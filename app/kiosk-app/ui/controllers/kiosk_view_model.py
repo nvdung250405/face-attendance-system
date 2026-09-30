@@ -44,6 +44,7 @@ class KioskViewModel(QObject):
     messageChanged = Signal(str)
     isProcessingChanged = Signal(bool)
     pendingSyncCountChanged = Signal(int)
+    frameReady = Signal()
     openPinDialogRequested = Signal()
     openEnrollmentDialogRequested = Signal()
 
@@ -142,6 +143,7 @@ class KioskViewModel(QObject):
         # 1. Cập nhật khung hình cho VideoImageProvider QML
         if self.image_provider:
             self.image_provider.update_frame(frame)
+            self.frameReady.emit()
 
         # 2. Nếu đang giữ màn hình kết quả Success / Error thì tạm dừng phân tích AI
         if self._holding_result:
