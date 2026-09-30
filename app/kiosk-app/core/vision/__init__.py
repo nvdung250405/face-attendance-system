@@ -7,6 +7,7 @@ from core.vision.feature_extractor import (
     ArcFaceFeatureExtractor,
 )
 from core.vision.gallery_matcher import GalleryCacheManager
+from core.vision.liveness_gate import LivenessResult, MiniFASNetLivenessGate
 
 __all__ = [
     "CameraWorker",
@@ -15,4 +16,6 @@ __all__ = [
     "ArcFaceFeatureExtractor",
     "REFERENCE_FACIAL_POINTS",
     "GalleryCacheManager",
+    "MiniFASNetLivenessGate",
+    "LivenessResult",
 ]
