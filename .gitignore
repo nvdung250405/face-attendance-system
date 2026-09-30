@@ -50,6 +50,10 @@ app/kiosk-app/.venv/
 *.db-shm
 kiosk_local.db
 
+# Trọng số mô hình AI ONNX tải về cục bộ
+app/kiosk-app/assets/models/*.onnx
+!app/kiosk-app/assets/models/.gitkeep
+
 # ------------------------------------------------------------------------------
 # 3. Node.js & Phân hệ Cổng Web (app/web-portal)
 # ------------------------------------------------------------------------------
