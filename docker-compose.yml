@@ -1,0 +1,84 @@
+# ==============================================================================
+# HỆ THỐNG ĐIỂM DANH KHUÔN MẶT (FAS) - DOCKER COMPOSE DEPLOYMENT
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Cơ sở dữ liệu PostgreSQL 16
+  # ----------------------------------------------------------------------------
+  fas-postgres:
+    image: postgres:16-alpine
+    container_name: fas-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-fas_db}
+      POSTGRES_USER: ${DB_USER:-fas_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword_FAS_2026!}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - fas-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fas_admin} -d ${DB_NAME:-fas_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # 2. Máy chủ Nghiệp vụ Java 21 / Spring Boot 4.x
+  # ----------------------------------------------------------------------------
+  fas-backend:
+    build:
+      context: ./app/backend-service
+      dockerfile: Dockerfile
+    container_name: fas-backend
+    restart: unless-stopped
+    depends_on:
+      fas-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://fas-postgres:5432/${DB_NAME:-fas_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-fas_admin}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-SecurePassword_FAS_2026!}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY}
+      KIOSK_SECRET_TOKEN: ${KIOSK_SECRET_TOKEN}
+      COOLDOWN_SECONDS: ${COOLDOWN_SECONDS:-120}
+      COMPLIANCE_DATA_RETENTION_DAYS: ${COMPLIANCE_DATA_RETENTION_DAYS:-20}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    networks:
+      - fas-net
+
+  # ----------------------------------------------------------------------------
+  # 3. Cổng Web Quản trị ReactJS / Nginx Reverse Proxy
+  # ----------------------------------------------------------------------------
+  fas-web:
+    build:
+      context: ./app/web-portal
+      dockerfile: Dockerfile
+    container_name: fas-web
+    restart: unless-stopped
+    depends_on:
+      - fas-backend
+    ports:
+      - "3000:80"
+    networks:
+      - fas-net
+
+# ------------------------------------------------------------------------------
+# Mạng & Volume Lưu trữ Dữ liệu Bền vững
+# ------------------------------------------------------------------------------
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  fas-net:
+    driver: bridge
