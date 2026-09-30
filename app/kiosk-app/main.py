@@ -1,15 +1,19 @@
 """Điểm khởi động chính của Phân hệ Trạm Điểm danh Kiosk Desktop (FAS Kiosk).
 
-Tài liệu tham chiếu:
-- BP-KIOSK-01 (Mục 2.5 - Khởi tạo & chạy dự án)
-- DDS.md (Mục 2.1 & 3.5 - Giao diện người dùng Kiosk)
+Tuân thủ kiến trúc MVC:
+- QML View: ui/qml/main.qml (nạp qua QQmlApplicationEngine)
+- Controller: KioskViewModel, PinController, EnrollmentController
+- Hardware Acceleration: QQuickImageProvider truyền luồng camera DirectShow/OpenCV vào QML Canvas
+- Model: YuNetFaceDetector, MiniFASNetLivenessGate, ArcFace, CooldownTracker, SQLiteQueueManager
 """
 
 import argparse
 import platform
 import sys
+from pathlib import Path
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtQml import QQmlApplicationEngine
 
 from config.logger import get_logger
 from config.settings import settings
@@ -21,7 +25,10 @@ from core.vision.face_detector import YuNetFaceDetector
 from core.vision.feature_extractor import ArcFaceFeatureExtractor
 from core.vision.gallery_matcher import GalleryCacheManager
 from core.vision.liveness_gate import MiniFASNetLivenessGate
-from ui.views.main_window import MainWindow
+from ui.controllers.enrollment_controller import EnrollmentController
+from ui.controllers.kiosk_view_model import KioskViewModel
+from ui.controllers.pin_controller import PinController
+from ui.controllers.video_image_provider import VideoImageProvider
 
 logger = get_logger("main")
 
@@ -87,7 +94,7 @@ def main() -> int:
     args = parse_arguments()
 
     logger.info("=" * 60)
-    logger.info("KHỞI ĐỘNG PHÂN HỆ TRẠM ĐIỂM DANH KIOSK DESKTOP (FAS)")
+    logger.info("KHỞI ĐỘNG PHÂN HỆ TRẠM ĐIỂM DANH KIOSK DESKTOP (FAS - QML MVC)")
     logger.info("=" * 60)
     logger.info("Phiên bản Python: %s (%s)", platform.python_version(), platform.platform())
     logger.info("Kiosk ID:        %s", settings.kiosk_id)
@@ -104,10 +111,10 @@ def main() -> int:
     logger.info("Ngưỡng Cosine:   %.2f", settings.cosine_similarity_threshold)
     logger.info("Thời gian chờ:   %d giây (Cooldown)", settings.cooldown_seconds)
 
-    # 1. Khởi tạo ứng dụng đồ họa PySide6
-    app = QApplication.instance()
+    # 1. Khởi tạo QGuiApplication
+    app = QGuiApplication.instance()
     if app is None:
-        app = QApplication(sys.argv)
+        app = QGuiApplication(sys.argv)
 
     app.setApplicationName("FAS Kiosk Desktop")
     app.setOrganizationName("FaceAttendanceSystem")
@@ -131,7 +138,26 @@ def main() -> int:
     )
     sync_worker.start()
 
-    # 6. Khởi tạo luồng đọc camera nếu không tắt qua flag
+    # 6. Khởi tạo VideoImageProvider & Controllers
+    image_provider = VideoImageProvider()
+    kiosk_view_model = KioskViewModel(
+        image_provider=image_provider,
+        detector=detector,
+        liveness_gate=liveness_gate,
+        extractor=extractor,
+        gallery_matcher=gallery_matcher,
+        cooldown_tracker=cooldown_tracker,
+        queue_manager=queue_manager,
+        sync_worker=sync_worker,
+    )
+    pin_controller = PinController()
+    enrollment_controller = EnrollmentController(
+        detector=detector,
+        extractor=extractor,
+        liveness_gate=liveness_gate,
+    )
+
+    # 7. Khởi tạo luồng đọc camera nếu không tắt qua flag
     camera_worker = None
     if not args.no_camera:
         try:
@@ -141,37 +167,49 @@ def main() -> int:
                 height=settings.camera_frame_height,
                 target_fps=settings.camera_fps,
             )
+            # Kết nối frame camera trực tiếp vào KioskViewModel và EnrollmentController
+            camera_worker.frame_ready.connect(kiosk_view_model.process_camera_frame)
+            camera_worker.frame_ready.connect(enrollment_controller.process_capture_frame)
             camera_worker.start()
             logger.info("Luồng camera DirectShow đã khởi động thành công.")
         except Exception as exc:
             logger.warning("Không thể mở webcam vật lý: %s. Chuyển sang chế độ không camera.", exc)
 
-    # 7. Khởi tạo cửa sổ chính MainWindow
-    window = MainWindow(
-        camera_worker=camera_worker,
-        detector=detector,
-        liveness_gate=liveness_gate,
-        extractor=extractor,
-        gallery_matcher=gallery_matcher,
-        cooldown_tracker=cooldown_tracker,
-        queue_manager=queue_manager,
-        sync_worker=sync_worker,
-    )
+    # 8. Khởi tạo QQmlApplicationEngine và đăng ký Controllers / Providers
+    engine = QQmlApplicationEngine()
+    engine.addImageProvider("camera", image_provider)
 
-    if args.windowed:
-        window.resize(1024, 768)
-        window.show()
+    context = engine.rootContext()
+    context.setContextProperty("kioskViewModel", kiosk_view_model)
+    context.setContextProperty("pinController", pin_controller)
+    context.setContextProperty("enrollmentController", enrollment_controller)
+
+    # Thêm đường dẫn tìm kiếm QML modules
+    qml_dir = Path(__file__).resolve().parent / "ui" / "qml"
+    engine.addImportPath(str(qml_dir))
+
+    main_qml_path = qml_dir / "main.qml"
+    engine.load(str(main_qml_path))
+
+    if not engine.rootObjects():
+        logger.error("Không thể nạp tệp giao diện QML tại %s", main_qml_path)
+        return -1
+
+    # Điều chỉnh kích thước toàn màn hình nếu không có cờ --windowed
+    root_window = engine.rootObjects()[0]
+    if not args.windowed:
+        root_window.showFullScreen()
     else:
-        window.showFullScreen()
+        root_window.show()
 
     logger.info("-" * 60)
-    logger.info("Giao diện Kiosk Desktop đã hiển thị lên màn hình. Nhấn [Esc] để thu nhỏ.")
+    logger.info("Giao diện Kiosk QML Desktop đã hiển thị thành công qua Scene Graph.")
     logger.info("=" * 60)
 
-    # 8. Bắt đầu vòng lặp sự kiện đồ họa Qt
+    # 9. Bắt đầu vòng lặp sự kiện đồ họa Qt
     exit_code = app.exec()
 
-    # 9. Dọn dẹp tài nguyên khi thoát
+    # 10. Dọn dẹp tài nguyên khi thoát
     if camera_worker is not None and camera_worker.isRunning():
         camera_worker.stop()
     if sync_worker.isRunning():
