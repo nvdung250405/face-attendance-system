@@ -46,5 +46,24 @@ Canvas {
         ctx.lineWidth = 5;
         ctx.strokeStyle = overlay.currentOvalColor;
         ctx.stroke();
+
+        // 4. Vẽ 4 vạch định vị góc quanh viền Oval (Corner brackets)
+        var guideLen = 22;
+        ctx.lineWidth = 3;
+        ctx.lineCap = "square";
+        ctx.beginPath();
+        // Đỉnh trên
+        ctx.moveTo(cx, cy - ry - 8);
+        ctx.lineTo(cx, cy - ry - 8 + guideLen);
+        // Đáy dưới
+        ctx.moveTo(cx, cy + ry + 8);
+        ctx.lineTo(cx, cy + ry + 8 - guideLen);
+        // Cạnh trái
+        ctx.moveTo(cx - rx - 8, cy);
+        ctx.lineTo(cx - rx - 8 + guideLen, cy);
+        // Cạnh phải
+        ctx.moveTo(cx + rx + 8, cy);
+        ctx.lineTo(cx + rx + 8 - guideLen, cy);
+        ctx.stroke();
     }
 }
