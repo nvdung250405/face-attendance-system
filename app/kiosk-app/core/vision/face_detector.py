@@ -194,3 +194,19 @@ class YuNetFaceDetector:
             )
 
         return results
+
+    def detect_face(self, frame: np.ndarray) -> FaceDetectionResult | None:
+        """Phát hiện và trả về khuôn mặt nổi bật nhất (diện tích lớn nhất) trong khung hình.
+
+        Args:
+            frame: Khung hình đầu vào (BGR numpy array).
+
+        Returns:
+            FaceDetectionResult | None: Khuôn mặt lớn nhất trong khung hình hoặc None nếu không phát hiện.
+        """
+        results = self.detect(frame)
+        if not results:
+            return None
+        # Ưu tiên khuôn mặt có diện tích lớn nhất (gần camera nhất)
+        return max(results, key=lambda r: r.bbox[2] * r.bbox[3])
+

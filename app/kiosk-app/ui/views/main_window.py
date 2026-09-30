@@ -342,7 +342,7 @@ class MainWindow(QMainWindow):
 
         # Bước 2: Kiểm tra thực thể sống Liveness chống giả mạo (MiniFASNet)
         if self.liveness_gate is not None:
-            liveness_score = self.liveness_gate.predict(frame, detection.bbox)
+            liveness_score = float(self.liveness_gate.predict(frame, detection.bbox))
             if liveness_score < settings.liveness_threshold:
                 self.canvas.set_state(
                     OvalState.ERROR,

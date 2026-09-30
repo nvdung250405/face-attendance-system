@@ -673,7 +673,7 @@ class EnrollmentDialog(QDialog):
         # Bước 2: Đo độ sống liveness
         liveness_score = 0.0
         if self.liveness_gate is not None:
-            liveness_score = self.liveness_gate.predict(frame, detection.bbox)
+            liveness_score = float(self.liveness_gate.predict(frame, detection.bbox))
         else:
             # Nếu không gắn module liveness thì mặc định coi là 1.0 (cho unit test)
             liveness_score = 1.0

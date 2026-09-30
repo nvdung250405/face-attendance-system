@@ -29,6 +29,21 @@ class LivenessResult:
     label: str  # "LIVE" nếu là người thật, "SPOOF" nếu là giả mạo
     class_probabilities: dict[str, float]  # Xác suất chi tiết của 3 lớp phân loại
 
+    def __float__(self) -> float:
+        return self.score
+
+    def __ge__(self, other: object) -> bool:
+        return self.score >= float(other)
+
+    def __gt__(self, other: object) -> bool:
+        return self.score > float(other)
+
+    def __le__(self, other: object) -> bool:
+        return self.score <= float(other)
+
+    def __lt__(self, other: object) -> bool:
+        return self.score < float(other)
+
 
 class MiniFASNetLivenessGate:
     """Bộ lọc kiểm tra thực thể sống thụ động (Passive Liveness) bằng Silent-Face MiniFASNet ONNX."""
@@ -151,22 +166,32 @@ class MiniFASNetLivenessGate:
         )
         return resized
 
-    def predict(self, crop_bgr: np.ndarray) -> LivenessResult:
+    def predict(
+        self,
+        crop_or_frame: np.ndarray,
+        bbox: tuple[int, int, int, int] | None = None,
+    ) -> LivenessResult:
         """Thực thi suy luận ONNX và phân loại xác suất thực thể sống.
 
         Args:
-            crop_bgr: Ảnh khuôn mặt kích thước 80x80 không gian màu BGR.
+            crop_or_frame: Ảnh khuôn mặt kích thước 80x80 hoặc khung hình gốc (kèm bbox).
+            bbox: Bounding box khuôn mặt nếu truyền vào cả khung hình.
 
         Returns:
             LivenessResult: Kết quả đánh giá tính xác thực của khuôn mặt.
         """
-        if crop_bgr is None or crop_bgr.size == 0:
+        if crop_or_frame is None or crop_or_frame.size == 0:
             return LivenessResult(
                 is_live=False,
                 score=0.0,
                 label="SPOOF",
                 class_probabilities={"fake_2d": 1.0, "real": 0.0, "fake_replay": 0.0},
             )
+
+        if bbox is not None:
+            crop_bgr = self.crop_face_context(crop_or_frame, bbox)
+        else:
+            crop_bgr = crop_or_frame
 
         if crop_bgr.shape[:2] != self.target_size:
             crop_bgr = cv2.resize(
