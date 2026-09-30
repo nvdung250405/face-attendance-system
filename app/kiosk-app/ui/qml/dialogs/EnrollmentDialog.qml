@@ -18,7 +18,7 @@ Dialog {
 
         // 1. Tiêu đề hướng dẫn
         Label {
-            text: (typeof enrollmentController !== "undefined") ? enrollmentController.statusMessage : "Đăng ký"
+            text: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.statusMessage : "Đăng ký"
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter
@@ -29,7 +29,7 @@ Dialog {
         // 2. Bước 1: Nhập mã OTP
         ColumnLayout {
             Layout.fillWidth: true
-            visible: (typeof enrollmentController !== "undefined") ? enrollmentController.currentStep === 1 : true
+            visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 1 : true
             spacing: 12
 
             TextField {
@@ -40,23 +40,23 @@ Dialog {
                 font.pixelSize: 24
                 font.bold: true
                 placeholderText: "Nhập mã OTP 6 số"
-                text: (typeof enrollmentController !== "undefined") ? enrollmentController.currentOtp : ""
+                text: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentOtp : ""
             }
 
             VirtualKeypad {
                 Layout.alignment: Qt.AlignHCenter
                 onDigitClicked: (digit) => {
-                    if (typeof enrollmentController !== "undefined") {
+                    if (typeof enrollmentController !== "undefined" && enrollmentController) {
                         enrollmentController.appendOtpDigit(digit)
                     }
                 }
                 onBackspaceClicked: {
-                    if (typeof enrollmentController !== "undefined") {
+                    if (typeof enrollmentController !== "undefined" && enrollmentController) {
                         enrollmentController.backspaceOtp()
                     }
                 }
                 onClearClicked: {
-                    if (typeof enrollmentController !== "undefined") {
+                    if (typeof enrollmentController !== "undefined" && enrollmentController) {
                         enrollmentController.clearOtp()
                     }
                 }
@@ -65,9 +65,9 @@ Dialog {
             Button {
                 text: "Xác thực OTP"
                 Layout.alignment: Qt.AlignHCenter
-                enabled: (typeof enrollmentController !== "undefined") && enrollmentController.currentOtp.length === 6
+                enabled: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentOtp.length === 6 : false
                 onClicked: {
-                    if (typeof enrollmentController !== "undefined") {
+                    if (typeof enrollmentController !== "undefined" && enrollmentController) {
                         enrollmentController.verifyOtp()
                     }
                 }
@@ -77,7 +77,7 @@ Dialog {
         // 3. Bước 2: Thanh tiến trình chụp ảnh
         ColumnLayout {
             Layout.fillWidth: true
-            visible: (typeof enrollmentController !== "undefined") ? enrollmentController.currentStep === 2 : false
+            visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 2 : false
             spacing: 12
 
             Label {
@@ -88,14 +88,14 @@ Dialog {
 
             ProgressBar {
                 Layout.fillWidth: true
-                value: (typeof enrollmentController !== "undefined") ? enrollmentController.progressPercent : 0.0
+                value: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.0
             }
         }
 
         // 4. Bước 3: Hoàn tất
         ColumnLayout {
             Layout.fillWidth: true
-            visible: (typeof enrollmentController !== "undefined") ? enrollmentController.currentStep === 3 : false
+            visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 3 : false
             spacing: 12
 
             Label {
@@ -114,7 +114,7 @@ Dialog {
             text: "Hủy bỏ / Đóng"
             Layout.alignment: Qt.AlignHCenter
             onClicked: {
-                if (typeof enrollmentController !== "undefined") {
+                if (typeof enrollmentController !== "undefined" && enrollmentController) {
                     enrollmentController.reset()
                 }
                 enrollDialog.close()

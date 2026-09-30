@@ -6,7 +6,7 @@ Canvas {
     anchors.fill: parent
 
     property color currentOvalColor: {
-        if (typeof kioskViewModel !== "undefined") {
+        if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
             switch (kioskViewModel.ovalState) {
                 case "ALIGNING": return Theme.ovalAligning
                 case "SUCCESS": return Theme.ovalSuccess

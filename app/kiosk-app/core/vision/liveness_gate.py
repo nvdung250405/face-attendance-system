@@ -198,11 +198,11 @@ class MiniFASNetLivenessGate:
                 crop_bgr, self.target_size, interpolation=cv2.INTER_LINEAR
             )
 
-        # Chuẩn hóa giá trị điểm ảnh về [0.0, 1.0] theo đúng quy chuẩn MiniFASNet
-        normalized = crop_bgr.astype(np.float32) / 255.0
+        # Chuyển đổi sang float32 theo quy chuẩn MiniFASNet (giữ nguyên dải [0, 255])
+        face_float = crop_bgr.astype(np.float32)
 
         # Chuyển định dạng từ HWC (80, 80, 3) sang NCHW (1, 3, 80, 80)
-        blob = np.transpose(normalized, (2, 0, 1))
+        blob = np.transpose(face_float, (2, 0, 1))
         blob = np.expand_dims(blob, axis=0)
 
         # Suy luận qua ONNX Runtime

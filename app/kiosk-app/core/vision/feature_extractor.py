@@ -163,3 +163,16 @@ class ArcFaceFeatureExtractor:
             unit_embedding = raw_embedding
 
         return unit_embedding
+
+    def extract_vector(self, aligned_face: np.ndarray) -> np.ndarray:
+        """Trích xuất vector đặc trưng 512D chuẩn hóa L2 Norm từ khuôn mặt đã căn chỉnh.
+
+        Bí danh (alias) tương thích với pipeline kiosk_view_model và enrollment_controller.
+
+        Args:
+            aligned_face: Ảnh mặt đã căn chỉnh chuẩn 112x112 (BGR uint8).
+
+        Returns:
+            np.ndarray: Vector đặc trưng 512 chiều kiểu float32 có độ dài ||v|| = 1.0.
+        """
+        return self.extract(aligned_face)

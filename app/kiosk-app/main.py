@@ -53,10 +53,25 @@ def parse_arguments() -> argparse.Namespace:
         metavar="EMP_ID",
         help="Tự động ghi nhận khuôn mặt hiện tại của bạn vào RAM Gallery với mã nhân viên EMP_ID (ví dụ: --demo-enroll 1001) để kiểm thử điểm danh trực tiếp",
     )
+    parser.add_argument(
+        "--no-liveness",
+        action="store_true",
+        help="Bỏ qua kiểm tra thực thể sống Liveness (chỉ dùng để test nhanh tại máy phát triển)",
+    )
+    parser.add_argument(
+        "--liveness-threshold",
+        type=float,
+        default=None,
+        metavar="FLOAT",
+        help="Ngưỡng đánh giá thực thể sống Liveness (mặc định: 0.85)",
+    )
     return parser.parse_args()
 
 
-def init_ai_pipeline() -> tuple[
+def init_ai_pipeline(
+    enable_liveness: bool = True,
+    liveness_threshold: float | None = None,
+) -> tuple[
     YuNetFaceDetector | None,
     MiniFASNetLivenessGate | None,
     ArcFaceFeatureExtractor | None,
@@ -75,10 +90,18 @@ def init_ai_pipeline() -> tuple[
     else:
         logger.warning("Chưa có tệp trọng số YuNet tại %s", settings.yunet_model_path)
 
-    if settings.minifasnet_model_path.exists():
+    if not enable_liveness:
+        logger.info("Mô hình AI: MiniFASNet Liveness Gate   -> [ĐÃ TẮT BẰNG CỜ --no-liveness]")
+    elif settings.minifasnet_model_path.exists():
         try:
-            liveness_gate = MiniFASNetLivenessGate(settings.minifasnet_model_path)
-            logger.info("Mô hình AI: MiniFASNet Liveness Gate   -> [SẴN SÀNG]")
+            liveness_gate = MiniFASNetLivenessGate(
+                settings.minifasnet_model_path,
+                threshold=liveness_threshold,
+            )
+            logger.info(
+                "Mô hình AI: MiniFASNet Liveness Gate   -> [SẴN SÀNG] (threshold=%.2f)",
+                liveness_gate.threshold,
+            )
         except Exception as exc:
             logger.warning("Không thể nạp MiniFASNet: %s", exc)
     else:
@@ -134,7 +157,10 @@ def main() -> int:
     gallery_matcher = GalleryCacheManager(settings.cosine_similarity_threshold)
 
     # 4. Nạp bộ 3 mô hình AI ONNX
-    detector, liveness_gate, extractor = init_ai_pipeline()
+    detector, liveness_gate, extractor = init_ai_pipeline(
+        enable_liveness=not args.no_liveness,
+        liveness_threshold=args.liveness_threshold,
+    )
 
     # 5. Khởi tạo tiến trình nền đồng bộ bù ngoại tuyến
     sync_worker = OfflineSyncWorker(
@@ -181,16 +207,19 @@ def main() -> int:
                 def _auto_enroll_handler(frame):
                     if enrolled_flag["done"] or frame is None or frame.size == 0:
                         return
-                    det = detector.detect_face(frame)
-                    if det is not None and not det.is_tilted and det.is_valid_size:
-                        aligned = extractor.align_face(frame, det.landmarks)
-                        vec = extractor.extract_vector(aligned)
-                        gallery_matcher.add_or_update_employee(args.demo_enroll, vec)
-                        enrolled_flag["done"] = True
-                        logger.info(
-                            "✅ [DEMO-ENROLL] Đã tự động đăng ký khuôn mặt của bạn vào Gallery với Mã NV: %d!",
-                            args.demo_enroll,
-                        )
+                    try:
+                        det = detector.detect_face(frame)
+                        if det is not None and not det.is_tilted and det.is_valid_size:
+                            aligned = extractor.align_face(frame, det.landmarks)
+                            vec = extractor.extract_vector(aligned)
+                            gallery_matcher.add_or_update_employee(args.demo_enroll, vec)
+                            enrolled_flag["done"] = True
+                            logger.info(
+                                "✅ [DEMO-ENROLL] Đã tự động đăng ký khuôn mặt của bạn vào Gallery với Mã NV: %d!",
+                                args.demo_enroll,
+                            )
+                    except Exception as exc:
+                        logger.warning("Lỗi trong quá trình demo-enroll: %s", exc)
 
                 camera_worker.frame_ready.connect(_auto_enroll_handler)
 

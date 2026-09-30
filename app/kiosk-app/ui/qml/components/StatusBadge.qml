@@ -9,7 +9,7 @@ Rectangle {
     radius: 12
     color: "#D9181825"
     border.color: {
-        if (typeof kioskViewModel !== "undefined") {
+        if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
             switch (kioskViewModel.ovalState) {
                 case "ALIGNING": return Theme.ovalAligning
                 case "SUCCESS": return Theme.ovalSuccess
@@ -29,6 +29,6 @@ Rectangle {
         font.pixelSize: 14
         font.bold: true
         color: badge.border.color
-        text: (typeof kioskViewModel !== "undefined") ? kioskViewModel.message : "Vui lòng nhìn vào khung hình..."
+        text: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.message : "Vui lòng nhìn vào khung hình..."
     }
 }
