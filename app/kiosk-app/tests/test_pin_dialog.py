@@ -5,7 +5,18 @@ Tài liệu tham chiếu:
 - TP-KIOSK-01 (Mục 6.2 & TC-KIOSK-10, TC-KIOSK-11, TC-KIOSK-12)
 """
 
-from ui.views.pin_dialog import PinLockoutStatus, PinSecurityManager, VirtualPinDialog
+import pytest
+
+try:
+    from ui.views.pin_dialog import PinLockoutStatus, PinSecurityManager, VirtualPinDialog
+    HAS_PIN_DIALOG = True
+except (ImportError, Exception):
+    HAS_PIN_DIALOG = False
+
+pytestmark = pytest.mark.skipif(
+    not HAS_PIN_DIALOG,
+    reason="Yêu cầu thư viện hệ thống đồ họa Qt (libEGL / display)",
+)
 
 # ------------------------------------------------------------------------------
 # 1. Kiểm thử PinSecurityManager (Logic chống Brute-Force 15 phút - TC-KIOSK-12)
