@@ -48,4 +48,25 @@ ApplicationWindow {
             }
         }
     }
+
+    // Hộp thoại quẹt PIN khẩn cấp
+    PinDialog {
+        id: pinDialog
+    }
+
+    // Hộp thoại tự đăng ký nhân viên mới
+    EnrollmentDialog {
+        id: enrollmentDialog
+    }
+
+    Connections {
+        target: (typeof kioskViewModel !== "undefined") ? kioskViewModel : null
+        function onOpenPinDialogRequested() {
+            pinDialog.open()
+        }
+        function onOpenEnrollmentDialogRequested() {
+            enrollmentDialog.open()
+        }
+    }
 }
+

@@ -26,6 +26,8 @@ class KioskViewModel(QObject):
     ovalStateChanged = Signal(str)
     messageChanged = Signal(str)
     isProcessingChanged = Signal(bool)
+    openPinDialogRequested = Signal()
+    openEnrollmentDialogRequested = Signal()
 
     def __init__(self, parent: QObject | None = None) -> None:
         """Khởi tạo KioskViewModel."""
@@ -68,8 +70,10 @@ class KioskViewModel(QObject):
     def requestPinFallback(self) -> None:
         """Slot được gọi từ QML khi người dùng bấm nút Quẹt PIN dự phòng."""
         self.set_state(OvalState.ALIGNING, "Vui lòng nhập mã PIN trên bàn phím ảo...")
+        self.openPinDialogRequested.emit()
 
     @Slot()
     def requestEnrollment(self) -> None:
         """Slot được gọi từ QML khi người dùng bấm Đăng ký nhân viên mới."""
         self.set_state(OvalState.ALIGNING, "Vui lòng nhập mã OTP để tiếp tục đăng ký...")
+        self.openEnrollmentDialogRequested.emit()
