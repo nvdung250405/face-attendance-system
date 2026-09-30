@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Docker: Start PostgreSQL",
+      "type": "shell",
+      "command": "docker-compose up -d fas-postgres",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop All Services",
+      "type": "shell",
+      "command": "docker-compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend: Run Maven Tests",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/app/backend-service"
+      },
+      "command": "./mvnw test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Kiosk: Run Pytest",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/app/kiosk-app"
+      },
+      "command": "${workspaceFolder}/app/kiosk-app/.venv/Scripts/python.exe -m pytest tests/ -v",
+      "problemMatcher": []
+    },
+    {
+      "label": "Web: Run Dev Server",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/app/web-portal"
+      },
+      "command": "npm run dev",
+      "problemMatcher": []
+    }
+  ]
+}

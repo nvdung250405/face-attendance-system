@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Debug Backend Service (Spring Boot)",
+      "request": "launch",
+      "mainClass": "com.fas.BackendServiceApplication",
+      "projectName": "backend-service",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Debug Kiosk App (Python)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/app/kiosk-app/main.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/app/kiosk-app",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug Web Portal (Chrome)",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/app/web-portal/src"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack Dev (Backend + Web)",
+      "configurations": [
+        "Debug Backend Service (Spring Boot)",
+        "Debug Web Portal (Chrome)"
+      ]
+    }
+  ]
+}
