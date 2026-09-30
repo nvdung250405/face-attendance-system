@@ -4,19 +4,7 @@ Tài liệu tham chiếu:
 - BP-KIOSK-01 (Mục 1.2 & Mục 4.3)
 """
 
-import pytest
-from PySide6.QtCore import QCoreApplication
-
 from core.vision.camera_worker import CameraWorker
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    """Khởi tạo QCoreApplication phục vụ kiểm thử tín hiệu Qt."""
-    app = QCoreApplication.instance()
-    if app is None:
-        app = QCoreApplication([])
-    return app
 
 
 def test_camera_worker_initialization(qapp):
