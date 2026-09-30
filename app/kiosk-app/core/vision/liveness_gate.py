@@ -122,40 +122,28 @@ class MiniFASNetLivenessGate:
             return np.zeros((self.target_size[1], self.target_size[0], 3), dtype=np.uint8)
 
         x, y, w, h = bbox
+        if w <= 0 or h <= 0:
+            return np.zeros((self.target_size[1], self.target_size[0], 3), dtype=np.uint8)
+
         frame_h, frame_w = frame.shape[:2]
 
-        cx = x + w / 2.0
-        cy = y + h / 2.0
-        crop_size = max(w, h) * self.scale_factor
+        scale = min(
+            (frame_h - 1) / max(1, h),
+            (frame_w - 1) / max(1, w),
+            self.scale_factor,
+        )
+        new_w = w * scale
+        new_h = h * scale
 
-        x1 = int(round(cx - crop_size / 2.0))
-        y1 = int(round(cy - crop_size / 2.0))
-        x2 = int(round(cx + crop_size / 2.0))
-        y2 = int(round(cy + crop_size / 2.0))
+        center_x = x + w / 2.0
+        center_y = y + h / 2.0
 
-        # Tính toán phần padding nếu vùng cắt vượt ra ngoài biên ảnh
-        pad_top = max(0, -y1)
-        pad_bottom = max(0, y2 - frame_h)
-        pad_left = max(0, -x1)
-        pad_right = max(0, x2 - frame_w)
+        x1 = max(0, int(round(center_x - new_w / 2.0)))
+        y1 = max(0, int(round(center_y - new_h / 2.0)))
+        x2 = min(frame_w - 1, int(round(center_x + new_w / 2.0)))
+        y2 = min(frame_h - 1, int(round(center_y + new_h / 2.0)))
 
-        if pad_top > 0 or pad_bottom > 0 or pad_left > 0 or pad_right > 0:
-            frame_padded = cv2.copyMakeBorder(
-                frame,
-                pad_top,
-                pad_bottom,
-                pad_left,
-                pad_right,
-                cv2.BORDER_CONSTANT,
-                value=(0, 0, 0),
-            )
-            crop_x1 = x1 + pad_left
-            crop_y1 = y1 + pad_top
-            crop_x2 = x2 + pad_left
-            crop_y2 = y2 + pad_top
-            crop = frame_padded[crop_y1:crop_y2, crop_x1:crop_x2]
-        else:
-            crop = frame[y1:y2, x1:x2]
+        crop = frame[y1 : y2 + 1, x1 : x2 + 1]
 
         if crop.size == 0 or crop.shape[0] == 0 or crop.shape[1] == 0:
             return np.zeros((self.target_size[1], self.target_size[0], 3), dtype=np.uint8)
@@ -213,12 +201,12 @@ class MiniFASNetLivenessGate:
         exp_logits = np.exp(logits - np.max(logits))
         probabilities = exp_logits / np.sum(exp_logits)
 
-        # Silent-Face-Anti-Spoofing quy ước:
-        # Index 0: Tấn công ảnh in 2D (Fake 2D)
-        # Index 1: Người thật (Real / Live)
-        # Index 2: Tấn công màn hình / Mặt nạ 3D (Fake Replay/3D)
-        prob_fake_2d = float(probabilities[0])
-        prob_real = float(probabilities[1])
+        # Silent-Face-Anti-Spoofing MiniFASNet quy ước chuẩn:
+        # Index 0: Người thật (Real / Live)
+        # Index 1: Tấn công ảnh in 2D (Print Attack / Fake 2D)
+        # Index 2: Tấn công màn hình / Mặt nạ 3D (Replay Attack / Fake Replay)
+        prob_real = float(probabilities[0])
+        prob_fake_2d = float(probabilities[1])
         prob_fake_replay = float(probabilities[2])
 
         is_live = prob_real >= self.threshold

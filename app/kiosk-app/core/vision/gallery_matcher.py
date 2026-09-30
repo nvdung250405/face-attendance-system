@@ -161,6 +161,10 @@ class GalleryCacheManager:
                 )
             logger.info("Thêm mới nhân viên ID: %d vào Gallery RAM", employee_id)
 
+    def add_or_update_employee(self, employee_id: int, vector: np.ndarray) -> None:
+        """Bí danh (alias) tương thích cho add_or_update."""
+        self.add_or_update(employee_id, vector)
+
     def remove(self, employee_id: int) -> bool:
         """Xóa nhân viên khỏi bộ đệm RAM.
 
