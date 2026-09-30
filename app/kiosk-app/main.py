@@ -207,7 +207,7 @@ def main() -> int:
                 enroll_state = {
                     "done": False,
                     "stable_count": 0,
-                    "target_frames": 12,
+                    "target_frames": 8,
                     "best_aligned": None,
                     "best_sharpness": 0.0,
                 }
@@ -225,7 +225,7 @@ def main() -> int:
                         fh, fw = frame.shape[:2]
                         cx = det.bbox[0] + det.bbox[2] / 2.0
                         cy = det.bbox[1] + det.bbox[3] / 2.0
-                        if not (0.25 * fw <= cx <= 0.75 * fw and 0.20 * fh <= cy <= 0.80 * fh):
+                        if not (0.20 * fw <= cx <= 0.80 * fw and 0.15 * fh <= cy <= 0.85 * fh):
                             enroll_state["stable_count"] = 0
                             return
 
@@ -246,7 +246,7 @@ def main() -> int:
                             enroll_state["best_sharpness"] = sharpness
                             enroll_state["best_aligned"] = aligned
 
-                        if cnt % 4 == 0 and cnt < enroll_state["target_frames"]:
+                        if cnt % 3 == 0 and cnt < enroll_state["target_frames"]:
                             logger.info(
                                 "⏳ [DEMO-ENROLL] Đang giữ yên khuôn mặt để lấy nét... (%d/%d frames)",
                                 cnt,
@@ -254,7 +254,11 @@ def main() -> int:
                             )
 
                         if cnt >= enroll_state["target_frames"]:
-                            best_crop = enroll_state["best_aligned"] or aligned
+                            best_crop = (
+                                enroll_state["best_aligned"]
+                                if enroll_state["best_aligned"] is not None
+                                else aligned
+                            )
                             vec = extractor.extract_vector(best_crop)
                             gallery_matcher.add_or_update_employee(args.demo_enroll, vec)
                             enroll_state["done"] = True
