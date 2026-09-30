@@ -196,6 +196,7 @@ COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", "120"))
     - `feature/kiosk-FR-04-pin-fallback`: Xây dựng VirtualPinDialog bàn phím số ảo.
     - `feature/kiosk-FR-05-offline-wal`: Xây dựng SQLiteQueueManager và OfflineSyncWorker.
     - `feature/kiosk-FR-09-self-enrollment`: Xây dựng EnrollmentDialog tiếp nhận OTP.
+    - `feature/kiosk-ui-integration`: Tích hợp hoàn chỉnh MainWindow, LiveCanvasWidget viền oval 4 màu, pipeline thị giác và khởi động ứng dụng.
 
 - 3.2. Commit
   - Áp dụng Conventional Commits chuẩn hóa:
