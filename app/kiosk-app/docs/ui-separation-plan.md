@@ -1,98 +1,87 @@
-# Kế Hoạch Tách Biệt Giao Diện Kiosk App Theo Mô Hình MVC (QML / PySide6)
+# Kế Hoạch Tái Thiết Lập Môi Trường & Chuyển Đổi QML (Foundation Refactoring)
 
 > **Tài liệu tham chiếu:**
-> - [DDS.md](file:///d:/workspace/VSCode/nvdung/face-attendance-system/docs/architecture/DDS.md) (Mục 2.1 & Mục 3.5 - Máy trạng thái viền oval 4 màu & kiến trúc Kiosk biên)
+> - [DDS.md](file:///d:/workspace/VSCode/nvdung/face-attendance-system/docs/architecture/DDS.md) (Mục 2.1 & 3.5 - Máy trạng thái viền oval 4 màu & kiến trúc Kiosk biên)
 > - [BP-KIOSK-01](file:///d:/workspace/VSCode/nvdung/face-attendance-system/app/kiosk-app/docs/planning/BP-KIOSK-01.md) (Quy hoạch phân hệ Kiosk)
-> - **Mô hình ánh xạ tương đương 1:1 với JavaFX**:
->   - **View**: `QML (.qml)` $\Leftrightarrow$ `FXML (.fxml)` + CSS
->   - **Controller**: `QObject Python` (`@Property`, `@Signal`, `@Slot`) $\Leftrightarrow$ `@FXML Controller Java`
->   - **Model**: Python Data Classes, SQLite WAL, ONNX Inference $\Leftrightarrow$ Model POJO & Services
+> - **Mô hình kiến trúc tương đương 1:1 với JavaFX**:
+>   - **View Layer**: `QML (.qml)` $\Leftrightarrow$ `FXML (.fxml)` + CSS (`.css`)
+>   - **Controller Layer**: `QObject Python` (`@Property`, `@Signal`, `@Slot`) $\Leftrightarrow$ `@FXML Controller Java`
+>   - **Model Layer**: Core Vision Engine, Cooldown, SQLite WAL $\Leftrightarrow$ Service & Business Logic
 
 ---
 
-## 1. Kiến Trúc MVC / MVVM Tách Rời Tuyệt Đối
+## 1. Mục Tiêu Tái Thiết Lập Nền Tảng (Foundation Refactoring)
 
-```
-+---------------------------------------------------------------------------------------+
-|                            VIEW LAYER (QML / Qt Quick)                                |
-|                        (Khai báo UI thuần túy, 0 logic code)                          |
-|                                                                                       |
-|   ui/qml/                                                                             |
-|   ├── main.qml                     -> Cửa sổ ứng dụng chính                           |
-|   ├── theme/Theme.qml              -> Bảng màu Catppuccin Mocha, kích thước font      |
-|   ├── components/LiveCanvas.qml    -> Khung hình camera, viền oval động, lớp mờ        |
-|   ├── components/VirtualKeypad.qml -> Bàn phím số ảo cảm ứng                          |
-|   ├── dialogs/PinDialog.qml        -> Popup quẹt mã PIN khẩn cấp                      |
-|   └── dialogs/EnrollmentDialog.qml -> Popup tự đăng ký khuôn mặt                      |
-+-------------------------------------------^-------------------------------------------+
-                                            | (Data Binding: @Property, Signals, Slots)
-+-------------------------------------------v-------------------------------------------+
-|                          CONTROLLER LAYER (Python QObject)                            |
-|             (Điều phối luồng dữ liệu giữa View và Model, tương tự JavaFX)             |
-|                                                                                       |
-|   ui/controllers/                                                                     |
-|   ├── kiosk_controller.py      -> Quản lý trạng thái Oval, thông điệp, đếm ngược      |
-|   ├── pin_controller.py        -> Điều phối xác thực mã PIN, lockout                  |
-|   ├── enrollment_controller.py -> Điều phối 3 bước chụp ảnh OTP                       |
-|   └── video_image_provider.py  -> Pipeline đẩy khung hình OpenCV sang QML Image       |
-+-------------------------------------------^-------------------------------------------+
-                                            |
-+-------------------------------------------v-------------------------------------------+
-|                             MODEL & CORE ENGINE LAYER                                 |
-|                       (Toàn bộ nghiệp vụ biên, độc lập 100% với UI)                   |
-|                                                                                       |
-|   core/vision/                 -> YuNet, MiniFASNet, MobileFaceNet                    |
-|   core/cooldown/               -> CooldownTracker (chống quẹt đúp)                    |
-|   network/                     -> SQLiteQueueManager (WAL), OfflineSyncWorker         |
-|   config/                      -> KioskConfig, Logger                                 |
-+---------------------------------------------------------------------------------------+
-```
+Chuyển đổi từ cơ chế vẽ tĩnh CPU Widgets (`QWidget`, `QPainter`) sang kiến trúc hiện đại **Declarative QML + Python Controller + Hardware Accelerated Scene Graph**:
+1. **Phân tách rạch ròi 100% UI & Business Logic**:
+   - `ui/qml/` (View): Chỉ thuần túy layout, CSS/Catppuccin styling, visual animation.
+   - `ui/controllers/` (Controller): Đóng vai trò ViewModel / Controller trung chuyển dữ liệu giữa UI và Model.
+   - `core/`, `network/`, `config/` (Model): Không dính líu đến bất kỳ thư viện UI nào.
+2. **Hiệu năng GPU**: Khung hình camera và viền oval được render trực tiếp qua Direct3D/OpenGL Scene Graph, giải phóng CPU tập trung cho AI inference (YuNet + MiniFASNet).
+3. **Đóng gói tài nguyên (Resource Compilation)**: Sử dụng file `resources.qrc` và `pyside6-rcc` để đóng gói toàn bộ file `.qml`, theme, icon vào nhị phân.
 
 ---
 
-## 2. Quy Chuẩn Tổ Chức Thư Mục `/kiosk-app`
+## 2. Cấu Trúc Thư Mục Chuẩn Hóa Toàn Diện
 
-```
+```text
 app/kiosk-app/
-├── config/                      # Cấu hình ngưỡng AI, camera, logger
-├── core/                        # Thuật toán AI, trích xuất đặc trưng, liveness
-├── network/                     # SQLite WAL và worker đồng bộ ngầm
-├── ui/
-│   ├── controllers/             # [MỚI - CONTROLLER] Các class QObject xử lý tương tác
-│   │   ├── __init__.py
-│   │   ├── kiosk_controller.py
-│   │   ├── pin_controller.py
-│   │   ├── enrollment_controller.py
-│   │   └── video_image_provider.py
-│   │
-│   └── qml/                     # [MỚI - VIEW] Toàn bộ mã nguồn giao diện khai báo
-│       ├── main.qml
-│       ├── theme/
-│       │   ├── Theme.qml        # Singleton chứa màu sắc, font chữ Catppuccin
-│       │   └── qmldir           # Khai báo module theme
-│       ├── components/
-│       │   ├── LiveCanvas.qml   # Stream camera + viền oval 4 màu
-│       │   ├── OvalOverlay.qml  # Lớp phủ mờ khoét lỗ oval + 4 góc corner guides
-│       │   ├── StatusBadge.qml  # Badge thông báo kết quả
-│       │   └── VirtualKeypad.qml# Bàn phím số ảo
-│       └── dialogs/
-│           ├── PinDialog.qml
-│           └── EnrollmentDialog.qml
+├── assets/                          # [MỚI] Icon, âm thanh hiệu ứng (Success/Error chime), model ONNX
+├── config/                          # Cấu hình KioskConfig, logger
+├── core/                            # Vision pipeline, CooldownTracker
+├── network/                         # SQLiteQueueManager (WAL), OfflineSyncWorker
 │
-├── tests/                       # Unit & Integration Tests (Offscreen headless)
-├── main.py                      # Điểm khởi chạy QQmlApplicationEngine
-├── pyproject.toml               # Cấu hình ruff, pytest, đường dẫn QML
-└── requirements.txt             # PySide6 và các gói AI biên
+├── ui/                              # [TÁI CẤU TRÚC HOÀN TOÀN]
+│   ├── qml/                         # TOÀN BỘ MÃ NGUỒN GIAO DIỆN KHAI BÁO (VIEW)
+│   │   ├── main.qml                 # Cửa sổ chính Kiosk
+│   │   ├── components/              # Các UI Component tái sử dụng
+│   │   │   ├── LiveCanvas.qml       # Camera stream & Oval 4 màu
+│   │   │   ├── OvalOverlay.qml      # Lớp phủ mờ khoét lỗ Oval + Corner brackets
+│   │   │   ├── StatusBadge.qml      # Thẻ thông báo trạng thái bo góc
+│   │   │   └── VirtualKeypad.qml    # Bàn phím số cảm ứng
+│   │   ├── dialogs/                 # Các màn hình popup / dialog QML
+│   │   │   ├── PinDialog.qml        # Giao diện quẹt mã PIN
+│   │   │   └── EnrollmentDialog.qml # Giao diện Self-Enrollment
+│   │   ├── theme/                   # Bảng màu Catppuccin & Font chung
+│   │   │   ├── Theme.qml            # Biến màu sắc toàn cục (Base, Surface, Oval colors)
+│   │   │   └── qmldir               # Khai báo module Singleton cho Theme
+│   │   └── assets/                  # Assets dành riêng cho QML (icons, svgs)
+│   │
+│   ├── controllers/                 # TẦNG CONTROLLER / VIEWMODEL (PYTHON QOBJECT)
+│   │   ├── __init__.py
+│   │   ├── kiosk_view_model.py      # ViewModel phát tín hiệu (Signals/Properties) cho QML
+│   │   ├── pin_controller.py        # Controller xử lý logic nhập PIN
+│   │   ├── enrollment_controller.py # Controller xử lý đăng ký OTP
+│   │   └── video_image_provider.py  # Provider truyền frame camera tốc độ cao sang QML
+│   │
+│   └── views/                       # (Legacy Widgets - loại bỏ sau khi QML hoàn tất)
+│
+├── resources.qrc                    # File định nghĩa tài nguyên QML đóng gói
+├── main.py                          # Điểm khởi chạy QQmlApplicationEngine
+├── pyproject.toml                   # Cấu hình Ruff, Pytest, offscreen runner
+├── requirements.txt                 # PySide6 và các gói AI biên
+└── tests/                           # Unit tests Controller / ViewModel không phụ thuộc màn hình
 ```
 
 ---
 
-## 3. Lộ Trình Triển Khai (Phased Roadmap)
+## 3. Cập Nhật Thư Viện, Công Cụ & Môi Trường
 
-| Giai Đoạn | Nhánh Git | Nội Dung Công Việc | Tiêu Chí Hoàn Thành |
+### 3.1. Thư viện & Module PySide6
+- Đảm bảo đầy đủ `PySide6-Essentials` và `PySide6-Addons` (đặc biệt: `PySide6.QtQuick`, `PySide6.QtQml`, `PySide6.QtQuickControls2`).
+- Công cụ Resource Compiler: `pyside6-rcc` để biên dịch `resources.qrc` sang `resources_rc.py` khi đóng gói production.
+
+### 3.2. Cấu hình Pytest & Headless CI
+- Thiết lập `QT_QPA_PLATFORM=offscreen` trong `pyproject.toml` để chạy test trơn tru trên mọi môi trường (Windows dev máy bàn và Ubuntu CI runner) mà không cần mở cửa sổ đồ họa.
+
+---
+
+## 4. Lộ Trình Triển Khai Chi Tiết (Phased Execution)
+
+| Giai Đoạn | Tên Nhánh Git | Nhiệm Vụ Trọng Tâm | Tiêu Chí Nghiệm Thu |
 |---|---|---|---|
-| **Phase 0 (Environment)** | `develop` | - Khởi tạo cấu trúc thư mục `ui/qml/`, `ui/controllers/`.<br>- Khởi tạo `Theme.qml`, `qmldir`, `video_image_provider.py` nền tảng.<br>- Bổ sung cấu hình QML vào test suite và kiểm tra môi trường. | Môi trường sạch, 100% test pass, sẵn sàng code Phase 1. |
-| **Phase 1 (Foundation)** | `feature/kiosk-qml-foundation` | - Hoàn thiện `VideoImageProvider` (OpenCV sang QML Pixmap stream zero-copy).<br>- Hoàn thiện `LiveCanvas.qml` vẽ viền Oval 4 màu động qua Canvas.<br>- `KioskController` phát tín hiệu thay đổi màu viền (`IDLE`, `ALIGNING`, `SUCCESS`, `ERROR`). | Video camera hiển thị mượt trên QML; viền oval đổi màu chuẩn xác; không lỗi ruff. |
-| **Phase 2 (Controller Integration)** | `feature/kiosk-qml-viewmodel` | - Kết nối `KioskController` với `CameraWorker`, `YuNetFaceDetector`, `MiniFASNetLivenessGate`.<br>- Bổ sung cơ chế Cooldown và tự động nhận diện mặt theo luồng. | Luồng điểm danh tự động hoạt động mượt mà qua QML; độ trễ < 100ms. |
-| **Phase 3 (Dialogs)** | `feature/kiosk-qml-dialogs` | - Xây dựng `VirtualKeypad.qml` và `PinDialog.qml` kết nối `PinController`.<br>- Xây dựng `EnrollmentDialog.qml` kết nối `EnrollmentController`. | Bàn phím số nhập mượt; luồng Self-Enrollment 3 bước hoàn chỉnh. |
-| **Phase 4 (Final Assembly)** | `feature/kiosk-qml-integration` | - Cập nhật `main.py` chạy qua `QQmlApplicationEngine`.<br>- Dọn dẹp mã nguồn cũ trong `ui/views/` và `ui/widgets/`.<br>- Viết trọn bộ Controller Unit Tests. | Toàn bộ hệ thống Kiosk chạy thuần QML/MVC; CI/CD đạt 100% xanh. |
+| **Phase 0 (Environment)** | `develop` | - Khởi tạo đầy đủ cây thư mục `ui/qml/{components,dialogs,theme,assets}` và `ui/controllers/`.<br>- Tạo `resources.qrc` mẫu và cấu hình `pyproject.toml`.<br>- Khởi tạo nền tảng `Theme.qml`, `VideoImageProvider`, `KioskViewModel` stub.<br>- Thiết lập fixture `qapp` offscreen cho toàn bộ test suite. | Môi trường sạch 100%, tất cả test pass, cấu trúc thư mục hoàn chỉnh. |
+| **Phase 1 (Live Canvas)** | `feature/kiosk-qml-foundation` | - Hoàn thiện `VideoImageProvider` stream OpenCV BGR sang QML với zero memory leak.<br>- Xây dựng `LiveCanvas.qml` + `OvalOverlay.qml` với 4 trạng thái viền Catppuccin.<br>- Viết Unit Test cho `VideoImageProvider`. | Hiển thị stream camera trên QML Canvas đạt 30-60 FPS; viền oval đổi màu mượt. |
+| **Phase 2 (Kiosk Controller)** | `feature/kiosk-qml-viewmodel` | - Hoàn thiện `KioskViewModel` (`kiosk_view_model.py`) kết nối `CameraWorker`, `YuNetFaceDetector`, `MiniFASNetLivenessGate`.<br>- Tích hợp Cooldown và máy trạng thái viền oval.<br>- Viết Unit Test cho `KioskViewModel`. | Nhận diện mặt và cập nhật trạng thái viền oval hoàn toàn tự động qua Signals. |
+| **Phase 3 (Virtual Dialogs)** | `feature/kiosk-qml-dialogs` | - Xây dựng `VirtualKeypad.qml` + `PinDialog.qml` kết nối `PinController`.<br>- Xây dựng `EnrollmentDialog.qml` kết nối `EnrollmentController`.<br>- Viết Unit Test cho `PinController` và `EnrollmentController`. | Bàn phím số phản hồi nhạy trên cảm ứng; quy trình OTP 3 bước hoạt động chuẩn. |
+| **Phase 4 (App Assembly & Clean)** | `feature/kiosk-qml-integration` | - Chuyển đổi `main.py` sang `QQmlApplicationEngine` nạp `ui/qml/main.qml`.<br>- Dọn dẹp toàn bộ legacy widgets trong `ui/views/` và `ui/widgets/`.<br>- Chạy toàn bộ test suite và xác nhận CI/CD xanh 100%. | Kiosk App khởi động thuần QML < 1.5s; 0 cảnh báo ruff; code gọn gàng, đúng chuẩn MVC. |

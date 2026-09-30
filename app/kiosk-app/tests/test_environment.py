@@ -63,16 +63,40 @@ def test_kiosk_logger_initialization(tmp_path):
 
 
 def test_qml_mvc_environment_readiness(qapp):
-    """Kiểm tra tính sẵn sàng của kiến trúc MVC QML mới."""
+    """Kiểm tra tính sẵn sàng của kiến trúc MVC QML toàn diện."""
     from pathlib import Path
+
+    from ui.controllers.enrollment_controller import EnrollmentController
+    from ui.controllers.kiosk_view_model import KioskViewModel, OvalState
+    from ui.controllers.pin_controller import PinController
     from ui.controllers.video_image_provider import VideoImageProvider
 
+    # Kiểm tra Controllers
     provider = VideoImageProvider()
-    assert provider is not None
+    vm = KioskViewModel()
+    pin = PinController()
+    enroll = EnrollmentController()
 
-    theme_qml = Path("ui/qml/theme/Theme.qml")
-    qmldir = Path("ui/qml/theme/qmldir")
-    assert theme_qml.exists() and theme_qml.stat().st_size > 0
-    assert qmldir.exists() and qmldir.stat().st_size > 0
+    assert provider is not None
+    assert vm.ovalState == OvalState.IDLE
+    assert pin.currentPin == ""
+    assert enroll.currentStep == 1
+
+    # Kiểm tra cấu trúc Views QML
+    expected_files = [
+        Path("resources.qrc"),
+        Path("ui/qml/main.qml"),
+        Path("ui/qml/theme/Theme.qml"),
+        Path("ui/qml/theme/qmldir"),
+        Path("ui/qml/components/LiveCanvas.qml"),
+        Path("ui/qml/components/OvalOverlay.qml"),
+        Path("ui/qml/components/StatusBadge.qml"),
+        Path("ui/qml/components/VirtualKeypad.qml"),
+        Path("ui/qml/dialogs/PinDialog.qml"),
+        Path("ui/qml/dialogs/EnrollmentDialog.qml"),
+    ]
+    for file_path in expected_files:
+        assert file_path.exists(), f"Thiếu file: {file_path}"
+        assert file_path.stat().st_size > 0, f"File rỗng: {file_path}"
 
 

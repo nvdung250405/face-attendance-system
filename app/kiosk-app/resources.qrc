@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>ui/qml/main.qml</file>
+        <file>ui/qml/theme/Theme.qml</file>
+        <file>ui/qml/theme/qmldir</file>
+        <file>ui/qml/components/LiveCanvas.qml</file>
+        <file>ui/qml/components/OvalOverlay.qml</file>
+        <file>ui/qml/components/StatusBadge.qml</file>
+        <file>ui/qml/components/VirtualKeypad.qml</file>
+        <file>ui/qml/dialogs/PinDialog.qml</file>
+        <file>ui/qml/dialogs/EnrollmentDialog.qml</file>
+    </qresource>
+</RCC>
