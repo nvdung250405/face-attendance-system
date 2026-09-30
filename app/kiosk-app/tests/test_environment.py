@@ -14,6 +14,8 @@ def test_core_dependencies_importable():
     import numpy as np
     import onnxruntime as ort
     import PySide6
+    import PySide6.QtQml
+    import PySide6.QtQuick
     import stomp
 
     assert np.__version__ is not None
@@ -22,6 +24,8 @@ def test_core_dependencies_importable():
     assert httpx.__version__ is not None
     assert stomp.__version__ is not None
     assert PySide6.__version__ is not None
+    assert PySide6.QtQml.QQmlApplicationEngine is not None
+    assert PySide6.QtQuick.QQuickImageProvider is not None
 
 
 def test_kiosk_settings_configuration():
