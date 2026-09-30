@@ -1,0 +1,121 @@
+# ==============================================================================
+# FAS Monorepo .gitignore
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Môi trường & Bí mật nhạy cảm
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ------------------------------------------------------------------------------
+# 2. Python & Phân hệ Kiosk Desktop (app/kiosk-app)
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Môi trường ảo Python
+.venv/
+venv/
+ENV/
+env/
+app/kiosk-app/.venv/
+
+# CSDL cục bộ SQLite của Kiosk
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+kiosk_local.db
+
+# ------------------------------------------------------------------------------
+# 3. Node.js & Phân hệ Cổng Web (app/web-portal)
+# ------------------------------------------------------------------------------
+node_modules/
+app/web-portal/node_modules/
+app/web-portal/dist/
+dist/
+dist-ssr/
+*.local
+
+# Logs npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ------------------------------------------------------------------------------
+# 4. Java & Phân hệ Máy chủ (app/backend-service)
+# ------------------------------------------------------------------------------
+app/backend-service/target/
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ------------------------------------------------------------------------------
+# 5. Nhật ký hệ thống & Logs
+# ------------------------------------------------------------------------------
+logs/
+*.log
+logs/backend/
+logs/kiosk/
+
+# ------------------------------------------------------------------------------
+# 6. IDEs & Hệ điều hành
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# JetBrains / Eclipse
+.idea/
+*.iml
+*.iws
+.settings/
+.project
+.classpath
+
+# VS Code (Giữ lại các file cấu hình chuẩn chung)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Scratch & Temporary
+scratch/
