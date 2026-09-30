@@ -5,6 +5,7 @@ from ui.views.enrollment_dialog import (
     EnrollmentQualityChecker,
     EnrollmentQualityReport,
 )
+from ui.views.main_window import MainWindow
 from ui.views.pin_dialog import (
     PinLockoutStatus,
     PinSecurityManager,
@@ -12,6 +13,7 @@ from ui.views.pin_dialog import (
 )
 
 __all__ = [
+    "MainWindow",
     "VirtualPinDialog",
     "PinSecurityManager",
     "PinLockoutStatus",
