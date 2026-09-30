@@ -51,5 +51,30 @@ Dialog {
                 }
             }
         }
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 12
+
+            Button {
+                text: "Hủy bỏ"
+                onClicked: {
+                    if (typeof pinController !== "undefined") {
+                        pinController.clear()
+                    }
+                    pinDialog.close()
+                }
+            }
+
+            Button {
+                text: "Xác nhận"
+                enabled: (typeof pinController !== "undefined") && !pinController.isLocked && pinController.currentPin.length >= 4
+                onClicked: {
+                    if (typeof pinController !== "undefined") {
+                        pinController.submitPin()
+                    }
+                }
+            }
+        }
     }
 }
