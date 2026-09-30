@@ -45,7 +45,7 @@ Dialog {
 
             VirtualKeypad {
                 Layout.alignment: Qt.AlignHCenter
-                onDigitClicked: {
+                onDigitClicked: (digit) => {
                     if (typeof enrollmentController !== "undefined") {
                         enrollmentController.appendOtpDigit(digit)
                     }

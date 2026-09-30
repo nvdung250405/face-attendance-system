@@ -35,7 +35,7 @@ Dialog {
 
         VirtualKeypad {
             Layout.alignment: Qt.AlignHCenter
-            onDigitClicked: {
+            onDigitClicked: (digit) => {
                 if (typeof pinController !== "undefined") {
                     pinController.appendDigit(digit)
                 }
