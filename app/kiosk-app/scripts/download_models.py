@@ -22,21 +22,19 @@ MODELS_DIR = CURRENT_DIR.parent / "assets" / "models"
 # Danh mục nguồn tải tin cậy cho các mô hình
 MODEL_REGISTRY = {
     "yunet.onnx": {
-        "url": "https://raw.githubusercontent.com/opencv/opencv_zoo/master/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
+        "url": "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
         "description": "YuNet Face Detector (OpenCV Zoo 2023)",
         "expected_min_bytes": 200_000,  # ~230 KB
     },
     "minifasnet.onnx": {
-        "url": "https://github.com/nvdung250405/face-attendance-system/releases/download/v1.0-models/minifasnet.onnx",
-        "fallback_url": "https://huggingface.co/antigravity/face-anti-spoofing/resolve/main/minifasnet.onnx",
+        "url": "https://github.com/yakhyo/face-anti-spoofing/releases/download/weights/MiniFASNetV2.onnx",
         "description": "MiniFASNet Liveness Gate (Silent-Face-Anti-Spoofing)",
-        "expected_min_bytes": 1_000_000,  # ~1.8 MB
+        "expected_min_bytes": 1_000_000,  # ~1.7 MB
     },
     "arcface_mobilefacenet.onnx": {
-        "url": "https://github.com/nvdung250405/face-attendance-system/releases/download/v1.0-models/arcface_mobilefacenet.onnx",
-        "fallback_url": "https://huggingface.co/antigravity/arcface-mobilefacenet/resolve/main/arcface_mobilefacenet.onnx",
+        "url": "https://github.com/yakhyo/face-reidentification/releases/download/v0.0.1/w600k_mbf.onnx",
         "description": "ArcFace MobileFaceNet 512D Feature Extractor",
-        "expected_min_bytes": 4_000_000,  # ~4.8 MB
+        "expected_min_bytes": 4_000_000,  # ~13 MB
     },
 }
 
