@@ -60,3 +60,19 @@ def test_kiosk_logger_initialization(tmp_path):
     test_logger = get_logger("unit_test")
     test_logger.info("Kiểm thử ghi log Kiosk thành công.")
     assert test_logger is not None
+
+
+def test_qml_mvc_environment_readiness(qapp):
+    """Kiểm tra tính sẵn sàng của kiến trúc MVC QML mới."""
+    from pathlib import Path
+    from ui.controllers.video_image_provider import VideoImageProvider
+
+    provider = VideoImageProvider()
+    assert provider is not None
+
+    theme_qml = Path("ui/qml/theme/Theme.qml")
+    qmldir = Path("ui/qml/theme/qmldir")
+    assert theme_qml.exists() and theme_qml.stat().st_size > 0
+    assert qmldir.exists() and qmldir.stat().st_size > 0
+
+
