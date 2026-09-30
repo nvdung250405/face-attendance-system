@@ -46,7 +46,7 @@ class KioskConfig:
     camera_fps: int = int(os.getenv("CAMERA_FPS", "30"))
 
     # 3. Ngưỡng AI & Nghiệp vụ điểm danh
-    liveness_threshold: float = float(os.getenv("LIVENESS_THRESHOLD", "0.85"))
+    liveness_threshold: float = float(os.getenv("LIVENESS_THRESHOLD", "0.70"))
     cosine_similarity_threshold: float = float(
         os.getenv("COSINE_SIMILARITY_THRESHOLD", "0.50")
     )

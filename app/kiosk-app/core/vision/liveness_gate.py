@@ -202,11 +202,11 @@ class MiniFASNetLivenessGate:
         probabilities = exp_logits / np.sum(exp_logits)
 
         # Silent-Face-Anti-Spoofing MiniFASNet quy ước chuẩn:
-        # Index 0: Người thật (Real / Live)
-        # Index 1: Tấn công ảnh in 2D (Print Attack / Fake 2D)
+        # Index 0: Tấn công ảnh in 2D (Print Attack / Fake 2D)
+        # Index 1: Người thật (Real / Live)
         # Index 2: Tấn công màn hình / Mặt nạ 3D (Replay Attack / Fake Replay)
-        prob_real = float(probabilities[0])
-        prob_fake_2d = float(probabilities[1])
+        prob_fake_2d = float(probabilities[0])
+        prob_real = float(probabilities[1])
         prob_fake_replay = float(probabilities[2])
 
         is_live = prob_real >= self.threshold

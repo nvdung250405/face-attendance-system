@@ -58,6 +58,7 @@ class KioskViewModel(QObject):
         cooldown_tracker: CooldownTracker | None = None,
         queue_manager: SQLiteQueueManager | None = None,
         sync_worker: OfflineSyncWorker | None = None,
+        stability_threshold: int = 1,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo KioskViewModel."""
@@ -70,6 +71,8 @@ class KioskViewModel(QObject):
         self.cooldown_tracker = cooldown_tracker
         self.queue_manager = queue_manager
         self.sync_worker = sync_worker
+        self._stability_threshold: int = max(1, stability_threshold)
+        self._stable_frames: int = 0
 
         self._oval_state: str = OvalState.IDLE
         self._message: str = "Vui lòng nhìn vào khung hình để điểm danh"
@@ -158,11 +161,13 @@ class KioskViewModel(QObject):
 
         detection = self.detector.detect_face(frame)
         if detection is None:
+            self._stable_frames = 0
             self.set_state(OvalState.IDLE, "Vui lòng nhìn vào khung hình để điểm danh")
             return
 
         # Kiểm tra góc nghiêng Euler
         if detection.is_tilted:
+            self._stable_frames = 0
             self.set_state(
                 OvalState.ALIGNING,
                 "Vui lòng giữ thẳng mặt, nhìn trực diện vào ống kính",
@@ -171,11 +176,36 @@ class KioskViewModel(QObject):
 
         # Kiểm tra kích thước khuôn mặt
         if not detection.is_valid_size:
+            self._stable_frames = 0
             self.set_state(
                 OvalState.ALIGNING,
                 "Vui lòng đứng lại gần camera hơn (khuôn mặt quá nhỏ)",
             )
             return
+
+        # Kiểm tra vị trí khuôn mặt nằm trong vùng trung tâm (Oval)
+        fh, fw = frame.shape[:2]
+        cx = detection.bbox[0] + detection.bbox[2] / 2.0
+        cy = detection.bbox[1] + detection.bbox[3] / 2.0
+        if not (0.20 * fw <= cx <= 0.80 * fw and 0.15 * fh <= cy <= 0.85 * fh):
+            self._stable_frames = 0
+            self.set_state(
+                OvalState.ALIGNING,
+                "Vui lòng đưa khuôn mặt vào giữa khung tròn",
+            )
+            return
+
+        # Yêu cầu khuôn mặt ổn định liên tục trước khi kích hoạt AI
+        if self._stability_threshold > 1:
+            self._stable_frames += 1
+            if self._stable_frames < self._stability_threshold:
+                self.set_state(
+                    OvalState.ALIGNING,
+                    "Đang định vị... Vui lòng giữ yên khuôn mặt",
+                )
+                return
+
+        self._stable_frames = 0
 
         # 4. Pipeline Bước 2: Kiểm tra thực thể sống Liveness chống giả mạo (MiniFASNet)
         if self.liveness_gate is not None:

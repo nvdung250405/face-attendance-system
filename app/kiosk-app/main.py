@@ -12,6 +12,7 @@ import platform
 import sys
 from pathlib import Path
 
+import cv2
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -182,6 +183,7 @@ def main() -> int:
         cooldown_tracker=cooldown_tracker,
         queue_manager=queue_manager,
         sync_worker=sync_worker,
+        stability_threshold=5,
     )
     pin_controller = PinController()
     enrollment_controller = EnrollmentController(
@@ -202,20 +204,62 @@ def main() -> int:
             )
             # Nếu có cờ --demo-enroll, tự động đăng ký khuôn mặt người ngồi trước camera vào Gallery
             if args.demo_enroll is not None and extractor is not None and detector is not None:
-                enrolled_flag = {"done": False}
+                enroll_state = {
+                    "done": False,
+                    "stable_count": 0,
+                    "target_frames": 12,
+                    "best_aligned": None,
+                    "best_sharpness": 0.0,
+                }
 
                 def _auto_enroll_handler(frame):
-                    if enrolled_flag["done"] or frame is None or frame.size == 0:
+                    if enroll_state["done"] or frame is None or frame.size == 0:
                         return
                     try:
                         det = detector.detect_face(frame)
-                        if det is not None and not det.is_tilted and det.is_valid_size:
-                            aligned = extractor.align_face(frame, det.landmarks)
-                            vec = extractor.extract_vector(aligned)
-                            gallery_matcher.add_or_update_employee(args.demo_enroll, vec)
-                            enrolled_flag["done"] = True
+                        if det is None or det.is_tilted or not det.is_valid_size:
+                            enroll_state["stable_count"] = 0
+                            return
+
+                        # Đảm bảo khuôn mặt đã đưa hẳn vào giữa khung hình (Oval)
+                        fh, fw = frame.shape[:2]
+                        cx = det.bbox[0] + det.bbox[2] / 2.0
+                        cy = det.bbox[1] + det.bbox[3] / 2.0
+                        if not (0.25 * fw <= cx <= 0.75 * fw and 0.20 * fh <= cy <= 0.80 * fh):
+                            enroll_state["stable_count"] = 0
+                            return
+
+                        # Đo độ sắc nét Laplacian để chọn ảnh chất lượng tốt nhất
+                        x, y, w, h = det.bbox
+                        roi = frame[max(0, y):min(fh, y+h), max(0, x):min(fw, x+w)]
+                        if roi.size > 0:
+                            gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                            sharpness = float(cv2.Laplacian(gray_roi, cv2.CV_64F).var())
+                        else:
+                            sharpness = 0.0
+
+                        aligned = extractor.align_face(frame, det.landmarks)
+                        enroll_state["stable_count"] += 1
+                        cnt = enroll_state["stable_count"]
+
+                        if sharpness > enroll_state["best_sharpness"]:
+                            enroll_state["best_sharpness"] = sharpness
+                            enroll_state["best_aligned"] = aligned
+
+                        if cnt % 4 == 0 and cnt < enroll_state["target_frames"]:
                             logger.info(
-                                "✅ [DEMO-ENROLL] Đã tự động đăng ký khuôn mặt của bạn vào Gallery với Mã NV: %d!",
+                                "⏳ [DEMO-ENROLL] Đang giữ yên khuôn mặt để lấy nét... (%d/%d frames)",
+                                cnt,
+                                enroll_state["target_frames"],
+                            )
+
+                        if cnt >= enroll_state["target_frames"]:
+                            best_crop = enroll_state["best_aligned"] or aligned
+                            vec = extractor.extract_vector(best_crop)
+                            gallery_matcher.add_or_update_employee(args.demo_enroll, vec)
+                            enroll_state["done"] = True
+                            logger.info(
+                                "✅ [DEMO-ENROLL] Đã lấy nét thành công! Đã lưu khuôn mặt vào RAM Gallery cho Mã NV: %d!",
                                 args.demo_enroll,
                             )
                     except Exception as exc:
