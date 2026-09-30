@@ -43,6 +43,11 @@ ENV/
 env/
 app/kiosk-app/.venv/
 
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
 # CSDL cục bộ SQLite của Kiosk
 *.sqlite3
 *.db
