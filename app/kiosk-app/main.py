@@ -46,6 +46,13 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Không khởi chạy luồng camera vật lý (dùng để kiểm thử giao diện)",
     )
+    parser.add_argument(
+        "--demo-enroll",
+        type=int,
+        default=None,
+        metavar="EMP_ID",
+        help="Tự động ghi nhận khuôn mặt hiện tại của bạn vào RAM Gallery với mã nhân viên EMP_ID (ví dụ: --demo-enroll 1001) để kiểm thử điểm danh trực tiếp",
+    )
     return parser.parse_args()
 
 
@@ -167,6 +174,26 @@ def main() -> int:
                 height=settings.camera_frame_height,
                 target_fps=settings.camera_fps,
             )
+            # Nếu có cờ --demo-enroll, tự động đăng ký khuôn mặt người ngồi trước camera vào Gallery
+            if args.demo_enroll is not None and extractor is not None and detector is not None:
+                enrolled_flag = {"done": False}
+
+                def _auto_enroll_handler(frame):
+                    if enrolled_flag["done"] or frame is None or frame.size == 0:
+                        return
+                    det = detector.detect_face(frame)
+                    if det is not None and not det.is_tilted and det.is_valid_size:
+                        aligned = extractor.align_face(frame, det.landmarks)
+                        vec = extractor.extract_vector(aligned)
+                        gallery_matcher.add_or_update_employee(args.demo_enroll, vec)
+                        enrolled_flag["done"] = True
+                        logger.info(
+                            "✅ [DEMO-ENROLL] Đã tự động đăng ký khuôn mặt của bạn vào Gallery với Mã NV: %d!",
+                            args.demo_enroll,
+                        )
+
+                camera_worker.frame_ready.connect(_auto_enroll_handler)
+
             # Kết nối frame camera trực tiếp vào KioskViewModel và EnrollmentController
             camera_worker.frame_ready.connect(kiosk_view_model.process_camera_frame)
             camera_worker.frame_ready.connect(enrollment_controller.process_capture_frame)
