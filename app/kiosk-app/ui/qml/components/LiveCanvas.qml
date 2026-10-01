@@ -1,19 +1,24 @@
 import QtQuick 2.15
 import "../theme"
 
-Item {
+Rectangle {
     id: root
+    color: Theme.crustColor
+    radius: 14
+    border.color: Theme.surfaceColor
+    border.width: 1
+    clip: true
 
     property int frameCounter: 0
 
     Connections {
-        target: (typeof kioskViewModel !== "undefined") ? kioskViewModel : null
+        target: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel : null
         function onFrameReady() {
             root.frameCounter++
         }
     }
 
-    // Khung hình video nhận từ VideoImageProvider
+    // 1. Khung hình video nhận từ VideoImageProvider
     Image {
         id: cameraFeed
         anchors.fill: parent
@@ -22,15 +27,15 @@ Item {
         cache: false
     }
 
-    // Oval Overlay
+    // 2. Oval Overlay định vị sinh trắc học
     OvalOverlay {
         anchors.fill: parent
     }
 
-    // Badge trạng thái
+    // 3. Badge chỉ dẫn trạng thái đặt phía dưới khung hình
     StatusBadge {
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottomMargin: 80
+        anchors.bottomMargin: 24
     }
 }

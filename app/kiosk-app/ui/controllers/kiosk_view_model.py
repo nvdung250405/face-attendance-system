@@ -47,6 +47,8 @@ class KioskViewModel(QObject):
     frameReady = Signal()
     openPinDialogRequested = Signal()
     openEnrollmentDialogRequested = Signal()
+    lastResultChanged = Signal()
+    networkStatusChanged = Signal(bool, str)
 
     def __init__(
         self,
@@ -79,12 +81,37 @@ class KioskViewModel(QObject):
         self._is_processing: bool = False
         self._pending_sync_count: int = 0
 
+        # Kết quả lần điểm danh gần nhất
+        self._last_emp_id: int | None = None
+        self._last_punch_time: str = ""
+        self._last_score: float = 0.0
+
+        # Trạng thái mạng Kiosk
+        self._is_online: bool = True
+        self._network_message: str = "Đang kết nối hệ thống"
+
         # Khoảng thời gian dừng giữ kết quả thành công/thất bại (Hold duration)
         self._holding_result: bool = False
         self._hold_end_time: float = 0.0
 
+        if self.sync_worker:
+            self.sync_worker.network_status_changed.connect(self._on_network_status_changed)
+            self.sync_worker.sync_progress.connect(self._on_sync_progress)
+
         if self.queue_manager:
             self._update_pending_sync_count()
+
+    def _on_network_status_changed(self, is_online: bool, message: str) -> None:
+        """Xử lý tín hiệu cập nhật trạng thái mạng từ OfflineSyncWorker."""
+        self._is_online = is_online
+        self._network_message = message
+        self.networkStatusChanged.emit(is_online, message)
+
+    def _on_sync_progress(self, synced_count: int, pending_count: int) -> None:
+        """Xử lý tín hiệu tiến độ đồng bộ từ OfflineSyncWorker."""
+        if pending_count != self._pending_sync_count:
+            self._pending_sync_count = pending_count
+            self.pendingSyncCountChanged.emit(pending_count)
 
     @Property(str, notify=ovalStateChanged)
     def ovalState(self) -> str:
@@ -105,6 +132,36 @@ class KioskViewModel(QObject):
     def pendingSyncCount(self) -> int:
         """Số lượng bản ghi điểm danh ngoại tuyến chưa đồng bộ."""
         return self._pending_sync_count
+
+    @Property(str, notify=lastResultChanged)
+    def lastEmployeeId(self) -> str:
+        """Mã nhân viên vừa điểm danh thành công gần nhất."""
+        return str(self._last_emp_id) if self._last_emp_id is not None else ""
+
+    @Property(str, notify=lastResultChanged)
+    def lastPunchTime(self) -> str:
+        """Thời gian ghi nhận điểm danh gần nhất."""
+        return self._last_punch_time
+
+    @Property(int, notify=lastResultChanged)
+    def lastMatchScore(self) -> int:
+        """Độ tương đồng Cosine gần nhất (0-100%)."""
+        return int(self._last_score * 100)
+
+    @Property(bool, notify=networkStatusChanged)
+    def isOnline(self) -> bool:
+        """Trạng thái kết nối trực tuyến tới máy chủ trung tâm."""
+        return self._is_online
+
+    @Property(str, notify=networkStatusChanged)
+    def networkMessage(self) -> str:
+        """Thông điệp chi tiết trạng thái kết nối mạng."""
+        return self._network_message
+
+    @Property(str, constant=True)
+    def kioskId(self) -> str:
+        """Mã định danh phần cứng của trạm Kiosk."""
+        return settings.kiosk_id
 
     def _update_pending_sync_count(self) -> None:
         """Cập nhật số bản ghi chưa đồng bộ từ SQLite WAL."""
@@ -262,6 +319,11 @@ class KioskViewModel(QObject):
                 kiosk_id=settings.kiosk_id,
             )
             self._update_pending_sync_count()
+
+        self._last_emp_id = emp_id
+        self._last_punch_time = punch_time
+        self._last_score = score
+        self.lastResultChanged.emit()
 
         # Hiển thị thông báo thành công viền xanh lá
         self.set_state(

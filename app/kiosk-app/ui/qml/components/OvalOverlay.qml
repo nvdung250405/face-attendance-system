@@ -33,9 +33,9 @@ Canvas {
         ctx.globalCompositeOperation = "destination-out";
         ctx.beginPath();
         var cx = width / 2;
-        var cy = height * 0.42;
-        var rx = Math.min(width * 0.22, 210);
-        var ry = Math.min(height * 0.35, 280);
+        var cy = height * 0.44;
+        var rx = Math.min(width * 0.28, 175);
+        var ry = Math.min(height * 0.38, 250);
         ctx.ellipse(cx - rx, cy - ry, rx * 2, ry * 2);
         ctx.fill();
 
