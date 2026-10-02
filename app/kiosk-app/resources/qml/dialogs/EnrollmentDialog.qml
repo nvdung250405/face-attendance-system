@@ -462,17 +462,19 @@ Item {
 
                 Rectangle {
                     Layout.alignment: Qt.AlignHCenter
-                    width: 140
-                    height: 140
-                    radius: 70
+                    width: 160
+                    height: 160
+                    radius: 80
                     color: "#EEF2FF"
                     border.color: Theme.brandPurple
-                    border.width: 3
+                    border.width: 4
+                    clip: true
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: "📷"
-                        font.pixelSize: 64
+                    Image {
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectCrop
+                        source: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? "image://camera?id=" + kioskViewModel.frameTick : ""
+                        cache: false
                     }
                 }
 
@@ -497,7 +499,7 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.preferredWidth: 500
                     Layout.preferredHeight: 12
-                    value: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.5
+                    value: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.0
                 }
 
                 // Nút mô phỏng hoàn tất ảnh chụp nếu test ngoại tuyến
@@ -522,7 +524,11 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                                enrollmentController.currentStep = 3
+                                if (typeof enrollmentController.completeCaptureStep === "function") {
+                                    enrollmentController.completeCaptureStep()
+                                } else {
+                                    enrollmentController.setCurrentStep(3)
+                                }
                             }
                         }
                     }

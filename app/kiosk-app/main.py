@@ -18,6 +18,7 @@ if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
 import cv2
+import numpy as np
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -285,6 +286,26 @@ def main() -> int:
             logger.info("Luồng camera DirectShow đã khởi động thành công.")
         except Exception as exc:
             logger.warning("Không thể mở webcam vật lý: %s. Chuyển sang chế độ không camera.", exc)
+
+    # Đăng ký callback khi nhân viên hoàn tất đăng ký khuôn mặt mới -> Nạp vào RAM Gallery
+    def _on_enrollment_completed(payload: dict) -> None:
+        try:
+            emp_id = payload.get("employeeId")
+            embs = payload.get("faceEmbeddings", [])
+            if emp_id and embs and gallery_matcher is not None:
+                mean_vec = np.mean(np.array(embs, dtype=np.float32), axis=0)
+                norm = float(np.linalg.norm(mean_vec))
+                if norm > 1e-6:
+                    mean_vec = mean_vec / norm
+                gallery_matcher.add_or_update_employee(int(emp_id), mean_vec)
+                logger.info(
+                    "✅ Đã tự động cập nhật nhân viên ID %d vào Gallery RAM sau khi hoàn tất đăng ký!",
+                    int(emp_id),
+                )
+        except Exception as exc:
+            logger.warning("Không thể lưu nhân viên mới vào Gallery RAM: %s", exc)
+
+    enrollment_controller.enrollmentCompleted.connect(_on_enrollment_completed)
 
     # 8. Khởi tạo QQmlApplicationEngine và đăng ký Controllers / Providers
     engine = QQmlApplicationEngine()
