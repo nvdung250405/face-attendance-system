@@ -7,7 +7,7 @@ Rectangle {
 
     property string stateValue: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.ovalState : "SUCCESS"
     property string employeeName: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.lastEmployeeId) ? ("Nhân viên " + kioskViewModel.lastEmployeeId) : "Nguyễn Minh Anh"
-    property string employeeId: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.lastEmployeeId) ? ("Mã NV: AH0128 • Phòng Vận hành") : "Mã NV: AH0128 • Phòng Vận hành"
+    property string employeeId: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.lastEmployeeId) ? ("Mã NV: NVD0128 • Phòng Vận hành") : "Mã NV: NVD0128 • Phòng Vận hành"
     property string punchTime: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.lastPunchTime) ? kioskViewModel.lastPunchTime : "07:58:32"
 
     width: Math.min(860, parent.width - 48)

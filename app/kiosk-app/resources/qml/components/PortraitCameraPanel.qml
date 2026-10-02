@@ -37,7 +37,7 @@ Rectangle {
         }
 
         Text {
-            text: "CAMERA • AH-K01"
+            text: "CAMERA • NVD-K01"
             font.family: Theme.fontFamily
             font.pixelSize: 14
             font.weight: Font.DemiBold

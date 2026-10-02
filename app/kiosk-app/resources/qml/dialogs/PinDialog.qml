@@ -8,13 +8,15 @@ Dialog {
     id: pinDialog
     modal: true
     anchors.centerIn: parent
-    width: 640
-    height: 960
+    width: 580
+    height: 800
+    scale: (typeof window !== "undefined" && window) ? window.scaleRatio : 1.0
+    transformOrigin: Item.Center
     padding: 0
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     property string activeField: "pin" // "empId" or "pin"
-    property string employeeIdInput: "1001"
+    property string employeeIdInput: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.lastEmployeeId) ? String(kioskViewModel.lastEmployeeId) : ""
 
     background: Rectangle {
         radius: 20

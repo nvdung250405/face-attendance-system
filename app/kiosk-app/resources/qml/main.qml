@@ -13,10 +13,10 @@ Window {
     // =========================================================================
     width: Theme.outerWidth   // 1080
     height: Theme.outerHeight // 1920
-    minimumWidth: 540
-    minimumHeight: 960
+    minimumWidth: 360
+    minimumHeight: 640
     visible: true
-    title: "FAS Face Attendance Kiosk"
+    title: "NVD - Trạm Điểm Danh Kiosk"
     color: Theme.bgOuter      // #222222
 
     // Tỷ lệ co giãn tự động Proportional Scale Ratio (giữ trọn vẹn bố cục 1080x1920)

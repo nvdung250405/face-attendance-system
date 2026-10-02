@@ -309,6 +309,18 @@ def main() -> int:
     if not args.windowed:
         root_window.showFullScreen()
     else:
+        # Cấu hình cửa sổ chế độ windowed chuẩn tỷ lệ 9:16 vừa vặn màn hình desktop
+        primary_screen = app.primaryScreen()
+        if primary_screen:
+            avail = primary_screen.availableGeometry()
+            # Chiều cao app chiếm ~90% không gian khả dụng (để vừa vặn thanh taskbar)
+            target_h = min(1920, int(avail.height() * 0.90))
+            # Chiều rộng app bằng đúng tỷ lệ 9:16 tương ứng với chiều cao màn hình chính
+            target_w = int(target_h * (1080 / 1920))
+            # Căn giữa cửa sổ ứng dụng ngay trung tâm màn hình desktop
+            pos_x = avail.x() + (avail.width() - target_w) // 2
+            pos_y = avail.y() + (avail.height() - target_h) // 2
+            root_window.setGeometry(pos_x, pos_y, target_w, target_h)
         root_window.show()
 
     logger.info("-" * 60)

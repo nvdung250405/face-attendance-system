@@ -5,9 +5,9 @@ import "../theme"
 Rectangle {
     id: root
 
-    property string organizationName: "AN HÒA"
+    property string organizationName: "NVD"
     property string stationTitle: "Trạm sảnh chính"
-    property string stationSubtitle: "AH-K01 • Tầng 1"
+    property string stationSubtitle: "NVD-K01 • Tầng 1"
     property bool isOnline: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.isOnline : true
     property int offlineCount: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.pendingSyncCount : 0
 

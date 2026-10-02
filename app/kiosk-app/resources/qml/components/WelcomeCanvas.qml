@@ -73,14 +73,14 @@ Rectangle {
             }
         }
 
-        // Tên thương hiệu AN HÒA • TRẠM ĐIỂM DANH
+        // Tên thương hiệu NVD • TRẠM ĐIỂM DANH
         ColumnLayout {
             Layout.alignment: Qt.AlignHCenter
             spacing: 4
 
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                text: "AN HÒA"
+                text: "NVD"
                 font.family: Theme.fontFamily
                 font.pixelSize: 28
                 font.bold: true
@@ -112,7 +112,7 @@ Rectangle {
         // Vị trí trạm
         Text {
             Layout.alignment: Qt.AlignHCenter
-            text: "An Hòa • Sảnh chính"
+            text: "NVD • Sảnh chính"
             font.family: Theme.fontFamily
             font.pixelSize: 18
             color: Theme.textSecondary

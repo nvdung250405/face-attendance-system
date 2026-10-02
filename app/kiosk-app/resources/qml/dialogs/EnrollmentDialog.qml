@@ -9,6 +9,8 @@ Dialog {
     anchors.centerIn: parent
     width: 580
     height: 680
+    scale: (typeof window !== "undefined" && window) ? window.scaleRatio : 1.0
+    transformOrigin: Item.Center
     padding: 0
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
