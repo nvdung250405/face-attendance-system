@@ -22,6 +22,30 @@ Rectangle {
         }
     }
 
+    // 0. Huy hiệu định danh luồng Camera góc trên trái (Figma: CAMERA • AH-K01)
+    RowLayout {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.margins: 24
+        spacing: 8
+        z: 2
+
+        Text {
+            text: "📷"
+            font.pixelSize: 15
+            opacity: 0.8
+        }
+
+        Text {
+            text: "CAMERA • AH-K01"
+            font.family: Theme.fontFamily
+            font.pixelSize: 14
+            font.weight: Font.DemiBold
+            color: "#FFFFFF"
+            opacity: 0.85
+        }
+    }
+
     // 1. Luồng video camera trực tiếp (PreserveAspectCrop)
     Image {
         id: cameraFeed
@@ -31,7 +55,7 @@ Rectangle {
         cache: false
     }
 
-    // Component Canvas vẽ lớp mờ + khung Oval trung tâm theo chuẩn Figma (470 x 604 px)
+    // Component Canvas vẽ lớp tối nhẹ + khung Oval trung tâm theo chuẩn Figma (470 x 604 px)
     Canvas {
         id: ovalCanvas
         anchors.fill: parent
@@ -53,8 +77,8 @@ Rectangle {
             var ctx = getContext("2d");
             ctx.clearRect(0, 0, width, height);
 
-            // 1. Phủ mờ không gian camera ngoài khung Oval
-            ctx.fillStyle = "rgba(23, 25, 29, 0.45)";
+            // 1. Phủ mờ không gian camera ngoài khung Oval nhẹ nhàng
+            ctx.fillStyle = "rgba(23, 25, 29, 0.35)";
             ctx.fillRect(0, 0, width, height);
 
             // 2. Khoét rỗng khung Oval (470 x 604px) căn đúng tầm mắt người đứng
@@ -67,31 +91,12 @@ Rectangle {
             ctx.ellipse(cx - rx, cy - ry, rx * 2, ry * 2);
             ctx.fill();
 
-            // 3. Vẽ viền nét đanh 8px chuẩn Figma
+            // 3. Vẽ viền Oval thanh thoát 4px chuẩn Figma (không có vạch phụ)
             ctx.globalCompositeOperation = "source-over";
             ctx.beginPath();
             ctx.ellipse(cx - rx, cy - ry, rx * 2, ry * 2);
-            ctx.lineWidth = Theme.ovalStrokeWidth; // 8px
-            ctx.strokeStyle = ovalCanvas.strokeColor;
-            ctx.stroke();
-
-            // 4. Vẽ 4 góc định vị sinh trắc học
-            var bracket = 24;
             ctx.lineWidth = 4;
             ctx.strokeStyle = ovalCanvas.strokeColor;
-            ctx.beginPath();
-            // Đỉnh trên
-            ctx.moveTo(cx, cy - ry - 12);
-            ctx.lineTo(cx, cy - ry - 12 + bracket);
-            // Đáy dưới
-            ctx.moveTo(cx, cy + ry + 12);
-            ctx.lineTo(cx, cy + ry + 12 - bracket);
-            // Cạnh trái
-            ctx.moveTo(cx - rx - 12, cy);
-            ctx.lineTo(cx - rx - 12 + bracket, cy);
-            // Cạnh phải
-            ctx.moveTo(cx + rx + 12, cy);
-            ctx.lineTo(cx + rx + 12 - bracket, cy);
             ctx.stroke();
         }
     }
@@ -100,11 +105,11 @@ Rectangle {
     Rectangle {
         id: scanBeam
         width: Theme.ovalWidth - 32
-        height: 4
+        height: 3
         anchors.horizontalCenter: parent.horizontalCenter
-        radius: 2
+        radius: 1.5
         color: Theme.brandPurple
-        opacity: root.recognitionState === "IDLE" || root.recognitionState === "ALIGNING" ? 0.75 : 0
+        opacity: root.recognitionState === "IDLE" || root.recognitionState === "ALIGNING" ? 0.8 : 0
 
         SequentialAnimation on y {
             running: scanBeam.opacity > 0
@@ -128,18 +133,18 @@ Rectangle {
     Rectangle {
         id: instructionStrip
         width: Math.min(920, parent.width - 48)
-        height: 120
+        height: 110
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 32
-        radius: Theme.radiusLg // 18px
+        anchors.bottomMargin: 28
+        radius: 18
 
         color: {
             switch (root.recognitionState) {
                 case "ALIGNING": return Theme.statusAligningBg
-                case "SUCCESS": return Theme.statusSuccessBg
+                case "SUCCESS": return "#E8F7ED" // Figma green card
                 case "ERROR": return Theme.statusErrorBg
-                default: return "#EEF2FF"
+                default: return "#FFFFFF"        // Figma white card
             }
         }
 
@@ -153,10 +158,11 @@ Rectangle {
                         case "ALIGNING": return "⚠"
                         case "SUCCESS": return "✓"
                         case "ERROR": return "✕"
-                        default: return "👤"
+                        default: return "⛶"
                     }
                 }
-                font.pixelSize: 32
+                font.pixelSize: 28
+                font.bold: true
                 color: {
                     switch (root.recognitionState) {
                         case "ALIGNING": return Theme.statusAligning
@@ -168,18 +174,19 @@ Rectangle {
             }
 
             Text {
-                text: root.instructionMessage
+                text: {
+                    if (root.recognitionState === "SUCCESS") {
+                        return "Điểm danh thành công"
+                    }
+                    if (root.recognitionState === "IDLE") {
+                        return "Vui lòng đứng trước camera để điểm danh"
+                    }
+                    return root.instructionMessage
+                }
                 font.family: Theme.fontFamily
                 font.pixelSize: 22
-                font.weight: Font.DemiBold
-                color: {
-                    switch (root.recognitionState) {
-                        case "ALIGNING": return Theme.statusAligning
-                        case "SUCCESS": return Theme.statusSuccess
-                        case "ERROR": return Theme.statusError
-                        default: return Theme.textPrimary
-                    }
-                }
+                font.bold: true
+                color: Theme.textPrimary
             }
         }
     }
@@ -187,7 +194,9 @@ Rectangle {
     // 3. Thiệp kết quả điểm danh nổi bật (Bật nổi khi SUCCESS)
     PortraitResultCard {
         id: resultCard
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: instructionStrip.top
+        anchors.bottomMargin: 16
         visible: root.recognitionState === "SUCCESS"
         opacity: visible ? 1.0 : 0.0
 

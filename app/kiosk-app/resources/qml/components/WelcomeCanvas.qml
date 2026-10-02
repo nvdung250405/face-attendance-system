@@ -36,83 +36,99 @@ Rectangle {
         }
     }
 
-    // 1. Quầng sáng Ambient Halo thở nhẹ nhàng (Figma 700x700px, 12% opacity)
-    Item {
-        id: haloContainer
-        anchors.centerIn: parent
-        width: Theme.haloSize
-        height: Theme.haloSize
-
-        Rectangle {
-            id: haloCircle
-            anchors.fill: parent
-            radius: Theme.radiusFull
-            color: Theme.brandPurple
-            opacity: 0.12
-
-            SequentialAnimation on opacity {
-                loops: Animation.Infinite
-                running: true
-                NumberAnimation { to: 0.18; duration: 2500; easing.type: Easing.InOutQuad }
-                NumberAnimation { to: 0.08; duration: 2500; easing.type: Easing.InOutQuad }
-            }
-
-            SequentialAnimation on scale {
-                loops: Animation.Infinite
-                running: true
-                NumberAnimation { to: 1.05; duration: 3000; easing.type: Easing.InOutQuad }
-                NumberAnimation { to: 0.95; duration: 3000; easing.type: Easing.InOutQuad }
-            }
-        }
+    // 1. Quầng trang trí góc trên phải theo chuẩn Figma (Top-right ambient blob)
+    Rectangle {
+        width: 650
+        height: 650
+        radius: 325
+        x: parent.width - 320
+        y: -180
+        color: "#EEF2FF"
+        opacity: 0.8
     }
 
-    // 2. Nội dung chính trung tâm (Padding 64px, Spacing 64px)
+    // 2. Nội dung chính trung tâm theo đúng Figma Frame 5:23526
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 64
-        spacing: 48
+        anchors.margins: 48
+        spacing: 28
 
         Item { Layout.fillHeight: true }
 
-        // Biểu tượng Logo đơn vị cỡ lớn
+        // Logo thương hiệu AI vuông bo góc tím đậm
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            width: 120
-            height: 120
-            radius: 30
-            color: Theme.brandPurpleSoft
+            width: 96
+            height: 96
+            radius: 24
+            color: Theme.brandPurple
 
             Text {
                 anchors.centerIn: parent
-                text: "⬡"
+                text: "AI"
                 font.family: Theme.fontFamily
-                font.pixelSize: 60
-                color: Theme.brandPurple
+                font.pixelSize: 44
+                font.bold: true
+                color: "#FFFFFF"
             }
         }
 
-        // Lời chào mừng
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: root.organizationGreeting
-            font.family: Theme.fontFamily
-            font.pixelSize: 30
-            font.weight: Font.DemiBold
-            color: Theme.textPrimary
-            horizontalAlignment: Text.AlignHCenter
-        }
-
-        // Đồng hồ số khổng lồ (Giant Clock 64px)
+        // Tên thương hiệu AN HÒA • TRẠM ĐIỂM DANH
         ColumnLayout {
             Layout.alignment: Qt.AlignHCenter
-            spacing: 12
+            spacing: 4
+
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: "AN HÒA"
+                font.family: Theme.fontFamily
+                font.pixelSize: 28
+                font.bold: true
+                color: Theme.textPrimary
+            }
+
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: "TRẠM ĐIỂM DANH"
+                font.family: Theme.fontFamily
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+                color: Theme.textSecondary
+            }
+        }
+
+        // Lời chào mừng 2 dòng
+        Text {
+            Layout.alignment: Qt.AlignHCenter
+            text: "Chào mừng bạn đến với cơ quan\n/ doanh nghiệp"
+            font.family: Theme.fontFamily
+            font.pixelSize: 34
+            font.bold: true
+            color: Theme.textPrimary
+            horizontalAlignment: Text.AlignHCenter
+            lineHeight: 1.25
+        }
+
+        // Vị trí trạm
+        Text {
+            Layout.alignment: Qt.AlignHCenter
+            text: "An Hòa • Sảnh chính"
+            font.family: Theme.fontFamily
+            font.pixelSize: 18
+            color: Theme.textSecondary
+        }
+
+        // Đồng hồ số khổng lồ (Giant Clock 72px)
+        ColumnLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 8
 
             Text {
                 id: giantClock
                 Layout.alignment: Qt.AlignHCenter
-                text: "08:42:15"
+                text: "07:58:32"
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontClockGiant // 64px
+                font.pixelSize: 72
                 font.bold: true
                 color: Theme.textPrimary
                 horizontalAlignment: Text.AlignHCenter
@@ -121,21 +137,23 @@ Rectangle {
             Text {
                 id: giantDate
                 Layout.alignment: Qt.AlignHCenter
-                text: "Thứ Hai, 26 tháng 09 năm 2026"
+                text: "Thứ Năm, ngày 01 tháng 10 năm 2026"
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontHeading // 26px
+                font.pixelSize: 18
                 color: Theme.textSecondary
                 horizontalAlignment: Text.AlignHCenter
             }
         }
 
-        // Thẻ ca kíp làm việc hiện tại
+        // Thẻ ca kíp sáng: 08:00 – 12:00
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            width: shiftRow.implicitWidth + 48
-            height: 60
-            radius: Theme.radiusMd
-            color: Theme.bgCanvas
+            width: Math.max(380, shiftRow.implicitWidth + 48)
+            height: 64
+            radius: 16
+            color: "#F8F9FA"
+            border.color: "#E5E7EB"
+            border.width: 1
 
             RowLayout {
                 id: shiftRow
@@ -143,15 +161,16 @@ Rectangle {
                 spacing: 12
 
                 Text {
-                    text: "⏰"
+                    text: "☼"
                     font.pixelSize: 22
+                    color: Theme.brandPurple
                 }
 
                 Text {
-                    text: root.currentShift
+                    text: "Ca sáng: 08:00 – 12:00"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 20
-                    font.weight: Font.DemiBold
+                    font.pixelSize: 19
+                    font.bold: true
                     color: Theme.textPrimary
                 }
             }
@@ -159,29 +178,29 @@ Rectangle {
 
         Item { Layout.fillHeight: true }
 
-        // 3. Thanh hướng dẫn bước tới trạm (Approach Guidance)
+        // 3. Dải chỉ dẫn bước tới trạm (Footsteps Pill)
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
             Layout.fillWidth: true
-            height: 96
-            radius: Theme.radiusLg // 18px
-            color: Theme.brandPurpleSoft
+            height: 84
+            radius: 16
+            color: "#EEF2FF"
 
             RowLayout {
                 anchors.centerIn: parent
                 spacing: 16
 
                 Text {
-                    text: "👋"
-                    font.pixelSize: 28
+                    text: "👣"
+                    font.pixelSize: 24
                 }
 
                 Text {
                     text: "Vui lòng bước tới trước trạm để điểm danh"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 24
-                    font.weight: Font.DemiBold
-                    color: Theme.brandPurple
+                    font.pixelSize: 20
+                    font.bold: true
+                    color: Theme.textPrimary
                 }
             }
         }

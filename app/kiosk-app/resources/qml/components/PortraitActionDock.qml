@@ -28,47 +28,43 @@ Rectangle {
         anchors.margins: 16
         spacing: 16
 
-        // 1. Nút 1: Điểm danh PIN (Figma: 301.3 x 112 px, nền tím nhạt 12%, bo góc 16px)
+        // 1. Nút 1: Điểm danh bằng PIN
         DockButton {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            iconChar: "🔢"
-            titleText: "Điểm danh PIN"
-            shortcutText: "Phím tắt [F2]"
+            iconChar: "⌨"
+            titleText: "Điểm danh bằng\nPIN"
             onClicked: root.pinClicked()
         }
 
-        // 2. Nút 2: Đăng ký khuôn mặt mới
+        // 2. Nút 2: Đăng ký mới
         DockButton {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            iconChar: "👤"
+            iconChar: "👤⁺"
             titleText: "Đăng ký mới"
-            shortcutText: "Phím tắt [F3]"
             onClicked: root.registerClicked()
         }
 
-        // 3. Nút 3: Hướng dẫn sử dụng
+        // 3. Nút 3: Hướng dẫn
         DockButton {
             Layout.fillWidth: true
             Layout.fillHeight: true
             iconChar: "❓"
             titleText: "Hướng dẫn"
-            shortcutText: "Phím tắt [F1]"
             onClicked: root.helpClicked()
         }
     }
 
-    // Component nút bấm cảm ứng chuẩn Figma
+    // Component nút bấm cảm ứng chuẩn Figma (#EEF2FF nền, chữ #111827)
     component DockButton : Rectangle {
         id: btn
         property string iconChar: ""
         property string titleText: ""
-        property string shortcutText: ""
         signal clicked()
 
-        radius: Theme.radiusMd // 16px
-        color: mouse.pressed ? Qt.rgba(0.459, 0.404, 1.0, 0.22) : Theme.brandPurpleSoft
+        radius: 16
+        color: mouse.pressed ? "#E0E7FF" : "#EEF2FF"
 
         Behavior on color {
             ColorAnimation { duration: 150 }
@@ -76,32 +72,23 @@ Rectangle {
 
         RowLayout {
             anchors.centerIn: parent
-            spacing: 16
+            spacing: 14
 
             Text {
                 text: btn.iconChar
-                font.pixelSize: 32
+                font.pixelSize: 26
+                color: "#4B5563"
                 Layout.alignment: Qt.AlignVCenter
             }
 
-            ColumnLayout {
-                spacing: 2
+            Text {
+                text: btn.titleText
+                font.family: Theme.fontFamily
+                font.pixelSize: 18
+                font.bold: true
+                color: Theme.textPrimary
+                lineHeight: 1.15
                 Layout.alignment: Qt.AlignVCenter
-
-                Text {
-                    text: btn.titleText
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontActionBtn // 20px
-                    font.weight: Font.DemiBold
-                    color: Theme.brandPurple
-                }
-
-                Text {
-                    text: btn.shortcutText
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 13
-                    color: Theme.textSubtle
-                }
             }
         }
 

@@ -7,7 +7,8 @@ from PySide6.QtCore import QEvent, Qt, QTimer
 from PySide6.QtGui import QGuiApplication, QKeyEvent
 from PySide6.QtQml import QQmlApplicationEngine
 
-src_dir = Path(__file__).resolve().parent / "src"
+app_root = Path(__file__).resolve().parent.parent
+src_dir = app_root / "src"
 if str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
@@ -30,14 +31,14 @@ ctx.setContextProperty("kioskViewModel", kiosk_vm)
 ctx.setContextProperty("pinController", pin_ctrl)
 ctx.setContextProperty("enrollmentController", enroll_ctrl)
 
-qml_dir = Path(__file__).resolve().parent / "resources" / "qml"
+qml_dir = app_root / "resources" / "qml"
 engine.addImportPath(str(qml_dir))
 engine.load(str(qml_dir / "main.qml"))
 
 root_window = engine.rootObjects()[0]
 root_window.show()
 
-output_dir = Path(__file__).resolve().parent.parent / "docs" / "screenshots"
+output_dir = app_root / "docs" / "screenshots"
 output_dir.mkdir(parents=True, exist_ok=True)
 
 

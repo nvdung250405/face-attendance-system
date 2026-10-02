@@ -5,9 +5,9 @@ import "../theme"
 Rectangle {
     id: root
 
-    property string organizationName: "FAS Kiosk"
-    property string kioskId: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.kioskId) ? kioskViewModel.kioskId : "KIOSK-01"
-    property string stationSubtitle: "Cổng ra vào chính"
+    property string organizationName: "AN HÒA"
+    property string stationTitle: "Trạm sảnh chính"
+    property string stationSubtitle: "AH-K01 • Tầng 1"
     property bool isOnline: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.isOnline : true
     property int offlineCount: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.pendingSyncCount : 0
 
@@ -44,7 +44,7 @@ Rectangle {
         anchors.rightMargin: 24
         spacing: 0
 
-        // 1. Nhận diện tổ chức (Organization identity)
+        // 1. Nhận diện tổ chức (AI Logo + AN HÒA • TRẠM ĐIỂM DANH)
         RowLayout {
             Layout.alignment: Qt.AlignVCenter
             spacing: 16
@@ -53,14 +53,15 @@ Rectangle {
                 width: 56
                 height: 56
                 radius: 14
-                color: Theme.brandPurpleSoft
+                color: Theme.brandPurple // Solid #7567FF
 
                 Text {
                     anchors.centerIn: parent
-                    text: "⬡"
+                    text: "AI"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 28
-                    color: Theme.brandPurple
+                    font.pixelSize: 26
+                    font.bold: true
+                    color: "#FFFFFF"
                 }
             }
 
@@ -69,14 +70,15 @@ Rectangle {
                 Text {
                     text: root.organizationName
                     font.family: Theme.fontFamily
-                    font.pixelSize: 26
-                    font.weight: Font.DemiBold
+                    font.pixelSize: 24
+                    font.bold: true
                     color: Theme.textPrimary
                 }
                 Text {
-                    text: "Hệ thống Điểm danh"
+                    text: "TRẠM ĐIỂM DANH"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 14
+                    font.pixelSize: 12
+                    font.weight: Font.DemiBold
                     color: Theme.textSecondary
                 }
             }
@@ -86,23 +88,23 @@ Rectangle {
             Layout.fillWidth: true
         }
 
-        // 2. Trạm Kiosk (Station)
+        // 2. Trạm Kiosk (Trạm sảnh chính • AH-K01 • Tầng 1)
         ColumnLayout {
             Layout.alignment: Qt.AlignVCenter
-            spacing: 4
+            spacing: 2
 
             Text {
-                text: root.kioskId
+                text: root.stationTitle
                 font.family: Theme.fontFamily
-                font.pixelSize: 24
-                font.weight: Font.DemiBold
+                font.pixelSize: 22
+                font.bold: true
                 color: Theme.textPrimary
             }
 
             Text {
                 text: root.stationSubtitle
                 font.family: Theme.fontFamily
-                font.pixelSize: 16
+                font.pixelSize: 14
                 color: Theme.textSecondary
             }
         }
@@ -141,10 +143,10 @@ Rectangle {
         // 4. Huy hiệu mạng (Network badge)
         Rectangle {
             Layout.alignment: Qt.AlignVCenter
-            width: Math.max(158, networkContent.implicitWidth + 32)
-            height: 59
-            radius: Theme.radiusSm // 12px
-            color: root.isOnline ? Theme.statusSuccessBg : (root.offlineCount > 0 ? Theme.statusWarningBg : Theme.statusErrorBg)
+            width: Math.max(140, networkContent.implicitWidth + 28)
+            height: 48
+            radius: 24 // Full pill shape
+            color: root.isOnline ? "#E8F7ED" : (root.offlineCount > 0 ? Theme.statusWarningBg : Theme.statusErrorBg)
 
             RowLayout {
                 id: networkContent
@@ -152,18 +154,18 @@ Rectangle {
                 spacing: 8
 
                 Rectangle {
-                    width: 10
-                    height: 10
-                    radius: Theme.radiusFull
-                    color: root.isOnline ? Theme.statusOnline : (root.offlineCount > 0 ? Theme.statusWarning : Theme.statusError)
+                    width: 8
+                    height: 8
+                    radius: 4
+                    color: root.isOnline ? "#20A464" : (root.offlineCount > 0 ? Theme.statusWarning : Theme.statusError)
                 }
 
                 Text {
                     text: root.isOnline ? "Trực tuyến" : (root.offlineCount > 0 ? "Chờ đồng bộ: " + root.offlineCount : "Ngoại tuyến")
                     font.family: Theme.fontFamily
-                    font.pixelSize: 18
-                    font.weight: Font.DemiBold
-                    color: root.isOnline ? Theme.statusOnline : (root.offlineCount > 0 ? Theme.statusWarning : Theme.statusError)
+                    font.pixelSize: 15
+                    font.bold: true
+                    color: root.isOnline ? "#159447" : (root.offlineCount > 0 ? Theme.statusWarning : Theme.statusError)
                 }
             }
         }
