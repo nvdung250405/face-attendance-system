@@ -2,8 +2,8 @@
 
 > **Mã phân hệ:** `SVC-BE`  
 > **Cấp độ:** Cấp Dịch vụ (Service-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
+> **Phiên bản:** 2.0  
+> **Ngày hiệu lực:** 2026-10-03  
 > **Trạng thái:** Approved / Canonical  
 > **Hệ thống chủ quản:** [face-attendance-system](../../system-docs/dds/dds.md)  
 > **Định vị kiến trúc:** `ARC-SYS-002` (Máy chủ Doanh nghiệp — Enterprise Core Server) & `ARC-SYS-004` (CSDL Quan hệ — PostgreSQL)
@@ -23,27 +23,52 @@ Phân hệ **Máy chủ Doanh nghiệp** (`backend-service`) là trung tâm đi�
 
 ---
 
-## 2. Bản đồ 3 Nhánh Facet Tài liệu Phân hệ Backend
+## 2. Bản đồ Cấu trúc & Quy trình Kỹ nghệ Chuẩn hóa (Data $\rightarrow$ API)
+
+Tuân thủ nghiêm ngặt quy trình kỹ nghệ dữ liệu làm gốc (**Data-First $\rightarrow$ API Contract $\rightarrow$ Implementation**) được quy định trong [docs/sdlc-docs.md](../../sdlc-docs.md):
 
 ```text
 docs/service-docs/backend-service/
 │
 ├── README.md                      # [Tài liệu hiện tại] Cẩm nang & Bản đồ định hướng phân hệ Backend
 │
-├── core/                          # [Bắt buộc] Khối nghiệp vụ chấm công, bảo mật & mã hóa
-│   ├── fsp.md                     # Thiết lập môi trường Java 21, Maven toolchain & cấu hình
+├── data/                          # [BƯỚC 1: DATA] Mô hình thực thể, DDL PostgreSQL & Caching
+│   ├── data-specs.md              # Đặc tả thực thể CSDL chi tiết từng trường & Enums (DATA-BE-)
+│   ├── data-design.md             # Thiết kế DDL PostgreSQL 16, Indexing & Caffeine Cache (DTD-BE-)
+│   └── data-build-plan.md         # Kế hoạch thi công Flyway scripts & JPA Repositories (DBL-BE-)
+│
+├── api/                           # [BƯỚC 2: API] Hợp đồng dữ liệu chi tiết từng trường REST & STOMP
+│   ├── api-specs.md               # Đặc tả 11 REST endpoints & 3 STOMP topics (API-BE-)
+│   ├── api-design.md              # Hợp đồng API chi tiết từng trường, validation & lỗi (APD-BE-)
+│   └── api-build-plan.md          # Kế hoạch thi công API Controllers & STOMP Broker (ABL-BE-)
+│
+├── core/                          # [NGHIỆP VỤ CỐT LÕI] Logic điểm danh, bảo mật & mã hóa
+│   ├── fsp.md                     # Thiết lập môi trường Java 21, Maven toolchain & cấu hình (FND-BE-)
 │   ├── fr-nfr-specs.md            # Yêu cầu chức năng (FR-BE-) & phi chức năng (NFR-BE-)
-│   ├── fr-nfr-design.md           # Thiết kế giải pháp nghiệp vụ & mã hóa (SOL-BE-)
+│   ├── fr-nfr-design.md           # Thiết kế giải pháp nghiệp vụ & mã hóa sinh trắc (SOL-BE-)
 │   ├── fr-nfr-build-plan.md       # Kế hoạch thi công module cốt lõi (CBL-BE-)
 │   └── test-plan.md               # Kế hoạch kiểm thử nội bộ phân hệ (TST-BE-)
 │
-├── api/                           # [Kích hoạt] REST API Controllers & WebSocket STOMP Broker
-│   ├── api-specs.md               # Đặc tả các interface REST & STOMP topic (API-BE-)
-│   ├── api-design.md              # Thiết kế Controllers, DTOs & Validation (APD-BE-)
-│   └── api-build-plan.md          # Kế hoạch thi công tầng truyền thông (ABL-BE-)
-│
-└── data/                          # [Kích hoạt] Lưu trữ CSDL quan hệ PostgreSQL & Flyway
-    ├── data-specs.md              # Đặc tả thực thể CSDL & chính sách bảo mật (DATA-BE-)
-    ├── data-design.md             # Thiết kế DDL PostgreSQL & JPA Repositories (DTD-BE-)
-    └── data-build-plan.md         # Kế hoạch thi công cơ sở dữ liệu (DBL-BE-)
+└── [ui-ux/]                       # [KHÔNG ÁP DỤNG] Phân hệ Backend là headless service phi giao diện
 ```
+
+> **Nguyên tắc kích hoạt Facet UI/UX**: Theo Mục 10.2 của `sdlc-docs.md`, nhánh `ui-ux/` chỉ được tạo khi service có giao diện tương tác trực tiếp với người dùng. Phân hệ `backend-service` là máy chủ cung cấp API (Headless API Provider), do đó nhánh `ui-ux/` không được kích hoạt. Toàn bộ trải nghiệm người dùng được quản lý độc lập tại `docs/service-docs/web-portal/ui-ux/` và `docs/service-docs/kiosk-app/ui-ux/`.
+
+---
+
+## 3. Danh mục Chi tiết Tập tin & Ma trận Truy vết (Traceability Matrix)
+
+| Nhánh Facet | Tập tin Tài liệu | Mã Leaf | ID Prefix Sở hữu | Nguồn Tham chiếu Upstream |
+| :--- | :--- | :---: | :---: | :--- |
+| **Trang chủ** | [README.md](README.md) | `BE-HUB` | — | `docs/meta.md`, `system-docs/dds/dds.md` (`ARC-SYS-002`) |
+| **Data (Bước 1)**| [data/data-specs.md](data/data-specs.md) | `SVC-SPEC`| `DATA-BE-` | `system-docs/srs/data-specs.md` (`DATA-SYS-001..015`) |
+| **Data (Bước 1)**| [data/data-design.md](data/data-design.md) | `SVC-DES` | `DTD-BE-` | `data/data-specs.md`, `system-docs/dds/data-design.md` |
+| **Data (Bước 1)**| [data/data-build-plan.md](data/data-build-plan.md) | `SVC-BLD` | `DBL-BE-` | `data/data-design.md` (`DTD-BE-001..004`) |
+| **API (Bước 2)** | [api/api-specs.md](api/api-specs.md) | `SVC-SPEC`| `API-BE-` | `system-docs/srs/api-specs.md` (`API-SYS-001..016`) |
+| **API (Bước 2)** | [api/api-design.md](api/api-design.md) | `SVC-DES` | `APD-BE-` | `api/api-specs.md`, `data/data-design.md`, `system-docs/dds/api-design.md` |
+| **API (Bước 2)** | [api/api-build-plan.md](api/api-build-plan.md) | `SVC-BLD` | `ABL-BE-` | `api/api-design.md` (`APD-BE-001..004`) |
+| **Core** | [core/fsp.md](core/fsp.md) | `SVC-FSP` | `FND-BE-` | `system-docs/plans/foundation-setup-plan.md`, `tech-tool-stack.md` |
+| **Core** | [core/fr-nfr-specs.md](core/fr-nfr-specs.md) | `SVC-SPEC`| `FR-BE-`, `NFR-BE-` | `system-docs/srs/fr-nfr-specs.md` (`FR-SYS-`, `NFR-SYS-`) |
+| **Core** | [core/fr-nfr-design.md](core/fr-nfr-design.md) | `SVC-DES` | `SOL-BE-` | `core/fr-nfr-specs.md`, `system-docs/dds/fr-nfr-design.md` |
+| **Core** | [core/fr-nfr-build-plan.md](core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-BE-` | `core/fr-nfr-design.md` (`SOL-BE-001..007`) |
+| **Core** | [core/test-plan.md](core/test-plan.md) | `SVC-TST` | `TST-BE-` | `core/fr-nfr-specs.md`, `api/api-specs.md` (trực tiếp) |
