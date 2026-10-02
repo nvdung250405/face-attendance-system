@@ -19,9 +19,9 @@ import numpy as np
 import pytest
 
 from core.vision.face_detector import FaceDetectionResult
-from ui.controllers.enrollment_controller import EnrollmentController
-from ui.controllers.pin_controller import PinController
-from ui.views.pin_dialog import PinSecurityManager
+from core.security.pin_security import PinSecurityManager
+from presentation.controllers.enrollment_controller import EnrollmentController
+from presentation.controllers.pin_controller import PinController
 
 
 def _create_mock_detection(is_valid: bool = True) -> FaceDetectionResult:

@@ -10,7 +10,7 @@ Kiểm tra:
 import numpy as np
 from PySide6.QtGui import QPixmap
 
-from ui.controllers.video_image_provider import VideoImageProvider
+from presentation.providers.video_image_provider import VideoImageProvider
 
 
 def test_video_image_provider_initialization(qapp):

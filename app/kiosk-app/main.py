@@ -12,6 +12,11 @@ import platform
 import sys
 from pathlib import Path
 
+# Thêm thư mục src vào sys.path để hỗ trợ src-layout
+src_dir = Path(__file__).resolve().parent / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
 import cv2
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
@@ -26,10 +31,10 @@ from core.vision.face_detector import YuNetFaceDetector
 from core.vision.feature_extractor import ArcFaceFeatureExtractor
 from core.vision.gallery_matcher import GalleryCacheManager
 from core.vision.liveness_gate import MiniFASNetLivenessGate
-from ui.controllers.enrollment_controller import EnrollmentController
-from ui.controllers.kiosk_view_model import KioskViewModel
-from ui.controllers.pin_controller import PinController
-from ui.controllers.video_image_provider import VideoImageProvider
+from presentation.controllers.enrollment_controller import EnrollmentController
+from presentation.controllers.pin_controller import PinController
+from presentation.providers.video_image_provider import VideoImageProvider
+from presentation.viewmodels.kiosk_view_model import KioskViewModel
 
 logger = get_logger("main")
 
@@ -288,8 +293,8 @@ def main() -> int:
     context.setContextProperty("pinController", pin_controller)
     context.setContextProperty("enrollmentController", enrollment_controller)
 
-    # Thêm đường dẫn tìm kiếm QML modules
-    qml_dir = Path(__file__).resolve().parent / "ui" / "qml"
+    # Thêm đường dẫn tìm kiếm QML modules từ resources/qml
+    qml_dir = Path(__file__).resolve().parent / "resources" / "qml"
     engine.addImportPath(str(qml_dir))
 
     main_qml_path = qml_dir / "main.qml"

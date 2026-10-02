@@ -8,6 +8,21 @@
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",
 
+  // QML & Qt Configuration for Kiosk App
+  "qml.qmlImportPaths": [
+    "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
+    "${workspaceFolder}/app/kiosk-app/resources/qml"
+  ],
+  "qt.qmlImportPaths": [
+    "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
+    "${workspaceFolder}/app/kiosk-app/resources/qml"
+  ],
+  "qmlls.includePaths": [
+    "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
+    "${workspaceFolder}/app/kiosk-app/resources/qml"
+  ],
+  "qml.qmllint.executablePath": "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qmllint.exe",
+
   // Java Configuration for Backend Service
   "java.configuration.runtimes": [
     {

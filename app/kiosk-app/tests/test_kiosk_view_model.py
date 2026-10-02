@@ -20,8 +20,8 @@ from core.cooldown.cooldown_tracker import CooldownTracker
 from core.offline.sqlite_manager import SQLiteQueueManager
 from core.vision.face_detector import FaceDetectionResult
 from core.vision.gallery_matcher import GalleryCacheManager
-from ui.controllers.kiosk_view_model import KioskViewModel, OvalState
-from ui.controllers.video_image_provider import VideoImageProvider
+from presentation.providers.video_image_provider import VideoImageProvider
+from presentation.viewmodels.kiosk_view_model import KioskViewModel, OvalState
 
 
 def _create_mock_detection(
