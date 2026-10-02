@@ -1,5 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
+// qmllint disable unqualified
+// qmllint disable unresolved-type
+// qmllint disable missing-property
+import QtQuick
+import QtQuick.Layouts
 import "../theme"
 
 Rectangle {
@@ -7,6 +10,8 @@ Rectangle {
 
     property string organizationGreeting: "Chào mừng bạn đến với FAS Kiosk"
     property string currentShift: "Ca làm việc: 08:00 - 17:30"
+    property string currentTimeText: "07:58:32"
+    property string currentDateText: "Thứ Năm, ngày 01 tháng 10 năm 2026"
 
     implicitWidth: Theme.canvasWidth - (Theme.canvasPadding * 2) // 968px
     implicitHeight: Theme.mainViewportHeight                     // 1496px
@@ -30,9 +35,9 @@ Rectangle {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            var d = new Date()
-            giantClock.text = Qt.formatTime(d, "hh:mm:ss")
-            giantDate.text = Qt.formatDate(d, "dddd, dd 'tháng' MM 'năm' yyyy")
+            const d = new Date()
+            root.currentTimeText = Qt.formatTime(d, "hh:mm:ss")
+            root.currentDateText = Qt.formatDate(d, "dddd, dd 'tháng' MM 'năm' yyyy")
         }
     }
 
@@ -126,7 +131,7 @@ Rectangle {
             Text {
                 id: giantClock
                 Layout.alignment: Qt.AlignHCenter
-                text: "07:58:32"
+                text: root.currentTimeText
                 font.family: Theme.fontFamily
                 font.pixelSize: 72
                 font.bold: true
@@ -137,7 +142,7 @@ Rectangle {
             Text {
                 id: giantDate
                 Layout.alignment: Qt.AlignHCenter
-                text: "Thứ Năm, ngày 01 tháng 10 năm 2026"
+                text: root.currentDateText
                 font.family: Theme.fontFamily
                 font.pixelSize: 18
                 color: Theme.textSecondary

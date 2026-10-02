@@ -10,6 +10,7 @@ Tuân thủ mô hình MVC/MVVM:
 import time
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 import numpy as np
 from PySide6.QtCore import Property, QObject, Signal, Slot
@@ -124,6 +125,7 @@ class KioskViewModel(QObject):
         queue_manager: SQLiteQueueManager | None = None,
         sync_worker: OfflineSyncWorker | None = None,
         stability_threshold: int = 8,
+        enrollment_controller: Any = None,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo KioskViewModel."""
@@ -136,6 +138,7 @@ class KioskViewModel(QObject):
         self.cooldown_tracker = cooldown_tracker
         self.queue_manager = queue_manager
         self.sync_worker = sync_worker
+        self.enrollment_controller = enrollment_controller
         self._stability_threshold: int = max(1, stability_threshold)
         self._stable_frames: int = 0
         self._frame_tick: int = 0
@@ -336,6 +339,11 @@ class KioskViewModel(QObject):
                 return
 
         current_time = time.time()
+
+        # Nếu đang ở chế độ Đăng ký mẫu khuôn mặt mới (Bước 2): Tạm dừng nhận diện điểm danh
+        if self.enrollment_controller is not None and getattr(self.enrollment_controller, "isEnrolling", False):
+            self._last_face_time = current_time
+            return
 
         # 2. Nếu đang giữ màn hình kết quả Success / Error thì tạm dừng phân tích AI
         if self._holding_result:

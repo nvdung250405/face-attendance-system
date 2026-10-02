@@ -30,7 +30,7 @@ def _create_mock_detection(is_valid: bool = True) -> FaceDetectionResult:
         dtype=np.float32,
     )
     return FaceDetectionResult(
-        bbox=(100, 100, 200, 200) if is_valid else (10, 10, 30, 30),
+        bbox=(280, 142, 80, 100) if is_valid else (10, 10, 30, 30),
         landmarks=landmarks,
         score=0.98,
         euler_angles=(2.0, 0.0, 0.0),
@@ -175,6 +175,7 @@ def test_enrollment_controller_process_frame_and_submit(qapp):
         extractor=extractor,
         liveness_gate=liveness_gate,
         client=mock_client,
+        capture_interval=0.0,
     )
 
     # Giả lập đã qua bước 1

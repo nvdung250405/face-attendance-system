@@ -183,6 +183,12 @@ def main() -> int:
 
     # 6. Khởi tạo VideoImageProvider & Controllers
     image_provider = VideoImageProvider()
+    pin_controller = PinController()
+    enrollment_controller = EnrollmentController(
+        detector=detector,
+        extractor=extractor,
+        liveness_gate=liveness_gate,
+    )
     kiosk_view_model = KioskViewModel(
         image_provider=image_provider,
         detector=detector,
@@ -193,12 +199,7 @@ def main() -> int:
         queue_manager=queue_manager,
         sync_worker=sync_worker,
         stability_threshold=8,
-    )
-    pin_controller = PinController()
-    enrollment_controller = EnrollmentController(
-        detector=detector,
-        extractor=extractor,
-        liveness_gate=liveness_gate,
+        enrollment_controller=enrollment_controller,
     )
 
     # 7. Khởi tạo luồng đọc camera nếu không tắt qua flag

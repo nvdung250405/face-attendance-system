@@ -1,6 +1,9 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+// qmllint disable unqualified
+// qmllint disable unresolved-type
+// qmllint disable missing-property
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 import "../theme"
 import "../components"
 
@@ -8,17 +11,20 @@ Item {
     id: root
     anchors.fill: parent
     z: 1000
-    visible: opacity > 0
+    visible: root.opacity > 0
     opacity: 0.0
 
     property bool isOpen: false
 
     function open() {
-        isOpen = true
-        opacity = 1.0
         if (typeof enrollmentController !== "undefined" && enrollmentController) {
+            if (enrollmentController.currentStep === 3 || enrollmentController.currentStep === 2) {
+                enrollmentController.reset()
+            }
             enrollmentController.clearOtp()
         }
+        isOpen = true
+        opacity = 1.0
         cardItem.forceActiveFocus()
     }
 
@@ -30,8 +36,31 @@ Item {
         }
     }
 
+    function hideForCapture() {
+        isOpen = false
+        opacity = 0.0
+    }
+
+    function showForCompletion() {
+        isOpen = true
+        opacity = 1.0
+        cardItem.forceActiveFocus()
+    }
+
     Behavior on opacity {
         NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+    }
+
+    Connections {
+        target: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController : null
+
+        function onCurrentStepChanged(step) {
+            if (step === 2) {
+                root.hideForCapture()
+            } else if (step === 3) {
+                root.showForCompletion()
+            }
+        }
     }
 
     // 1. Lớp phủ nền tối (Backdrop Overlay) 1080x1920
@@ -76,7 +105,7 @@ Item {
         focus: true
         Keys.onPressed: function(event) {
             if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
-                var digit = String(event.key - Qt.Key_0)
+                const digit = String(event.key - Qt.Key_0)
                 if (typeof enrollmentController !== "undefined" && enrollmentController) {
                     enrollmentController.appendOtpDigit(digit)
                 }
@@ -390,7 +419,7 @@ Item {
                             if (typeof enrollmentController !== "undefined" && enrollmentController) {
                                 if (enrollmentController.currentOtp.length === 0) {
                                     // Tự động điền mã mẫu Figma để demo nhanh nếu người dùng chưa nhập
-                                    for (var i = 0; i < "482619".length; i++) {
+                                    for (let i = 0; i < "482619".length; i++) {
                                         enrollmentController.appendOtpDigit("482619"[i])
                                     }
                                 }
@@ -442,7 +471,7 @@ Item {
                             onClicked: {
                                 if (typeof enrollmentController !== "undefined" && enrollmentController) {
                                     enrollmentController.clearOtp()
-                                    for (var i = 0; i < "482619".length; i++) {
+                                    for (let i = 0; i < "482619".length; i++) {
                                         enrollmentController.appendOtpDigit("482619"[i])
                                     }
                                 }

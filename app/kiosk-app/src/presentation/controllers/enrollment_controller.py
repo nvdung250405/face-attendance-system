@@ -1,6 +1,7 @@
 """EnrollmentController: Điều phối quy trình tự đăng ký nhân viên mới qua OTP cho QML."""
 
 import base64
+import time
 from typing import Any
 
 import cv2
@@ -14,6 +15,7 @@ from core.vision.face_detector import FaceDetectionResult, YuNetFaceDetector
 from core.vision.feature_extractor import ArcFaceFeatureExtractor
 from core.vision.liveness_gate import MiniFASNetLivenessGate
 from core.vision.quality_checker import EnrollmentQualityChecker
+from presentation.viewmodels.kiosk_view_model import evaluate_face_oval_alignment
 
 logger = get_logger("enrollment_controller")
 
@@ -34,6 +36,7 @@ class EnrollmentController(QObject):
         extractor: ArcFaceFeatureExtractor | None = None,
         liveness_gate: MiniFASNetLivenessGate | None = None,
         client: httpx.Client | None = None,
+        capture_interval: float = 0.35,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo EnrollmentController."""
@@ -41,8 +44,14 @@ class EnrollmentController(QObject):
         self.detector = detector
         self.extractor = extractor
         self.liveness_gate = liveness_gate
-        self.quality_checker = EnrollmentQualityChecker()
+        self.quality_checker = EnrollmentQualityChecker(
+            max_angle_deg=15.0,
+            min_face_size=80,
+            min_sharpness=30.0,
+            min_liveness=0.60,
+        )
         self._client = client or httpx.Client(timeout=10.0)
+        self._capture_interval: float = capture_interval
 
         self._current_step: int = 1  # 1: OTP, 2: Chụp ảnh, 3: Hoàn tất
         self._progress_percent: float = 0.0
@@ -53,6 +62,7 @@ class EnrollmentController(QObject):
         self._employee_name: str = ""
         self._captured_embeddings: list[list[float]] = []
         self._target_frames: int = 3  # Chụp đủ 3 khung hình chuẩn
+        self._last_capture_time: float = 0.0
 
     @Property(int, notify=currentStepChanged)
     def currentStep(self) -> int:
@@ -86,6 +96,21 @@ class EnrollmentController(QObject):
             "avatarBase64": "",
         }
         self.enrollmentCompleted.emit(payload)
+
+    @Property(bool, notify=currentStepChanged)
+    def isEnrolling(self) -> bool:
+        """Kiểm tra có đang ở Bước 2 thu thập mẫu khuôn mặt trên màn hình chính hay không."""
+        return self._current_step == 2
+
+    @Property(str, notify=currentStepChanged)
+    def employeeName(self) -> str:
+        """Tên nhân viên đang thực hiện đăng ký."""
+        return self._employee_name
+
+    @Property(int, notify=currentStepChanged)
+    def employeeId(self) -> int:
+        """Mã nhân viên đang thực hiện đăng ký."""
+        return self._employee_id or 0
 
     @Property(float, notify=progressPercentChanged)
     def progressPercent(self) -> float:
@@ -185,7 +210,14 @@ class EnrollmentController(QObject):
             self.statusMessageChanged.emit(self._status_message)
             return
 
-        # Tính điểm thực thể sống
+        # 1. Kiểm tra vị trí khuôn mặt trong khung Oval
+        is_aligned, align_msg = evaluate_face_oval_alignment(frame.shape, detection.bbox)
+        if not is_aligned:
+            self._status_message = align_msg
+            self.statusMessageChanged.emit(self._status_message)
+            return
+
+        # 2. Tính điểm thực thể sống
         liveness_score = 1.0
         if self.liveness_gate:
             try:
@@ -203,28 +235,52 @@ class EnrollmentController(QObject):
         y2 = min(fh, max(0, y + h))
         face_crop = frame[y1:y2, x1:x2]
 
-        # Kiểm định chất lượng hình học & ánh sáng
+        # 3. Kiểm định chất lượng hình học & ánh sáng
         report = self.quality_checker.evaluate(
             detection.bbox,
             detection.euler_angles,
             face_crop,
             liveness_score,
         )
-        self._status_message = report.feedback_message
-        self.statusMessageChanged.emit(self._status_message)
 
         if not report.is_passed:
+            self._status_message = report.feedback_message
+            self.statusMessageChanged.emit(self._status_message)
             return
+
+        now = time.time()
+        if (
+            self._capture_interval > 0
+            and now - self._last_capture_time < self._capture_interval
+            and len(self._captured_embeddings) > 0
+        ):
+            return
+        self._last_capture_time = now
 
         # Trích xuất vector 512D
         aligned = self.extractor.align_face(frame, detection.landmarks)
         vector = self.extractor.extract_vector(aligned)
         self._captured_embeddings.append(vector.tolist())
 
-        self._progress_percent = len(self._captured_embeddings) / self._target_frames
+        cnt = len(self._captured_embeddings)
+        self._progress_percent = cnt / self._target_frames
         self.progressPercentChanged.emit(self._progress_percent)
 
-        if len(self._captured_embeddings) >= self._target_frames:
+        logger.info(
+            "📸 [ENROLL] Đã chụp thành công mẫu khuôn mặt %d/%d (Độ sắc nét: %.1f, Liveness: %.2f)",
+            cnt,
+            self._target_frames,
+            report.sharpness,
+            report.liveness_score,
+        )
+
+        if cnt < self._target_frames:
+            self._status_message = f"Khuôn mặt đạt chuẩn! Vui lòng giữ yên ({cnt}/{self._target_frames})"
+            self.statusMessageChanged.emit(self._status_message)
+        else:
+            self._status_message = "Đã thu thập đủ 3 ảnh mẫu! Đang hoàn tất đăng ký..."
+            self.statusMessageChanged.emit(self._status_message)
+            logger.info("✅ [ENROLL] Đã thu thập đủ %d ảnh mẫu -> Tự động chuyển Bước 3", self._target_frames)
             self._submit_enrollment(frame, detection)
 
     def _submit_enrollment(self, final_frame: np.ndarray, detection: FaceDetectionResult) -> None:

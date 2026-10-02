@@ -1,6 +1,9 @@
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Layouts 1.15
+// qmllint disable unqualified
+// qmllint disable unresolved-type
+// qmllint disable missing-property
+import QtQuick
+import QtQuick.Window
+import QtQuick.Layouts
 import "theme"
 import "components"
 import "dialogs" as Dialogs
@@ -73,6 +76,7 @@ Window {
                         // Chế độ A: Màn hình Chờ Chào mừng (WelcomeCanvas)
                         WelcomeCanvas {
                             id: welcomeCanvas
+                            objectName: "welcomeCanvas"
                             anchors.fill: parent
                             visible: opacity > 0
                             opacity: window.viewState === "STANDBY" ? 1.0 : 0.0
@@ -85,6 +89,7 @@ Window {
                         // Chế độ B: Màn hình Quét Camera Trực tiếp (PortraitCameraPanel)
                         PortraitCameraPanel {
                             id: cameraPanel
+                            objectName: "cameraPanel"
                             anchors.fill: parent
                             visible: opacity > 0
                             opacity: window.viewState === "ACTIVE" ? 1.0 : 0.0
@@ -180,6 +185,12 @@ Window {
 
         Keys.onPressed: function(event) {
             if (event.key === Qt.Key_Space) {
+                if (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.isEnrolling) {
+                    console.log("[ENROLL] Phím Space: Chụp nhanh / hoàn tất lấy mẫu đăng ký")
+                    enrollmentController.completeCaptureStep()
+                    event.accepted = true
+                    return
+                }
                 console.log("[TEST] Giả lập nhận diện thành công")
                 if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
                     kioskViewModel.setStandby(false)
@@ -218,6 +229,9 @@ Window {
                 }
                 event.accepted = true
             } else if (event.key === Qt.Key_Escape) {
+                if (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.isEnrolling) {
+                    enrollmentController.reset()
+                }
                 pinDialog.close()
                 enrollmentDialog.close()
                 helpDialog.close()
