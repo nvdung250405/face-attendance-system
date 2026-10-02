@@ -34,7 +34,10 @@ from core.vision.liveness_gate import MiniFASNetLivenessGate
 from presentation.controllers.enrollment_controller import EnrollmentController
 from presentation.controllers.pin_controller import PinController
 from presentation.providers.video_image_provider import VideoImageProvider
-from presentation.viewmodels.kiosk_view_model import KioskViewModel
+from presentation.viewmodels.kiosk_view_model import (
+    KioskViewModel,
+    evaluate_face_oval_alignment,
+)
 
 logger = get_logger("main")
 
@@ -188,7 +191,7 @@ def main() -> int:
         cooldown_tracker=cooldown_tracker,
         queue_manager=queue_manager,
         sync_worker=sync_worker,
-        stability_threshold=5,
+        stability_threshold=8,
     )
     pin_controller = PinController()
     enrollment_controller = EnrollmentController(
@@ -226,15 +229,14 @@ def main() -> int:
                             enroll_state["stable_count"] = 0
                             return
 
-                        # Đảm bảo khuôn mặt đã đưa hẳn vào giữa khung hình (Oval)
-                        fh, fw = frame.shape[:2]
-                        cx = det.bbox[0] + det.bbox[2] / 2.0
-                        cy = det.bbox[1] + det.bbox[3] / 2.0
-                        if not (0.20 * fw <= cx <= 0.80 * fw and 0.15 * fh <= cy <= 0.85 * fh):
+                        # Đảm bảo khuôn mặt đã đưa hẳn vào giữa khung hình Oval
+                        is_aligned, _ = evaluate_face_oval_alignment(frame.shape, det.bbox)
+                        if not is_aligned:
                             enroll_state["stable_count"] = 0
                             return
 
                         # Đo độ sắc nét Laplacian để chọn ảnh chất lượng tốt nhất
+                        fh, fw = frame.shape[:2]
                         x, y, w, h = det.bbox
                         roi = frame[max(0, y):min(fh, y+h), max(0, x):min(fw, x+w)]
                         if roi.size > 0:

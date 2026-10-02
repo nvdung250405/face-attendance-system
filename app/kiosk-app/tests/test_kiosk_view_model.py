@@ -21,17 +21,31 @@ from core.offline.sqlite_manager import SQLiteQueueManager
 from core.vision.face_detector import FaceDetectionResult
 from core.vision.gallery_matcher import GalleryCacheManager
 from presentation.providers.video_image_provider import VideoImageProvider
-from presentation.viewmodels.kiosk_view_model import KioskViewModel, OvalState
+from presentation.viewmodels.kiosk_view_model import (
+    KioskViewModel,
+    OvalState,
+    evaluate_face_oval_alignment,
+)
 
 
 def _create_mock_detection(
     is_tilted: bool = False,
     is_valid_size: bool = True,
-    bbox: tuple[int, int, int, int] = (100, 100, 200, 200),
+    bbox: tuple[int, int, int, int] | None = None,
 ) -> FaceDetectionResult:
     """Tạo đối tượng FaceDetectionResult giả lập cho test."""
+    if bbox is None:
+        if not is_valid_size:
+            bbox = (300, 180, 40, 40)  # Mặt nhỏ / xa
+        else:
+            bbox = (270, 137, 100, 110)  # Chuẩn tâm Oval cho frame 480x640
+
     landmarks = np.array(
-        [[150, 150], [200, 150], [175, 180], [160, 220], [190, 220]],
+        [[bbox[0] + 30, bbox[1] + 30],
+         [bbox[0] + 70, bbox[1] + 30],
+         [bbox[0] + 50, bbox[1] + 55],
+         [bbox[0] + 35, bbox[1] + 85],
+         [bbox[0] + 65, bbox[1] + 85]],
         dtype=np.float32,
     )
     yaw = 25.0 if is_tilted else 2.0
@@ -101,7 +115,11 @@ def test_kiosk_view_model_spoof_detection_error(qapp):
     liveness_gate = MagicMock()
     liveness_gate.predict.return_value = 0.15  # < Ngưỡng liveness
 
-    vm = KioskViewModel(detector=detector, liveness_gate=liveness_gate)
+    vm = KioskViewModel(
+        detector=detector,
+        liveness_gate=liveness_gate,
+        stability_threshold=1,
+    )
     dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
     vm.process_camera_frame(dummy_frame)
 
@@ -129,6 +147,7 @@ def test_kiosk_view_model_unregistered_face_error(qapp):
         liveness_gate=liveness_gate,
         extractor=extractor,
         gallery_matcher=gallery_matcher,
+        stability_threshold=1,
     )
     dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
     vm.process_camera_frame(dummy_frame)
@@ -165,6 +184,7 @@ def test_kiosk_view_model_successful_punch(qapp, tmp_path):
         gallery_matcher=gallery_matcher,
         cooldown_tracker=cooldown_tracker,
         queue_manager=queue_manager,
+        stability_threshold=1,
     )
 
     dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -241,4 +261,127 @@ def test_kiosk_view_model_auto_standby_timeout(qapp):
     vm.process_camera_frame(dummy_frame)
 
     assert vm.isStandby is True
+
+
+def test_evaluate_face_oval_alignment_centered():
+    """Kiểm tra khuôn mặt căn chuẩn tâm Oval."""
+    frame_shape = (480, 640, 3)
+    bbox = (270, 137, 100, 110)
+    is_aligned, msg = evaluate_face_oval_alignment(frame_shape, bbox)
+    assert is_aligned is True
+    assert "chuẩn xác" in msg
+
+
+def test_evaluate_face_oval_alignment_too_close():
+    """Kiểm tra cảnh báo lùi ra xa khi khuôn mặt quá gần (quá to)."""
+    frame_shape = (480, 640, 3)
+    bbox = (240, 100, 160, 180)  # bh=180 > max_face_h (164.7)
+    is_aligned, msg = evaluate_face_oval_alignment(frame_shape, bbox)
+    assert is_aligned is False
+    assert "lùi ra xa" in msg
+
+
+def test_evaluate_face_oval_alignment_too_far():
+    """Kiểm tra cảnh báo lại gần khi khuôn mặt quá xa (quá nhỏ)."""
+    frame_shape = (480, 640, 3)
+    bbox = (300, 175, 40, 45)  # bh=45 < min_face_h (67.8)
+    is_aligned, msg = evaluate_face_oval_alignment(frame_shape, bbox)
+    assert is_aligned is False
+    assert "lại gần" in msg
+
+
+def test_evaluate_face_oval_alignment_displaced():
+    """Kiểm tra cảnh báo điều hướng khi tâm mặt lệch ra ngoài Oval."""
+    frame_shape = (480, 640, 3)
+    # Lệch sang trái khung hình (người dùng nhìn vào thấy mình ở bên trái -> hướng dẫn sang phải)
+    bbox_left = (80, 137, 100, 110)
+    is_aligned, msg = evaluate_face_oval_alignment(frame_shape, bbox_left)
+    assert is_aligned is False
+    assert "sang phải" in msg
+
+    # Lệch sang phải khung hình -> hướng dẫn sang trái
+    bbox_right = (460, 137, 100, 110)
+    is_aligned, msg = evaluate_face_oval_alignment(frame_shape, bbox_right)
+    assert is_aligned is False
+    assert "sang trái" in msg
+
+    # Lệch quá cao (phía trên Oval) -> hướng dẫn hạ tầm mắt
+    bbox_up = (270, 10, 100, 110)
+    is_aligned, msg = evaluate_face_oval_alignment(frame_shape, bbox_up)
+    assert is_aligned is False
+    assert "hạ tầm mắt" in msg
+
+    # Lệch quá thấp (phía dưới Oval) -> hướng dẫn nâng tầm mắt
+    bbox_down = (270, 330, 100, 110)
+    is_aligned, msg = evaluate_face_oval_alignment(frame_shape, bbox_down)
+    assert is_aligned is False
+    assert "nâng tầm mắt" in msg
+
+
+def test_kiosk_view_model_stability_countdown(qapp):
+    """Kiểm tra cơ chế đếm khung hình ổn định (0.5s - 1.0s) trước khi quét."""
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection()
+
+    liveness_gate = MagicMock()
+    liveness_gate.predict.return_value = 0.95
+
+    extractor = MagicMock()
+    extractor.align_face.return_value = np.zeros((112, 112, 3), dtype=np.uint8)
+    extractor.extract_vector.return_value = np.random.randn(512).astype(np.float32)
+
+    gallery_matcher = MagicMock(spec=GalleryCacheManager)
+    gallery_matcher.match.return_value = (1001, 0.90)
+
+    vm = KioskViewModel(
+        detector=detector,
+        liveness_gate=liveness_gate,
+        extractor=extractor,
+        gallery_matcher=gallery_matcher,
+        stability_threshold=3,  # Cần 3 frame ổn định liên tục
+    )
+    # Bỏ standby để vào active loop
+    vm.setStandby(False)
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+
+    # Frame 1: Chưa đủ ngưỡng -> ALIGNING, hướng dẫn giữ yên
+    vm.process_camera_frame(dummy_frame)
+    assert vm.ovalState == OvalState.ALIGNING
+    assert "giữ yên" in vm.message.lower()
+
+    # Frame 2: Vẫn chưa đủ ngưỡng -> ALIGNING, giữ yên
+    vm.process_camera_frame(dummy_frame)
+    assert vm.ovalState == OvalState.ALIGNING
+    assert "giữ yên" in vm.message.lower()
+
+    # Frame 3: Đủ 3 frame ổn định liên tục -> Bắt đầu nhận diện và SUCCESS!
+    vm.process_camera_frame(dummy_frame)
+    assert vm.ovalState == OvalState.SUCCESS
+    assert "thành công" in vm.message.lower()
+
+
+def test_kiosk_view_model_stability_resets_on_movement(qapp):
+    """Kiểm tra bộ đếm ổn định bị reset về 0 nếu mặt di chuyển lệch hoặc nghiêng."""
+    detector = MagicMock()
+    # Ban đầu mặt chuẩn
+    detector.detect_face.return_value = _create_mock_detection()
+
+    vm = KioskViewModel(
+        detector=detector,
+        stability_threshold=4,
+    )
+    vm.setStandby(False)
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+
+    # Frame 1 & 2: Giữ yên
+    vm.process_camera_frame(dummy_frame)
+    vm.process_camera_frame(dummy_frame)
+    assert vm._stable_frames == 2
+
+    # Frame 3: Bất ngờ nghiêng đầu -> reset về 0
+    detector.detect_face.return_value = _create_mock_detection(is_tilted=True)
+    vm.process_camera_frame(dummy_frame)
+    assert vm._stable_frames == 0
+    assert "giữ thẳng mặt" in vm.message.lower()
+
 
