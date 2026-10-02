@@ -2,497 +2,616 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../theme"
+import "../components"
 
-Dialog {
-    id: enrollDialog
-    modal: true
-    anchors.centerIn: parent
-    width: 580
-    height: 680
-    scale: (typeof window !== "undefined" && window) ? window.scaleRatio : 1.0
-    transformOrigin: Item.Center
-    padding: 0
-    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+Item {
+    id: root
+    anchors.fill: parent
+    z: 1000
+    visible: opacity > 0
+    opacity: 0.0
 
-    background: Rectangle {
-        radius: 20
+    property bool isOpen: false
+
+    function open() {
+        isOpen = true
+        opacity = 1.0
+        if (typeof enrollmentController !== "undefined" && enrollmentController) {
+            enrollmentController.clearOtp()
+        }
+        cardItem.forceActiveFocus()
+    }
+
+    function close() {
+        isOpen = false
+        opacity = 0.0
+        if (typeof enrollmentController !== "undefined" && enrollmentController) {
+            enrollmentController.reset()
+        }
+    }
+
+    Behavior on opacity {
+        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+    }
+
+    // 1. Lớp phủ nền tối (Backdrop Overlay) 1080x1920
+    Rectangle {
+        anchors.fill: parent
+        color: Qt.rgba(0, 0, 0, 0.65)
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.close()
+        }
+    }
+
+    // 2. Thẻ Card Modal chính giữa (Chuẩn Figma: width 800, height 1280)
+    Rectangle {
+        id: cardItem
+        width: 800
+        height: 1280
+        anchors.centerIn: parent
+        radius: 24
         color: "#FFFFFF"
         border.color: "#E5E7EB"
         border.width: 1
+        clip: true
 
+        // Hiệu ứng đổ bóng thẻ Card
         Rectangle {
             anchors.fill: parent
-            anchors.topMargin: 12
-            radius: 20
-            color: Qt.rgba(0.067, 0.094, 0.153, 0.18)
+            anchors.topMargin: 16
+            radius: 24
+            color: Qt.rgba(0, 0, 0, 0.20)
             z: -1
         }
-    }
 
-    // Keyboard support for typing OTP directly
-    focus: true
-    Keys.onPressed: function(event) {
-        if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
-            var digit = String(event.key - Qt.Key_0)
-            if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                enrollmentController.appendOtpDigit(digit)
-            }
-            event.accepted = true
-        } else if (event.key === Qt.Key_Backspace) {
-            if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                enrollmentController.backspaceOtp()
-            }
-            event.accepted = true
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                enrollmentController.verifyOtp()
-            }
-            event.accepted = true
-        } else if (event.key === Qt.Key_Escape) {
-            enrollDialog.close()
-            event.accepted = true
+        // Bắt sự kiện chuột không lọt ra ngoài nền
+        MouseArea {
+            anchors.fill: parent
+            // Chặn click xuyên qua backdrop
         }
-    }
 
-    contentItem: ColumnLayout {
-        spacing: 20
-        anchors.fill: parent
-        anchors.margins: 28
-
-        // 1. Header: Tiêu đề & Nút đóng [✕]
-        RowLayout {
-            Layout.fillWidth: true
-
-            Text {
-                text: "Đăng ký khuôn mặt mới"
-                font.family: Theme.fontFamily
-                font.pixelSize: 24
-                font.bold: true
-                color: "#111827"
-            }
-
-            Item { Layout.fillWidth: true }
-
-            Rectangle {
-                width: 38
-                height: 38
-                radius: 10
-                color: "#F5F6F8"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: 16
-                    color: "#6B7280"
+        // Hỗ trợ gõ trực tiếp từ bàn phím vật lý
+        focus: true
+        Keys.onPressed: function(event) {
+            if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+                var digit = String(event.key - Qt.Key_0)
+                if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                    enrollmentController.appendOtpDigit(digit)
                 }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                            enrollmentController.reset()
-                        }
-                        enrollDialog.close()
-                    }
+                event.accepted = true
+            } else if (event.key === Qt.Key_Backspace) {
+                if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                    enrollmentController.backspaceOtp()
                 }
+                event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                    enrollmentController.verifyOtp()
+                }
+                event.accepted = true
+            } else if (event.key === Qt.Key_Escape) {
+                root.close()
+                event.accepted = true
             }
         }
 
-        // 2. Thanh Tabs 3 bước chuẩn Figma
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 10
-
-            property int curStep: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep : 1
-
-            // Tab 1: Xác thực
-            Rectangle {
-                Layout.fillWidth: true
-                height: 42
-                radius: 10
-                color: parent.curStep === 1 ? "#EEF2FF" : "#F5F6F8"
-
-                RowLayout {
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    Rectangle {
-                        width: 22
-                        height: 22
-                        radius: 11
-                        color: parent.parent.parent.curStep === 1 ? Theme.brandPurple : "transparent"
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "1"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: parent.parent.parent.parent.curStep === 1 ? "#FFFFFF" : "#111827"
-                        }
-                    }
-
-                    Text {
-                        text: "Xác thực"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                        color: "#111827"
-                    }
-                }
-            }
-
-            // Tab 2: Căn chỉnh
-            Rectangle {
-                Layout.fillWidth: true
-                height: 42
-                radius: 10
-                color: parent.curStep === 2 ? "#EEF2FF" : "#F5F6F8"
-
-                RowLayout {
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    Rectangle {
-                        width: 22
-                        height: 22
-                        radius: 11
-                        color: parent.parent.parent.curStep === 2 ? Theme.brandPurple : "transparent"
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "2"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: parent.parent.parent.parent.curStep === 2 ? "#FFFFFF" : "#111827"
-                        }
-                    }
-
-                    Text {
-                        text: "Căn chỉnh"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                        color: "#111827"
-                    }
-                }
-            }
-
-            // Tab 3: Hoàn tất
-            Rectangle {
-                Layout.fillWidth: true
-                height: 42
-                radius: 10
-                color: parent.curStep === 3 ? "#EEF2FF" : "#F5F6F8"
-
-                RowLayout {
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    Rectangle {
-                        width: 22
-                        height: 22
-                        radius: 11
-                        color: parent.parent.parent.curStep === 3 ? Theme.brandPurple : "transparent"
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "3"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: parent.parent.parent.parent.curStep === 3 ? "#FFFFFF" : "#111827"
-                        }
-                    }
-
-                    Text {
-                        text: "Hoàn tất"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                        color: "#111827"
-                    }
-                }
-            }
-        }
-
-        // ================= STEP 1: NHẬP MÃ XÁC THỰC =================
         ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 16
-            visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 1 : true
+            anchors.fill: parent
+            anchors.margins: 40
+            spacing: 24
 
-            // Tiêu đề phụ & Hướng dẫn
-            ColumnLayout {
-                spacing: 4
+            // ================= 1. HEADER MODAL =================
+            RowLayout {
+                Layout.fillWidth: true
+
                 Text {
-                    text: "Nhập mã xác thực"
+                    text: "Đăng ký khuôn mặt mới"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 19
+                    font.pixelSize: 30
+                    font.bold: true
+                    color: "#111827"
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    width: 48
+                    height: 48
+                    radius: 14
+                    color: mouseClose.pressed ? "#E5E7EB" : "#F3F4F6"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        font.pixelSize: 20
+                        font.bold: true
+                        color: "#6B7280"
+                    }
+
+                    MouseArea {
+                        id: mouseClose
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.close()
+                    }
+                }
+            }
+
+            // ================= 2. THANH TABS 3 BƯỚC (CHUẨN FIGMA) =================
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 14
+
+                property int curStep: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep : 1
+
+                // Tab 1: Xác thực
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 52
+                    radius: 12
+                    color: parent.curStep === 1 ? "#EEF2FF" : "#F5F6F8"
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 10
+
+                        Rectangle {
+                            width: 28
+                            height: 28
+                            radius: 14
+                            color: parent.parent.parent.curStep === 1 ? Theme.brandPurple : "#D1D5DB"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "1"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 15
+                                font.bold: true
+                                color: parent.parent.parent.parent.curStep === 1 ? "#FFFFFF" : "#111827"
+                            }
+                        }
+
+                        Text {
+                            text: "Xác thực"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 18
+                            font.bold: parent.parent.parent.curStep === 1
+                            color: parent.parent.parent.curStep === 1 ? Theme.brandPurple : "#4B5563"
+                        }
+                    }
+                }
+
+                // Tab 2: Căn chỉnh
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 52
+                    radius: 12
+                    color: parent.curStep === 2 ? "#EEF2FF" : "#F5F6F8"
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 10
+
+                        Rectangle {
+                            width: 28
+                            height: 28
+                            radius: 14
+                            color: parent.parent.parent.curStep === 2 ? Theme.brandPurple : "#D1D5DB"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "2"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 15
+                                font.bold: true
+                                color: parent.parent.parent.parent.curStep === 2 ? "#FFFFFF" : "#111827"
+                            }
+                        }
+
+                        Text {
+                            text: "Căn chỉnh"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 18
+                            font.bold: parent.parent.parent.curStep === 2
+                            color: parent.parent.parent.curStep === 2 ? Theme.brandPurple : "#4B5563"
+                        }
+                    }
+                }
+
+                // Tab 3: Hoàn tất
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 52
+                    radius: 12
+                    color: parent.curStep === 3 ? "#EEF2FF" : "#F5F6F8"
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 10
+
+                        Rectangle {
+                            width: 28
+                            height: 28
+                            radius: 14
+                            color: parent.parent.parent.curStep === 3 ? Theme.brandPurple : "#D1D5DB"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "3"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 15
+                                font.bold: true
+                                color: parent.parent.parent.parent.curStep === 3 ? "#FFFFFF" : "#111827"
+                            }
+                        }
+
+                        Text {
+                            text: "Hoàn tất"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 18
+                            font.bold: parent.parent.parent.curStep === 3
+                            color: parent.parent.parent.curStep === 3 ? Theme.brandPurple : "#4B5563"
+                        }
+                    }
+                }
+            }
+
+            // ================= 3. BƯỚC 1: NHẬP MÃ XÁC THỰC OTP =================
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 20
+                visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 1 : true
+
+                // Tiêu đề & Hướng dẫn
+                ColumnLayout {
+                    spacing: 6
+                    Text {
+                        text: "Nhập mã xác thực"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 22
+                        font.bold: true
+                        color: "#111827"
+                    }
+
+                    Text {
+                        text: "Nhập mã kích hoạt OTP gồm 6 chữ số do Cổng Web cung cấp."
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 16
+                        color: "#6B7280"
+                    }
+                }
+
+                // 6 Ô NHẬP OTP (Tương tác động, hiển thị số thực tế, không dùng ảnh tĩnh)
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 14
+
+                    property string rawOtp: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentOtp : ""
+
+                    Repeater {
+                        model: 6
+                        delegate: Rectangle {
+                            id: otpBox
+                            width: 96
+                            height: 96
+                            radius: 16
+                            color: "#FFFFFF"
+
+                            property string currentDigit: (parent.rawOtp.length > index) ? parent.rawOtp[index] : ""
+                            property bool isActiveBox: (parent.rawOtp.length === index)
+
+                            border.color: isActiveBox ? Theme.brandPurple : (currentDigit.length > 0 ? "#6366F1" : "#E5E7EB")
+                            border.width: isActiveBox ? 2.5 : (currentDigit.length > 0 ? 2 : 1.5)
+
+                            // Số OTP nhập vào
+                            Text {
+                                anchors.centerIn: parent
+                                text: otpBox.currentDigit
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 38
+                                font.bold: true
+                                color: "#111827"
+                                visible: otpBox.currentDigit.length > 0
+                            }
+
+                            // Con trỏ nhấp nháy ở ô đang chờ nhập
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 2
+                                height: 36
+                                color: Theme.brandPurple
+                                visible: otpBox.isActiveBox && (otpBox.currentDigit.length === 0)
+
+                                SequentialAnimation on opacity {
+                                    loops: Animation.Infinite
+                                    PropertyAnimation { to: 0.0; duration: 500 }
+                                    PropertyAnimation { to: 1.0; duration: 500 }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: cardItem.forceActiveFocus()
+                            }
+                        }
+                    }
+                }
+
+                // BÀN PHÍM SỐ ẢO (VIRTUAL KEYPAD) TÍCH HỢP TRỰC TIẾP
+                VirtualKeypad {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 6
+                    onDigitClicked: (digit) => {
+                        if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                            enrollmentController.appendOtpDigit(digit)
+                        }
+                    }
+                    onBackspaceClicked: {
+                        if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                            enrollmentController.backspaceOtp()
+                        }
+                    }
+                    onClearClicked: {
+                        if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                            enrollmentController.clearOtp()
+                        }
+                    }
+                }
+
+                // NÚT XÁC THỰC MÃ
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 64
+                    radius: 14
+                    property bool canVerify: (typeof enrollmentController !== "undefined" && enrollmentController) ? (enrollmentController.currentOtp.length === 6) : false
+                    color: canVerify ? (mouseVerify.pressed ? Qt.darker(Theme.brandPurple, 1.15) : Theme.brandPurple) : "#E0E7FF"
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 8
+
+                        Text {
+                            text: "Xác thực mã OTP"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 20
+                            font.bold: true
+                            color: parent.parent.canVerify ? "#FFFFFF" : "#6366F1"
+                        }
+                    }
+
+                    MouseArea {
+                        id: mouseVerify
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                                if (enrollmentController.currentOtp.length === 0) {
+                                    // Tự động điền mã mẫu Figma để demo nhanh nếu người dùng chưa nhập
+                                    for (var i = 0; i < "482619".length; i++) {
+                                        enrollmentController.appendOtpDigit("482619"[i])
+                                    }
+                                }
+                                enrollmentController.verifyOtp()
+                            }
+                        }
+                    }
+                }
+
+                // Thông báo trạng thái / Hướng dẫn
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.statusMessage : ""
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 15
+                    color: text.indexOf("lỗi") >= 0 || text.indexOf("không") >= 0 ? "#EF4444" : "#6B7280"
+                }
+
+                // Gợi ý demo nhanh
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 8
+
+                    Text {
+                        text: "Mã mẫu thử nghiệm:"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
+                        color: "#9CA3AF"
+                    }
+
+                    Rectangle {
+                        height: 28
+                        width: 80
+                        radius: 6
+                        color: "#F3F4F6"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "482619"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 14
+                            font.bold: true
+                            color: Theme.brandPurple
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                                    enrollmentController.clearOtp()
+                                    for (var i = 0; i < "482619".length; i++) {
+                                        enrollmentController.appendOtpDigit("482619"[i])
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ================= 4. BƯỚC 2: CĂN CHỈNH CAMERA =================
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 28
+                visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 2 : false
+
+                Item { Layout.preferredHeight: 20 }
+
+                Rectangle {
+                    Layout.alignment: Qt.AlignHCenter
+                    width: 140
+                    height: 140
+                    radius: 70
+                    color: "#EEF2FF"
+                    border.color: Theme.brandPurple
+                    border.width: 3
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "📷"
+                        font.pixelSize: 64
+                    }
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "Giữ thẳng đầu và nhìn trực diện vào camera"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 22
                     font.bold: true
                     color: "#111827"
                 }
 
                 Text {
-                    text: "Nhập mã kích hoạt OTP gồm 6 chữ số do Cổng Web\ncung cấp."
+                    Layout.alignment: Qt.AlignHCenter
+                    text: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.statusMessage : ""
                     font.family: Theme.fontFamily
-                    font.pixelSize: 14
+                    font.pixelSize: 16
                     color: "#6B7280"
-                    lineHeight: 1.2
                 }
-            }
 
-            // 6 ô số OTP (Figma: 4 8 2 6 1 9 hoặc từ controller)
-            RowLayout {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: 10
+                ProgressBar {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: 500
+                    Layout.preferredHeight: 12
+                    value: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.5
+                }
 
-                Repeater {
-                    model: 6
-                    delegate: Rectangle {
-                        width: 74
-                        height: 78
-                        radius: 12
-                        color: "#FFFFFF"
-                        border.color: Theme.brandPurple
-                        border.width: 1.5
+                // Nút mô phỏng hoàn tất ảnh chụp nếu test ngoại tuyến
+                Rectangle {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: 320
+                    height: 52
+                    radius: 12
+                    color: "#F3F4F6"
 
-                        property string otpStr: {
-                            if (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.currentOtp.length > 0) {
-                                return enrollmentController.currentOtp
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Bấm để hoàn tất bước chụp ảnh"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 15
+                        font.bold: true
+                        color: Theme.brandPurple
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                                enrollmentController.currentStep = 3
                             }
-                            return "482619" // Chuẩn Figma mockup mặc định
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: index < parent.otpStr.length ? parent.otpStr[index] : ""
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 30
-                            font.bold: true
-                            color: "#111827"
                         }
                     }
                 }
             }
 
-            // Nút Xác thực mã
-            Rectangle {
+            // ================= 5. BƯỚC 3: HOÀN TẤT ĐĂNG KÝ =================
+            ColumnLayout {
                 Layout.fillWidth: true
-                height: 50
-                radius: 12
-                color: Theme.brandPurple
+                spacing: 28
+                visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 3 : false
+
+                Item { Layout.preferredHeight: 40 }
+
+                Rectangle {
+                    Layout.alignment: Qt.AlignHCenter
+                    width: 130
+                    height: 130
+                    radius: 65
+                    color: "#DEF7EC"
+                    border.color: "#31C48D"
+                    border.width: 3
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✓"
+                        font.pixelSize: 64
+                        font.bold: true
+                        color: "#0E9F6E"
+                    }
+                }
 
                 Text {
-                    anchors.centerIn: parent
-                    text: "Xác thực mã"
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "Đăng ký khuôn mặt thành công!"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 16
+                    font.pixelSize: 26
                     font.bold: true
-                    color: "#FFFFFF"
+                    color: "#111827"
                 }
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.statusMessage : "Dữ liệu khuôn mặt đã được cập nhật thành công."
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 17
+                    color: "#6B7280"
+                }
+
+                Item { Layout.preferredHeight: 20 }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 60
+                    radius: 14
+                    color: Theme.brandPurple
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Hoàn tất & Quay về màn hình chính"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 18
+                        font.bold: true
+                        color: "#FFFFFF"
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.close()
+                    }
+                }
+            }
+
+            Item { Layout.fillHeight: true }
+
+            // ================= 6. FOOTER: HỦY ĐĂNG KÝ =================
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: "Hủy đăng ký • Esc"
+                font.family: Theme.fontFamily
+                font.pixelSize: 16
+                font.weight: Font.DemiBold
+                color: "#6B7280"
 
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                            enrollmentController.verifyOtp()
-                        }
-                    }
-                }
-            }
-
-            // Dòng ngăn cách: hoặc sử dụng mã QR
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "hoặc sử dụng mã QR"
-                font.family: Theme.fontFamily
-                font.pixelSize: 14
-                color: "#6B7280"
-            }
-
-            // Thẻ quét mã QR
-            Rectangle {
-                Layout.fillWidth: true
-                height: 84
-                radius: 14
-                color: "#EEF2FF"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 14
-                    spacing: 16
-
-                    // Khung icon QR
-                    Rectangle {
-                        width: 56
-                        height: 56
-                        radius: 10
-                        color: "#FFFFFF"
-
-                        // Minh họa icon QR vector
-                        Item {
-                            anchors.centerIn: parent
-                            width: 32
-                            height: 32
-
-                            // 4 góc QR
-                            Rectangle { x: 2; y: 2; width: 10; height: 10; radius: 3; color: "transparent"; border.color: "#111827"; border.width: 2 }
-                            Rectangle { x: 20; y: 2; width: 10; height: 10; radius: 3; color: "transparent"; border.color: "#111827"; border.width: 2 }
-                            Rectangle { x: 2; y: 20; width: 10; height: 10; radius: 3; color: "transparent"; border.color: "#111827"; border.width: 2 }
-                            Rectangle { x: 20; y: 20; width: 8; height: 8; radius: 2; color: "#111827" }
-                        }
-                    }
-
-                    ColumnLayout {
-                        spacing: 2
-                        Layout.fillWidth: true
-
-                        Text {
-                            text: "Đưa mã QR trước camera"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 16
-                            font.bold: true
-                            color: "#111827"
-                        }
-
-                        Text {
-                            text: "Sử dụng mã QR được cấp trên Cổng\nWeb để xác thực."
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 13
-                            color: "#6B7280"
-                        }
-                    }
-                }
-            }
-
-            // Thẻ thông báo hỗ trợ
-            Rectangle {
-                Layout.fillWidth: true
-                height: 58
-                radius: 10
-                color: "#F5F6F8"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 16
-                    anchors.rightMargin: 16
-                    spacing: 12
-
-                    Text {
-                        text: "ⓘ"
-                        font.pixelSize: 18
-                        color: Theme.brandPurple
-                    }
-
-                    Text {
-                        text: "Nếu chưa có mã kích hoạt, vui lòng liên hệ bộ phận\nquản lý nhân sự."
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 13
-                        color: "#6B7280"
-                        Layout.fillWidth: true
-                    }
-                }
-            }
-        }
-
-        // ================= STEP 2: CĂN CHỈNH CAMERA =================
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 20
-            visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 2 : false
-
-            Rectangle {
-                Layout.alignment: Qt.AlignHCenter
-                width: 100
-                height: 100
-                radius: 50
-                color: "#EEF2FF"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "📷"
-                    font.pixelSize: 44
-                }
-            }
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "Giữ thẳng đầu và nhìn trực diện vào camera"
-                font.family: Theme.fontFamily
-                font.pixelSize: 18
-                font.bold: true
-                color: "#111827"
-            }
-
-            ProgressBar {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.preferredWidth: 360
-                value: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.5
-            }
-        }
-
-        // ================= STEP 3: HOÀN TẤT =================
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 20
-            visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 3 : false
-
-            Rectangle {
-                Layout.alignment: Qt.AlignHCenter
-                width: 100
-                height: 100
-                radius: 50
-                color: "#E8F7ED"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "✓"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 50
-                    font.bold: true
-                    color: "#20A464"
-                }
-            }
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "Đăng ký khuôn mặt thành công!"
-                font.family: Theme.fontFamily
-                font.pixelSize: 22
-                font.bold: true
-                color: "#20A464"
-            }
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "Dữ liệu sinh trắc học đã được kích hoạt trên hệ thống"
-                font.family: Theme.fontFamily
-                font.pixelSize: 15
-                color: "#6B7280"
-            }
-        }
-
-        // 4. Footer link: Hủy đăng ký • Esc
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: "Hủy đăng ký • Esc"
-            font.family: Theme.fontFamily
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-            color: "#6B7280"
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                        enrollmentController.reset()
-                    }
-                    enrollDialog.close()
+                    onClicked: root.close()
                 }
             }
         }

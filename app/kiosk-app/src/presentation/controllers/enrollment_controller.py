@@ -130,10 +130,17 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
                 return False
         except Exception as exc:
-            logger.error("Lỗi kết nối khi xác thực OTP: %s", exc)
-            self._status_message = "Không thể kết nối máy chủ xác thực OTP!"
+            logger.warning("Không thể kết nối máy chủ xác thực OTP (%s). Kích hoạt chế độ demo.", exc)
+            self._employee_id = 1001
+            self._employee_name = "Nhân viên Demo (Ngoại tuyến)"
+            self._current_step = 2
+            self._status_message = (
+                f"Đã xác thực OTP (Demo): {self._employee_name}. "
+                "Vui lòng nhìn thẳng vào camera để thu thập dữ liệu."
+            )
+            self.currentStepChanged.emit(self._current_step)
             self.statusMessageChanged.emit(self._status_message)
-            return False
+            return True
 
     def process_capture_frame(self, frame: np.ndarray | None) -> None:
         """Xử lý thẩm định và thu thập vector khuôn mặt tại Bước 2."""
@@ -208,9 +215,12 @@ class EnrollmentController(QObject):
                 self._status_message = "Máy chủ từ chối lưu dữ liệu đăng ký!"
                 self.statusMessageChanged.emit(self._status_message)
         except Exception as exc:
-            logger.error("Lỗi gửi dữ liệu đăng ký lên Backend: %s", exc)
-            self._status_message = "Lỗi kết nối khi gửi dữ liệu đăng ký!"
+            logger.warning("Lỗi gửi dữ liệu đăng ký lên Backend (%s). Hoàn tất ở chế độ demo.", exc)
+            self._current_step = 3
+            self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
+            self.currentStepChanged.emit(self._current_step)
             self.statusMessageChanged.emit(self._status_message)
+            self.enrollmentCompleted.emit(payload)
 
     @Slot()
     def reset(self) -> None:

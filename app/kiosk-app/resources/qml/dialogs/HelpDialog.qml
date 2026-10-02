@@ -3,423 +3,461 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../theme"
 
-Dialog {
-    id: helpDialog
-    modal: true
-    anchors.centerIn: parent
-    width: 580
-    height: 930
-    scale: (typeof window !== "undefined" && window) ? window.scaleRatio : 1.0
-    transformOrigin: Item.Center
-    padding: 0
-    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+Item {
+    id: root
+    anchors.fill: parent
+    z: 1000
+    visible: opacity > 0
+    opacity: 0.0
 
-    background: Rectangle {
-        radius: 20
+    property bool isOpen: false
+
+    function open() {
+        isOpen = true
+        opacity = 1.0
+        cardItem.forceActiveFocus()
+    }
+
+    function close() {
+        isOpen = false
+        opacity = 0.0
+    }
+
+    Behavior on opacity {
+        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+    }
+
+    // 1. Backdrop Overlay tối 1080x1920
+    Rectangle {
+        anchors.fill: parent
+        color: Qt.rgba(0, 0, 0, 0.65)
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.close()
+        }
+    }
+
+    // 2. Thẻ Card Dialog chính giữa (Figma: width 800, height 1400)
+    Rectangle {
+        id: cardItem
+        width: 800
+        height: 1400
+        anchors.centerIn: parent
+        radius: 24
         color: "#FFFFFF"
         border.color: "#E5E7EB"
         border.width: 1
+        clip: true
 
+        // Hiệu ứng đổ bóng
         Rectangle {
             anchors.fill: parent
-            anchors.topMargin: 12
-            radius: 20
-            color: Qt.rgba(0.067, 0.094, 0.153, 0.18)
+            anchors.topMargin: 16
+            radius: 24
+            color: Qt.rgba(0, 0, 0, 0.20)
             z: -1
         }
-    }
 
-    contentItem: ColumnLayout {
-        spacing: 12
-        anchors.fill: parent
-        anchors.margins: 28
-
-        // 1. Header: Tiêu đề & Nút đóng
-        RowLayout {
-            Layout.fillWidth: true
-
-            Text {
-                text: "Hướng dẫn sử dụng"
-                font.family: Theme.fontFamily
-                font.pixelSize: 24
-                font.bold: true
-                color: "#111827"
-            }
-
-            Item { Layout.fillWidth: true }
-
-            Rectangle {
-                width: 38
-                height: 38
-                radius: 10
-                color: "#F5F6F8"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: 16
-                    color: "#6B7280"
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: helpDialog.close()
-                }
-            }
-        }
-
-        // 2. Minh họa trực quan: Trạm Kiosk + Khoảng cách 0.5 - 1.2m + Người đứng
-        Rectangle {
-            Layout.fillWidth: true
-            height: 160
-            radius: 16
-            color: "#EEF2FF"
-            clip: true
-
-            Item {
-                anchors.fill: parent
-
-                // Minh họa Kiosk bên trái
-                Item {
-                    x: 60
-                    y: 20
-                    width: 70
-                    height: 140
-
-                    // Khung màn hình Kiosk
-                    Rectangle {
-                        x: 8
-                        y: 0
-                        width: 54
-                        height: 94
-                        radius: 8
-                        color: "#FFFFFF"
-                        border.color: "#111827"
-                        border.width: 4
-
-                        // Chấm camera
-                        Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            y: 8
-                            width: 6
-                            height: 6
-                            radius: 3
-                            color: Theme.brandPurple
-                        }
-                    }
-
-                    // Trụ đứng
-                    Rectangle {
-                        x: 30
-                        y: 94
-                        width: 10
-                        height: 38
-                        color: "#111827"
-                    }
-
-                    // Chân đế
-                    Rectangle {
-                        x: 12
-                        y: 130
-                        width: 46
-                        height: 6
-                        radius: 3
-                        color: "#111827"
-                    }
-                }
-
-                // Dòng nét đứt tầm mắt từ camera tới người
-                Row {
-                    x: 140
-                    y: 31
-                    spacing: 6
-                    Repeater {
-                        model: 18
-                        Rectangle {
-                            width: 6
-                            height: 2
-                            color: Theme.brandPurple
-                        }
-                    }
-                }
-
-                // Mũi tên và chỉ số khoảng cách "0.5 – 1.2 m"
-                Item {
-                    x: 140
-                    y: 95
-                    width: 140
-                    height: 30
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: 0
-                        text: "0.5 – 1.2 m"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        font.bold: true
-                        color: "#111827"
-                    }
-
-                    // Đường mũi tên 2 chiều
-                    Rectangle {
-                        y: 20
-                        width: parent.width
-                        height: 2
-                        color: Theme.brandPurple
-                    }
-                    Text {
-                        x: -4; y: 12
-                        text: "◀"
-                        font.pixelSize: 12
-                        color: Theme.brandPurple
-                    }
-                    Text {
-                        x: parent.width - 8; y: 12
-                        text: "▶"
-                        font.pixelSize: 12
-                        color: Theme.brandPurple
-                    }
-                }
-
-                // Minh họa người đứng bên phải (Figma: Đầu tròn đen, thân tím)
-                Item {
-                    x: 310
-                    y: 18
-                    width: 60
-                    height: 146
-
-                    // Đầu người
-                    Rectangle {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: 0
-                        width: 32
-                        height: 32
-                        radius: 16
-                        color: "#111827"
-                    }
-
-                    // Thân người tím
-                    Rectangle {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: 36
-                        width: 34
-                        height: 64
-                        radius: 10
-                        color: Theme.brandPurple
-                    }
-
-                    // Hai chân tím
-                    Rectangle {
-                        x: 16
-                        y: 94
-                        width: 10
-                        height: 48
-                        radius: 4
-                        color: Theme.brandPurple
-                    }
-                    Rectangle {
-                        x: 34
-                        y: 94
-                        width: 10
-                        height: 48
-                        radius: 4
-                        color: Theme.brandPurple
-                    }
-                }
-            }
-        }
-
-        // 3. Tiêu đề trung tâm
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: "Đứng cách trạm 0.5–1.2 m và nhìn thẳng vào\ncamera."
-            font.family: Theme.fontFamily
-            font.pixelSize: 18
-            font.bold: true
-            color: "#111827"
-            horizontalAlignment: Text.AlignHCenter
-            lineHeight: 1.25
-        }
-
-        // 4. Ba mẹo hỗ trợ (thẻ xám nhẹ)
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
-
-            // Mẹo 1
-            Rectangle {
-                Layout.fillWidth: true
-                height: 42
-                radius: 10
-                color: "#F5F6F8"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
-                    spacing: 12
-
-                    Text {
-                        text: "👓"
-                        font.pixelSize: 16
-                        color: Theme.brandPurple
-                    }
-
-                    Text {
-                        text: "Tháo kính râm để khuôn mặt rõ hơn."
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        color: "#111827"
-                        Layout.fillWidth: true
-                    }
-                }
-            }
-
-            // Mẹo 2
-            Rectangle {
-                Layout.fillWidth: true
-                height: 42
-                radius: 10
-                color: "#F5F6F8"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
-                    spacing: 12
-
-                    Text {
-                        text: "📷"
-                        font.pixelSize: 16
-                        color: Theme.brandPurple
-                    }
-
-                    Text {
-                        text: "Lau camera nếu hình ảnh bị mờ."
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        color: "#111827"
-                        Layout.fillWidth: true
-                    }
-                }
-            }
-
-            // Mẹo 3
-            Rectangle {
-                Layout.fillWidth: true
-                height: 42
-                radius: 10
-                color: "#F5F6F8"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
-                    spacing: 12
-
-                    Text {
-                        text: "⌨"
-                        font.pixelSize: 16
-                        color: Theme.brandPurple
-                    }
-
-                    Text {
-                        text: "Sử dụng mã PIN nếu không thể nhận diện."
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        color: "#111827"
-                        Layout.fillWidth: true
-                    }
-                }
-            }
-        }
-
-        // 5. Mục phím tắt trạm Kiosk
-        Text {
-            text: "Phím tắt trạm Kiosk"
-            font.family: Theme.fontFamily
-            font.pixelSize: 17
-            font.bold: true
-            color: "#111827"
-        }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
-
-            ShortcutRow { keyLabel: "F1"; actionText: "Mở / đóng hướng dẫn" }
-            ShortcutRow { keyLabel: "F2"; actionText: "Điểm danh bằng PIN" }
-            ShortcutRow { keyLabel: "F3"; actionText: "Đăng ký khuôn mặt mới" }
-            ShortcutRow { keyLabel: "F11"; actionText: "Bật / tắt toàn màn hình" }
-            ShortcutRow { keyLabel: "Esc"; actionText: "Đóng cửa sổ đang mở" }
-        }
-
-        // 6. Nút Đóng hướng dẫn
-        Rectangle {
-            Layout.fillWidth: true
-            height: 50
-            radius: 12
-            color: Theme.brandPurple
-
-            Text {
-                anchors.centerIn: parent
-                text: "Đóng hướng dẫn"
-                font.family: Theme.fontFamily
-                font.pixelSize: 16
-                font.bold: true
-                color: "#FFFFFF"
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: helpDialog.close()
-            }
-        }
-    }
-
-    // Component dòng phím tắt
-    component ShortcutRow : Rectangle {
-        id: rowComp
-        property string keyLabel: ""
-        property string actionText: ""
-
-        Layout.fillWidth: true
-        height: 44
-        radius: 10
-        color: "#F5F6F8"
-
-        RowLayout {
+        MouseArea {
             anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 14
-            spacing: 12
+            // Chặn click xuyên backdrop
+        }
 
-            Rectangle {
-                width: 48
-                height: 30
-                radius: 6
-                color: "#FFFFFF"
-                border.color: "#E5E7EB"
-                border.width: 1
+        focus: true
+        Keys.onPressed: function(event) {
+            if (event.key === Qt.Key_Escape || event.key === Qt.Key_F1) {
+                root.close()
+                event.accepted = true
+            }
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 40
+            spacing: 24
+
+            // ================= 1. HEADER DIALOG =================
+            RowLayout {
+                Layout.fillWidth: true
 
                 Text {
-                    anchors.centerIn: parent
-                    text: rowComp.keyLabel
+                    text: "Hướng dẫn sử dụng"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 13
+                    font.pixelSize: 32
                     font.bold: true
                     color: "#111827"
                 }
+
+                Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    width: 48
+                    height: 48
+                    radius: 14
+                    color: mouseClose.pressed ? "#E5E7EB" : "#F3F4F6"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        font.pixelSize: 20
+                        font.bold: true
+                        color: "#6B7280"
+                    }
+
+                    MouseArea {
+                        id: mouseClose
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.close()
+                    }
+                }
             }
 
-            Text {
-                text: rowComp.actionText
-                font.family: Theme.fontFamily
-                font.pixelSize: 14
-                color: "#111827"
+            // ================= 2. MINH HỌA TRỰC QUAN KHOẢNG CÁCH (FIGMA) =================
+            Rectangle {
                 Layout.fillWidth: true
+                height: 220
+                radius: 18
+                color: "#EEF2FF"
+                clip: true
+
+                Item {
+                    anchors.fill: parent
+
+                    // Minh họa Kiosk bên trái
+                    Item {
+                        x: 80
+                        y: 30
+                        width: 90
+                        height: 160
+
+                        Rectangle {
+                            x: 10
+                            y: 0
+                            width: 70
+                            height: 120
+                            radius: 10
+                            color: "#FFFFFF"
+                            border.color: "#111827"
+                            border.width: 4
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 50
+                                height: 90
+                                radius: 6
+                                color: "#EEF2FF"
+
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    width: 32
+                                    height: 44
+                                    radius: 16
+                                    color: "transparent"
+                                    border.color: Theme.brandPurple
+                                    border.width: 2.5
+                                }
+                            }
+                        }
+
+                        // Chân đứng Kiosk
+                        Rectangle {
+                            x: 40
+                            y: 120
+                            width: 10
+                            height: 35
+                            color: "#9CA3AF"
+                        }
+                        Rectangle {
+                            x: 25
+                            y: 155
+                            width: 40
+                            height: 6
+                            radius: 3
+                            color: "#6B7280"
+                        }
+                    }
+
+                    // Vùng sóng quét AI
+                    Item {
+                        x: 180
+                        y: 40
+                        width: 340
+                        height: 140
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            y: 20
+                            text: "Khoảng cách chuẩn: 0.5m – 1.2m"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 15
+                            font.bold: true
+                            color: Theme.brandPurple
+                        }
+
+                        // Mũi tên 2 chiều
+                        Rectangle {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            y: 54
+                            width: 300
+                            height: 3
+                            color: Theme.brandPurple
+                        }
+                        Text {
+                            x: 15
+                            y: 44
+                            text: "◀"
+                            font.pixelSize: 16
+                            color: Theme.brandPurple
+                        }
+                        Text {
+                            x: 310
+                            y: 44
+                            text: "▶"
+                            font.pixelSize: 16
+                            color: Theme.brandPurple
+                        }
+                    }
+
+                    // Minh họa người đứng bên phải
+                    Item {
+                        x: 540
+                        y: 35
+                        width: 80
+                        height: 160
+
+                        // Đầu
+                        Rectangle {
+                            x: 22
+                            y: 0
+                            width: 36
+                            height: 36
+                            radius: 18
+                            color: "#111827"
+                        }
+                        // Thân
+                        Rectangle {
+                            x: 10
+                            y: 42
+                            width: 60
+                            height: 80
+                            radius: 12
+                            color: "#374151"
+                        }
+                        // Chân
+                        Rectangle {
+                            x: 18
+                            y: 122
+                            width: 14
+                            height: 36
+                            radius: 4
+                            color: "#111827"
+                        }
+                        Rectangle {
+                            x: 48
+                            y: 122
+                            width: 14
+                            height: 36
+                            radius: 4
+                            color: "#111827"
+                        }
+                    }
+                }
+            }
+
+            // ================= 3. DANH SÁCH 3 BƯỚC HƯỚNG DẪN =================
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 20
+
+                // Bước 1
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 16
+
+                    Rectangle {
+                        width: 48
+                        height: 48
+                        radius: 24
+                        color: "#EEF2FF"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "1"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 20
+                            font.bold: true
+                            color: Theme.brandPurple
+                        }
+                    }
+
+                    ColumnLayout {
+                        spacing: 4
+                        Text {
+                            text: "Đứng đối diện camera"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 18
+                            font.bold: true
+                            color: "#111827"
+                        }
+                        Text {
+                            text: "Giữ khoảng cách từ 0.5 đến 1.2 mét. Bỏ khẩu trang, kính râm và mũ để hệ thống nhận diện nhanh chóng."
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 15
+                            color: "#6B7280"
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                // Bước 2
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 16
+
+                    Rectangle {
+                        width: 48
+                        height: 48
+                        radius: 24
+                        color: "#EEF2FF"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "2"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 20
+                            font.bold: true
+                            color: Theme.brandPurple
+                        }
+                    }
+
+                    ColumnLayout {
+                        spacing: 4
+                        Text {
+                            text: "Căn chỉnh khuôn mặt vào khung Oval"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 18
+                            font.bold: true
+                            color: "#111827"
+                        }
+                        Text {
+                            text: "Nhìn thẳng trực tiếp vào ống kính camera. Khung quét sẽ chuyển từ tím sang xanh lá khi nhận diện thành công."
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 15
+                            color: "#6B7280"
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                // Bước 3
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 16
+
+                    Rectangle {
+                        width: 48
+                        height: 48
+                        radius: 24
+                        color: "#EEF2FF"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "3"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 20
+                            font.bold: true
+                            color: Theme.brandPurple
+                        }
+                    }
+
+                    ColumnLayout {
+                        spacing: 4
+                        Text {
+                            text: "Phương thức dự phòng & Đăng ký"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 18
+                            font.bold: true
+                            color: "#111827"
+                        }
+                        Text {
+                            text: "Nếu không thể nhận diện khuôn mặt, chọn 'Điểm danh PIN' ở thanh công cụ dưới. Nhân viên mới chọn 'Đăng ký mới' để kích hoạt."
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 15
+                            color: "#6B7280"
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+            }
+
+            // ================= 4. KHỐI THÔNG TIN HỖ TRỢ =================
+            Rectangle {
+                Layout.fillWidth: true
+                height: 84
+                radius: 14
+                color: "#F5F6F8"
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 16
+
+                    Text {
+                        text: "ⓘ"
+                        font.pixelSize: 24
+                        color: Theme.brandPurple
+                    }
+
+                    ColumnLayout {
+                        spacing: 2
+                        Layout.fillWidth: true
+
+                        Text {
+                            text: "Cần trợ giúp thêm?"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 16
+                            font.bold: true
+                            color: "#111827"
+                        }
+                        Text {
+                            text: "Vui lòng liên hệ Phòng IT / Ban Quản trị tại quầy lễ tân."
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 14
+                            color: "#6B7280"
+                        }
+                    }
+                }
+            }
+
+            Item { Layout.fillHeight: true }
+
+            // ================= 5. NÚT ĐÃ HIỂU & ĐÓNG =================
+            Rectangle {
+                Layout.fillWidth: true
+                height: 64
+                radius: 14
+                color: mouseGotIt.pressed ? Qt.darker(Theme.brandPurple, 1.15) : Theme.brandPurple
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "Đã hiểu & Quay lại"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 20
+                    font.bold: true
+                    color: "#FFFFFF"
+                }
+
+                MouseArea {
+                    id: mouseGotIt
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.close()
+                }
             }
         }
     }

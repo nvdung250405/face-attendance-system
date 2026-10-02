@@ -118,20 +118,23 @@ Window {
                     }
                 }
             }
+
+            // ================= MODAL DIALOGS OVERLAYS (NẰM TRONG HỆ TỌA ĐỘ 1080x1920) =================
+            Dialogs.PinDialog {
+                id: pinDialog
+                objectName: "pinDialog"
+            }
+
+            Dialogs.EnrollmentDialog {
+                id: enrollmentDialog
+                objectName: "enrollmentDialog"
+            }
+
+            Dialogs.HelpDialog {
+                id: helpDialog
+                objectName: "helpDialog"
+            }
         }
-    }
-
-    // ================= MODAL DIALOGS =================
-    Dialogs.PinDialog {
-        id: pinDialog
-    }
-
-    Dialogs.EnrollmentDialog {
-        id: enrollmentDialog
-    }
-
-    Dialogs.HelpDialog {
-        id: helpDialog
     }
 
     // ================= KẾT NỐI SỰ KIỆN TỪ BACKEND VIEWMODEL =================
@@ -156,7 +159,9 @@ Window {
 
     // ================= BỘ PHÍM TẮT DEV TESTING & VẬN HÀNH =================
     Item {
+        id: shortcutHandler
         focus: true
+        Component.onCompleted: forceActiveFocus()
 
         Keys.onPressed: function(event) {
             if (event.key === Qt.Key_Space) {

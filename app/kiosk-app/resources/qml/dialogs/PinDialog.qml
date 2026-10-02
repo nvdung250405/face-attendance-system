@@ -4,250 +4,318 @@ import QtQuick.Layouts 1.15
 import "../theme"
 import "../components"
 
-Dialog {
-    id: pinDialog
-    modal: true
-    anchors.centerIn: parent
-    width: 580
-    height: 800
-    scale: (typeof window !== "undefined" && window) ? window.scaleRatio : 1.0
-    transformOrigin: Item.Center
-    padding: 0
-    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+Item {
+    id: root
+    anchors.fill: parent
+    z: 1000
+    visible: opacity > 0
+    opacity: 0.0
 
+    property bool isOpen: false
     property string activeField: "pin" // "empId" or "pin"
     property string employeeIdInput: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.lastEmployeeId) ? String(kioskViewModel.lastEmployeeId) : ""
 
-    background: Rectangle {
-        radius: 20
-        color: Theme.bgCard
-        border.color: "#E5E7EB"
-        border.width: 1
+    function open() {
+        isOpen = true
+        opacity = 1.0
+        if (typeof pinController !== "undefined" && pinController) {
+            pinController.clear()
+        }
+        cardItem.forceActiveFocus()
+    }
 
-        Rectangle {
-            anchors.fill: parent
-            anchors.topMargin: 16
-            radius: 20
-            color: Qt.rgba(0.067, 0.094, 0.153, 0.25)
-            z: -1
+    function close() {
+        isOpen = false
+        opacity = 0.0
+        if (typeof pinController !== "undefined" && pinController) {
+            pinController.clear()
         }
     }
 
-    contentItem: ColumnLayout {
-        spacing: 16
+    Behavior on opacity {
+        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+    }
+
+    // 1. Backdrop Overlay tối 1080x1920
+    Rectangle {
         anchors.fill: parent
-        anchors.margins: 36
+        color: Qt.rgba(0, 0, 0, 0.65)
 
-        // 1. Tiêu đề Dialog & Nút đóng [X]
-        RowLayout {
-            Layout.fillWidth: true
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.close()
+        }
+    }
 
-            ColumnLayout {
-                spacing: 6
-                Text {
-                    text: "Điểm danh bằng PIN"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 30
-                    font.bold: true
-                    color: Theme.textPrimary
+    // 2. Thẻ Card Dialog chính giữa (Figma: width 800, height 1200)
+    Rectangle {
+        id: cardItem
+        width: 800
+        height: 1200
+        anchors.centerIn: parent
+        radius: 24
+        color: "#FFFFFF"
+        border.color: "#E5E7EB"
+        border.width: 1
+        clip: true
+
+        // Đổ bóng nổi bật
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: 16
+            radius: 24
+            color: Qt.rgba(0, 0, 0, 0.20)
+            z: -1
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            // Chặn click xuyên backdrop
+        }
+
+        // Hỗ trợ gõ trực tiếp bàn phím máy tính
+        focus: true
+        Keys.onPressed: function(event) {
+            if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+                var digit = String(event.key - Qt.Key_0)
+                if (root.activeField === "empId") {
+                    root.employeeIdInput += digit
+                } else if (typeof pinController !== "undefined" && pinController) {
+                    pinController.appendDigit(digit)
                 }
-                Text {
-                    text: "Nhập mã số nhân viên và mã PIN cá nhân của bạn."
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 15
-                    color: Theme.textSecondary
+                event.accepted = true
+            } else if (event.key === Qt.Key_Backspace) {
+                if (root.activeField === "empId") {
+                    root.employeeIdInput = root.employeeIdInput.slice(0, -1)
+                } else if (typeof pinController !== "undefined" && pinController) {
+                    pinController.backspace()
+                }
+                event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (typeof pinController !== "undefined" && pinController) {
+                    pinController.submitPin()
+                }
+                root.close()
+                event.accepted = true
+            } else if (event.key === Qt.Key_Escape) {
+                root.close()
+                event.accepted = true
+            }
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 40
+            spacing: 22
+
+            // ================= 1. HEADER DIALOG =================
+            RowLayout {
+                Layout.fillWidth: true
+
+                ColumnLayout {
+                    spacing: 6
+                    Text {
+                        text: "Điểm danh bằng PIN"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 32
+                        font.bold: true
+                        color: Theme.textPrimary
+                    }
+                    Text {
+                        text: "Nhập mã số nhân viên và mã PIN cá nhân của bạn."
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 16
+                        color: Theme.textSecondary
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    width: 48
+                    height: 48
+                    radius: 14
+                    color: mouseClose.pressed ? "#E5E7EB" : "#F3F4F6"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        font.pixelSize: 20
+                        font.bold: true
+                        color: Theme.textSecondary
+                    }
+
+                    MouseArea {
+                        id: mouseClose
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.close()
+                    }
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            // ================= 2. Ô NHẬP MÃ SỐ NHÂN VIÊN =================
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 8
 
+                Text {
+                    text: "Mã số nhân viên"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: Theme.textPrimary
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 64
+                    radius: 14
+                    color: "#F5F6F8"
+                    border.color: root.activeField === "empId" ? Theme.brandPurple : "transparent"
+                    border.width: 2
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 20
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.employeeIdInput.length > 0 ? root.employeeIdInput : "Nhấp để nhập mã số nhân viên"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 18
+                        font.bold: root.employeeIdInput.length > 0
+                        color: root.employeeIdInput.length > 0 ? Theme.textPrimary : "#9CA3AF"
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.activeField = "empId"
+                    }
+                }
+            }
+
+            // ================= 3. Ô NHẬP MÃ PIN CÁ NHÂN =================
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Text {
+                    text: "Mã PIN cá nhân"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: Theme.textPrimary
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 64
+                    radius: 14
+                    color: "#F5F6F8"
+                    border.color: root.activeField === "pin" ? Theme.brandPurple : "transparent"
+                    border.width: 2
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 20
+                        anchors.verticalCenter: parent.verticalCenter
+                        property int pinLen: (typeof pinController !== "undefined" && pinController) ? pinController.currentPin.length : 0
+                        text: pinLen > 0 ? "● ".repeat(pinLen).trim() : "Nhấp để nhập 4–6 chữ số PIN"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: pinLen > 0 ? 24 : 18
+                        font.bold: pinLen > 0
+                        color: pinLen > 0 ? Theme.textPrimary : "#9CA3AF"
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.activeField = "pin"
+                    }
+                }
+
+                Text {
+                    text: (typeof pinController !== "undefined" && pinController && pinController.isLocked) ? pinController.statusMessage : "Mã PIN được bảo mật an toàn để chống truy cập trái phép."
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 14
+                    color: (typeof pinController !== "undefined" && pinController && pinController.isLocked) ? "#EF4444" : Theme.textSecondary
+                }
+            }
+
+            // ================= 4. BÀN PHÍM SỐ VIRTUAL KEYPAD =================
+            VirtualKeypad {
+                Layout.fillWidth: true
+                Layout.topMargin: 4
+                onDigitClicked: (digit) => {
+                    if (root.activeField === "empId") {
+                        root.employeeIdInput += digit
+                    } else if (typeof pinController !== "undefined" && pinController) {
+                        pinController.appendDigit(digit)
+                    }
+                }
+                onBackspaceClicked: {
+                    if (root.activeField === "empId") {
+                        root.employeeIdInput = root.employeeIdInput.slice(0, -1)
+                    } else if (typeof pinController !== "undefined" && pinController) {
+                        pinController.backspace()
+                    }
+                }
+                onClearClicked: {
+                    if (root.activeField === "empId") {
+                        root.employeeIdInput = ""
+                    } else if (typeof pinController !== "undefined" && pinController) {
+                        pinController.clear()
+                    }
+                }
+            }
+
+            // ================= 5. NÚT XÁC NHẬN ĐIỂM DANH =================
             Rectangle {
-                width: 44
-                height: 44
-                radius: 12
-                color: "#F5F6F8"
+                Layout.fillWidth: true
+                height: 64
+                radius: 14
+
+                property bool isReady: (typeof pinController !== "undefined" && pinController) ? (!pinController.isLocked && pinController.currentPin.length >= 4) : false
+                color: isReady ? (mouseConfirm.pressed ? Qt.darker(Theme.brandPurple, 1.15) : Theme.brandPurple) : "#E0E7FF"
 
                 Text {
                     anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: 18
-                    color: Theme.textSecondary
+                    text: "Xác nhận điểm danh"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 20
+                    font.bold: true
+                    color: parent.isReady ? "#FFFFFF" : "#6366F1"
                 }
+
+                MouseArea {
+                    id: mouseConfirm
+                    anchors.fill: parent
+                    enabled: parent.isReady
+                    cursorShape: parent.isReady ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: {
+                        if (typeof pinController !== "undefined" && pinController) {
+                            pinController.submitPin()
+                        }
+                        root.close()
+                    }
+                }
+            }
+
+            Item { Layout.fillHeight: true }
+
+            // ================= 6. FOOTER: HỦY =================
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: "Hủy • Esc"
+                font.family: Theme.fontFamily
+                font.pixelSize: 16
+                font.weight: Font.DemiBold
+                color: "#6B7280"
 
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (typeof pinController !== "undefined" && pinController) {
-                            pinController.clear()
-                        }
-                        pinDialog.close()
-                    }
-                }
-            }
-        }
-
-        // 2. Ô nhập Mã số nhân viên
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-                text: "Mã số nhân viên"
-                font.family: Theme.fontFamily
-                font.pixelSize: 15
-                font.bold: true
-                color: Theme.textPrimary
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 54
-                radius: 12
-                color: "#F5F6F8"
-                border.color: pinDialog.activeField === "empId" ? Theme.brandPurple : "transparent"
-                border.width: 1.5
-
-                Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 18
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: pinDialog.employeeIdInput.length > 0 ? pinDialog.employeeIdInput : "Nhập mã số nhân viên"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 16
-                    font.bold: pinDialog.employeeIdInput.length > 0
-                    color: pinDialog.employeeIdInput.length > 0 ? Theme.textPrimary : "#9CA3AF"
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: pinDialog.activeField = "empId"
-                }
-            }
-        }
-
-        // 3. Ô nhập Mã PIN cá nhân (active border tím)
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-                text: "Mã PIN cá nhân"
-                font.family: Theme.fontFamily
-                font.pixelSize: 15
-                font.bold: true
-                color: Theme.textPrimary
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 54
-                radius: 12
-                color: "#F5F6F8"
-                border.color: pinDialog.activeField === "pin" ? Theme.brandPurple : "transparent"
-                border.width: 1.5
-
-                Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 18
-                    anchors.verticalCenter: parent.verticalCenter
-                    property int pinLen: (typeof pinController !== "undefined" && pinController) ? pinController.currentPin.length : 0
-                    text: pinLen > 0 ? "● ".repeat(pinLen).trim() : "Nhập 4–6 chữ số"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: pinLen > 0 ? 20 : 16
-                    font.bold: pinLen > 0
-                    color: pinLen > 0 ? Theme.textPrimary : "#9CA3AF"
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: pinDialog.activeField = "pin"
-                }
-            }
-
-            Text {
-                text: "Mã PIN được ẩn để bảo vệ thông tin của bạn."
-                font.family: Theme.fontFamily
-                font.pixelSize: 13
-                color: Theme.textSecondary
-            }
-        }
-
-        // 4. Bàn phím số chuẩn Figma
-        VirtualKeypad {
-            Layout.fillWidth: true
-            onDigitClicked: (digit) => {
-                if (pinDialog.activeField === "empId") {
-                    pinDialog.employeeIdInput += digit
-                } else if (typeof pinController !== "undefined" && pinController) {
-                    pinController.appendDigit(digit)
-                }
-            }
-            onBackspaceClicked: {
-                if (pinDialog.activeField === "empId") {
-                    pinDialog.employeeIdInput = pinDialog.employeeIdInput.slice(0, -1)
-                } else if (typeof pinController !== "undefined" && pinController) {
-                    pinController.backspace()
-                }
-            }
-            onClearClicked: {
-                if (pinDialog.activeField === "empId") {
-                    pinDialog.employeeIdInput = ""
-                } else if (typeof pinController !== "undefined" && pinController) {
-                    pinController.clear()
-                }
-            }
-        }
-
-        // 5. Nút bấm Xác nhận điểm danh
-        Rectangle {
-            Layout.fillWidth: true
-            height: 56
-            radius: 12
-
-            property bool isReady: (typeof pinController !== "undefined" && pinController) ? (!pinController.isLocked && pinController.currentPin.length >= 4) : false
-            color: isReady ? (mouseConfirm.pressed ? Qt.darker(Theme.brandPurple, 1.15) : Theme.brandPurple) : "#F5F6F8"
-
-            Text {
-                anchors.centerIn: parent
-                text: "Xác nhận điểm danh"
-                font.family: Theme.fontFamily
-                font.pixelSize: 18
-                font.bold: true
-                color: parent.isReady ? "#FFFFFF" : "#6B7280"
-            }
-
-            MouseArea {
-                id: mouseConfirm
-                anchors.fill: parent
-                enabled: parent.isReady
-                cursorShape: parent.isReady ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: {
-                    if (typeof pinController !== "undefined" && pinController) {
-                        pinController.submitPin()
-                    }
-                    pinDialog.close()
-                }
-            }
-        }
-
-        // 6. Link Hủy • Esc
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: "Hủy • Esc"
-            font.family: Theme.fontFamily
-            font.pixelSize: 16
-            font.weight: Font.DemiBold
-            color: "#4B5563"
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    if (typeof pinController !== "undefined" && pinController) {
-                        pinController.clear()
-                    }
-                    pinDialog.close()
+                    onClicked: root.close()
                 }
             }
         }

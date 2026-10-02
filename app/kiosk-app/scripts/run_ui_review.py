@@ -86,9 +86,15 @@ def capture_success():
     step4_pin()
 
 
+from PySide6.QtCore import QMetaObject
+
 def step4_pin():
-    print("[4/6] Capturing PIN Dialog via Key F2...")
-    send_key(Qt.Key_F2)
+    print("[4/6] Opening and capturing PIN Dialog...")
+    pin_dlg = root_window.findChild(object, "pinDialog")
+    if pin_dlg:
+        QMetaObject.invokeMethod(pin_dlg, "open")
+    else:
+        send_key(Qt.Key_F2)
     QTimer.singleShot(800, capture_pin)
 
 
@@ -96,32 +102,49 @@ def capture_pin():
     img = root_window.grabWindow()
     img.save(str(output_dir / "04_pin_dialog.png"))
     print("Saved 04_pin_dialog.png")
+    pin_dlg = root_window.findChild(object, "pinDialog")
+    if pin_dlg:
+        QMetaObject.invokeMethod(pin_dlg, "close")
     step5_enroll()
 
 
 def step5_enroll():
-    print("[5/6] Closing PIN and capturing Enrollment Dialog via Key Escape + F3...")
-    send_key(Qt.Key_Escape)
-    QTimer.singleShot(300, lambda: [send_key(Qt.Key_F3), QTimer.singleShot(800, capture_enroll)])
+    print("[5/6] Opening and capturing Enrollment Dialog...")
+    enroll_dlg = root_window.findChild(object, "enrollmentDialog")
+    if enroll_dlg:
+        QMetaObject.invokeMethod(enroll_dlg, "open")
+    else:
+        send_key(Qt.Key_F3)
+    QTimer.singleShot(800, capture_enroll)
 
 
 def capture_enroll():
     img = root_window.grabWindow()
     img.save(str(output_dir / "05_enrollment_dialog.png"))
     print("Saved 05_enrollment_dialog.png")
+    enroll_dlg = root_window.findChild(object, "enrollmentDialog")
+    if enroll_dlg:
+        QMetaObject.invokeMethod(enroll_dlg, "close")
     step6_help()
 
 
 def step6_help():
-    print("[6/6] Closing Enrollment and capturing Help Dialog via Key Escape + F1...")
-    send_key(Qt.Key_Escape)
-    QTimer.singleShot(300, lambda: [send_key(Qt.Key_F1), QTimer.singleShot(800, capture_help)])
+    print("[6/6] Opening and capturing Help Dialog...")
+    help_dlg = root_window.findChild(object, "helpDialog")
+    if help_dlg:
+        QMetaObject.invokeMethod(help_dlg, "open")
+    else:
+        send_key(Qt.Key_F1)
+    QTimer.singleShot(800, capture_help)
 
 
 def capture_help():
     img = root_window.grabWindow()
     img.save(str(output_dir / "06_help_dialog.png"))
     print("Saved 06_help_dialog.png")
+    help_dlg = root_window.findChild(object, "helpDialog")
+    if help_dlg:
+        QMetaObject.invokeMethod(help_dlg, "close")
     print("=== All 6 UI reviews completed successfully! ===")
     app.quit()
 
