@@ -49,6 +49,7 @@ class KioskViewModel(QObject):
     openEnrollmentDialogRequested = Signal()
     lastResultChanged = Signal()
     networkStatusChanged = Signal(bool, str)
+    isStandbyChanged = Signal(bool)
 
     def __init__(
         self,
@@ -95,6 +96,11 @@ class KioskViewModel(QObject):
         self._holding_result: bool = False
         self._hold_end_time: float = 0.0
 
+        # Trạng thái Màn hình Chờ Chào mừng (Standby) mặc định khi khởi động
+        self._is_standby: bool = True
+        self._last_face_time: float = time.time()
+        self._standby_timeout: float = 8.0  # 8.0 giây vắng người -> Standby
+
         if self.sync_worker:
             self.sync_worker.network_status_changed.connect(self._on_network_status_changed)
             self.sync_worker.sync_progress.connect(self._on_sync_progress)
@@ -130,10 +136,22 @@ class KioskViewModel(QObject):
         }
         return mapping.get(OvalState(self._oval_state), 0)
 
-    @Property(bool, notify=ovalStateChanged)
+    @Property(bool, notify=isStandbyChanged)
     def isStandby(self) -> bool:
-        """Kiểm tra có đang ở trạng thái Standby hay không."""
-        return False
+        """Kiểm tra có đang ở trạng thái Standby (Chờ chào mừng) hay không."""
+        return self._is_standby
+
+    @Slot(bool)
+    def setStandby(self, standby: bool) -> None:
+        """Chuyển đổi thủ công hoặc tự động giữa Standby (Chờ chào mừng) và Active (Quét camera)."""
+        if self._is_standby != standby:
+            self._is_standby = standby
+            self._last_face_time = time.time()
+            self.isStandbyChanged.emit(standby)
+            if standby:
+                self.set_state(OvalState.IDLE, "Trạm đang ở chế độ chờ chào mừng")
+            else:
+                self.set_state(OvalState.IDLE, "Vui lòng nhìn vào khung hình để điểm danh")
 
     @Slot()
     def simulateSuccess(self) -> None:
@@ -242,9 +260,25 @@ class KioskViewModel(QObject):
             self._frame_tick += 1
             self.frameReady.emit()
 
+        # NẾU ĐANG Ở STANDBY: Quét ngầm để phát hiện người dùng bước tới (Smart Standby & Instant Wake-up)
+        detection = None
+        if self._is_standby:
+            if self.detector is not None:
+                detection = self.detector.detect_face(frame)
+                if detection is not None:
+                    logger.info("Phát hiện người dùng bước tới trạm -> Đánh thức Kiosk (Standby -> Active)")
+                    self.setStandby(False)
+                else:
+                    return
+            else:
+                return
+
+        current_time = time.time()
+
         # 2. Nếu đang giữ màn hình kết quả Success / Error thì tạm dừng phân tích AI
         if self._holding_result:
-            if time.time() < self._hold_end_time:
+            self._last_face_time = current_time
+            if current_time < self._hold_end_time:
                 return
             self._holding_result = False
             self.set_state(OvalState.IDLE, "Vui lòng nhìn vào khung hình để điểm danh")
@@ -253,11 +287,20 @@ class KioskViewModel(QObject):
         if self.detector is None:
             return
 
-        detection = self.detector.detect_face(frame)
+        if detection is None:
+            detection = self.detector.detect_face(frame)
+
         if detection is None:
             self._stable_frames = 0
             self.set_state(OvalState.IDLE, "Vui lòng nhìn vào khung hình để điểm danh")
+            # Tự động chuyển về Màn hình Chờ Chào mừng khi không phát hiện người trong 8 giây
+            if current_time - self._last_face_time >= self._standby_timeout:
+                logger.info("Không phát hiện người dùng trong %.1fs -> Tự động chuyển sang Standby", self._standby_timeout)
+                self.setStandby(True)
             return
+
+        # Có khuôn mặt trước camera -> Cập nhật mốc thời gian hoạt động gần nhất
+        self._last_face_time = current_time
 
         # Kiểm tra góc nghiêng Euler
         if detection.is_tilted:

@@ -203,3 +203,42 @@ def test_kiosk_view_model_dialog_signals(qapp):
     vm.requestEnrollment()
     assert len(enroll_signal_emitted) == 1
     assert vm.ovalState == OvalState.ALIGNING
+
+
+def test_kiosk_view_model_standby_and_instant_wakeup(qapp):
+    """Kiểm tra Màn hình Chờ Chào mừng mặc định và cơ chế đánh thức tức thì khi có người."""
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection()
+
+    vm = KioskViewModel(detector=detector)
+    # 1. Trạng thái khởi động mặc định phải là Standby
+    assert vm.isStandby is True
+
+    # 2. Đánh thức tức thì khi phát hiện khuôn mặt trước camera
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    vm.process_camera_frame(dummy_frame)
+    assert vm.isStandby is False
+
+    # 3. Chuyển đổi thủ công qua setStandby
+    vm.setStandby(True)
+    assert vm.isStandby is True
+    vm.setStandby(False)
+    assert vm.isStandby is False
+
+
+def test_kiosk_view_model_auto_standby_timeout(qapp):
+    """Kiểm tra tự động chuyển về Chế độ Chờ (Standby) sau thời gian vắng người."""
+    detector = MagicMock()
+    detector.detect_face.return_value = None  # Không có người trước camera
+
+    vm = KioskViewModel(detector=detector)
+    vm.setStandby(False)
+    assert vm.isStandby is False
+
+    # Giả lập thời gian vắng người vượt quá standby_timeout (8s)
+    vm._last_face_time = 0.0  # Mốc quá khứ
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    vm.process_camera_frame(dummy_frame)
+
+    assert vm.isStandby is True
+

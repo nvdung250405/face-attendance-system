@@ -205,4 +205,17 @@ Rectangle {
             }
         }
     }
+
+    // Chạm hoặc nhấp chuột vào Màn hình Chờ để đánh thức Kiosk ngay lập tức
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        onClicked: {
+            if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                kioskViewModel.setStandby(false)
+            } else if (typeof window !== "undefined" && window) {
+                window.viewState = "ACTIVE"
+            }
+        }
+    }
 }

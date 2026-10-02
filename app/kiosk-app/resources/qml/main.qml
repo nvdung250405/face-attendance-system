@@ -141,18 +141,33 @@ Window {
     Connections {
         target: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel : null
 
+        function onIsStandbyChanged(standby) {
+            window.viewState = standby ? "STANDBY" : "ACTIVE"
+        }
+
         function onOvalStateChanged(state) {
             // Khi có sự kiện nhận diện, tự động đánh thức về ACTIVE nếu đang ở STANDBY
             if (window.viewState === "STANDBY" && state !== "IDLE") {
+                if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                    kioskViewModel.setStandby(false)
+                }
                 window.viewState = "ACTIVE"
             }
         }
 
         function onOpenPinDialogRequested() {
+            if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                kioskViewModel.setStandby(false)
+            }
+            window.viewState = "ACTIVE"
             pinDialog.open()
         }
 
         function onOpenEnrollmentDialogRequested() {
+            if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                kioskViewModel.setStandby(false)
+            }
+            window.viewState = "ACTIVE"
             enrollmentDialog.open()
         }
     }
@@ -166,17 +181,24 @@ Window {
         Keys.onPressed: function(event) {
             if (event.key === Qt.Key_Space) {
                 console.log("[TEST] Giả lập nhận diện thành công")
-                window.viewState = "ACTIVE"
                 if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                    kioskViewModel.setStandby(false)
                     kioskViewModel.simulateSuccess()
                 }
+                window.viewState = "ACTIVE"
                 event.accepted = true
             } else if (event.key === Qt.Key_0) {
                 console.log("[TEST] Chuyển viewState -> STANDBY")
+                if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                    kioskViewModel.setStandby(true)
+                }
                 window.viewState = "STANDBY"
                 event.accepted = true
             } else if (event.key === Qt.Key_1) {
                 console.log("[TEST] Chuyển viewState -> ACTIVE")
+                if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                    kioskViewModel.setStandby(false)
+                }
                 window.viewState = "ACTIVE"
                 event.accepted = true
             } else if (event.key === Qt.Key_F1) {
