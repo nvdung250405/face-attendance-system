@@ -66,10 +66,10 @@ def test_qml_mvc_environment_readiness(qapp):
     """Kiểm tra tính sẵn sàng của kiến trúc MVC QML toàn diện."""
     from pathlib import Path
 
-    from ui.controllers.enrollment_controller import EnrollmentController
-    from ui.controllers.kiosk_view_model import KioskViewModel, OvalState
-    from ui.controllers.pin_controller import PinController
-    from ui.controllers.video_image_provider import VideoImageProvider
+    from presentation.controllers.enrollment_controller import EnrollmentController
+    from presentation.controllers.pin_controller import PinController
+    from presentation.providers.video_image_provider import VideoImageProvider
+    from presentation.viewmodels.kiosk_view_model import KioskViewModel, OvalState
 
     # Kiểm tra Controllers
     provider = VideoImageProvider()
@@ -82,18 +82,24 @@ def test_qml_mvc_environment_readiness(qapp):
     assert pin.currentPin == ""
     assert enroll.currentStep == 1
 
-    # Kiểm tra cấu trúc Views QML
+    # Kiểm tra cấu trúc Views QML trong resources/qml
     expected_files = [
         Path("resources.qrc"),
-        Path("ui/qml/main.qml"),
-        Path("ui/qml/theme/Theme.qml"),
-        Path("ui/qml/theme/qmldir"),
-        Path("ui/qml/components/LiveCanvas.qml"),
-        Path("ui/qml/components/OvalOverlay.qml"),
-        Path("ui/qml/components/StatusBadge.qml"),
-        Path("ui/qml/components/VirtualKeypad.qml"),
-        Path("ui/qml/dialogs/PinDialog.qml"),
-        Path("ui/qml/dialogs/EnrollmentDialog.qml"),
+        Path("resources/qml/main.qml"),
+        Path("resources/qml/theme/Theme.qml"),
+        Path("resources/qml/theme/qmldir"),
+        Path("resources/qml/components/LiveCanvas.qml"),
+        Path("resources/qml/components/OvalOverlay.qml"),
+        Path("resources/qml/components/StatusBadge.qml"),
+        Path("resources/qml/components/VirtualKeypad.qml"),
+        Path("resources/qml/components/PortraitHeaderBar.qml"),
+        Path("resources/qml/components/WelcomeCanvas.qml"),
+        Path("resources/qml/components/PortraitCameraPanel.qml"),
+        Path("resources/qml/components/PortraitResultCard.qml"),
+        Path("resources/qml/components/PortraitActionDock.qml"),
+        Path("resources/qml/dialogs/PinDialog.qml"),
+        Path("resources/qml/dialogs/EnrollmentDialog.qml"),
+        Path("resources/qml/dialogs/HelpDialog.qml"),
     ]
     for file_path in expected_files:
         assert file_path.exists(), f"Thiếu file: {file_path}"

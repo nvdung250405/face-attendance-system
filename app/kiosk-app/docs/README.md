@@ -1,0 +1,28 @@
+- **UX Goals**
+  - Người dùng cần đạt được gì trên UI
+  - Các nguyên tắc UX quan trọng
+
+- **Layout**
+- Cấu trúc cửa sổ
+- Navigation
+- Các vùng chính
+- Quy tắc bố cục
+- **Visual**
+- Style
+- Color
+- Typography
+- Spacing
+- Icons
+- Theme
+- **Screens & Interactions**
+- Các screen/view
+- Thành phần chính
+- Action chính
+- Interaction quan trọng
+- Các state đặc biệt
+- **UI Acceptance**
+- Những tiêu chí UI bắt buộc đạt
+- Visual consistency
+- Interaction correctness
+- States phải được xử lý
+- Visual verification

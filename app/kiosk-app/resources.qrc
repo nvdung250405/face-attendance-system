@@ -1,13 +1,19 @@
 <RCC>
     <qresource prefix="/">
-        <file>ui/qml/main.qml</file>
-        <file>ui/qml/theme/Theme.qml</file>
-        <file>ui/qml/theme/qmldir</file>
-        <file>ui/qml/components/LiveCanvas.qml</file>
-        <file>ui/qml/components/OvalOverlay.qml</file>
-        <file>ui/qml/components/StatusBadge.qml</file>
-        <file>ui/qml/components/VirtualKeypad.qml</file>
-        <file>ui/qml/dialogs/PinDialog.qml</file>
-        <file>ui/qml/dialogs/EnrollmentDialog.qml</file>
+        <file>resources/qml/main.qml</file>
+        <file>resources/qml/theme/Theme.qml</file>
+        <file>resources/qml/theme/qmldir</file>
+        <file>resources/qml/components/LiveCanvas.qml</file>
+        <file>resources/qml/components/OvalOverlay.qml</file>
+        <file>resources/qml/components/StatusBadge.qml</file>
+        <file>resources/qml/components/VirtualKeypad.qml</file>
+        <file>resources/qml/components/PortraitHeaderBar.qml</file>
+        <file>resources/qml/components/WelcomeCanvas.qml</file>
+        <file>resources/qml/components/PortraitCameraPanel.qml</file>
+        <file>resources/qml/components/PortraitResultCard.qml</file>
+        <file>resources/qml/components/PortraitActionDock.qml</file>
+        <file>resources/qml/dialogs/PinDialog.qml</file>
+        <file>resources/qml/dialogs/EnrollmentDialog.qml</file>
+        <file>resources/qml/dialogs/HelpDialog.qml</file>
     </qresource>
 </RCC>

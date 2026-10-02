@@ -19,9 +19,9 @@ import numpy as np
 import pytest
 
 from core.vision.face_detector import FaceDetectionResult
-from ui.controllers.enrollment_controller import EnrollmentController
-from ui.controllers.pin_controller import PinController
-from ui.views.pin_dialog import PinSecurityManager
+from core.security.pin_security import PinSecurityManager
+from presentation.controllers.enrollment_controller import EnrollmentController
+from presentation.controllers.pin_controller import PinController
 
 
 def _create_mock_detection(is_valid: bool = True) -> FaceDetectionResult:
@@ -30,7 +30,7 @@ def _create_mock_detection(is_valid: bool = True) -> FaceDetectionResult:
         dtype=np.float32,
     )
     return FaceDetectionResult(
-        bbox=(100, 100, 200, 200) if is_valid else (10, 10, 30, 30),
+        bbox=(280, 142, 80, 100) if is_valid else (10, 10, 30, 30),
         landmarks=landmarks,
         score=0.98,
         euler_angles=(2.0, 0.0, 0.0),
@@ -175,6 +175,7 @@ def test_enrollment_controller_process_frame_and_submit(qapp):
         extractor=extractor,
         liveness_gate=liveness_gate,
         client=mock_client,
+        capture_interval=0.0,
     )
 
     # Giả lập đã qua bước 1
@@ -206,3 +207,48 @@ def test_enrollment_controller_process_frame_and_submit(qapp):
     assert controller.progressPercent == 1.0
     assert controller.currentStep == 3
     assert "thành công" in controller.statusMessage.lower()
+
+
+def test_enrollment_controller_real_quality_checker_integration(qapp):
+    """Kiểm tra gọi thực tế với EnrollmentQualityChecker thật không bị TypeError."""
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection(is_valid=True)
+
+    extractor = MagicMock()
+    extractor.align_face.return_value = np.zeros((112, 112, 3), dtype=np.uint8)
+    extractor.extract_vector.return_value = np.random.randn(512).astype(np.float32)
+
+    liveness_gate = MagicMock()
+    liveness_gate.predict.return_value = 0.95
+
+    controller = EnrollmentController(
+        detector=detector,
+        extractor=extractor,
+        liveness_gate=liveness_gate,
+    )
+    controller._current_step = 2
+    controller._employee_id = 1001
+
+    # Tạo frame giả lập với kết cấu để đạt độ sắc nét
+    sharp_frame = np.random.randint(0, 256, (480, 640, 3), dtype=np.uint8)
+
+    # Gọi process_capture_frame - không được ném ngoại lệ TypeError hay IndexError
+    controller.process_capture_frame(sharp_frame)
+    assert controller.currentStep in (2, 3)
+    assert controller.statusMessage != ""
+
+
+def test_enrollment_controller_manual_complete_step(qapp):
+    """Kiểm tra nút hoàn tất thủ công bước 2 sang bước 3 (cho dev/demo)."""
+    controller = EnrollmentController()
+    controller._current_step = 2
+
+    controller.completeCaptureStep()
+    assert controller.currentStep == 3
+    assert controller.progressPercent == 1.0
+    assert "thành công" in controller.statusMessage.lower()
+
+    # Kiểm tra setter currentStep
+    controller.currentStep = 1
+    assert controller.currentStep == 1
+

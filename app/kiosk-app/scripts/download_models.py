@@ -17,7 +17,7 @@ from pathlib import Path
 
 # Đường dẫn thư mục models
 CURRENT_DIR = Path(__file__).resolve().parent
-MODELS_DIR = CURRENT_DIR.parent / "assets" / "models"
+MODELS_DIR = CURRENT_DIR.parent / "resources" / "assets" / "models"
 
 # Danh mục nguồn tải tin cậy cho các mô hình
 MODEL_REGISTRY = {

@@ -12,7 +12,13 @@ import platform
 import sys
 from pathlib import Path
 
+# Thêm thư mục src vào sys.path để hỗ trợ src-layout
+src_dir = Path(__file__).resolve().parent / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
 import cv2
+import numpy as np
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -26,10 +32,13 @@ from core.vision.face_detector import YuNetFaceDetector
 from core.vision.feature_extractor import ArcFaceFeatureExtractor
 from core.vision.gallery_matcher import GalleryCacheManager
 from core.vision.liveness_gate import MiniFASNetLivenessGate
-from ui.controllers.enrollment_controller import EnrollmentController
-from ui.controllers.kiosk_view_model import KioskViewModel
-from ui.controllers.pin_controller import PinController
-from ui.controllers.video_image_provider import VideoImageProvider
+from presentation.controllers.enrollment_controller import EnrollmentController
+from presentation.controllers.pin_controller import PinController
+from presentation.providers.video_image_provider import VideoImageProvider
+from presentation.viewmodels.kiosk_view_model import (
+    KioskViewModel,
+    evaluate_face_oval_alignment,
+)
 
 logger = get_logger("main")
 
@@ -174,6 +183,12 @@ def main() -> int:
 
     # 6. Khởi tạo VideoImageProvider & Controllers
     image_provider = VideoImageProvider()
+    pin_controller = PinController()
+    enrollment_controller = EnrollmentController(
+        detector=detector,
+        extractor=extractor,
+        liveness_gate=liveness_gate,
+    )
     kiosk_view_model = KioskViewModel(
         image_provider=image_provider,
         detector=detector,
@@ -183,13 +198,8 @@ def main() -> int:
         cooldown_tracker=cooldown_tracker,
         queue_manager=queue_manager,
         sync_worker=sync_worker,
-        stability_threshold=5,
-    )
-    pin_controller = PinController()
-    enrollment_controller = EnrollmentController(
-        detector=detector,
-        extractor=extractor,
-        liveness_gate=liveness_gate,
+        stability_threshold=8,
+        enrollment_controller=enrollment_controller,
     )
 
     # 7. Khởi tạo luồng đọc camera nếu không tắt qua flag
@@ -221,15 +231,14 @@ def main() -> int:
                             enroll_state["stable_count"] = 0
                             return
 
-                        # Đảm bảo khuôn mặt đã đưa hẳn vào giữa khung hình (Oval)
-                        fh, fw = frame.shape[:2]
-                        cx = det.bbox[0] + det.bbox[2] / 2.0
-                        cy = det.bbox[1] + det.bbox[3] / 2.0
-                        if not (0.20 * fw <= cx <= 0.80 * fw and 0.15 * fh <= cy <= 0.85 * fh):
+                        # Đảm bảo khuôn mặt đã đưa hẳn vào giữa khung hình Oval
+                        is_aligned, _ = evaluate_face_oval_alignment(frame.shape, det.bbox)
+                        if not is_aligned:
                             enroll_state["stable_count"] = 0
                             return
 
                         # Đo độ sắc nét Laplacian để chọn ảnh chất lượng tốt nhất
+                        fh, fw = frame.shape[:2]
                         x, y, w, h = det.bbox
                         roi = frame[max(0, y):min(fh, y+h), max(0, x):min(fw, x+w)]
                         if roi.size > 0:
@@ -279,6 +288,26 @@ def main() -> int:
         except Exception as exc:
             logger.warning("Không thể mở webcam vật lý: %s. Chuyển sang chế độ không camera.", exc)
 
+    # Đăng ký callback khi nhân viên hoàn tất đăng ký khuôn mặt mới -> Nạp vào RAM Gallery
+    def _on_enrollment_completed(payload: dict) -> None:
+        try:
+            emp_id = payload.get("employeeId")
+            embs = payload.get("faceEmbeddings", [])
+            if emp_id and embs and gallery_matcher is not None:
+                mean_vec = np.mean(np.array(embs, dtype=np.float32), axis=0)
+                norm = float(np.linalg.norm(mean_vec))
+                if norm > 1e-6:
+                    mean_vec = mean_vec / norm
+                gallery_matcher.add_or_update_employee(int(emp_id), mean_vec)
+                logger.info(
+                    "✅ Đã tự động cập nhật nhân viên ID %d vào Gallery RAM sau khi hoàn tất đăng ký!",
+                    int(emp_id),
+                )
+        except Exception as exc:
+            logger.warning("Không thể lưu nhân viên mới vào Gallery RAM: %s", exc)
+
+    enrollment_controller.enrollmentCompleted.connect(_on_enrollment_completed)
+
     # 8. Khởi tạo QQmlApplicationEngine và đăng ký Controllers / Providers
     engine = QQmlApplicationEngine()
     engine.addImageProvider("camera", image_provider)
@@ -288,8 +317,8 @@ def main() -> int:
     context.setContextProperty("pinController", pin_controller)
     context.setContextProperty("enrollmentController", enrollment_controller)
 
-    # Thêm đường dẫn tìm kiếm QML modules
-    qml_dir = Path(__file__).resolve().parent / "ui" / "qml"
+    # Thêm đường dẫn tìm kiếm QML modules từ resources/qml
+    qml_dir = Path(__file__).resolve().parent / "resources" / "qml"
     engine.addImportPath(str(qml_dir))
 
     main_qml_path = qml_dir / "main.qml"
@@ -304,6 +333,18 @@ def main() -> int:
     if not args.windowed:
         root_window.showFullScreen()
     else:
+        # Cấu hình cửa sổ chế độ windowed chuẩn tỷ lệ 9:16 vừa vặn màn hình desktop
+        primary_screen = app.primaryScreen()
+        if primary_screen:
+            avail = primary_screen.availableGeometry()
+            # Chiều cao app chiếm ~90% không gian khả dụng (để vừa vặn thanh taskbar)
+            target_h = min(1920, int(avail.height() * 0.90))
+            # Chiều rộng app bằng đúng tỷ lệ 9:16 tương ứng với chiều cao màn hình chính
+            target_w = int(target_h * (1080 / 1920))
+            # Căn giữa cửa sổ ứng dụng ngay trung tâm màn hình desktop
+            pos_x = avail.x() + (avail.width() - target_w) // 2
+            pos_y = avail.y() + (avail.height() - target_h) // 2
+            root_window.setGeometry(pos_x, pos_y, target_w, target_h)
         root_window.show()
 
     logger.info("-" * 60)
