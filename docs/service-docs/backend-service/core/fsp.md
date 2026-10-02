@@ -1,0 +1,36 @@
+# FSP — Kế hoạch Thiết lập Nền tảng Phân hệ Backend (Foundation Setup Plan)
+
+> **Mã tài liệu:** `FSP-BE-01`  
+> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
+> **Phiên bản:** 1.0  
+> **Ngày hiệu lực:** 2026-10-02  
+> **Trạng thái:** Approved  
+> **Mục đích:** Đặc tả các hạng mục thiết lập môi trường thực thi Java, chuỗi công cụ Maven và cấu hình nền tảng (`FND-BE-`) cho phân hệ Máy chủ Doanh nghiệp.
+
+---
+
+## 1. Mục tiêu & Phạm vi (Objectives & Scope)
+
+* **Mục tiêu**: Chuẩn bị hoàn chỉnh môi trường phát triển Java 21 LTS, cấu hình dự án Spring Boot, thiết lập kết nối CSDL PostgreSQL qua Testcontainers/Docker và quản lý cấu hình tập trung.
+* **Phạm vi**: Giới hạn trong phân hệ `app/backend-service`, kế thừa từ kế hoạch nền tảng hệ thống `PLN-FND-01` (`FND-SYS-001`, `FND-SYS-003`).
+
+---
+
+## 2. Hiện trạng & Yêu cầu Kỹ thuật (Prerequisites & Constraints)
+
+* **JDK Runtime**: Eclipse Temurin hoặc OpenJDK phiên bản 21 LTS 64-bit.
+* **Công cụ Xây dựng**: Apache Maven 3.9+ (sử dụng Maven Wrapper `mvnw` đi kèm dự án).
+* **CSDL & Cache**: PostgreSQL 16 và Redis 7 (chạy qua Docker Compose trong môi trường dev/staging).
+* **Quản trị Phiên bản CSDL**: Tích hợp Flyway Migration tự động kiểm soát lược đồ CSDL.
+
+---
+
+## 3. Foundation Work Items (Hạng mục Thiết lập Nền tảng Backend)
+
+| ID | Hạng mục Công việc | Mô tả Kỹ thuật Chi tiết | Covers / Uses | Depends on | Tiêu chí Hoàn thành (Done when) | Trạng thái |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `FND-BE-001` | Cấu hình Java 21 Toolchain & Maven | Thiết lập Maven POM với Java 21 compiler, Spring Boot Starter Parent và cấu hình plugin phụ trợ. | `STK-010`, `STK-011` | `FND-SYS-001` | Lệnh `./mvnw clean compile` thành công với zero warning; nhận diện đúng Java 21. | **Hoàn thành** |
+| `FND-BE-002` | Khởi tạo Khung Dự án Spring Boot | Khai báo các starter cốt lõi: Web, Security, Data JPA, Validation, WebSocket, Actuator, Flyway. | `STK-011` | `FND-BE-001` | Ứng dụng khởi động được ở profile `local` mà không ném lỗi bean wiring. | **Hoàn thành** |
+| `FND-BE-003` | Cấu hình Flyway Migration & DataSource | Thiết lập kết nối PostgreSQL qua `application.yml`, cấu hình Flyway kiểm soát thư mục `db/migration`. | `STK-013`, `STK-014` | `FND-BE-002` | Tự động tạo bảng `flyway_schema_history` và chạy các migration script ban đầu thành công. | **Hoàn thành** |
+| `FND-BE-004` | Cấu hình Spring Security & JWT Base | Thiết lập `SecurityFilterChain` không trạng thái (Stateless), bộ sinh và thẩm định JSON Web Token. | `STK-011`, `ARC-SYS-002` | `FND-BE-002` | Endpoint công khai truy cập bình thường; endpoint bảo vệ trả về 401 khi thiếu token. | **Hoàn thành** |
+| `FND-BE-005` | Cấu hình WebSocket STOMP Broker | Thiết lập endpoint `/ws-attendance` hỗ trợ SockJS fallback, message broker giản đơn cho topic `/topic`. | `STK-012`, `ARC-SYS-002` | `FND-BE-002` | Trình duyệt và Kiosk kết nối bắt tay STOMP thành công; gửi nhận ping frame ổn định. | **Hoàn thành** |

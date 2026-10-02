@@ -1,443 +1,121 @@
-# Bộ tài liệu SDLC — Cấu trúc chuẩn hóa
+# Danh mục Điều hướng Toàn bộ Bộ tài liệu SDLC (Master Documentation Portal)
 
-> **Quy ước chung cho mọi tài liệu:**
-> Mỗi tài liệu có phần thông tin quản lý chung: **Mã tài liệu, Tên, Phiên bản, Trạng thái, Chủ sở hữu, Người phê duyệt, Ngày hiệu lực, Tài liệu liên quan, Lịch sử thay đổi**.
-> Các thông tin này không cần lặp lại ở mục cuối của từng tài liệu.
-
----
-
-## PC — Bối cảnh dự án (Project Context)
-
-**1. Tổng quan & Lý do dự án**
-
-- 1.1. Tổng quan dự án / sản phẩm
-- 1.2. Vấn đề / nhu cầu / cơ hội
-- 1.3. Lý do thực hiện dự án
-- 1.4. Kết quả mong muốn
-
-**2. Hiện trạng & Môi trường liên quan**
-
-- 2.1. Hiện trạng hoạt động / quy trình
-- 2.2. Hệ thống và công nghệ hiện có
-- 2.3. Các bên liên quan chính
-- 2.4. Các yếu tố bên ngoài có ảnh hưởng
-
-**3. Điều kiện & Ranh giới ảnh hưởng**
-
-- 3.1. Ràng buộc
-- 3.2. Giả định
-- 3.3. Phụ thuộc
-- 3.4. Quy định / chính sách / tiêu chuẩn liên quan
-
-**4. Nguồn thông tin & Bằng chứng**
-
-- 4.1. Nguồn thông tin
-- 4.2. Bằng chứng / dữ liệu thu thập
-- 4.3. Thời điểm / người cung cấp
-- 4.4. Tài liệu tham chiếu
+> - **Hệ thống**: Hệ thống Chấm công Khuôn mặt Doanh nghiệp (`face-attendance-system`)  
+> - **Tiêu chuẩn Kiến trúc & Quản trị**: Tuân thủ chuẩn 2 tầng (System-Level & Service-Level) quy định tại [`sdlc-docs.md`](sdlc-docs.md) và [`meta.md`](meta.md).  
+> - **Quy tắc Đặc tả**: 100% tài liệu trừu tượng hóa, không chứa đường dẫn mã nguồn nội bộ hoặc tên hàm/lớp triển khai cụ thể; mỗi phần tử kỹ thuật có mã định danh duy nhất phục vụ truy vết hai chiều (Bi-directional Traceability).
 
 ---
 
-## PI — Khởi tạo dự án (Project Initiation)
+## 🏛️ Lớp Quản trị & Quy ước Toàn hệ thống (Governance Layer)
 
-**1. Định hướng dự án**
-
-- 1.1. Mục tiêu dự án
-- 1.2. Kết quả / sản phẩm chính
-- 1.3. Phạm vi cấp cao
-- 1.4. Tiêu chí thành công
-
-**2. Business Case & Quyết định thực hiện**
-
-- 2.1. Cơ sở kinh doanh và nhu cầu
-- 2.2. Giá trị & lợi ích kỳ vọng
-- 2.3. Chi phí & nguồn lực sơ bộ
-- 2.4. Tính khả thi và phương án được lựa chọn
-
-**3. Tổ chức & Quản trị**
-
-- 3.1. Vai trò chủ chốt
-- 3.2. Quyền hạn & trách nhiệm
-- 3.3. Cơ chế ra quyết định & phê duyệt
-- 3.4. Cơ chế báo cáo & escalation
-
-**4. Định hướng thực hiện**
-
-- 4.1. Phương pháp / cách tiếp cận phát triển
-- 4.2. Giai đoạn & mốc chính
-- 4.3. Nguồn lực chính
-- 4.4. Rủi ro, giả định & phụ thuộc quan trọng
-
-**5. Quyết định khởi động**
-
-- 5.1. Quyết định / ủy quyền khởi động
-- 5.2. Quyền hạn được cấp
-- 5.3. Phạm vi baseline ban đầu
+| Tài liệu | Mã Leaf | Mục đích Quản trị & Nội dung Chính |
+| :--- | :---: | :--- |
+| [**`docs/meta.md`**](meta.md) | `META` | Quy chuẩn định danh (29 prefixes), 6 canonical schemas, Document Tree, Registry, Traceability và Quality Gates. |
+| [**`docs/sdlc-docs.md`**](sdlc-docs.md) | `SDLC-GUIDE` | Đặc tả quy chuẩn cấu trúc tài liệu, nguyên tắc thiết kế và hướng dẫn vòng đời phát triển phần mềm. |
 
 ---
 
-## TS — Công nghệ & Công cụ (Tech Stack)
+## 🌐 Tầng 1: Tài liệu Cấp Hệ thống (System-Level Documentation)
 
-**1. Tổng quan**
+Tài liệu Cấp Hệ thống xác lập khuôn khổ định hướng chiến lược, bối cảnh bài toán, tiêu chuẩn công nghệ nền tảng, kiến trúc tổng thể, đặc tả yêu cầu toàn diện và kế hoạch phối hợp liên phân hệ.
 
-- 1.1. Mục đích tài liệu
-- 1.2. Phạm vi công nghệ
-- 1.3. Liên kết với DDS
+### 1.1. Khởi tạo, Bối cảnh & Công nghệ Nền tảng
+| Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
+| :--- | :---: | :---: | :--- |
+| [**`system-docs/info.md`**](system-docs/info.md) | `INFO` | `SRC-`, `INF-` | Kho khảo sát thực tế, bằng chứng kỹ thuật, phân tích tính khả thi và bối cảnh pháp lý Luật 2025. |
+| [**`system-docs/tech-tool-stack.md`**](system-docs/tech-tool-stack.md) | `STACK` | `STK-` | Danh mục công nghệ chuẩn hóa: Python/PySide6, Java 21/Spring Boot, React/Tailwind, PostgreSQL, SQLite WAL, ONNX. |
+| [**`system-docs/pi.md`**](system-docs/pi.md) | `PI` | `PD-` | Mục tiêu chiến lược, phạm vi sản phẩm (SOW), tiêu chí thành công (KPIs) và quyết định khởi tạo dự án. |
 
-**2. Công nghệ hệ thống**
+### 1.2. Phân hệ Đặc tả Yêu cầu Hệ thống (System Requirements Specification - SRS)
+| Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
+| :--- | :---: | :---: | :--- |
+| [**`system-docs/srs/srs.md`**](system-docs/srs/srs.md) | `SRS` | `ACT-`, `EXT-`, `SRS-` | Ngữ cảnh hệ thống, định danh tác nhân (Actor), hệ thống ngoài và các yêu cầu cross-cutting. |
+| [**`system-docs/srs/fr-nfr-specs.md`**](system-docs/srs/fr-nfr-specs.md) | `SPEC-FR` | `FR-SYS-`, `NFR-SYS-` | 15 Yêu cầu chức năng cốt lõi (FR-01..15) và 10 chỉ số chất lượng hệ thống (NFR-01..10). |
+| [**`system-docs/srs/ui-ux-specs.md`**](system-docs/srs/ui-ux-specs.md) | `SPEC-UI` | `UI-SYS-` | Đặc tả hành trình người dùng toàn trình, trải nghiệm tương tác Kiosk và Cổng Web. |
+| [**`system-docs/srs/api-specs.md`**](system-docs/srs/api-specs.md) | `SPEC-API` | `API-SYS-` | Đặc tả các giao diện truyền thông trung lập công nghệ, luồng REST API và WebSocket STOMP. |
+| [**`system-docs/srs/data-specs.md`**](system-docs/srs/data-specs.md) | `SPEC-DAT` | `DATA-SYS-` | Đặc tả mô hình dữ liệu khái niệm, thực thể trung tâm và chính sách bảo vệ dữ liệu sinh trắc học. |
 
-- 2.1. Kiến trúc / nền tảng
-- 2.2. Ngôn ngữ & framework
-- 2.3. Cơ sở dữ liệu & lưu trữ
-- 2.4. Hạ tầng / cloud
-- 2.5. Công nghệ tích hợp
+### 1.3. Phân hệ Thiết kế Chi tiết Hệ thống (Detailed Design Specification - DDS)
+| Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
+| :--- | :---: | :---: | :--- |
+| [**`system-docs/dds/dds.md`**](system-docs/dds/dds.md) | `DDS` | `ARC-SYS-`, `DD-SYS-` | Kiến trúc phân tầng C4, phân rã 3 ranh giới service, 6 quyết định kiến trúc then chốt (ADR). |
+| [**`system-docs/dds/fr-nfr-design.md`**](system-docs/dds/fr-nfr-design.md) | `DES-FR` | `SOL-SYS-`, `DD-SOL-` | Thiết kế giải pháp kỹ thuật cho chu trình AI biên, xác thực OTP và bảo mật đa tầng. |
+| [**`system-docs/dds/ui-ux-design.md`**](system-docs/dds/ui-ux-design.md) | `DES-UI` | `UXD-SYS-`, `DD-UXD-` | Thiết kế hệ thống Design System chung, bộ quy chuẩn màu sắc, typography và tỷ lệ hình học. |
+| [**`system-docs/dds/api-design.md`**](system-docs/dds/api-design.md) | `DES-API` | `APD-SYS-`, `DD-APD-` | Thiết kế hợp đồng API cụ thể, schema JSON Request/Response, mã lỗi RFC 7807 và kênh STOMP. |
+| [**`system-docs/dds/data-design.md`**](system-docs/dds/data-design.md) | `DES-DAT` | `DTD-SYS-`, `DD-DTD-` | Thiết kế mô hình CSDL quan hệ PostgreSQL 16, CSDL cục bộ SQLite WAL và chiến lược lập chỉ mục. |
 
-**3. Công cụ phát triển & vận hành**
-
-- 3.1. Source control
-- 3.2. IDE / development tools
-- 3.3. Build / package
-- 3.4. CI/CD
-- 3.5. Testing tools
-- 3.6. Monitoring / logging
-- 3.7. Documentation / collaboration
-
-**4. Danh mục & phiên bản**
-
-- 4.1. Công nghệ / công cụ
-- 4.2. Phiên bản sử dụng
-- 4.3. Môi trường áp dụng
-- 4.4. License / quyền sử dụng
-- 4.5. Trạng thái hỗ trợ / vòng đời
-
-**5. Quyết định lựa chọn**
-
-- 5.1. Công nghệ / công cụ được chọn
-- 5.2. Lý do lựa chọn
-- 5.3. Phương án đã xem xét
-- 5.4. Trade-off / hạn chế
-- 5.5. Điều kiện hoặc ràng buộc khi sử dụng
-
-**6. Quản lý công nghệ**
-
-- 6.1. Quy tắc nâng cấp phiên bản
-- 6.2. Quản lý dependency
-- 6.3. Công nghệ / công cụ không còn sử dụng
-- 6.4. Quy trình thay đổi stack
+### 1.4. Phân hệ Kế hoạch Hệ thống (System Plans)
+| Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
+| :--- | :---: | :---: | :--- |
+| [**`system-docs/plans/project-plan.md`**](system-docs/plans/project-plan.md) | `PLN-PRJ` | `APC-SYS-`, `PRJ-SYS-`, `RSK-SYS-` | Kế hoạch tổ chức, WBS 5 Phase, 6 mốc nghiệm thu (Milestones) và ma trận rủi ro hệ thống. |
+| [**`system-docs/plans/foundation-setup-plan.md`**](system-docs/plans/foundation-setup-plan.md) | `PLN-FND` | `FND-SYS-` | Kế hoạch chuẩn bị hạ tầng Monorepo, môi trường thực thi và chuỗi công cụ phát triển chung. |
+| [**`system-docs/plans/build-plan.md`**](system-docs/plans/build-plan.md) | `PLN-BLD` | `BLD-SYS-` | Kế hoạch xây dựng & tích hợp toàn diện xuyên suốt 3 phân hệ từ Biên đến Trung tâm. |
+| [**`system-docs/plans/test-plan.md`**](system-docs/plans/test-plan.md) | `PLN-TST` | `TST-SYS-` | Kế hoạch kiểm thử tích hợp, ma trận kiểm định chất lượng toàn trình và tiêu chí nghiệm thu. |
+| [**`system-docs/plans/deploy-plan.md`**](system-docs/plans/deploy-plan.md) | `PLN-DPL` | `DPL-SYS-` | Kế hoạch đóng gói, phát hành, triển khai môi trường và kịch bản dự phòng khôi phục. |
 
 ---
 
-## PP — Kế hoạch dự án (Project Plan)
+## 🚀 Tầng 2: Tài liệu Cấp Dịch vụ (Service-Level Documentation)
 
-**1. Cơ sở & Định hướng kế hoạch**
+Tài liệu Cấp Dịch vụ đi sâu vào từng phân hệ độc lập trong thư mục `/app`, cụ thể hóa trách nhiệm kỹ thuật và chi tiết thi công theo các nhánh facet tương ứng.
 
-- 1.1. Mục tiêu thực hiện
-- 1.2. Phạm vi thực hiện
-- 1.3. Cách tiếp cận / phương pháp thực hiện
-- 1.4. Giả định & cơ sở lập kế hoạch
+### 2.1. Phân hệ Trạm Điểm danh Kiosk Desktop — [`kiosk-app`](service-docs/kiosk-app/README.md)
+*Trạm điểm danh cận biên chạy độc lập trên phần cứng tại chỗ, giao diện cảm ứng dọc 9:16, tích hợp AI thị giác máy tính và CSDL đệm ngoại tuyến.*
 
-**2. Công việc & Kết quả**
-
-- 2.1. Các kết quả / sản phẩm cần tạo ra
-- 2.2. WBS / nhóm công việc
-- 2.3. Phụ thuộc giữa các công việc
-- 2.4. Ranh giới trách nhiệm thực hiện
-
-**3. Tiến độ & Nguồn lực**
-
-- 3.1. Lịch trình tổng thể
-- 3.2. Mốc quan trọng
-- 3.3. Phân bổ nhân sự
-- 3.4. Công cụ / hạ tầng / nguồn lực cần thiết
-
-**4. Chi phí & Ngân sách**
-
-- 4.1. Ước tính chi phí
-- 4.2. Phân bổ ngân sách
-- 4.3. Dự phòng
-- 4.4. Cơ sở & giả định của ước tính
-
-**5. Quản lý & Kiểm soát**
-
-- 5.1. Quản lý thay đổi
-- 5.2. Quản lý rủi ro
-- 5.3. Quản lý chất lượng
-- 5.4. Theo dõi & báo cáo
-- 5.5. Quản lý vấn đề & escalation
-
-**6. Baseline kế hoạch**
-
-- 6.1. Scope baseline
-- 6.2. Schedule baseline
-- 6.3. Cost baseline
-- 6.4. Quy trình cập nhật baseline
+| Nhánh Facet | Tài liệu | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
+| :--- | :--- | :---: | :---: | :--- |
+| **Hub** | [**`kiosk-app/README.md`**](service-docs/kiosk-app/README.md) | `KSK-HUB` | — | Tổng quan phân hệ Kiosk và cẩm nang điều hướng 4 facet. |
+| **Core** | [**`core/fsp.md`**](service-docs/kiosk-app/core/fsp.md) | `SVC-FSP` | `FND-KSK-` | Môi trường ảo Python, thư viện PySide6/OpenCV, kiểm định mô hình ONNX. |
+| **Core** | [**`core/fr-nfr-specs.md`**](service-docs/kiosk-app/core/fr-nfr-specs.md) | `SVC-SPEC` | `FR-KSK-`, `NFR-KSK-` | Yêu cầu thị giác YuNet, MiniFASNet, ArcFace, bàn phím PIN, đệm 120s. |
+| **Core** | [**`core/fr-nfr-design.md`**](service-docs/kiosk-app/core/fr-nfr-design.md) | `SVC-DES` | `SOL-KSK-` | Thiết kế pipeline thị giác biên, kiểm chuẩn Oval và hàng đợi SQLite WAL. |
+| **Core** | [**`core/fr-nfr-build-plan.md`**](service-docs/kiosk-app/core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-KSK-` | Kế hoạch thi công module camera worker, AI detector, RAM matcher. |
+| **Core** | [**`core/test-plan.md`**](service-docs/kiosk-app/core/test-plan.md) | `SVC-TST` | `TST-KSK-` | Ma trận kiểm thử đơn vị, chống giả mạo PAD và kiểm thử ngâm tải RAM 8h. |
+| **UI/UX** | [**`ui-ux/ui-ux-specs.md`**](service-docs/kiosk-app/ui-ux/ui-ux-specs.md) | `SVC-SPEC` | `UI-KSK-` | Hành trình điểm danh, nhập PIN dự phòng và máy trạng thái Oval 4 màu. |
+| **UI/UX** | [**`ui-ux/ui-ux-design.md`**](service-docs/kiosk-app/ui-ux/ui-ux-design.md) | `SVC-DES` | `UXD-KSK-` | Design tokens QML, tỷ lệ co giãn động $1080\times 1920$, modal PIN và In-Viewport. |
+| **UI/UX** | [**`ui-ux/ui-ux-build-plan.md`**](service-docs/kiosk-app/ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `UBL-KSK-` | Kế hoạch thi công component QML, hiệu ứng sóng quét và âm thanh phản hồi. |
+| **API** | [**`api/api-specs.md`**](service-docs/kiosk-app/api/api-specs.md) | `SVC-SPEC` | `API-KSK-` | Đặc tả interface HTTP tiêu thụ (`punch`, `sync-batch`, `gallery`) và STOMP. |
+| **API** | [**`api/api-design.md`**](service-docs/kiosk-app/api/api-design.md) | `SVC-DES` | `APD-KSK-` | Thiết kế HTTP Client (`httpx`), luồng STOMP worker và đồng bộ bù ngoại tuyến. |
+| **API** | [**`api/api-build-plan.md`**](service-docs/kiosk-app/api/api-build-plan.md) | `SVC-BLD` | `ABL-KSK-` | Kế hoạch thi công HTTP client wrapper và worker đồng bộ ngầm. |
+| **Data** | [**`data/data-specs.md`**](service-docs/kiosk-app/data/data-specs.md) | `SVC-SPEC` | `DATA-KSK-` | Thực thể hàng đợi `offline_punches` và ma trận bộ nhớ RAM NumPy. |
+| **Data** | [**`data/data-design.md`**](service-docs/kiosk-app/data/data-design.md) | `SVC-DES` | `DTD-KSK-` | Lược đồ bảng SQLite WAL, cơ chế PRAGMA tối ưu và công thức tích vô hướng. |
+| **Data** | [**`data/data-build-plan.md`**](service-docs/kiosk-app/data/data-build-plan.md) | `SVC-BLD` | `DBL-KSK-` | Kế hoạch thi công bảng CSDL cục bộ và module quản lý RAM gallery. |
 
 ---
 
-## SRS — Đặc tả yêu cầu phần mềm
+### 2.2. Phân hệ Máy chủ Doanh nghiệp — [`backend-service`](service-docs/backend-service/README.md)
+*Trung tâm xử lý nghiệp vụ, quản lý phiên xác thực JWT, mã hóa dữ liệu sinh trắc học AES-256-GCM, phát sóng thời gian thực WebSocket STOMP và CSDL PostgreSQL 16.*
 
-**1. Tổng quan & Phạm vi**
-
-- 1.1. Mục đích hệ thống
-- 1.2. Phạm vi sản phẩm
-- 1.3. Đối tượng sử dụng
-- 1.4. Thuật ngữ / định nghĩa
-
-**2. Bối cảnh nghiệp vụ & Sử dụng**
-
-- 2.1. Bối cảnh sử dụng
-- 2.2. Quy trình / nghiệp vụ liên quan
-- 2.3. Phạm vi chức năng
-- 2.4. Ngoài phạm vi
-- 2.5. Người dùng / tác nhân / hệ thống tương tác
-
-**3. Yêu cầu chức năng**
-
-- 3.1. Nhóm chức năng
-- 3.2. Đặc tả yêu cầu
-- 3.3. Quy tắc nghiệp vụ
-- 3.4. Luồng chính
-- 3.5. Luồng thay thế / ngoại lệ
-- 3.6. Điều kiện đầu vào / đầu ra
-- 3.7. Tiêu chí chấp nhận
-
-**4. Yêu cầu phi chức năng**
-
-- 4.1. Hiệu năng
-- 4.2. Bảo mật
-- 4.3. Độ tin cậy / sẵn sàng
-- 4.4. Khả năng mở rộng
-- 4.5. Khả năng sử dụng
-- 4.6. Khả năng bảo trì
-- 4.7. Tuân thủ & yêu cầu đặc thù
-
-**5. Yêu cầu giao tiếp & tích hợp**
-
-- 5.1. Giao diện người dùng
-- 5.2. API / hệ thống bên ngoài
-- 5.3. Trao đổi dữ liệu
-- 5.4. Giao thức / định dạng
-- 5.5. Yêu cầu tích hợp
-
-**6. Yêu cầu dữ liệu**
-
-- 6.1. Các loại dữ liệu
-- 6.2. Dữ liệu đầu vào / đầu ra
-- 6.3. Quy tắc dữ liệu
-- 6.4. Kiểm tra & validation
-- 6.5. Lưu trữ / truy xuất / vòng đời
-
-**7. Ràng buộc, Giả định & Phụ thuộc**
-
-- 7.1. Ràng buộc
-- 7.2. Giả định
-- 7.3. Phụ thuộc
-- 7.4. Điều kiện ảnh hưởng đến yêu cầu
-
-**8. Quản lý & Truy xuất yêu cầu**
-
-- 8.1. Requirement ID
-- 8.2. Nguồn yêu cầu
-- 8.3. Quan hệ giữa các yêu cầu
-- 8.4. Traceability sang thiết kế / kiểm thử
-- 8.5. Trạng thái yêu cầu
+| Nhánh Facet | Tài liệu | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
+| :--- | :--- | :---: | :---: | :--- |
+| **Hub** | [**`backend-service/README.md`**](service-docs/backend-service/README.md) | `BE-HUB` | — | Tổng quan phân hệ Backend và cẩm nang điều hướng 3 facet. |
+| **Core** | [**`core/fsp.md`**](service-docs/backend-service/core/fsp.md) | `SVC-FSP` | `FND-BE-` | Môi trường Java 21 LTS, cấu hình Maven, Spring Boot Starter và Flyway. |
+| **Core** | [**`core/fr-nfr-specs.md`**](service-docs/backend-service/core/fr-nfr-specs.md) | `SVC-SPEC` | `FR-BE-`, `NFR-BE-` | Xác thực RBAC, xử lý điểm danh, mã hóa vector sinh trắc học, độ trễ $\le 100\text{ ms}$. |
+| **Core** | [**`core/fr-nfr-design.md`**](service-docs/backend-service/core/fr-nfr-design.md) | `SVC-DES` | `SOL-BE-` | Security filter chain, Biometric crypto service, STOMP event broadcaster. |
+| **Core** | [**`core/fr-nfr-build-plan.md`**](service-docs/backend-service/core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-BE-` | Kế hoạch thi công JWT provider, attendance engine và aspect audit trail. |
+| **Core** | [**`core/test-plan.md`**](service-docs/backend-service/core/test-plan.md) | `SVC-TST` | `TST-BE-` | Ca kiểm thử JUnit 5, MockMvc, Testcontainers PostgreSQL và kiểm thử tải. |
+| **API** | [**`api/api-specs.md`**](service-docs/backend-service/api/api-specs.md) | `SVC-SPEC` | `API-BE-` | Danh mục REST endpoints (`punch`, `sync-batch`, `gallery`, `consent`) và STOMP topics. |
+| **API** | [**`api/api-design.md`**](service-docs/backend-service/api/api-design.md) | `SVC-DES` | `APD-BE-` | Thiết kế REST Controllers, Record DTOs, Validation và STOMP Broker. |
+| **API** | [**`api/api-build-plan.md`**](service-docs/backend-service/api/api-build-plan.md) | `SVC-BLD` | `ABL-BE-` | Kế hoạch thi công API Controllers, WebSocket handlers và global exception. |
+| **Data** | [**`data/data-specs.md`**](service-docs/backend-service/data/data-specs.md) | `SVC-SPEC` | `DATA-BE-` | Thực thể `users`, `biometric_templates`, `attendance_logs`, `audit_logs`. |
+| **Data** | [**`data/data-design.md`**](service-docs/backend-service/data/data-design.md) | `SVC-DES` | `DTD-BE-` | Lược đồ bảng PostgreSQL 16, chỉ mục khóa ngoại và cấu hình kết nối HikariCP. |
+| **Data** | [**`data/data-build-plan.md`**](service-docs/backend-service/data/data-build-plan.md) | `SVC-BLD` | `DBL-BE-` | Kế hoạch thi công script Flyway migration và Spring Data JPA Repositories. |
 
 ---
 
-## DDS — Đặc tả thiết kế phần mềm
+### 2.3. Phân hệ Cổng Web Quản trị & Người dùng — [`web-portal`](service-docs/web-portal/README.md)
+*Cổng thông tin kép SPA React/Tailwind phục vụ quản lý nhân sự theo dõi chấm công thời gian thực và nhân viên ký cam kết kích hoạt sinh trắc học.*
 
-**1. Cơ sở & Phạm vi thiết kế**
-
-- 1.1. Phạm vi thiết kế
-- 1.2. Nguyên tắc thiết kế
-- 1.3. Cơ sở từ SRS
-- 1.4. Các ràng buộc thiết kế chính
-
-**2. Kiến trúc hệ thống**
-
-- 2.1. Kiến trúc tổng thể
-- 2.2. Thành phần chính
-- 2.3. Quan hệ & luồng tương tác
-- 2.4. Công nghệ & nền tảng
-- 2.5. Kiến trúc triển khai
-
-**3. Thiết kế chi tiết**
-
-- 3.1. Module / Component
-- 3.2. Logic & xử lý
-- 3.3. Luồng dữ liệu / Sequence
-- 3.4. Xử lý lỗi & trường hợp đặc biệt
-- 3.5. UI / Interaction Design
-- 3.6. Các quyết định thiết kế quan trọng
-
-**4. Thiết kế dữ liệu & giao tiếp**
-
-- 4.1. Mô hình dữ liệu
-- 4.2. Cấu trúc lưu trữ
-- 4.3. API / Interface
-- 4.4. Tích hợp hệ thống ngoài
-- 4.5. Định dạng & quy tắc trao đổi dữ liệu
-
-**5. Thiết kế các thuộc tính xuyên suốt**
-
-- 5.1. Bảo mật
-- 5.2. Hiệu năng & khả năng mở rộng
-- 5.3. Độ tin cậy & khả năng phục hồi
-- 5.4. Logging & Monitoring
-- 5.5. Configuration / Deployment Concerns
-
-**6. Quyết định & Truy xuất thiết kế**
-
-- 6.1. Requirement → Design
-- 6.2. Design Decision & Rationale
-- 6.3. Giả định & ràng buộc thiết kế
-- 6.4. Trạng thái / quyết định thiết kế
-
----
-
-## BP — Kế hoạch xây dựng phần mềm
-
-**1. Cơ sở & Phạm vi xây dựng**
-
-- 1.1. Phạm vi xây dựng
-- 1.2. Thành phần / module cần xây dựng
-- 1.3. Cơ sở thiết kế
-- 1.4. Yêu cầu kỹ thuật cần tuân thủ
-
-**2. Môi trường & Mã nguồn**
-
-- 2.1. Repository & cấu trúc source code
-- 2.2. Môi trường phát triển
-- 2.3. Công cụ & dependency
-- 2.4. Cấu hình môi trường
-- 2.5. Khởi tạo & chạy dự án
-
-**3. Quy trình phát triển**
-
-- 3.1. Branching
-- 3.2. Commit
-- 3.3. Code → Review → Merge
-- 3.4. Coding convention
-- 3.5. Error handling / logging
-- 3.6. Dependency / configuration management
-
-**4. Build & Kiểm soát chất lượng**
-
-- 4.1. Quy trình build
-- 4.2. Lint / static analysis
-- 4.3. Unit test
-- 4.4. Quality gate / coverage
-- 4.5. Build artifact
-- 4.6. CI pipeline
-
-**5. Bảo trì & Thay đổi mã nguồn**
-
-- 5.1. Versioning mã nguồn
-- 5.2. Quản lý thay đổi
-- 5.3. Cập nhật tài liệu khi code thay đổi
-- 5.4. Refactoring & technical debt
-
----
-
-## TP — Kế hoạch kiểm thử
-
-**1. Mục tiêu & Phạm vi kiểm thử**
-
-- 1.1. Mục đích kiểm thử
-- 1.2. Đối tượng kiểm thử
-- 1.3. Mục tiêu
-- 1.4. Phạm vi / ngoài phạm vi
-
-**2. Chiến lược & Cách tiếp cận**
-
-- 2.1. Cách tiếp cận kiểm thử
-- 2.2. Mức kiểm thử
-- 2.3. Loại kiểm thử
-- 2.4. Tự động hóa / thủ công
-
-**3. Điều kiện & Môi trường**
-
-- 3.1. Điều kiện đầu vào
-- 3.2. Môi trường kiểm thử
-- 3.3. Dữ liệu / cấu hình
-- 3.4. Điều kiện kết thúc
-
-**4. Tổ chức & Thực hiện**
-
-- 4.1. Vai trò & trách nhiệm
-- 4.2. Nguồn lực & công cụ
-- 4.3. Lịch trình & mốc kiểm thử
-- 4.4. Các phụ thuộc chính
-- 4.5. Test deliverables
-
-**5. Theo dõi & Kiểm soát**
-
-- 5.1. Tiêu chí theo dõi
-- 5.2. Báo cáo
-- 5.3. Quản lý vấn đề / defect
-- 5.4. Rủi ro & ứng phó
-
-**6. Truy xuất kiểm thử**
-
-- 6.1. Cơ sở kiểm thử
-- 6.2. Requirement → Test
-- 6.3. Phạm vi bao phủ
-
----
-
-## DP — Kế hoạch triển khai
-
-**1. Tổng quan triển khai**
-
-- 1.1. Release / phiên bản
-- 1.2. Phạm vi triển khai
-- 1.3. Môi trường đích
-- 1.4. Cửa sổ triển khai
-- 1.5. Kết quả cần đạt
-
-**2. Điều kiện sẵn sàng**
-
-- 2.1. Tiêu chí sẵn sàng
-- 2.2. Artifact / phiên bản
-- 2.3. Hạ tầng & cấu hình
-- 2.4. Backup / migration / dữ liệu
-- 2.5. Phê duyệt triển khai
-
-**3. Quy trình triển khai**
-
-- 3.1. Trình tự triển khai
-- 3.2. Cập nhật ứng dụng
-- 3.3. Cập nhật cấu hình
-- 3.4. Database / migration
-- 3.5. Tích hợp / dịch vụ liên quan
-- 3.6. Kiểm tra trong quá trình triển khai
-
-**4. Xác minh sau triển khai**
-
-- 4.1. Xác minh deployment
-- 4.2. Smoke / sanity check
-- 4.3. Xác minh dịch vụ / tích hợp
-- 4.4. Monitoring / logging
-- 4.5. Tiêu chí hoàn tất
-
-**5. Rollback & Xử lý sự cố**
-
-- 5.1. Điều kiện rollback
-- 5.2. Quy trình rollback
-- 5.3. Khôi phục dữ liệu / cấu hình
-- 5.4. Xác minh sau rollback
-- 5.5. Quyền quyết định rollback
-
-**6. Vai trò & Liên lạc**
-
-- 6.1. Người thực hiện
-- 6.2. Người giám sát
-- 6.3. Người quyết định / phê duyệt
-- 6.4. Kênh liên lạc
-- 6.5. Thông báo trước / trong / sau triển khai
-
-**7. Rủi ro & Kiểm soát**
-
-- 7.1. Rủi ro triển khai
-- 7.2. Phụ thuộc
-- 7.3. Biện pháp kiểm soát / dự phòng
+| Nhánh Facet | Tài liệu | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
+| :--- | :--- | :---: | :---: | :--- |
+| **Hub** | [**`web-portal/README.md`**](service-docs/web-portal/README.md) | `WEB-HUB` | — | Tổng quan phân hệ Web Portal và cẩm nang điều hướng 3 facet. |
+| **Core** | [**`core/fsp.md`**](service-docs/web-portal/core/fsp.md) | `SVC-FSP` | `FND-WEB-` | Môi trường Node.js 20+, cấu hình Vite 5, React 18/19 TypeScript và Tailwind. |
+| **Core** | [**`core/fr-nfr-specs.md`**](service-docs/web-portal/core/fr-nfr-specs.md) | `SVC-SPEC` | `FR-WEB-`, `NFR-WEB-` | Đăng nhập phân quyền, ký cam kết Consent, nhận sự kiện STOMP, xuất file Excel/PDF. |
+| **Core** | [**`core/fr-nfr-design.md`**](service-docs/web-portal/core/fr-nfr-design.md) | `SVC-DES` | `SOL-WEB-` | Quản lý phiên Zustand, React Router guards, STOMP hook và động cơ xuất file. |
+| **Core** | [**`core/fr-nfr-build-plan.md`**](service-docs/web-portal/core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-WEB-` | Kế hoạch thi công Auth store, module cam kết, STOMP client và báo cáo. |
+| **Core** | [**`core/test-plan.md`**](service-docs/web-portal/core/test-plan.md) | `SVC-TST` | `TST-WEB-` | Ca kiểm thử Vitest, React Testing Library, kiểm thử luồng E2E và responsive. |
+| **UI/UX** | [**`ui-ux/ui-ux-specs.md`**](service-docs/web-portal/ui-ux/ui-ux-specs.md) | `SVC-SPEC` | `UI-WEB-` | Luồng ký cam kết, thẻ thống kê KPI, bảng Live Table và lịch biểu cá nhân. |
+| **UI/UX** | [**`ui-ux/ui-ux-design.md`**](service-docs/web-portal/ui-ux/ui-ux-design.md) | `SVC-DES` | `UXD-WEB-` | Bảng màu Tailwind, typography Inter, cấu trúc Sidebar/Header và modal dialogs. |
+| **UI/UX** | [**`ui-ux/ui-ux-build-plan.md`**](service-docs/web-portal/ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `UBL-WEB-` | Kế hoạch thi công bộ thành phần Base UI, trang Dashboard và Calendar view. |
+| **API** | [**`api/api-specs.md`**](service-docs/web-portal/api/api-specs.md) | `SVC-SPEC` | `API-WEB-` | Đặc tả interface tiêu thụ (`auth`, `attendance`, `consent`) và đăng ký STOMP topic. |
+| **API** | [**`api/api-design.md`**](service-docs/web-portal/api/api-design.md) | `SVC-DES` | `APD-WEB-` | Thiết kế Axios client instance, tự động làm mới token và hook `useStompListener`. |
+| **API** | [**`api/api-build-plan.md`**](service-docs/web-portal/api/api-build-plan.md) | `SVC-BLD` | `ABL-WEB-` | Kế hoạch thi công Axios wrapper, API services và STOMP provider. |
