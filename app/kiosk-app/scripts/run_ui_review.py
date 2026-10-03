@@ -1,6 +1,4 @@
-import os
 import sys
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, Qt, QTimer
@@ -87,6 +85,7 @@ def capture_success():
 
 
 from PySide6.QtCore import QMetaObject
+
 
 def step4_pin():
     print("[4/6] Opening and capturing PIN Dialog...")

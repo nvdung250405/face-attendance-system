@@ -7,6 +7,7 @@ Tài liệu tham chiếu:
 """
 
 import numpy as np
+
 from core.vision.quality_checker import EnrollmentQualityChecker
 
 

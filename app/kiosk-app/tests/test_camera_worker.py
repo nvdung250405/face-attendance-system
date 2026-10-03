@@ -8,7 +8,6 @@ Tài liệu tham chiếu:
 from unittest.mock import MagicMock, patch
 
 import cv2
-import numpy as np
 
 from core.vision.camera_worker import CameraWorker
 

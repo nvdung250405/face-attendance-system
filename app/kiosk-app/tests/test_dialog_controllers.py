@@ -18,8 +18,8 @@ import httpx
 import numpy as np
 import pytest
 
-from core.vision.face_detector import FaceDetectionResult
 from core.security.pin_security import PinSecurityManager
+from core.vision.face_detector import FaceDetectionResult
 from presentation.controllers.enrollment_controller import EnrollmentController
 from presentation.controllers.pin_controller import PinController
 

@@ -7,7 +7,6 @@ Bao gồm:
 - TST-KSK-UX-004: Kiểm thử Luồng Tự Đăng ký In-Viewport (3-Step Enrollment Wizard)
 """
 
-import math
 import time
 from unittest.mock import MagicMock
 
@@ -15,14 +14,12 @@ import httpx
 import numpy as np
 import pytest
 
-from config.settings import settings
 from core.security.pin_security import PinSecurityManager
 from core.vision.face_detector import FaceDetectionResult
 from core.vision.gallery_matcher import GalleryCacheManager
 from presentation.controllers.enrollment_controller import EnrollmentController
 from presentation.controllers.pin_controller import PinController
 from presentation.viewmodels.kiosk_view_model import KioskViewModel, OvalState
-
 
 # ==============================================================================
 # Helper fixtures / mocks
@@ -58,7 +55,7 @@ def _create_mock_detection(
 
 def test_tst_ksk_ux_001_oval_four_color_state_machine(qapp):
     """TST-KSK-UX-001: Máy trạng thái Khung Oval 4 Màu.
-    
+
     Chuyển đổi chính xác 4 màu & trạng thái:
     1. Standby (IDLE): Màu #64748B, thông điệp mời nhìn thẳng vào khung oval.
     2. Aligning: Màu #F59E0B, hướng dẫn người dùng chỉnh tư thế.
@@ -141,7 +138,7 @@ def test_tst_ksk_ux_001_oval_four_color_state_machine(qapp):
 def test_tst_ksk_ux_002_dynamic_proportional_scaling():
     """TST-KSK-UX-002: Kiểm thử Co giãn Tỷ lệ Động S theo công thức:
     S = min(W_actual / 1080, H_actual / 1920)
-    
+
     Đảm bảo:
     - Chuẩn 1080x1920 (FHD Portrait) -> S = 1.0
     - Chuẩn 720x1280 (HD Portrait) -> S = 0.6667
@@ -191,7 +188,7 @@ def test_tst_ksk_ux_002_dynamic_proportional_scaling():
 
 def test_tst_ksk_ux_003_pin_pad_and_lockout(qapp):
     """TST-KSK-UX-003: Bàn phím ảo PIN Pad & Khóa 15 Phút (Lockout).
-    
+
     Kiểm tra:
     1. Thao tác gõ phím số 0-9, backspace, clear trên bàn phím ảo.
     2. Chế độ che dấu bảo mật Anti-Peeking (hiển thị chấm tròn ● tương ứng số lượng).
@@ -251,7 +248,7 @@ def test_tst_ksk_ux_003_pin_pad_and_lockout(qapp):
 
 def test_tst_ksk_ux_004_in_viewport_enrollment_flow(qapp):
     """TST-KSK-UX-004: Kiểm thử Luồng Tự Đăng ký In-Viewport 3 Bước.
-    
+
     Quy trình:
     - Bước 1 (Xác thực OTP): Người dùng nhập 6 số OTP -> gọi POST /api/v1/kiosk/verify-otp.
     - Bước 2 (Thu thập Mẫu In-Viewport):
