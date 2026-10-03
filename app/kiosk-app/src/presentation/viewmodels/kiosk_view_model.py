@@ -449,9 +449,9 @@ class KioskViewModel(QObject):
         if self.queue_manager:
             self.queue_manager.enqueue_punch(
                 employee_id=emp_id,
-                punch_type="FACE",
-                similarity_score=score,
-                liveness_score=liveness_score,
+                punch_type="CHECK_IN",
+                verification_method="VERIFICATION_FACE",
+                confidence_score=score,
                 kiosk_id=settings.kiosk_id,
             )
             self._update_pending_sync_count()

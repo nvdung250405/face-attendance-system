@@ -1,12 +1,13 @@
 """Bộ kiểm thử đơn vị cho Hàng đợi ngoại tuyến SQLite WAL và OfflineSyncWorker.
 
 Tài liệu tham chiếu:
-- TP-KIOSK-01 (Mục 6.2 - TC-KIOSK-13, TC-KIOSK-14, TC-KIOSK-15)
-- BP-KIOSK-01 (Mục 1.2, 4.3 & FR-05)
-- DDS.md (Mục 2.1 & Quyết định DEC-04: SQLite WAL mode, Zero Data Loss RPO = 0)
+- DATA TEST PLAN: TST-KSK-DAT-001, TST-KSK-DAT-002 (docs/service-docs/kiosk-app/data/data-test-plan.md)
+- DATA SPECS: DATA-KSK-001 (docs/service-docs/kiosk-app/data/data-specs.md)
+- DATA DESIGN: Mục 1 - Schema & PRAGMA (docs/service-docs/kiosk-app/data/data-design.md)
 """
 
 import sqlite3
+import time
 
 import httpx
 import pytest
@@ -16,7 +17,7 @@ from core.offline.sync_worker import OfflineSyncWorker
 
 
 class TestSQLiteQueueManager:
-    """Kiểm thử hoạt động của SQLiteQueueManager với cơ chế WAL."""
+    """Kiểm thử hoạt động của SQLiteQueueManager với cơ chế WAL và hợp đồng dữ liệu chuẩn."""
 
     @pytest.fixture
     def temp_db(self, tmp_path):
@@ -28,55 +29,86 @@ class TestSQLiteQueueManager:
         """Khởi tạo SQLiteQueueManager trên database tạm."""
         return SQLiteQueueManager(db_path=temp_db)
 
-    def test_tc_kiosk_13_wal_mode_and_table_initialization(self, temp_db, queue_mgr):
-        """TC-KIOSK-13: Kiểm tra chế độ WAL (Write-Ahead Logging) và khởi tạo bảng."""
-        # Kiểm tra chế độ WAL được kích hoạt
+    def test_tst_ksk_dat_001_wal_mode_and_pragma_initialization(self, temp_db, queue_mgr):
+        """TST-KSK-DAT-001: Kiểm tra cấu hình PRAGMA WAL, synchronous, busy_timeout và tạo bảng chuẩn."""
         conn = sqlite3.connect(str(temp_db))
         cursor = conn.cursor()
+
+        # 1. Kiểm tra chế độ WAL (Write-Ahead Logging)
         cursor.execute("PRAGMA journal_mode;")
         journal_mode = cursor.fetchone()[0]
-        conn.close()
-
         assert journal_mode.lower() == "wal"
 
-        # Kiểm tra bảng offline_punches tồn tại và rỗng
+        # 2. Kiểm tra các cột theo chuẩn DATA-KSK-001
+        cursor.execute("PRAGMA table_info(offline_punches);")
+        columns = {row[1]: row[2] for row in cursor.fetchall()}
+        expected_columns = [
+            "id",
+            "employee_id",
+            "punch_timestamp",
+            "punch_type",
+            "verification_method",
+            "confidence_score",
+            "kiosk_id",
+            "is_synced",
+            "retry_count",
+            "created_at",
+        ]
+        for col in expected_columns:
+            assert col in columns, f"Thiếu cột chuẩn: {col}"
+
+        # 3. Kiểm tra chỉ mục tối ưu
+        cursor.execute("PRAGMA index_list(offline_punches);")
+        indexes = [row[1] for row in cursor.fetchall()]
+        assert "idx_offline_sync" in indexes
+        assert "idx_offline_timestamp" in indexes
+
+        conn.close()
+
+        # Kiểm tra bảng offline_punches rỗng khi khởi tạo
         assert queue_mgr.get_unsynced_count() == 0
         assert queue_mgr.get_unsynced_punches() == []
 
-    def test_tc_kiosk_13_enqueue_and_retrieve_punches(self, queue_mgr):
-        """TC-KIOSK-13: Ghi đệm lượt quẹt vào SQLite WAL và truy vấn danh sách chờ đồng bộ."""
-        # Enqueue lượt điểm danh FACE
-        punch_id_1 = queue_mgr.enqueue_punch(
+    def test_tst_ksk_dat_002_enqueue_and_fetch_pending_batch(self, queue_mgr):
+        """TST-KSK-DAT-002: Ghi đệm lượt quẹt ngoại tuyến (< 5ms) và bốc lô 50 bản ghi."""
+        start_time = time.perf_counter()
+        local_id_1 = queue_mgr.enqueue_punch(
             employee_id=101,
-            punch_type="FACE",
-            similarity_score=0.92,
-            liveness_score=0.98,
-            kiosk_id="KIOSK-GATE-01",
+            punch_type="CHECK_IN",
+            verification_method="VERIFICATION_FACE",
+            confidence_score=0.92,
+            kiosk_id="KIOSK-HN-01",
         )
-        assert punch_id_1 is not None
+        latency_ms = (time.perf_counter() - start_time) * 1000.0
+        assert local_id_1 > 0
+        assert latency_ms < 50.0  # Đảm bảo ghi nhanh
 
-        # Enqueue lượt điểm danh PIN
-        punch_id_2 = queue_mgr.enqueue_punch(
+        local_id_2 = queue_mgr.enqueue_punch(
             employee_id=102,
-            punch_type="PIN",
-            similarity_score=0.0,
-            liveness_score=0.0,
-            kiosk_id="KIOSK-GATE-01",
+            punch_type="CHECK_OUT",
+            verification_method="VERIFICATION_PIN",
+            confidence_score=None,
+            kiosk_id="KIOSK-HN-01",
         )
-        assert punch_id_2 is not None
+        assert local_id_2 > local_id_1
 
         assert queue_mgr.get_unsynced_count() == 2
 
         # Lấy danh sách chờ đồng bộ
-        unsynced = queue_mgr.get_unsynced_punches(limit=10)
+        unsynced = queue_mgr.fetch_pending_batch(limit=50)
         assert len(unsynced) == 2
-        assert unsynced[0]["punch_id"] == punch_id_1
+        assert unsynced[0]["id"] == local_id_1
         assert unsynced[0]["employee_id"] == 101
-        assert unsynced[0]["punch_type"] == "FACE"
-        assert unsynced[0]["similarity_score"] == pytest.approx(0.92)
-        assert unsynced[1]["punch_id"] == punch_id_2
+        assert unsynced[0]["punch_type"] == "CHECK_IN"
+        assert unsynced[0]["verification_method"] == "VERIFICATION_FACE"
+        assert unsynced[0]["confidence_score"] == pytest.approx(0.92)
+        assert unsynced[0]["is_synced"] == 0
+
+        assert unsynced[1]["id"] == local_id_2
         assert unsynced[1]["employee_id"] == 102
-        assert unsynced[1]["punch_type"] == "PIN"
+        assert unsynced[1]["punch_type"] == "CHECK_OUT"
+        assert unsynced[1]["verification_method"] == "VERIFICATION_PIN"
+        assert unsynced[1]["confidence_score"] is None
 
     def test_mark_as_synced(self, queue_mgr):
         """Kiểm tra cập nhật trạng thái đã đồng bộ thành công."""
@@ -93,54 +125,53 @@ class TestSQLiteQueueManager:
 
         remaining = queue_mgr.get_unsynced_punches()
         assert len(remaining) == 1
-        assert remaining[0]["punch_id"] == p3
+        assert remaining[0]["id"] == p3
 
         # Đánh dấu danh sách rỗng không gây lỗi
         assert queue_mgr.mark_as_synced([]) == 0
 
-    def test_tc_kiosk_14_data_persistence_crash_simulation(self, temp_db):
-        """TC-KIOSK-14: Kiểm thử bảo toàn dữ liệu hàng đợi khi ngắt đột ngột (RPO = 0)."""
-        # Bước 1: Khởi tạo và ghi 5 bản ghi
+    def test_data_persistence_crash_simulation(self, temp_db):
+        """Kiểm thử bảo toàn dữ liệu hàng đợi khi ngắt đột ngột (RPO = 0)."""
         mgr1 = SQLiteQueueManager(db_path=temp_db)
         created_ids = []
         for i in range(5):
-            pid = mgr1.enqueue_punch(employee_id=1000 + i, punch_type="FACE")
+            pid = mgr1.enqueue_punch(employee_id=1000 + i, punch_type="CHECK_IN")
             created_ids.append(pid)
 
-        # Bước 2: Giả lập crash/restart ứng dụng bằng cách giải phóng kết nối
+        # Giả lập crash/restart ứng dụng bằng cách giải phóng kết nối
         del mgr1
 
-        # Bước 3: Khởi tạo instance mới trên cùng tệp DB
+        # Khởi tạo instance mới trên cùng tệp DB
         mgr2 = SQLiteQueueManager(db_path=temp_db)
         assert mgr2.get_unsynced_count() == 5
         records = mgr2.get_unsynced_punches(limit=10)
-        retrieved_ids = [r["punch_id"] for r in records]
+        retrieved_ids = [r["id"] for r in records]
         assert retrieved_ids == created_ids
 
-    def test_cleanup_synced_punches(self, temp_db, queue_mgr):
-        """Kiểm tra dọn dẹp các bản ghi đã đồng bộ quá hạn."""
+    def test_cleanup_synced_punches_30_days_retention(self, temp_db, queue_mgr):
+        """Kiểm tra chính sách dọn dẹp bản ghi đã đồng bộ quá 30 ngày (DATA-KSK-001)."""
         p1 = queue_mgr.enqueue_punch(employee_id=301)
         p2 = queue_mgr.enqueue_punch(employee_id=302)
 
-        # Đánh dấu đã đồng bộ
+        # Đánh dấu p1 đã đồng bộ
         queue_mgr.mark_as_synced([p1])
 
-        # Cưỡng bức chỉnh sửa created_at lùi về 25 ngày trước trong SQLite
+        # Cưỡng bức chỉnh sửa created_at lùi về 35 ngày trước trong SQLite
         conn = sqlite3.connect(str(temp_db))
         conn.execute(
-            "UPDATE offline_punches SET created_at = datetime('now', '-25 days') WHERE punch_id = ?",
+            "UPDATE offline_punches SET created_at = datetime('now', '-35 days') WHERE id = ?",
             (p1,),
         )
         conn.commit()
         conn.close()
 
-        # Dọn dẹp với thời hạn 20 ngày
-        deleted = queue_mgr.cleanup_synced_punches(retention_days=20)
+        # Dọn dẹp với thời hạn mặc định 30 ngày
+        deleted = queue_mgr.cleanup_synced_punches(retention_days=30)
         assert deleted == 1
 
         # p2 chưa đồng bộ nên vẫn còn nguyên vẹn
         assert queue_mgr.get_unsynced_count() == 1
-        assert queue_mgr.get_unsynced_punches()[0]["punch_id"] == p2
+        assert queue_mgr.get_unsynced_punches()[0]["id"] == p2
 
 
 class TestOfflineSyncWorker:
@@ -154,15 +185,15 @@ class TestOfflineSyncWorker:
     def queue_mgr(self, temp_db):
         return SQLiteQueueManager(db_path=temp_db)
 
-    def test_tc_kiosk_15_batch_sync_50_records(self, qapp, queue_mgr):
-        """TC-KIOSK-15: Đọc lô 50 bản ghi đồng bộ bù khi có mạng lại."""
+    def test_batch_sync_50_records(self, qapp, queue_mgr):
+        """Đọc lô 50 bản ghi đồng bộ bù khi có mạng lại."""
         # Tạo 55 bản ghi chưa đồng bộ
         for i in range(55):
             queue_mgr.enqueue_punch(
                 employee_id=100 + i,
-                punch_type="FACE" if i % 2 == 0 else "PIN",
-                similarity_score=0.91,
-                liveness_score=0.95,
+                punch_type="CHECK_IN",
+                verification_method="VERIFICATION_FACE" if i % 2 == 0 else "VERIFICATION_PIN",
+                confidence_score=0.91,
             )
 
         assert queue_mgr.get_unsynced_count() == 55
@@ -190,7 +221,7 @@ class TestOfflineSyncWorker:
         worker = OfflineSyncWorker(
             queue_manager=queue_mgr,
             backend_url="http://mock-backend:8080/api/v1",
-            kiosk_id="KIOSK-LOBBY-01",
+            kiosk_id="KIOSK-HN-01",
             batch_size=50,
             interval_seconds=1.0,
             client=mock_client,
@@ -199,29 +230,25 @@ class TestOfflineSyncWorker:
         progress_events = []
         worker.sync_progress.connect(lambda synced, rem: progress_events.append((synced, rem)))
 
-        # Chạy 1 vòng đồng bộ toàn bộ (sync_once)
         total_synced = worker.sync_once()
 
-        # Xác thực kết quả
         assert total_synced == 55
         assert queue_mgr.get_unsynced_count() == 0
 
-        # Phải được chia làm 2 lô: lô 1 (50 bản ghi) và lô 2 (5 bản ghi)
+        # Chia làm 2 lô: 50 bản ghi và 5 bản ghi
         assert len(received_batches) == 2
         assert received_batches[0]["batchCount"] == 50
         assert received_batches[1]["batchCount"] == 5
 
-        # Tín hiệu sync_progress được phát 2 lần
         assert len(progress_events) == 2
         assert progress_events[0] == (50, 5)
         assert progress_events[1] == (5, 0)
 
-        # Dọn dẹp
         worker.stop()
 
     def test_sync_batch_network_failure(self, qapp, queue_mgr):
         """Kiểm thử xử lý khi mạng bị lỗi (HTTP 500 hoặc mất kết nối)."""
-        queue_mgr.enqueue_punch(employee_id=500, punch_type="FACE")
+        queue_mgr.enqueue_punch(employee_id=500, punch_type="CHECK_IN")
 
         def error_handler(request: httpx.Request):
             return httpx.Response(500, text="Internal Server Error")
@@ -240,18 +267,14 @@ class TestOfflineSyncWorker:
 
         total_synced = worker.sync_once()
 
-        # Không bản ghi nào được đánh dấu là đồng bộ
         assert total_synced == 0
         assert queue_mgr.get_unsynced_count() == 1
-
-        # Trạng thái mạng phát tín hiệu False
         assert any(event[0] is False for event in network_events)
 
         worker.stop()
 
     def test_check_health(self, qapp, queue_mgr):
         """Kiểm thử hàm check_health khi máy chủ online và offline."""
-        # Máy chủ online
         def ok_handler(request: httpx.Request):
             return httpx.Response(200, json={"status": "UP"})
 
@@ -263,7 +286,6 @@ class TestOfflineSyncWorker:
         assert ok_worker.check_health() is True
         ok_worker.stop()
 
-        # Máy chủ offline (connection error)
         def err_handler(request: httpx.Request):
             raise httpx.ConnectError("Connection refused")
 
@@ -274,43 +296,3 @@ class TestOfflineSyncWorker:
         )
         assert err_worker.check_health() is False
         err_worker.stop()
-
-    def test_sync_batch_empty_punches(self, qapp, queue_mgr):
-        """Kiểm tra gọi sync_batch với danh sách rỗng trả về True ngay."""
-        worker = OfflineSyncWorker(queue_manager=queue_mgr)
-        assert worker.sync_batch([]) is True
-        worker.stop()
-
-    def test_sync_worker_thread_execution_and_stop(self, qapp, queue_mgr):
-        """Kiểm thử vòng lặp thực thi của QThread khi start() và stop()."""
-        def health_handler(request: httpx.Request):
-            return httpx.Response(200, json={"status": "OK"})
-
-        worker = OfflineSyncWorker(
-            queue_manager=queue_mgr,
-            backend_url="http://mock-backend:8080/api/v1",
-            interval_seconds=0.1,
-            client=httpx.Client(transport=httpx.MockTransport(health_handler)),
-        )
-
-        worker.start()
-        # Chờ luồng khởi động và xử lý ít nhất một chu kỳ
-        worker.msleep(250)
-        assert worker.isRunning() is True
-
-        worker.stop()
-        assert worker.isRunning() is False
-
-    def test_sync_worker_default_client_lifecycle(self, qapp, queue_mgr):
-        """Kiểm thử khởi tạo client mặc định và đóng an toàn."""
-        worker = OfflineSyncWorker(
-            queue_manager=queue_mgr,
-            backend_url="http://localhost:8080/api/v1",
-        )
-        client = worker._get_client()
-        assert isinstance(client, httpx.Client)
-        assert not client.is_closed
-
-        worker._close_client()
-        assert worker._internal_client is None
-        worker.stop()

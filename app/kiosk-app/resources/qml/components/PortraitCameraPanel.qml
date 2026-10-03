@@ -154,10 +154,10 @@ Rectangle {
                 return Theme.brandPurple
             }
             switch (root.recognitionState) {
-                case "ALIGNING": return Theme.statusAligning
-                case "SUCCESS": return Theme.statusSuccess
-                case "ERROR": return Theme.statusError
-                default: return Theme.brandPurple
+                case "ALIGNING": return Theme.ovalAligning
+                case "SUCCESS": return Theme.ovalSuccess
+                case "ERROR": return Theme.ovalRejected
+                default: return Theme.ovalStandby
             }
         }
 

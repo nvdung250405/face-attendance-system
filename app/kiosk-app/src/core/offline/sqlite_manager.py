@@ -1,15 +1,14 @@
 """Module quản lý hàng đợi ngoại tuyến SQLite chế độ Write-Ahead Logging (WAL).
 
 Tài liệu tham chiếu:
-- BP-KIOSK-01 (Mục 1.2 & FR-05 - SQLiteQueueManager)
-- TP-KIOSK-01 (Mục 6.2 & TC-KIOSK-13, TC-KIOSK-14)
-- DDS.md (Mục 2.1 & Quyết định DEC-04: Lưu trữ ngoại tuyến SQLite WAL)
+- DATA-KSK-001: offline_punches entity & lifecycle (docs/service-docs/kiosk-app/data/data-specs.md)
+- DATA DESIGN: DDL & PRAGMA configuration (docs/service-docs/kiosk-app/data/data-design.md)
+- DATA BUILD PLAN: DBL-KSK-001 & DBL-KSK-002 (docs/service-docs/kiosk-app/data/data-build-plan.md)
 - Cam kết: Bảo toàn dữ liệu RPO = 0 khi ngắt mạng đột ngột hoặc cúp nguồn.
 """
 
 import sqlite3
 import threading
-import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -23,12 +22,12 @@ logger = get_logger("sqlite_manager")
 class SQLiteQueueManager:
     """Quản lý hàng đợi giao dịch điểm danh ngoại tuyến trên SQLite chế độ WAL an toàn."""
 
-    def __init__(self, db_path: Path | None = None, timeout: float = 10.0) -> None:
+    def __init__(self, db_path: Path | None = None, timeout: float = 5.0) -> None:
         """Khởi tạo SQLiteQueueManager.
 
         Args:
             db_path: Đường dẫn tệp database SQLite (mặc định từ settings: kiosk_local.db).
-            timeout: Thời gian chờ tối đa (giây) khi tranh chấp khóa ghi SQLite.
+            timeout: Thời gian chờ tối đa (giây) khi tranh chấp khóa ghi SQLite (mặc định 5.0s).
         """
         self.db_path: Path = db_path or settings.db_path
         self.timeout: float = timeout
@@ -37,56 +36,73 @@ class SQLiteQueueManager:
         self._init_db()
 
     def _get_connection(self) -> sqlite3.Connection:
-        """Mở kết nối SQLite mới kèm cấu hình WAL và Row factory."""
+        """Mở kết nối SQLite mới kèm cấu hình WAL, PRAGMA tối ưu và Row factory."""
         conn = sqlite3.connect(
             str(self.db_path),
             timeout=self.timeout,
             check_same_thread=False,
         )
         conn.row_factory = sqlite3.Row
+        # Kích hoạt các chỉ thị PRAGMA tối ưu hóa I/O biên trên mỗi kết nối
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute(f"PRAGMA busy_timeout = {int(self.timeout * 1000)};")
+        conn.execute("PRAGMA cache_size = -64000;")
+        conn.execute("PRAGMA temp_store = MEMORY;")
         return conn
 
     def _init_db(self) -> None:
-        """Khởi tạo cấu trúc bảng dữ liệu và cấu hình PRAGMA chế độ WAL."""
+        """Khởi tạo cấu trúc bảng dữ liệu, chỉ mục và áp dụng PRAGMA theo chuẩn Data Design."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
         with self._lock:
             conn = self._get_connection()
             try:
                 cursor = conn.cursor()
-                # Kích hoạt chế độ WAL (Write-Ahead Logging) cho phép đọc ghi đồng thời
-                cursor.execute("PRAGMA journal_mode=WAL;")
+                cursor.execute("PRAGMA journal_mode;")
                 journal_mode = cursor.fetchone()[0]
-                cursor.execute("PRAGMA synchronous=NORMAL;")
-                cursor.execute(f"PRAGMA busy_timeout={int(self.timeout * 1000)};")
 
-                # Tạo bảng lưu trữ hàng đợi điểm danh ngoại tuyến
+                # Kiểm tra tương thích schema bảng hiện có
+                cursor.execute("PRAGMA table_info(offline_punches);")
+                existing_cols = [row[1] for row in cursor.fetchall()]
+                if existing_cols and ("is_synced" not in existing_cols or "punch_timestamp" not in existing_cols):
+                    logger.warning("Phát hiện schema cũ trong %s, thực hiện tái cấu trúc bảng chuẩn...", self.db_path.name)
+                    cursor.execute("DROP TABLE offline_punches;")
+
+                # DDL Tạo bảng hàng đợi điểm danh ngoại tuyến theo chuẩn DATA-KSK-001
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS offline_punches (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        punch_id TEXT UNIQUE NOT NULL,
                         employee_id INTEGER NOT NULL,
-                        punch_time TEXT NOT NULL,
-                        punch_type TEXT NOT NULL,
-                        similarity_score REAL,
-                        liveness_score REAL,
+                        punch_timestamp TEXT NOT NULL,
+                        punch_type TEXT NOT NULL DEFAULT 'CHECK_IN',
+                        verification_method TEXT NOT NULL DEFAULT 'VERIFICATION_FACE',
+                        confidence_score REAL,
                         kiosk_id TEXT NOT NULL,
-                        synced_status INTEGER NOT NULL DEFAULT 0,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        is_synced INTEGER NOT NULL DEFAULT 0,
+                        retry_count INTEGER NOT NULL DEFAULT 0,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
                     );
                 """)
 
-                # Chỉ mục tăng tốc độ truy vấn lô chưa đồng bộ
+                # Chỉ mục tối ưu hóa cho truy vấn quét các bản ghi chưa đồng bộ
                 cursor.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_punches_synced
-                    ON offline_punches(synced_status, id ASC);
+                    CREATE INDEX IF NOT EXISTS idx_offline_sync
+                    ON offline_punches(is_synced, id);
+                """)
+
+                # Chỉ mục phục vụ thống kê lượt chấm trong ngày tại trạm
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_offline_timestamp
+                    ON offline_punches(punch_timestamp DESC);
                 """)
 
                 conn.commit()
                 logger.info(
-                    "SQLiteQueueManager sẵn sàng tại %s [journal_mode=%s]",
+                    "SQLiteQueueManager sẵn sàng tại %s [journal_mode=%s, timeout=%.1fs]",
                     self.db_path.name,
                     journal_mode,
+                    self.timeout,
                 )
             except Exception as exc:
                 logger.error("Lỗi khởi tạo SQLite DB tại %s: %s", self.db_path, exc)
@@ -97,36 +113,47 @@ class SQLiteQueueManager:
     def enqueue_punch(
         self,
         employee_id: int,
-        punch_type: str = "FACE",
-        punch_time: str | None = None,
-        similarity_score: float = 0.0,
-        liveness_score: float = 0.0,
+        punch_type: str = "CHECK_IN",
+        verification_method: str = "VERIFICATION_FACE",
+        confidence_score: float | None = None,
         kiosk_id: str | None = None,
+        punch_timestamp: str | None = None,
+        # Tương thích ngược với các caller cũ:
+        similarity_score: float | None = None,
+        punch_time: str | None = None,
+        liveness_score: float | None = None,
         punch_id: str | None = None,
-    ) -> str:
+    ) -> int:
         """Thêm một lượt điểm danh vào hàng đợi ngoại tuyến với giao dịch commit an toàn.
 
+        Tuân thủ DBL-KSK-002: Ghi đệm giao dịch ngoại tuyến < 5ms.
+
         Args:
-            employee_id: Mã định danh nhân viên.
-            punch_type: Loại điểm danh ("FACE" hoặc "PIN").
-            punch_time: Thời gian điểm danh định dạng ISO-8601 UTC (mặc định lấy thời điểm gọi).
-            similarity_score: Điểm tương đồng nhận diện khuôn mặt (nếu dùng FACE).
-            liveness_score: Điểm thực thể sống (nếu dùng FACE).
-            kiosk_id: Mã trạm Kiosk thực hiện điểm danh.
-            punch_id: Mã định danh UUID v4 duy nhất (nếu None sẽ tự sinh mới).
+            employee_id: Mã định danh số của nhân viên trong CSDL trung tâm.
+            punch_type: Loại điểm danh ('CHECK_IN' hoặc 'CHECK_OUT').
+            verification_method: Phương thức xác thực ('VERIFICATION_FACE' hoặc 'VERIFICATION_PIN').
+            confidence_score: Điểm số tương đồng Cosine Similarity (0.0 - 1.0).
+            kiosk_id: Mã định danh của trạm Kiosk thực hiện.
+            punch_timestamp: Mốc thời gian ISO-8601 tại thời điểm quét.
 
         Returns:
-            str: punch_id của bản ghi đã lưu vào hàng đợi.
+            int: Khóa chính `id` của bản ghi đã lưu vào CSDL cục bộ.
         """
-        p_id = punch_id or str(uuid.uuid4())
-        p_time = punch_time or datetime.now(UTC).isoformat()
+        # Chuẩn hóa loại điểm danh và phương thức xác thực nếu caller truyền legacy
+        if punch_type in ("FACE", "PIN"):
+            verification_method = "VERIFICATION_FACE" if punch_type == "FACE" else "VERIFICATION_PIN"
+            punch_type = "CHECK_IN"
+
+        p_time = punch_timestamp or punch_time or datetime.now(UTC).isoformat()
+        score = confidence_score if confidence_score is not None else similarity_score
         k_id = kiosk_id or settings.kiosk_id
 
         sql = """
             INSERT INTO offline_punches (
-                punch_id, employee_id, punch_time, punch_type,
-                similarity_score, liveness_score, kiosk_id, synced_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                employee_id, punch_timestamp, punch_type,
+                verification_method, confidence_score, kiosk_id,
+                is_synced, retry_count
+            ) VALUES (?, ?, ?, ?, ?, ?, 0, 0)
         """
 
         with self._lock:
@@ -135,25 +162,27 @@ class SQLiteQueueManager:
                 cursor = conn.cursor()
                 cursor.execute(
                     sql,
-                    (p_id, employee_id, p_time, punch_type, similarity_score, liveness_score, k_id),
+                    (employee_id, p_time, punch_type, verification_method, score, k_id),
                 )
                 conn.commit()
+                local_id = cursor.lastrowid
                 logger.info(
-                    "Đã lưu hàng đợi ngoại tuyến: punch_id=%s, emp_id=%d, type=%s",
-                    p_id,
+                    "Đã lưu hàng đợi ngoại tuyến: id=%d, emp_id=%d, type=%s, method=%s",
+                    local_id,
                     employee_id,
                     punch_type,
+                    verification_method,
                 )
-                return p_id
+                return int(local_id)
             except Exception as exc:
                 conn.rollback()
-                logger.error("Lỗi khi ghi hàng đợi ngoại tuyến punch_id=%s: %s", p_id, exc)
+                logger.error("Lỗi khi ghi hàng đợi ngoại tuyến emp_id=%d: %s", employee_id, exc)
                 raise
             finally:
                 conn.close()
 
     def get_unsynced_punches(self, limit: int = 50) -> list[dict[str, Any]]:
-        """Lấy danh sách các bản ghi chưa đồng bộ theo thứ tự thời gian phát sinh (FIFO).
+        """Lấy danh sách các bản ghi chưa đồng bộ theo thứ tự phát sinh (FIFO).
 
         Args:
             limit: Số lượng bản ghi tối đa trong một lô (mặc định 50 bản ghi).
@@ -162,10 +191,11 @@ class SQLiteQueueManager:
             list[dict[str, Any]]: Danh sách các bản ghi điểm danh chờ gửi lên máy chủ.
         """
         sql = """
-            SELECT id, punch_id, employee_id, punch_time, punch_type,
-                   similarity_score, liveness_score, kiosk_id
+            SELECT id, employee_id, punch_timestamp, punch_type,
+                   verification_method, confidence_score, kiosk_id,
+                   is_synced, retry_count, created_at
             FROM offline_punches
-            WHERE synced_status = 0
+            WHERE is_synced = 0
             ORDER BY id ASC
             LIMIT ?
         """
@@ -175,44 +205,65 @@ class SQLiteQueueManager:
                 cursor = conn.cursor()
                 cursor.execute(sql, (limit,))
                 rows = cursor.fetchall()
-                results = [dict(row) for row in rows]
+                results = []
+                for row in rows:
+                    item = dict(row)
+                    # Giữ tương thích ngược với các trường cũ nếu caller cần
+                    item["punch_id"] = str(item["id"])
+                    item["punch_time"] = item["punch_timestamp"]
+                    item["similarity_score"] = item["confidence_score"] or 0.0
+                    item["synced_status"] = item["is_synced"]
+                    results.append(item)
                 return results
             finally:
                 conn.close()
 
-    def mark_as_synced(self, punch_ids: list[str]) -> int:
+    def fetch_pending_batch(self, limit: int = 50) -> list[dict[str, Any]]:
+        """Bí danh chuẩn hóa theo DBL-KSK-002 cho get_unsynced_punches."""
+        return self.get_unsynced_punches(limit=limit)
+
+    def mark_as_synced(self, local_ids: list[int | str]) -> int:
         """Đánh dấu các bản ghi đã được đồng bộ thành công lên máy chủ trung tâm.
 
         Args:
-            punch_ids: Danh sách các punch_id đã gửi và nhận xác nhận 200 OK.
+            local_ids: Danh sách các ID bản ghi (id khóa chính) đã nhận xác nhận 200 OK.
 
         Returns:
             int: Số lượng bản ghi được cập nhật trạng thái.
         """
-        if not punch_ids:
+        if not local_ids:
             return 0
 
-        placeholders = ",".join("?" for _ in punch_ids)
+        # Chuẩn hóa sang int
+        clean_ids = [int(i) for i in local_ids if str(i).isdigit()]
+        if not clean_ids:
+            return 0
+
+        placeholders = ",".join("?" for _ in clean_ids)
         sql = f"""
             UPDATE offline_punches
-            SET synced_status = 1
-            WHERE punch_id IN ({placeholders}) AND synced_status = 0
+            SET is_synced = 1
+            WHERE id IN ({placeholders}) AND is_synced = 0
         """
         with self._lock:
             conn = self._get_connection()
             try:
                 cursor = conn.cursor()
-                cursor.execute(sql, punch_ids)
+                cursor.execute(sql, clean_ids)
                 updated_count = cursor.rowcount
                 conn.commit()
                 logger.info("Đã đánh dấu đồng bộ thành công %d bản ghi", updated_count)
                 return updated_count
             except Exception as exc:
                 conn.rollback()
-                logger.error("Lỗi cập nhật synced_status: %s", exc)
+                logger.error("Lỗi cập nhật is_synced: %s", exc)
                 raise
             finally:
                 conn.close()
+
+    def mark_synced(self, local_ids: list[int | str]) -> int:
+        """Bí danh chuẩn hóa theo DBL-KSK-002 cho mark_as_synced."""
+        return self.mark_as_synced(local_ids)
 
     def get_unsynced_count(self) -> int:
         """Đếm tổng số bản ghi chưa được đồng bộ trong CSDL cục bộ.
@@ -220,7 +271,7 @@ class SQLiteQueueManager:
         Returns:
             int: Số lượng bản ghi chờ đồng bộ.
         """
-        sql = "SELECT COUNT(*) FROM offline_punches WHERE synced_status = 0"
+        sql = "SELECT COUNT(*) FROM offline_punches WHERE is_synced = 0"
         with self._lock:
             conn = self._get_connection()
             try:
@@ -231,20 +282,20 @@ class SQLiteQueueManager:
             finally:
                 conn.close()
 
-    def cleanup_synced_punches(self, retention_days: int = 20) -> int:
+    def cleanup_synced_punches(self, retention_days: int = 30) -> int:
         """Xóa vĩnh viễn các bản ghi đã đồng bộ quá hạn lưu trữ quy định.
 
-        Tuân thủ Nghị định 13/2023/NĐ-CP và Luật Bảo vệ dữ liệu cá nhân 2025.
+        Tuân thủ DATA-KSK-001 & data-specs.md: Lưu trữ tối đa 30 ngày phục vụ đối soát.
 
         Args:
-            retention_days: Thời hạn lưu trữ tối đa (mặc định 20 ngày).
+            retention_days: Thời hạn lưu trữ tối đa (mặc định 30 ngày).
 
         Returns:
             int: Số lượng bản ghi đã được dọn dẹp.
         """
         sql = f"""
             DELETE FROM offline_punches
-            WHERE synced_status = 1
+            WHERE is_synced = 1
               AND created_at < datetime('now', '-{retention_days} days')
         """
         with self._lock:

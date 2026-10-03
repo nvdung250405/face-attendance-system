@@ -141,16 +141,12 @@ class OfflineSyncWorker(QThread):
         for p in punches:
             rec = {
                 "localId": p.get("id"),
-                "punchId": p.get("punch_id"),
+                "punchId": str(p.get("id")),
                 "employeeId": p.get("employee_id"),
-                "punchTimestamp": p.get("punch_time"),
-                "verificationMethod": (
-                    "VERIFICATION_FACE"
-                    if p.get("punch_type") == "FACE"
-                    else "VERIFICATION_PIN"
-                ),
-                "confidenceScore": p.get("similarity_score"),
-                "livenessScore": p.get("liveness_score"),
+                "punchTimestamp": p.get("punch_timestamp") or p.get("punch_time"),
+                "punchType": p.get("punch_type", "CHECK_IN"),
+                "verificationMethod": p.get("verification_method", "VERIFICATION_FACE"),
+                "confidenceScore": p.get("confidence_score") if p.get("confidence_score") is not None else p.get("similarity_score"),
             }
             records_payload.append(rec)
 
@@ -174,8 +170,8 @@ class OfflineSyncWorker(QThread):
             )
 
             if response.status_code == 200:
-                punch_ids = [p["punch_id"] for p in punches if "punch_id" in p]
-                self.queue_manager.mark_as_synced(punch_ids)
+                local_ids = [p["id"] for p in punches if "id" in p]
+                self.queue_manager.mark_as_synced(local_ids)
                 self._update_network_status(True, "Đồng bộ lô ngoại tuyến thành công")
                 logger.info(
                     "Đồng bộ thành công lô %d bản ghi lên backend %s",
