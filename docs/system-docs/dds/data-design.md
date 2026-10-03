@@ -1,13 +1,12 @@
+---
+title: System Data Design
+version: 1.0
+status: Approved
+owner: Data Architect
+---
+
 # DATA DESIGN — Thiết kế Chi tiết Dữ liệu & Lưu trữ Hệ thống
 
-> **Mã tài liệu:** `DES-DAT-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết lược đồ CSDL PostgreSQL chuẩn 3NF (`DTD-SYS-`), cấu trúc CSDL cục bộ SQLite WAL, cấu trúc ma trận bộ nhớ RAM và các chỉ mục tối ưu hóa hiệu năng truy vấn.
-
----
 
 ## 1. Enterprise Database Model (Lược đồ CSDL Quan hệ PostgreSQL 16+)
 

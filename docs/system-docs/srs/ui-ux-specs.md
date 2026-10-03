@@ -1,11 +1,13 @@
+---
+title: Đặc tả Yêu cầu Giao diện & Trải nghiệm Người dùng Hệ thống (UI/UX)
+version: 1.0
+status: Approved
+owner: Product Designer
+---
+
 # UI/UX SPECS — Đặc tả Yêu cầu Giao diện & Trải nghiệm Người dùng Hệ thống
 
-> **Mã tài liệu:** `SPEC-UI-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả hành trình người dùng (User Journeys), các trạng thái tương tác trực quan và các thuộc tính trải nghiệm (Experience Qualities) trên cả hai phân hệ có giao diện: Trạm Điểm danh Kiosk Desktop và Cổng Quản trị Web Portal.
+Đặc tả hành trình người dùng (User Journeys), các trạng thái tương tác trực quan và các thuộc tính trải nghiệm (Experience Qualities) trên cả hai phân hệ có giao diện: Trạm Điểm danh Kiosk Desktop và Cổng Quản trị Web Portal.
 
 ---
 

@@ -1,39 +1,45 @@
+---
+title: System Test Plan
+version: 1.0
+status: Approved
+owner: QA Lead
+---
+
 # TEST PLAN — Kế hoạch Kiểm thử & Ma trận Nghiệm thu Hệ thống
 
-> **Mã tài liệu:** `PLN-TST-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Xác lập chiến lược kiểm thử, môi trường thử nghiệm, tiêu chuẩn nghiệm thu và ma trận ca kiểm thử toàn diện (`TST-SYS-`) để kiểm chứng trọn vẹn 16 yêu cầu chức năng và các chỉ số chất lượng phi chức năng của hệ thống.
+## 1. Scope & Objectives (Phạm vi & Mục tiêu)
+
+* **Phạm vi kiểm thử**: Toàn bộ các chức năng và chỉ tiêu chất lượng của hệ thống bao gồm: AI Vision Pipeline, GUI Kiosk, Offline SQLite, REST API, WebSocket/STOMP, Web Dashboard, và tuân thủ an toàn thông tin dữ liệu sinh trắc học.
+* **Mục tiêu kiểm thử**:
+  * Xác thực độ chính xác nhận diện sinh trắc học ($\ge 95\%$), chặn giả mạo ($\ge 98\%$), độ trễ phản hồi ($\le 1.5\text{s}$).
+  * Kiểm chứng khả năng chịu lỗi ngoại tuyến (Fault Tolerance) và cơ chế tự động bù đồng bộ.
+  * Đạt tỷ lệ bao phủ kiểm thử (Test Coverage) $\ge 80\%$ cho các thành phần nghiệp vụ cốt lõi.
 
 ---
 
-## 1. Approach & Test Levels (Chiến lược & Các Mức độ Kiểm thử)
+## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử)
 
-Hệ thống áp dụng mô hình Kim tự tháp kiểm thử đa tầng liên tục:
-* **Mức 1 — Unit Testing**: Kiểm thử độc lập từng thuật toán và hàm xử lý (Cosine Similarity, băm mật mã, logic ca kíp).
-* **Mức 2 — Component GUI Testing**: Kiểm thử các thành phần giao diện (Khung Oval 4 màu, bàn phím số PIN Pad, Live Dashboard).
-* **Mức 3 — Integration Testing**: Kiểm thử tích hợp chuỗi pipeline thị giác máy tính và giao thức truyền thông REST/STOMP.
-* **Mức 4 — System & Fault Injection Testing**: Mô phỏng sự cố mạng, cúp điện đột ngột, tấn công giả mạo ảnh in/video 2D.
-* **Mức 5 — Soak Testing**: Kiểm thử ngâm tải liên tục 8 giờ làm việc trên máy trạm để phát hiện rò rỉ bộ nhớ.
-
----
-
-## 2. Test Gates (Điều kiện Đầu vào & Đầu ra Kiểm thử)
-
-* **Entry Gate (Điều kiện Đầu vào)**:
-  * Mã nguồn vượt qua kiểm tra tĩnh (Linter: Ruff cho Python, ESLint cho Web) không còn lỗi cú pháp.
-  * Toàn bộ 3 tệp trọng số mô hình AI hiện diện đầy đủ và kiểm tra mã băm SHA-256 hợp lệ.
-  * Môi trường CSDL PostgreSQL và các tệp migration đã khởi tạo thành công.
-* **Exit Gate (Tiêu chí Hoàn thành)**:
-  * 100% các ca kiểm thử mức Blocker và Critical vượt qua thành công (Pass rate: 100%).
-  * Tỷ lệ bao phủ kiểm thử tự động (Line Coverage) đạt $\ge 80\%$ đối với các khối xử lý cốt lõi.
-  * Không còn rò rỉ bộ nhớ RAM sau bài kiểm thử ngâm tải 8 giờ ($\Delta_{\text{RAM}} \le 10\%$).
+| ID | Quyết định Tiếp cận Kiểm thử | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
+| :--- | :--- | :--- | :---: | :---: |
+| `APC-SYS-010` | Kim tự tháp kiểm thử đa tầng liên tục (Unit $\rightarrow$ Component $\rightarrow$ Integration $\rightarrow$ System $\rightarrow$ Soak). | Đảm bảo phát hiện lỗi sớm ở tầng dưới, tối ưu chi phí sửa đổi và bảo đảm độ ổn định hệ thống. | `APC-SYS-002`, `NFR-SYS-001` | Approved |
+| `APC-SYS-011` | Kiểm thử tiêm lỗi cưỡng bức (Fault Injection Testing: ngắt mạng, mất camera, cúp điện). | Hệ thống chạy tại biên trong môi trường nhà máy/văn phòng có độ ổn định ngoại cảnh không đồng đều, bắt buộc phải tự phục hồi. | `NFR-SYS-006`, `RSK-SYS-001` | Approved |
+| `APC-SYS-012` | Kiểm thử ngâm tải bộ nhớ 8 giờ liên tục (Soak Testing) với luồng camera thật. | Phát hiện triệt để rò rỉ bộ nhớ (Memory Leak) từ các khung hình OpenCV/NumPy trước khi đưa vào vận hành thực tế. | `NFR-SYS-009`, `KPI-06` | Approved |
 
 ---
 
-## 3. System Test Items (Ma trận Ca Kiểm thử Toàn diện Hệ thống)
+## 3. Test Scope & Types (Phạm vi & Cấp độ Kiểm thử)
+
+* **Unit Testing**: Kiểm thử độc lập các hàm toán học (Cosine Similarity, L2 normalization), logic ca kíp và mã hóa AES-256-GCM.
+* **Component / GUI Testing**: Kiểm thử máy trạng thái viền oval 4 màu, bàn phím ảo PIN Pad và các modal tự phục vụ.
+* **Integration Testing**: Kiểm định luồng tích hợp Kiosk $\leftrightarrow$ Backend qua REST API và Backend $\leftrightarrow$ Web qua STOMP.
+* **Security & PAD Testing**: Kiểm thử phát hiện tấn công giả mạo (Print/Replay Attack), băm mật khẩu OTP và chống Formula Injection.
+* **Entry & Exit Gates**:
+  * *Entry Gate*: Linting thông qua, mã băm mô hình AI khớp 100%, schema PostgreSQL đã migrate.
+  * *Exit Gate*: 100% test Blocker/Critical pass, coverage $\ge 80\%$, kiểm thử ngâm tải 8h có độ tăng RAM $\Delta_{\text{RAM}} \le 10\%$.
+
+---
+
+## 4. System Test Items (Ma trận Ca Kiểm thử Toàn diện Hệ thống)
 
 | ID | Tên Ca Kiểm thử (Test Item Title) | Covers Spec | Mức độ Test | Tiêu chí Đạt (Done when / Pass Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -57,3 +63,15 @@ Hệ thống áp dụng mô hình Kim tự tháp kiểm thử đa tầng liên t
 | `TST-SYS-018` | Kiểm thử Nạp nóng Vector vào RAM Kiosk | `FR-SYS-014` | Integration | Nhân viên mới đăng ký trên trạm A; trạm B nhận bản tin STOMP nạp vector vào RAM ngay lập tức. | Sẵn sàng |
 | `TST-SYS-019` | Kiểm thử Duyệt Giải trình & Xuất Báo cáo | `FR-SYS-016`, `SRS-007` | Functional / Security | HR duyệt đơn giải trình; xuất file Excel bảng công kiểm tra không chứa mã độc Formula Injection. | Sẵn sàng |
 | `TST-SYS-020` | Kiểm thử Ngâm tải Bộ nhớ Liên tục 8 Giờ | `NFR-SYS-009`, `KPI-06` | Soak Testing | Chạy ứng dụng Kiosk với camera hoạt động thật liên tục 8h; mức RAM duy trì ổn định $\Delta \le 10\%$. | Sẵn sàng |
+
+---
+
+## 5. Defect Management (Quy trình Quản lý Lỗi)
+
+* **Phân loại Mức độ Nghiêm trọng (Severity Levels)**:
+  * **Blocker (P0)**: Sập ứng dụng, mất dữ liệu điểm danh, rò rỉ khóa mã hóa. Phải xử lý ngay lập tức trong vòng 4 giờ.
+  * **Critical (P1)**: Sai lệch kết quả nhận diện, lỗi đồng bộ ngoại tuyến, không đăng ký được nhân viên. Xử lý trong vòng 24 giờ.
+  * **Major (P2)**: Lỗi giao diện người dùng, thông điệp hiển thị chậm nhưng không ảnh hưởng tính toàn vẹn dữ liệu. Xử lý trước đợt release tiếp theo.
+  * **Minor (P3)**: Lỗi căn chỉnh văn bản, sai sót nhỏ về định dạng ngày tháng hiển thị.
+* **Vòng đời Lỗi (Defect Lifecycle)**:
+  $$\text{New} \longrightarrow \text{Assigned} \longrightarrow \text{In Progress} \longrightarrow \text{Resolved} \longrightarrow \text{Re-tested} \longrightarrow \text{Closed}$$

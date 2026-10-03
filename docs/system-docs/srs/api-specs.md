@@ -1,11 +1,13 @@
+---
+title: Đặc tả Giao diện & Hợp đồng Truyền thông Hệ thống (API)
+version: 1.0
+status: Approved
+owner: Integration Architect
+---
+
 # API SPECS — Đặc tả Giao diện & Hợp đồng Truyền thông Hệ thống
 
-> **Mã tài liệu:** `SPEC-API-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả giao diện truyền thông trung lập công nghệ (Interface Contracts) giữa các phân hệ: Trạm Điểm danh Kiosk Desktop, Máy chủ Doanh nghiệp Backend và Cổng Web Quản trị.
+Đặc tả giao diện truyền thông trung lập công nghệ (Interface Contracts) giữa các phân hệ: Trạm Điểm danh Kiosk Desktop, Máy chủ Doanh nghiệp Backend và Cổng Web Quản trị.
 
 ---
 

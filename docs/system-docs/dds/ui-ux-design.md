@@ -1,11 +1,13 @@
+---
+title: Thiết kế Chi tiết Giao diện & Trải nghiệm Người dùng (UI/UX Design)
+version: 1.0
+status: Approved
+owner: Product Designer
+---
+
 # UI/UX DESIGN — Thiết kế Chi tiết Giao diện & Trải nghiệm Người dùng
 
-> **Mã tài liệu:** `DES-UI-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD-SYS-`), bố cục màn hình và máy trạng thái hành vi tương tác cho Trạm Kiosk Desktop và Cổng Web Quản trị.
+Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD-SYS-`), bố cục màn hình và máy trạng thái hành vi tương tác cho Trạm Kiosk Desktop và Cổng Web Quản trị.
 
 ---
 

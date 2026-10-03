@@ -1,11 +1,13 @@
+---
+title: Khởi tạo Dự án (Project Initiation)
+version: 1.0
+status: Approved
+owner: Project Manager
+---
+
 # PI — Khởi tạo Dự án (Project Initiation)
 
-> **Mã tài liệu:** `PI-FAS-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Xác lập tầm nhìn chiến lược, mục tiêu định lượng, phạm vi sản phẩm, hướng tiếp cận phát triển và các quyết định khởi tạo mang tính ràng buộc (`PD-`) của Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS).
+Xác lập tầm nhìn chiến lược, mục tiêu định lượng, phạm vi sản phẩm, hướng tiếp cận phát triển, các quyết định khởi tạo mang tính ràng buộc (`PD-`) và thuật ngữ nội tại của Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS).
 
 ---
 
@@ -90,3 +92,16 @@
 * Trạm Kiosk được đặt cố định tại sảnh/cửa ra vào với ánh sáng môi trường tiêu chuẩn $\ge 150\text{ lux}$.
 * Khoảng cách đứng chấm công của nhân viên nằm trong khoảng tối ưu từ $0.5\text{ m}$ đến $1.2\text{ m}$ trước camera.
 * Nhân viên nhìn thẳng vào camera trong khung Oval định vị trong khoảng $0.5 - 1.0\text{ s}$ khi điểm danh.
+
+---
+
+## 6. Glossary (Thuật ngữ Nội tại Hệ thống)
+
+| Thuật ngữ (Term) | Định nghĩa (Definition) |
+| :--- | :--- |
+| **FAS (Face Attendance System)** | Hệ thống quản trị và tự động hóa điểm danh nhân sự ứng dụng công nghệ nhận diện khuôn mặt và thị giác máy tính. |
+| **Kiosk Station** | Thiết bị máy trạm vật lý đặt tại cửa ra vào, tích hợp camera quang học và màn hình cảm ứng để phục vụ nhân viên điểm danh. |
+| **Gallery RAM Matrix** | Ma trận bộ nhớ đệm lưu trữ danh mục vector đặc trưng khuôn mặt của toàn bộ nhân viên hoạt động tại Kiosk để tính toán so khớp song song. |
+| **Informed Consent** | Văn bản thỏa thuận số có hiệu lực pháp lý xác nhận sự đồng thuận tự nguyện của nhân viên đối với việc thu thập và xử lý dữ liệu sinh trắc học. |
+| **Presentation Attack (PAD)** | Hành vi tấn công giả mạo nhận diện sinh trắc học bằng vật phẩm nhân tạo (ảnh in màu giấy, ảnh kỹ thuật số, video phát lại, mặt nạ silicon). |
+| **Cooldown Window** | Cửa sổ thời gian 120 giây ngăn chặn việc một nhân viên bị ghi nhận điểm danh nhiều lần liên tiếp do vô tình nấn ná trước ống kính camera. |

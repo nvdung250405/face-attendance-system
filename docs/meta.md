@@ -1,280 +1,290 @@
+---
+title: Metadata & Quy ước Quản trị Bộ tài liệu SDLC
+version: 2.0
+status: Approved
+owner: Lead System Architect
+---
+
 # META — Metadata & Quy ước Quản trị Bộ tài liệu SDLC
 
-> **Vị trí tài liệu:** `docs/meta.md`  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Active / Canonical  
-> **Mục đích:** Định nghĩa cấu trúc cây tài liệu, danh mục đăng ký (Registry), quy ước định danh (Conventions), hệ thống schema chuẩn hóa, quy tắc kiểm tra (Quality Gates) và cơ chế truy vết (Traceability) cho toàn bộ hệ thống tài liệu SDLC ở cả hai cấp độ: **System-level** và **Service-level**.
+Tài liệu này xác lập cấu trúc cây tài liệu thực tế, danh mục đăng ký (Registry), quy ước định danh (Conventions), hệ thống schema chuẩn hóa, quy tắc kiểm tra chất lượng (Quality Gates) và cơ chế truy vết (Traceability) cho toàn bộ hệ thống tài liệu SDLC của dự án **Face Attendance System (FAS)** ở cả hai cấp độ: **System-level** và **Service-level**, tuân thủ chuẩn khung quy định tại [docs/sdlc-docs.md](sdlc-docs.md).
 
 ---
 
-## 1. Document Tree (Cây Cấu trúc Tài liệu)
-
-Hệ thống tài liệu được tổ chức phân cấp rõ ràng theo hai cấp độ: Cấp Hệ thống (`system-docs`) và Cấp Dịch vụ (`service-docs`):
+## 1. Document Tree (Cây Cấu trúc Tài liệu Thực tế)
 
 ```text
 docs/
 │
-├── meta.md                                      # Metadata và quy ước quản lý của toàn bộ bộ tài liệu.
-│                                                # Lớp quản trị document system, không phải artifact trong SDLC.
+├── meta.md                                      # Metadata và quy ước quản trị của toàn bộ bộ tài liệu.
+├── sdlc-docs.md                                 # Framework chuẩn khung hướng dẫn SDLC.
 │
-├── system-docs/                                 # TÀI LIỆU CẤP HỆ THỐNG (SYSTEM-LEVEL)
-│   ├── info.md                                  # Kho nghiên cứu, sự thật và bằng chứng về đề tài.
-│   ├── tech-tool-stack.md                       # Công nghệ, framework, runtime, nền tảng và công cụ dự án.
-│   ├── pi.md                                    # Khởi tạo dự án: mục tiêu, phạm vi, định hướng và quyết định khởi tạo.
+├── system-docs/                                 # [CẤP HỆ THỐNG] Phát triển theo chiều ngang
+│   ├── info.md                                  # Kho nghiên cứu, sự thật và bằng chứng về đề tài
+│   ├── tech-tool-stack.md                       # Công nghệ, framework, runtime, nền tảng và công cụ dự án
+│   ├── pi.md                                    # Khởi tạo dự án: mục tiêu, phạm vi, định hướng và quyết định
 │   │
 │   ├── srs/                                     # Phân hệ Đặc tả Yêu cầu Hệ thống
-│   │   ├── srs.md                               # Yêu cầu tổng thể, ngữ cảnh hệ thống (ACT, EXT) và cross-cutting.
-│   │   ├── fr-nfr-specs.md                      # Đặc tả chức năng (FR) và phi chức năng (NFR) toàn hệ thống.
-│   │   ├── ui-ux-specs.md                       # Đặc tả trải nghiệm người dùng, luồng tương tác cấp hệ thống.
-│   │   ├── api-specs.md                         # Đặc tả giao diện/interface truyền thông liên hệ thống.
-│   │   └── data-specs.md                        # Đặc tả thực thể dữ liệu, tính toàn vẹn và chính sách bảo vệ dữ liệu.
+│   │   ├── srs.md                               # Ngữ cảnh hệ thống (ACT-, EXT-) và yêu cầu xuyên suốt (SRS-)
+│   │   ├── fr-nfr-specs.md                      # Yêu cầu chức năng (FR-SYS-) và phi chức năng (NFR-SYS-)
+│   │   ├── ui-ux-specs.md                       # Đặc tả hành trình người dùng và tương tác cấp hệ thống (UI-SYS-)
+│   │   ├── api-specs.md                         # Đặc tả giao diện/interface liên hệ thống trung lập (API-SYS-)
+│   │   └── data-specs.md                        # Đặc tả thực thể, tính toàn vẹn và vòng đời dữ liệu (DATA-SYS-)
 │   │
 │   ├── dds/                                     # Phân hệ Thiết kế Chi tiết Hệ thống
-│   │   ├── dds.md                               # Thiết kế kiến trúc tổng thể (ARC), ranh giới service và cross-cutting.
-│   │   ├── fr-nfr-design.md                     # Thiết kế hiện thực các giải pháp chức năng & phi chức năng (SOL).
-│   │   ├── ui-ux-design.md                      # Thiết kế chi tiết hệ thống giao diện, design system, tokens (UXD).
-│   │   ├── api-design.md                        # Thiết kế chi tiết giao thức, schema API REST/WebSocket (APD).
-│   │   └── data-design.md                       # Thiết kế mô hình dữ liệu quan hệ, lưu trữ và luồng đồng bộ (DTD).
+│   │   ├── dds.md                               # Kiến trúc tổng thể, ranh giới phân rã service và topology (ARC-)
+│   │   ├── fr-nfr-design.md                     # Thiết kế hiện thực các giải pháp chức năng & chất lượng (SOL-SYS-)
+│   │   ├── ui-ux-design.md                      # Thiết kế design system, tokens, bố cục chung (UXD-SYS-)
+│   │   ├── api-design.md                        # Thiết kế chi tiết giao thức REST/STOMP, schema liên dịch vụ (APD-SYS-)
+│   │   └── data-design.md                       # Thiết kế lược đồ CSDL quan hệ, lưu trữ và luồng đồng bộ (DTD-SYS-)
 │   │
-│   └── plans/                                   # Phân hệ Kế hoạch Hệ thống
-│       ├── project-plan.md                      # Kế hoạch tổng thể, các giai đoạn (Phase), mốc (Milestone) và rủi ro.
-│       ├── foundation-setup-plan.md             # Kế hoạch chuẩn bị nền tảng chung toàn hệ thống trước khi build.
-│       ├── build-plan.md                        # Kế hoạch xây dựng & tích hợp xuyên phân hệ.
-│       ├── test-plan.md                         # Kế hoạch kiểm thử tích hợp và nghiệm thu toàn hệ thống.
-│       └── deploy-plan.md                       # Kế hoạch phát hành, triển khai môi trường và dự phòng rollback.
+│   └── plans/                                   # Phân hệ Kế hoạch Cấp Hệ thống
+│       ├── project-plan.md                      # Kế hoạch tổng thể, giai đoạn, mốc (PRJ-) và rủi ro (RSK-)
+│       ├── foundation-setup-plan.md             # Kế hoạch chuẩn bị nền tảng chung toàn hệ thống (FND-SYS-)
+│       ├── build-plan.md                        # Kế hoạch xây dựng & tích hợp xuyên phân hệ (BLD-SYS-)
+│       ├── test-plan.md                         # Kế hoạch kiểm thử tích hợp & nghiệm thu hệ thống (TST-SYS-)
+│       └── deploy-plan.md                       # Kế hoạch phát hành, triển khai môi trường và dự phòng (DPL-SYS-)
 │
-└── service-docs/                                # TÀI LIỆU CẤP DỊCH VỤ (SERVICE-LEVEL)
-    │                                            # Áp dụng cho từng service độc lập (kiosk-app, backend-service, web-portal)
-    ├── <service-name>/
-    │   ├── core/                                # [Bắt buộc] Khối nghiệp vụ cốt lõi của service
-    │   │   ├── fsp.md                           # Kế hoạch thiết lập nền tảng riêng của service (Foundation Setup Plan).
-    │   │   ├── fr-nfr-specs.md                  # Yêu cầu chức năng và phi chức năng thuộc trách nhiệm service.
-    │   │   ├── fr-nfr-design.md                 # Thiết kế chi tiết hiện thực giải pháp của service.
-    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch xây dựng thành phần nghiệp vụ cốt lõi.
-    │   │   └── test-plan.md                     # Kế hoạch kiểm thử nội bộ service.
-    │   │
-    │   ├── ui-ux/                               # [Tùy chọn] Chỉ có khi service có tương tác trực tiếp với người dùng
-    │   │   ├── ui-ux-specs.md                   # Đặc tả luồng tương tác và trải nghiệm người dùng của service.
-    │   │   ├── ui-ux-design.md                  # Thiết kế chi tiết giao diện, layout và visual behavior của service.
-    │   │   └── ui-ux-build-plan.md              # Kế hoạch thi công thành phần giao diện của service.
-    │   │
-    │   ├── api/                                 # [Tùy chọn] Chỉ có khi service cung cấp hoặc tiêu thụ interface bên ngoài
-    │   │   ├── api-specs.md                     # Đặc tả interface, hợp đồng dữ liệu vào/ra của service.
-    │   │   ├── api-design.md                    # Thiết kế chi tiết endpoint, schema, serialization và security.
-    │   │   └── api-build-plan.md                # Kế hoạch triển khai tích hợp giao tiếp của service.
-    │   │
-    │   └── data/                                # [Tùy chọn] Chỉ có khi service chịu trách nhiệm lưu trữ bền vững (DB/Cache)
-    │       ├── data-specs.md                    # Đặc tả thực thể dữ liệu và ràng buộc thuộc quyền sở hữu của service.
-    │       ├── data-design.md                   # Thiết kế chi tiết lược đồ bảng, chỉ mục và lưu trữ của service.
-    │       └── data-build-plan.md               # Kế hoạch khởi tạo CSDL, migration và cấu hình lưu trữ.
+└── service-docs/                                # [CẤP DỊCH VỤ] Phát triển theo chiều dọc (Vertical Slices)
+    │
+    ├── backend-service/                         # Phân hệ Máy chủ Doanh nghiệp (Java 21, Spring Boot, PostgreSQL)
+    │   ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Backend
+    │   ├── core/                                # [Bắt buộc] Nghiệp vụ máy chủ & Bảo mật
+    │   │   ├── fsp.md                           # Foundation Setup Plan riêng của Backend (FND-BE-)
+    │   │   ├── fr-nfr-specs.md                  # Yêu cầu nghiệp vụ chấm công, bảo mật (FR-BE-, NFR-BE-)
+    │   │   ├── fr-nfr-design.md                 # Thiết kế component, cơ chế mã hóa AES (SOL-BE-)
+    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công nghiệp vụ Backend (BLD-BE-)
+    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử nghiệp vụ Backend (TST-BE-)
+    │   ├── data/                                # [Kích hoạt] Quản lý lưu trữ CSDL trung tâm
+    │   │   ├── data-specs.md                    # Thực thể CSDL PostgreSQL, quy tắc toàn vẹn (DATA-BE-)
+    │   │   ├── data-design.md                   # Lược đồ DDL PostgreSQL 16 8 bảng, chỉ mục (DTD-BE-)
+    │   │   ├── data-build-plan.md               # Kế hoạch migration CSDL và cấu hình cache (BLD-BE-)
+    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL và toàn vẹn dữ liệu (TST-BE-)
+    │   └── api/                                 # [Kích hoạt] Cung cấp REST API & STOMP Broker
+    │       ├── api-specs.md                     # Đặc tả 11 REST Endpoints & 3 STOMP Topics (API-BE-)
+    │       ├── api-design.md                    # Thiết kế chi tiết từng trường payload, Controller (APD-BE-)
+    │       ├── api-build-plan.md                # Kế hoạch thi công API Controllers & STOMP (BLD-BE-)
+    │       └── api-test-plan.md                 # Kế hoạch kiểm thử hợp đồng API (TST-BE-)
+    │
+    ├── kiosk-app/                               # Phân hệ Trạm Điểm danh Cận biên (Python 3, PySide6, OpenCV)
+    │   ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Kiosk
+    │   ├── core/                                # [Bắt buộc] Pipeline Thị giác Máy tính & AI Biên
+    │   │   ├── fsp.md                           # Foundation Setup Plan riêng của Kiosk (FND-KSK-)
+    │   │   ├── fr-nfr-specs.md                  # Yêu cầu phát hiện mặt, liveness, so khớp (FR-KSK-, NFR-KSK-)
+    │   │   ├── fr-nfr-design.md                 # Thiết kế pipeline YuNet, MiniFASNet, ArcFace (SOL-KSK-)
+    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công pipeline thị giác biên (BLD-KSK-)
+    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử thị giác máy tính và AI (TST-KSK-)
+    │   ├── data/                                # [Kích hoạt] CSDL ngoại tuyến SQLite WAL & Ma trận RAM
+    │   │   ├── data-specs.md                    # Thực thể SQLite offline_punches, GalleryMatrix (DATA-KSK-)
+    │   │   ├── data-design.md                   # Lược đồ SQLite WAL, Cosine Matcher, Atomic Swap (DTD-KSK-)
+    │   │   ├── data-build-plan.md               # Kế hoạch thi công CSDL cục bộ và RAM matrix (BLD-KSK-)
+    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL cục bộ và ma trận (TST-KSK-)
+    │   ├── api/                                 # [Kích hoạt] Tiêu thụ REST API & Lắng nghe STOMP
+    │   │   ├── api-specs.md                     # Đặc tả giao diện tiêu thụ và topic lắng nghe (API-KSK-)
+    │   │   ├── api-design.md                    # Thiết kế HTTP Client httpx, Offline Sync, STOMP (APD-KSK-)
+    │   │   ├── api-build-plan.md                # Kế hoạch thi công tầng mạng và sync worker (BLD-KSK-)
+    │   │   └── api-test-plan.md                 # Kế hoạch kiểm thử truyền thông mạng Kiosk (TST-KSK-)
+    │   └── ui-ux/                               # [Kích hoạt] Màn hình Cảm ứng Dọc 9:16 (Figma 1080x1920)
+    │       ├── ui-ux-specs.md                   # Hành trình điểm danh, máy trạng thái Oval 4 màu (UI-KSK-)
+    │       ├── ui-ux-design.md                  # Design Tokens, tỷ lệ co giãn S, hình học vector (UXD-KSK-)
+    │       ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện QML (BLD-KSK-)
+    │       └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và tương tác chạm (TST-KSK-)
+    │
+    └── web-portal/                              # Phân hệ Cổng Web Quản trị & Người dùng (React, TypeScript)
+        ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Web Portal
+        ├── core/                                # [Bắt buộc] Định tuyến, Phân quyền & Quản lý Phiên
+        │   ├── fsp.md                           # Foundation Setup Plan riêng của Web Portal (FND-WEB-)
+        │   ├── fr-nfr-specs.md                  # Yêu cầu quản trị phân quyền, giám sát (FR-WEB-, NFR-WEB-)
+        │   ├── fr-nfr-design.md                 # Thiết kế SPA architecture, Auth guards (SOL-WEB-)
+        │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công khung nghiệp vụ client (BLD-WEB-)
+        │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử nghiệp vụ và định tuyến (TST-WEB-)
+        ├── data/                                # [Kích hoạt] Lưu trữ Trình duyệt & TanStack Query Cache
+        │   ├── data-specs.md                    # Thực thể Local/SessionStorage, Query Cache (DATA-WEB-)
+        │   ├── data-design.md                   # TypeScript contracts, Storage Adapter, Cache keys (DTD-WEB-)
+        │   ├── data-build-plan.md               # Kế hoạch thi công tầng dữ liệu máy trạm (BLD-WEB-)
+        │   └── data-test-plan.md                # Kế hoạch kiểm thử lưu trữ client và cache (TST-WEB-)
+        ├── api/                                 # [Kích hoạt] Tiêu thụ REST API & Lắng nghe STOMP
+        │   ├── api-specs.md                     # Đặc tả 6 REST Endpoints & 2 STOMP Topics tiêu thụ (API-WEB-)
+        │   ├── api-design.md                    # Thiết kế Axios Client, Mutex Refresh Interceptor (APD-WEB-)
+        │   ├── api-build-plan.md                # Kế hoạch thi công Axios client và STOMP hooks (BLD-WEB-)
+        │   └── api-test-plan.md                 # Kế hoạch kiểm thử giao tiếp mạng Web (TST-WEB-)
+        └── ui-ux/                               # [Kích hoạt] Giao diện Web Responsive Đa màn hình
+            ├── ui-ux-specs.md                   # Hành trình người dùng, quy trình ký cam kết OTP (UI-WEB-)
+            ├── ui-ux-design.md                  # Tailwind Tokens Indigo SaaS, Admin Shell, Modals (UXD-WEB-)
+            ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện React/Tailwind (BLD-WEB-)
+            └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và độ phản hồi (TST-WEB-)
 ```
-
-> **Nguyên tắc kích hoạt nhánh service:**  
-> Các nhánh `ui-ux/`, `api/`, `data/` không bắt buộc hiện diện ở mọi service. Chúng chỉ được tạo lập khi service có trách nhiệm kỹ thuật thực tế tương ứng.
 
 ---
 
-## 2. Document Registry (Sổ Đăng ký Tài liệu)
+## 2. Document Registry (Sổ Đăng ký Tài liệu Toàn hệ thống)
 
-Bảng phân công vai trò, nguồn dữ liệu đầu vào (Upstream), đầu ra (Downstream) và điều kiện áp dụng cho từng tệp tài liệu:
+### 2.1. Cấp Hệ thống (System-Level Registry)
 
-| Mã Leaf | Tên Tệp | Cấp độ | Mục đích Kỹ thuật & Trách nhiệm | Upstream | Downstream | Điều kiện Áp dụng |
-| :--- | :--- | :---: | :--- | :--- | :--- | :--- |
-| `INFO` | `info.md` | System | Kho dữ liệu nghiên cứu, khảo sát thực tế và phân tích | Nguồn khảo sát ngoài | PI, SRS, Specs | Bắt buộc |
-| `STACK` | `tech-tool-stack.md` | System | Lựa chọn công nghệ, runtime, thư viện và công cụ | INFO, PI | DDS, FSP, Plans | Bắt buộc |
-| `PI` | `pi.md` | System | Khởi tạo dự án: mục tiêu, phạm vi và quyết định nền tảng | INFO | SRS, STACK, PP | Bắt buộc |
-| `SRS` | `srs/srs.md` | System | Ngữ cảnh hệ thống, actor, external system và cross-cutting | PI, INFO | Specs, DDS | Bắt buộc |
-| `SPEC-FR` | `srs/fr-nfr-specs.md` | System | Danh mục yêu cầu chức năng (FR) và phi chức năng (NFR) | SRS, PI | DDS, Test Plan | Bắt buộc |
-| `SPEC-UI` | `srs/ui-ux-specs.md` | System | Đặc tả hành trình người dùng và trải nghiệm cấp hệ thống | SRS, SPEC-FR | UI Design, Test Plan | Bắt buộc nếu có UI |
-| `SPEC-API`| `srs/api-specs.md` | System | Đặc tả giao diện truyền thông trung lập công nghệ | SRS, SPEC-FR | API Design, Test Plan | Bắt buộc nếu có API |
-| `SPEC-DAT`| `srs/data-specs.md` | System | Đặc tả thực thể dữ liệu, quy tắc toàn vẹn và vòng đời | SRS, SPEC-FR | Data Design, Test Plan| Bắt buộc nếu có data |
-| `DDS` | `dds/dds.md` | System | Kiến trúc tổng thể, ranh giới phân rã service và cross-cutting | SRS, STACK | Service Docs, Plans | Bắt buộc |
-| `DES-FR` | `dds/fr-nfr-design.md` | System | Thiết kế giải pháp hiện thực hóa yêu cầu chức năng | SPEC-FR, DDS | Build Plan | Bắt buộc |
-| `DES-UI` | `dds/ui-ux-design.md` | System | Thiết kế chi tiết UI, thông số design token và layout | SPEC-UI, DDS | UI Build Plan | Có UI |
-| `DES-API`| `dds/api-design.md` | System | Thiết kế hợp đồng API REST, WebSocket STOMP cụ thể | SPEC-API, DDS | API Build Plan | Có API |
-| `DES-DAT`| `dds/data-design.md` | System | Thiết kế lược đồ CSDL PostgreSQL, SQLite WAL, migration | SPEC-DAT, DDS | Data Build Plan | Có CSDL bền vững |
-| `PLN-PRJ`| `plans/project-plan.md`| System | Lịch trình mốc thời gian, quản lý phân bổ và rủi ro | PI, DDS | Toàn bộ kế hoạch | Bắt buộc |
-| `PLN-FND`| `plans/foundation-setup-plan.md`| System | Kế hoạch chuẩn bị hạ tầng, repo, công cụ chung | STACK, DDS | Build Plans, FSP | Bắt buộc |
-| `PLN-BLD`| `plans/build-plan.md` | System | Kế hoạch xây dựng và tích hợp xuyên suốt hệ thống | DDS, Design leaves | Quá trình Build | Bắt buộc |
-| `PLN-TST`| `plans/test-plan.md` | System | Kế hoạch kiểm thử tích hợp và ma trận kiểm thử hệ thống | Specs (trực tiếp) | Quá trình Test | Bắt buộc |
-| `PLN-DPL`| `plans/deploy-plan.md` | System | Kế hoạch đóng gói, triển khai và kiểm soát vận hành | DDS (Topology), STACK | Quá trình Deploy | Bắt buộc |
-| `SVC-FSP`| `<service>/core/fsp.md`| Service | Kế hoạch thiết lập nền tảng cục bộ của service | PLN-FND, STACK | Service Build | Bắt buộc cho service |
-| `SVC-SPEC`| `<service>/*/*-specs.md`| Service | Yêu cầu chi tiết thuộc phạm vi trách nhiệm của service | System Specs, DDS | Service Design, Test | Theo facet của service |
-| `SVC-DES` | `<service>/*/*-design.md`| Service | Thiết kế kỹ thuật chi tiết của service | Service Specs, STACK | Service Build | Theo facet của service |
-| `SVC-BLD` | `<service>/*/*-build-plan.md`| Service| Kế hoạch phân rã công việc thi công của service | Service Design | Code | Theo facet của service |
-| `SVC-TST` | `<service>/core/test-plan.md`| Service| Ma trận kiểm thử đơn vị và kiểm thử thành phần service | Service Specs | Kiểm thử mã nguồn | Bắt buộc cho service |
+| Leaf Document | Trả lời Câu hỏi | Upstream | Downstream | Điều kiện Áp dụng |
+| :--- | :--- | :--- | :--- | :---: |
+| `system-docs/info.md` | Ta biết gì: sự thật, bằng chứng và phân tích? | Nguồn khảo sát ngoài (`SRC-`) | PI, SRS, Specs | Bắt buộc |
+| `system-docs/pi.md` | Làm gì, trong phạm vi nào, quyết định cấp dự án gì? | INFO | STACK, SRS, Project Plan | Bắt buộc |
+| `system-docs/tech-tool-stack.md` | Dùng công nghệ, framework, công cụ và nền tảng nào? | INFO, PI | DDS, FSP, Plans | Bắt buộc |
+| `system-docs/srs/srs.md` | Ngữ cảnh hệ thống và yêu cầu xuyên suốt? | PI, INFO | Specs, DDS | Bắt buộc |
+| `system-docs/srs/fr-nfr-specs.md` | Hệ thống phải làm gì (FR) và đạt mức chất lượng nào (NFR)? | SRS, PI | DDS, Test Plan | Bắt buộc |
+| `system-docs/srs/ui-ux-specs.md` | Người dùng trải nghiệm và tương tác với hệ thống thế nào? | SRS, FR-NFR | UI Design, Test Plan | Có UI |
+| `system-docs/srs/api-specs.md` | Hệ thống giao tiếp qua các ranh giới/interface nào? | SRS, FR-NFR | API Design, Test Plan | Có API |
+| `system-docs/srs/data-specs.md` | Thực thể dữ liệu, toàn vẹn và vòng đời dữ liệu ra sao? | SRS, FR-NFR | Data Design, Test Plan| Có dữ liệu |
+| `system-docs/dds/dds.md` | Kiến trúc tổng thể, ranh giới phân rã service thế nào? | SPEC, STACK, PI | Service Docs, Plans | Bắt buộc |
+| `system-docs/dds/fr-nfr-design.md` | Các requirement FR/NFR được hiện thực bằng giải pháp nào? | SPEC, DDS | Build Plan | Bắt buộc |
+| `system-docs/dds/ui-ux-design.md` | Hệ thống giao diện được hiện thực bằng cấu trúc/token nào? | UI Spec, DDS | Build Plan | Có UI |
+| `system-docs/dds/api-design.md` | Các interface được hiện thực bằng giao thức/schema nào? | API Spec, DDS | Build Plan | Có API |
+| `system-docs/dds/data-design.md` | Mô hình dữ liệu được hiện thực bằng cấu trúc lưu trữ nào? | Data Spec, DDS | Build Plan | Có CSDL |
+| `system-docs/plans/project-plan.md` | Khi nào, ai làm, rủi ro nào, theo lifecycle nào? | PI, các Plan | — | Bắt buộc |
+| `system-docs/plans/foundation-setup-plan.md` | Chuẩn bị nền tảng chung nào để build bắt đầu? | STACK, DDS | Build Plan, Service FSP| Bắt buộc |
+| `system-docs/plans/build-plan.md` | Xây dựng và tích hợp hệ thống theo thứ tự nào? | DDS, Design leaves | Quá trình Build | Bắt buộc |
+| `system-docs/plans/test-plan.md` | Kiểm chứng yêu cầu hệ thống bằng cách nào? | Specs (trực tiếp) | Quá trình Test | Bắt buộc |
+| `system-docs/plans/deploy-plan.md` | Phát hành và đưa hệ thống vào vận hành thế nào? | DDS (Topology), STACK | Quá trình Deploy | Bắt buộc |
 
 ---
 
-## 3. Conventions & Standards (Quy chuẩn Định danh & Schema)
+### 2.2. Cấp Dịch vụ (Service-Level Registry)
 
-### 3.1. Cú pháp Mã Định danh (ID Scheme)
+Áp dụng quy tắc ma trận **chiều dọc** quy định tại Mục 2.1 & Mục 10 của `sdlc-docs.md`: Mỗi facet khi tồn tại **bắt buộc phải có đủ bộ tứ 4 leaf** (`specs → design → build-plan → test-plan`).
 
-Mỗi phần tử trong bộ tài liệu bắt buộc phải có mã định danh duy nhất theo cấu trúc:
-
-* **Cấp Hệ thống (System-Level)**: `<TYPE>-<NNN>` (Ví dụ: `INF-001`, `STK-003`, `ARC-002`, `FR-SYS-001`)
-* **Cấp Dịch vụ (Service-Level)**: `<TYPE>-<SCOPE>-<NNN>` (Ví dụ: `FR-KSK-001`, `SOL-BE-002`, `CBL-WEB-003`)
-
-#### Bảng Prefix Chuẩn hóa Toàn Hệ thống:
-
-| Prefix | Phân loại Phần tử | Vị trí Tài liệu Quy định | Diễn giải |
-| :--- | :--- | :--- | :--- |
-| `SRC-` | Nguồn bằng chứng | `info.md` | Báo cáo, khảo sát, tiêu chuẩn nghiên cứu |
-| `INF-` | Phát hiện nghiên cứu | `info.md` | Sự thật, kết quả phân tích thị trường/kỹ thuật |
-| `PD-` | Quyết định dự án | `pi.md` | Quyết định khởi tạo, mục tiêu, ranh giới dự án |
-| `STK-` | Công nghệ / Công cụ | `tech-tool-stack.md` | Thành phần trong Tech Stack hoặc Tool Stack |
-| `ACT-` | Tác nhân người dùng | `srs/srs.md` | Vai trò người dùng tương tác với hệ thống |
-| `EXT-` | Hệ thống bên ngoài | `srs/srs.md` | Thiết bị phần cứng, dịch vụ bên ngoài |
-| `SRS-` | Yêu cầu xuyên suốt | `srs/srs.md` | Quy chuẩn bảo mật, tuân thủ pháp lý toàn cục |
-| `FR-` | Yêu cầu chức năng | `*/fr-nfr-specs.md` | Năng lực nghiệp vụ và quy tắc nghiệp vụ |
-| `NFR-` | Yêu cầu phi chức năng | `*/fr-nfr-specs.md` | Thuộc tính chất lượng đo được (hiệu năng, độ tin cậy) |
-| `UI-` | Đặc tả tương tác UI/UX | `*/ui-ux-specs.md` | Tác vụ, luồng trải nghiệm, thông tin hiển thị |
-| `API-` | Đặc tả giao diện/hợp đồng | `*/api-specs.md` | Hợp đồng giao tiếp dữ liệu vào/ra |
-| `DATA-`| Đặc tả dữ liệu | `*/data-specs.md` | Khái niệm thực thể, quy tắc toàn vẹn dữ liệu |
-| `ARC-` | Thiết kế kiến trúc | `dds/dds.md` | Cấu trúc phân tầng, ranh giới service, topology |
-| `SOL-` | Thiết kế giải pháp | `*/fr-nfr-design.md` | Thành phần phần mềm, logic và cơ chế xử lý |
-| `UXD-` | Thiết kế giao diện | `*/ui-ux-design.md` | Cấu trúc màn hình, token giao diện, behavior |
-| `APD-` | Thiết kế API chi tiết | `*/api-design.md` | Endpoint, schema JSON, sequence giao tiếp |
-| `DTD-` | Thiết kế dữ liệu chi tiết | `*/data-design.md` | Lược đồ CSDL, bảng, chỉ mục, migration |
-| `DD-` | Quyết định thiết kế | `*/*-design.md` | Design Decision ghi nhận rationale và trade-off |
-| `APC-` | Quyết định cách tiếp cận | `*/*-plan.md` | Approach Decision trong kế hoạch thực hiện |
-| `PRJ-` | Hạng mục dự án | `plans/project-plan.md` | Giai đoạn, mốc mốc hoàn thành |
-| `RSK-` | Rủi ro | `plans/project-plan.md` | Rủi ro dự án, mức độ ảnh hưởng và biện pháp |
-| `FND-` | Công việc chuẩn bị nền tảng | `*/foundation-setup-plan.md` | Cài đặt môi trường, công cụ, cấu hình repo |
-| `BLD-` | Công việc build hệ thống | `plans/build-plan.md` | Hạng mục tích hợp cấp hệ thống |
-| `CBL-` | Công việc build Core service | `<service>/core/fr-nfr-build-plan.md` | Hạng mục thi công nghiệp vụ service |
-| `UBL-` | Công việc build UI service | `<service>/ui-ux/ui-ux-build-plan.md` | Hạng mục thi công giao diện service |
-| `ABL-` | Công việc build API service | `<service>/api/api-build-plan.md` | Hạng mục thi công giao tiếp service |
-| `DBL-` | Công việc build Data service | `<service>/data/data-build-plan.md` | Hạng mục thi công CSDL service |
-| `TST-` | Hạng mục kiểm thử | `*/test-plan.md` | Ca kiểm thử chức năng/phi chức năng/tích hợp |
-| `DPL-` | Hạng mục triển khai | `plans/deploy-plan.md` | Đóng gói, triển khai và xác minh môi trường |
+| Leaf Type | Tên Tệp Chuẩn | Trách nhiệm Kỹ thuật | Upstream | Downstream |
+| :--- | :--- | :--- | :--- | :--- |
+| **Foundation** | `core/fsp.md` | Kế hoạch chuẩn bị môi trường, công cụ riêng của service | System Foundation Plan, STACK | Service Build Plans |
+| **Core Specs** | `core/fr-nfr-specs.md` | Năng lực nghiệp vụ và chất lượng thuộc trách nhiệm service | System Specs, ARC- | Core Design, Core Test |
+| **Core Design** | `core/fr-nfr-design.md` | Cấu trúc component, logic và cơ chế chất lượng service | Core Specs, STACK | Core Build Plan |
+| **Core Build** | `core/fr-nfr-build-plan.md` | Kế hoạch phân rã thi công nghiệp vụ service | Core Design | Quá trình Build |
+| **Core Test** | `core/fr-nfr-test-plan.md` | Kế hoạch kiểm thử nghiệp vụ cốt lõi của service | Core Specs | Quá trình Test |
+| **Data Specs** | `data/data-specs.md` | Thực thể dữ liệu, quy tắc toàn vẹn, vòng đời của service | System Data Spec, ARC- | Data Design, Data Test |
+| **Data Design** | `data/data-design.md` | Lược đồ CSDL, cấu trúc bảng, chỉ mục, migration của service | Data Specs, STACK | Data Build Plan |
+| **Data Build** | `data/data-build-plan.md` | Kế hoạch khởi tạo CSDL, migration và lưu trữ của service | Data Design | Quá trình Build |
+| **Data Test** | `data/data-test-plan.md` | Kế hoạch kiểm thử tầng dữ liệu và lưu trữ của service | Data Specs | Quá trình Test |
+| **API Specs** | `api/api-specs.md` | Ranh giới giao tiếp, interface cung cấp/tiêu thụ của service | System API Spec, ARC- | API Design, API Test |
+| **API Design** | `api/api-design.md` | Endpoint, schema dữ liệu, client wrapper, sequence của service | API Specs, STACK | API Build Plan |
+| **API Build** | `api/api-build-plan.md` | Kế hoạch thi công các client/controller giao tiếp của service | API Design | Quá trình Build |
+| **API Test** | `api/api-test-plan.md` | Kế hoạch kiểm thử hợp đồng giao tiếp của service | API Specs | Quá trình Test |
+| **UI/UX Specs** | `ui-ux/ui-ux-specs.md` | Tác vụ người dùng, luồng tương tác, phản hồi của service | System UI Spec, ARC- | UI Design, UI Test |
+| **UI/UX Design**| `ui-ux/ui-ux-design.md` | Design tokens, layout, tỷ lệ co giãn, hình học của service | UI Specs, STACK | UI Build Plan |
+| **UI/UX Build** | `ui-ux/ui-ux-build-plan.md` | Kế hoạch thi công giao diện của service | UI Design | Quá trình Build |
+| **UI/UX Test** | `ui-ux/ui-ux-test-plan.md` | Kế hoạch kiểm thử giao diện và tương tác người dùng | UI Specs | Quá trình Test |
 
 ---
 
-### 3.2. Vòng đời Trạng thái (Status Lifecycle)
+## 3. Conventions & Standards (Quy chuẩn Quản lý & Định danh)
 
-Mỗi phần tử (Requirement, Design, Plan Item) bắt buộc phải phản ánh trạng thái chuẩn:
+### 3.1. Document Control & Front Matter
+Mọi tệp tài liệu trong cây SDLC bắt buộc bắt đầu bằng khối YAML Front Matter chuẩn:
 
-* **Draft**: Mới soạn thảo, chưa qua kiểm định hoặc đang cập nhật.
-* **In Review**: Đang trong quá trình đánh giá và phản biện kỹ thuật.
-* **Approved**: Đã phê duyệt chính thức làm chuẩn baseline.
-* **Implemented**: Đã hoàn tất cài đặt trong mã nguồn.
-* **Verified**: Đã vượt qua các ca kiểm thử tương ứng.
-* **Deprecated / Superseded**: Không còn sử dụng hoặc đã được thay thế bằng ID mới.
-
-### 3.3. Mức độ Ưu tiên (Priority Levels)
-
-* **P1 (Must-Have)**: Bắt buộc phải có để hệ thống hoạt động; không thể release nếu thiếu.
-* **P2 (Should-Have)**: Rất quan trọng, có thể chấp nhận giải pháp thay thế tạm thời trong ngắn hạn.
-* **P3 (Could-Have)**: Tính năng hữu ích nhưng có thể trì hoãn nếu nguồn lực giới hạn.
-* **P4 (Won't-Have)**: Chưa thực hiện trong phiên bản phát hành hiện tại.
+```yaml
+---
+title: <tên leaf>
+version: <MAJOR.MINOR>
+status: Draft | In Review | Approved | Baselined | Deprecated
+owner: <vai trò chịu trách nhiệm>
+---
+```
+* **Lịch sử thay đổi**: Quản lý hoàn toàn qua Git VCS; không chèn bảng Revision History thủ công trong file.
+* **Quy tắc tăng phiên bản**: `MINOR` tăng khi cập nhật, làm rõ; `MAJOR` tăng khi thay đổi lớn về ngữ nghĩa của tài liệu đã Approved.
 
 ---
 
-### 3.4. Hệ thống Bảng Schema Chuẩn mực (Canonical Schemas)
+### 3.2. Cú pháp Định danh & Danh mục Tiền tố (ID Scheme)
 
-#### A. Schema STACK (`tech-tool-stack.md`)
-```text
-| ID | Category | Name & Version | Applies to | Role | Basis | Requires | Status |
-```
-* *Basis*: Trỏ về `PD-` hoặc `INF-`.
-* *Requires*: Ghi nhận các điều kiện tương thích phần cứng/runtime.
+Định dạng chuẩn: `<TYPE>-<SCOPE>-<NNN>` (có scope) hoặc `<TYPE>-<NNN>` (không scope, cấp dự án duy nhất).
 
-#### B. Schema SPEC (`*-specs.md`)
-```text
-| ID | Statement | Category | Priority | Basis | Acceptance | Status |
-```
-* *Statement*: Phát biểu yêu cầu ngắn gọn, rõ ràng, độc lập.
-* *Basis*: Trỏ về `INF-`, `PD-` hoặc Spec cấp trên.
-* *Acceptance*: Tiêu chí nghiệm thu định lượng, có thể kiểm chứng được.
-
-#### C. Schema DESIGN — Structure & Behavior (`*-design.md`)
-```text
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
-```
-* *Definition*: Trách nhiệm của thành phần hoặc diễn biến hành vi.
-* *Uses*: Trỏ tới phần tử kỹ thuật khác, `STK-` hoặc `EXT-`.
-* *Realizes*: Trỏ về ID Spec mà thành phần này giải quyết.
-* *Decisions*: Trỏ về `DD-` chi phối.
-
-#### D. Schema DESIGN — Decisions (`*-design.md`)
-```text
-| ID | Decision | Rationale | Basis | Status |
-```
-* *Rationale*: Lý do lựa chọn, các phương án đã loại trừ và phân tích đánh đổi (trade-off).
-* *Basis*: Trỏ về Spec, `STK-`, `INF-` hoặc `PD-`.
-
-#### E. Schema PLAN — Work Items (`*-plan.md`)
-```text
-| ID | Name | Description | Covers | Depends on | Done when | Status |
-```
-* *Covers*: Trỏ về ID của Design Element (`ARC-`, `SOL-`, `UXD-`, `APD-`, `DTD-`) hoặc Spec.
-* *Depends on*: Danh sách các ID công việc phải hoàn thành trước.
-* *Done when*: Tiêu chí nghiệm thu hoàn thành công việc cụ thể.
-
-#### F. Schema TEST — Test Items (`*-test-plan.md`)
-```text
-| ID | Name | Description | Covers | Level | Done when | Status |
-```
-* *Covers*: Trỏ trực tiếp về ID của Spec (`FR-`, `NFR-`, `UI-`, `API-`, `DATA-`).
-* *Done when*: Tiêu chí pass kiểm thử cụ thể hóa từ trường `Acceptance` của Spec.
+| Tiền tố | Phân loại Phần tử | Leaf Sở hữu | Scope |
+| :--- | :--- | :--- | :---: |
+| `SRC-` | Nguồn khảo sát nghiên cứu | `system-docs/info.md` | Không |
+| `INF-` | Phát hiện / Sự thật khoa học | `system-docs/info.md` | Không |
+| `PD-` | Quyết định khởi tạo dự án | `system-docs/pi.md` | Không |
+| `STK-` | Phần tử công nghệ / Công cụ | `system-docs/tech-tool-stack.md` | Không (`Applies to`) |
+| `ACT-` | Tác nhân người dùng | `system-docs/srs/srs.md` | Không |
+| `EXT-` | Hệ thống / Phần cứng bên ngoài | `system-docs/srs/srs.md` | Không |
+| `SRS-` | Yêu cầu hệ thống xuyên suốt | `system-docs/srs/srs.md` | Không |
+| `FR-` | Yêu cầu chức năng | `*/fr-nfr-specs.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `NFR-` | Yêu cầu phi chức năng (Chất lượng) | `*/fr-nfr-specs.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `UI-` | Đặc tả tương tác người dùng | `*/ui-ux-specs.md` | Có (`SYS`, `KSK`, `WEB`) |
+| `API-` | Đặc tả interface / hợp đồng | `*/api-specs.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `DATA-` | Đặc tả dữ liệu | `*/data-specs.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `ARC-` | Phần tử kiến trúc & Topology | `system-docs/dds/dds.md` | Không |
+| `SOL-` | Giải pháp thiết kế nghiệp vụ | `*/fr-nfr-design.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `UXD-` | Thiết kế giao diện & tokens | `*/ui-ux-design.md` | Có (`SYS`, `KSK`, `WEB`) |
+| `APD-` | Thiết kế API chi tiết | `*/api-design.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `DTD-` | Thiết kế dữ liệu chi tiết | `*/data-design.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `DD-` | Quyết định thiết kế (Design Decision) | Mọi leaf design | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `APC-` | Quyết định cách tiếp cận (Approach) | Mọi leaf plan | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `PRJ-` | Giai đoạn / Mốc dự án | `system-docs/plans/project-plan.md` | Không |
+| `RSK-` | Rủi ro dự án | `system-docs/plans/project-plan.md` | Không |
+| `FND-` | Công việc chuẩn bị nền tảng | `*/foundation-setup-plan.md`, `fsp.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `BLD-` | Công việc thi công / Build | `*/build-plan.md`, `*-build-plan.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `TST-` | Ca kiểm thử / Test item | `*/test-plan.md`, `*-test-plan.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `DPL-` | Công việc triển khai / Vận hành | `system-docs/plans/deploy-plan.md` | Không |
 
 ---
 
-## 4. Traceability & Ownership (Nguyên tắc Truy vết & Quyền sở hữu)
+### 3.3. Các Bảng Schema Chuẩn hóa Toàn Hệ thống
 
-### 4.1. Nguyên tắc Vàng: Single Ownership
-> **Mỗi nội dung chỉ có một tài liệu duy nhất làm Owner; tất cả các tài liệu khác chỉ được phép tham chiếu bằng mã ID, tuyệt đối không sao chép nguyên văn.**
-
-### 4.2. Chuỗi Truy vết Kỹ thuật Xuyên suốt (End-to-End Traceability)
-
-```text
-       [info.md]              Kho bằng chứng, sự thật
-          │ (INF-)
-          ▼
-       [pi.md]                Quyết định khởi tạo dự án
-          │ (PD-)
-          ├──────────────────────────┐
-          ▼                          ▼
-[tech-tool-stack.md]         [srs/ & specs/]     Đặc tả yêu cầu hệ thống & dịch vụ
-   (STK-)                          │ (FR-, NFR-, DATA-...)
-     │                             ├──────────────────────────┐
-     ▼                             ▼                          │
-[dds/ & design/] ◄─────────── (Realizes)                      │
-   (ARC-, SOL-, DTD-...)           │                          │
-     │                             │                          │
-     ▼ (Covers)                    │                          ▼ (Covers)
-[plans/ & build-plans/]            │                   [test-plans/]
-   (BLD-, CBL-, UBL-...)           │                      (TST-)
-     │                             │                          │
-     ▼                             │                          ▼
- Mã nguồn thực thi (Code) ─────────┴──────────────────► Kiểm chứng nghiệm thu (Test Execution)
-```
-
-### 4.3. Quy tắc Refinement giữa System-level và Service-level
-1. Tài liệu cấp hệ thống định nghĩa ranh giới và phân bổ trách nhiệm thông qua kiến trúc `ARC-` trong `dds.md`.
-2. Tài liệu cấp dịch vụ không được sao chép nguyên văn yêu cầu hệ thống; mỗi dòng trong Service Spec là sự cụ thể hóa (refinement) từ System Spec và kiến trúc `ARC-` liên quan.
+* **Spec Schema (`*-specs.md`)**:
+  ```text
+  ID | Statement | Category | Priority | Basis | Acceptance | Status
+  ```
+* **Design Elements Schema (`*-design.md`)**:
+  ```text
+  ID | Name | Definition | Uses | Realizes | Decisions | Status
+  ```
+* **Decisions Schema (`PD-`, `DD-`, `APC-`)**:
+  ```text
+  ID | Decision | Rationale | Basis | Status
+  ```
+* **Work Items Schema (`*-build-plan.md`, `foundation-setup-plan.md`, `deploy-plan.md`)**:
+  ```text
+  ID | Name | Description | Covers | Depends on | Done when | Status
+  ```
+* **Test Items Schema (`*-test-plan.md`)**:
+  ```text
+  ID | Name | Description | Covers | Level / Category | Done when | Status
+  ```
+* **Stack Schema (`tech-tool-stack.md`)**:
+  ```text
+  ID | Category | Name | Version | Applies to | Role | Basis | Requires | Status
+  ```
 
 ---
 
-## 5. Quality Gates (Quy tắc Đánh giá Chất lượng Tài liệu)
+## 4. Traceability & Ownership (Quy tắc Truy vết & Quyền sở hữu)
 
-Mỗi phần tử và mục tài liệu chỉ được phê duyệt khi vượt qua đầy đủ **4 bài kiểm tra chuẩn mực**:
+### 4.1. Nguyên tắc Đơn sở hữu (Single Ownership)
+> **Mỗi nội dung kỹ thuật chỉ có đúng một Leaf làm Owner duy nhất. Mọi tài liệu khác bắt buộc tham chiếu qua mã ID, tuyệt đối không sao chép nội dung.**
 
-1. **Correct (Đúng đắn)**: Có trả lời chính xác câu hỏi cốt lõi mà loại tài liệu đó chịu trách nhiệm hay không? (Spec trả lời *Cần gì*, Design trả lời *Làm như thế nào*, Plan trả lời *Làm theo thứ tự nào*).
-2. **Complete (Đầy đủ)**: Nếu lược bỏ phần tử này đi, câu hỏi đó có còn được trả lời trọn vẹn và kiểm chứng được không?
-3. **Non-overlapping (Không chồng chéo)**: Nội dung này đã được sở hữu ở một leaf khác chưa? (Nếu đã có, bắt buộc phải thay bằng ID tham chiếu).
-4. **Abstract (Đúng mức độ trừu tượng)**: Tài liệu có bị lộ chi tiết thi công không cần thiết hay không? (Spec không chứa URL REST cụ thể, Design không ghi số dòng code, Plan không ghi ngày giờ cá nhân).
+### 4.2. Từ điển Trường Quan hệ Truy vết (Trace Fields)
+* `Basis`: Căn cứ upstream của Spec, Decision, STACK, Risk. Trỏ tới `INF-`, `PD-`, Spec/`ARC-` upstream.
+* `Uses`: Mối quan hệ sử dụng trong Design. Trỏ tới Design element khác, `STK-`, `EXT-`.
+* `Realizes`: Mối quan hệ hiện thực hóa trong Design. Trỏ tới Spec item (Requirement).
+* `Decisions`: Trỏ tới các quyết định thiết kế `DD-` chi phối phần tử.
+* `Covers`: Mối quan hệ bao phủ trong Plan. Build Plan trỏ tới Design Element; Test Plan trỏ trực tiếp tới Spec Item; Deploy Plan trỏ tới `ARC-` topology, `STK-`, `NFR-`.
+* `Depends on`: Mối quan hệ phụ thuộc thứ tự thực thi giữa các work items cùng phạm vi.
+* `Requires`: Ràng buộc điều kiện tiên quyết trong `tech-tool-stack.md`.
+* `Applies to`: Phạm vi áp dụng của phần tử công nghệ (System hoặc mã Service).
+
+### 4.3. Quy tắc Không mồ côi (Zero Orphan Rule)
+* Mọi Design element bắt buộc có `Realizes` trỏ về Spec item hợp lệ.
+* Mọi Work item trong Build Plan bắt buộc có `Covers` trỏ về Design element hợp lệ (trừ `Gate`).
+* Mọi Requirement trong Spec bắt buộc có Design element hiện thực (hoặc được phân bổ xuống Service qua `Basis`) và **bắt buộc có ít nhất một Test item cover**.
 
 ---
 
-## 6. Terms & Glossary (Thuật ngữ SDLC)
+## 5. Bảng Điều chỉnh Dự án (Project Tailoring)
 
-* **SDLC (Software Development Life Cycle)**: Vòng đời phát triển phần mềm toàn diện.
-* **SRS (System Requirements Specification)**: Tài liệu đặc tả yêu cầu cấp hệ thống.
-* **DDS (Detailed Design Specification)**: Tài liệu đặc tả thiết kế kỹ thuật chi tiết.
-* **FSP (Foundation Setup Plan)**: Kế hoạch thiết lập nền tảng và môi trường ban đầu của service.
-* **Leaf Document**: Một tệp markdown độc lập đóng vai trò sở hữu chuyên biệt một nhóm nội dung kỹ thuật.
-* **Traceability**: Khả năng lần vết hai chiều giữa yêu cầu, thiết kế, công việc triển khai và ca kiểm thử.
-* **RTM (Requirements Traceability Matrix)**: Ma trận truy xuất từ yêu cầu sang kiểm thử.
+Tuân thủ Mục 2.2 của `sdlc-docs.md`, dự án Face Attendance System thực hiện các điều chỉnh tailoring sau:
+
+| Phân hệ / Facet | Trạng thái Áp dụng | Căn cứ Kỹ thuật & Lý do Điều chỉnh |
+| :--- | :---: | :--- |
+| `backend-service/ui-ux` | **Bỏ qua (Tailored Out)** | Phân hệ chạy chế độ headless daemon / REST API service; không có giao diện tương tác người dùng trực tiếp. |
+| `backend-service/data` | **Kích hoạt (Active)** | Sở hữu và quản lý lưu trữ bền vững CSDL PostgreSQL 16 trung tâm và Caffeine Cache. |
+| `backend-service/api` | **Kích hoạt (Active)** | Cung cấp ranh giới giao tiếp REST API và STOMP Broker cho toàn bộ Kiosk và Web. |
+| `kiosk-app/data` | **Kích hoạt (Active)** | Sở hữu và quản lý hàng đợi ngoại tuyến SQLite WAL cục bộ và Ma trận bộ nhớ RAM. |
+| `kiosk-app/api` | **Kích hoạt (Active)** | Có ranh giới truyền thông mạng tiêu thụ REST API và lắng nghe STOMP. |
+| `kiosk-app/ui-ux` | **Kích hoạt (Active)** | Màn hình cảm ứng dọc 9:16 tương tác trực tiếp với cán bộ nhân viên điểm danh. |
+| `web-portal/data` | **Kích hoạt (Active)** | Quản lý lưu trữ trạng thái phiên xác thực (LocalStorage), tiến trình ký cam kết (SessionStorage) và bộ đệm truy vấn TanStack Query Cache. |
+| `web-portal/api` | **Kích hoạt (Active)** | Có ranh giới truyền thông mạng tiêu thụ REST API và lắng nghe STOMP. |
+| `web-portal/ui-ux` | **Kích hoạt (Active)** | Giao diện Single Page Application tương tác trực tiếp với Quản lý HR và Nhân viên. |

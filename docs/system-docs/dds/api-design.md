@@ -1,13 +1,12 @@
+---
+title: System API Design
+version: 1.0
+status: Approved
+owner: Solution Architect
+---
+
 # API DESIGN — Thiết kế Chi tiết Giao thức & Hợp đồng API
 
-> **Mã tài liệu:** `DES-API-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết các điểm cuối REST API (`APD-SYS-`), cấu trúc dữ liệu JSON Schema vào/ra, cơ chế xác thực và kênh truyền thông điệp thời gian thực WebSocket STOMP.
-
----
 
 ## 1. RESTful API Structure & Endpoints (Danh mục Điểm cuối API)
 

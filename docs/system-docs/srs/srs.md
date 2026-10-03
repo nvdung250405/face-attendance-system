@@ -1,11 +1,13 @@
+---
+title: Yêu cầu Tổng thể & Ngữ cảnh Hệ thống (SRS)
+version: 1.0
+status: Approved
+owner: Requirements Lead
+---
+
 # SRS — Yêu cầu Tổng thể & Ngữ cảnh Hệ thống (System Requirements Specification)
 
-> **Mã tài liệu:** `SRS-FAS-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả ngữ cảnh vận hành toàn hệ thống, danh mục tác nhân người dùng (`ACT-`), hệ thống/thiết bị bên ngoài (`EXT-`) và các yêu cầu kỹ thuật xuyên suốt (`SRS-`) chi phối toàn bộ giải pháp Monorepo.
+Đặc tả ngữ cảnh vận hành toàn hệ thống, danh mục tác nhân người dùng (`ACT-`), hệ thống/thiết bị bên ngoài (`EXT-`) và các yêu cầu kỹ thuật xuyên suốt (`SRS-`) chi phối toàn bộ giải pháp Monorepo.
 
 ---
 

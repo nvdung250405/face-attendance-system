@@ -1,11 +1,13 @@
+---
+title: Thiết kế Hiện thực Hóa Giải pháp Chức năng & Phi chức năng (FR/NFR)
+version: 1.0
+status: Approved
+owner: Solution Architect
+---
+
 # FR/NFR DESIGN — Thiết kế Hiện thực Hóa Giải pháp Chức năng & Phi chức năng
 
-> **Mã tài liệu:** `DES-FR-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết các thành phần giải pháp kỹ thuật (`SOL-SYS-`), thuật toán xử lý logic và cơ chế đảm bảo các thuộc tính chất lượng (NFR) nhằm hiện thực hóa trọn vẹn 16 yêu cầu chức năng của hệ thống.
+Thiết kế chi tiết các thành phần giải pháp kỹ thuật (`SOL-SYS-`), thuật toán xử lý logic và cơ chế đảm bảo các thuộc tính chất lượng (NFR) nhằm hiện thực hóa trọn vẹn 16 yêu cầu chức năng của hệ thống.
 
 ---
 

@@ -1,23 +1,46 @@
+---
+title: System Deploy Plan
+version: 1.0
+status: Approved
+owner: Release Engineer
+---
+
 # DEPLOY PLAN — Kế hoạch Triển khai & Vận hành Hệ thống
 
-> **Mã tài liệu:** `PLN-DPL-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả các hạng mục triển khai (`DPL-SYS-`), quy trình khởi động môi trường qua Docker Compose, kịch bản kiểm tra sau triển khai (Smoke Test) và quy trình dự phòng xử lý sự cố (Rollback).
+## 1. Scope & Objectives (Phạm vi & Mục tiêu)
+
+* **Phạm vi**: Toàn bộ quy trình đóng gói, phát hành, thiết lập môi trường vận hành thực tế và kịch bản phục hồi sau sự cố cho toàn bộ giải pháp Face Attendance System.
+* **Mục tiêu**:
+  * Đóng gói tự động cụm dịch vụ máy chủ và web portal thông qua Docker Compose.
+  * Đóng gói bản phân phối độc lập cho trạm điểm danh biên Kiosk Desktop.
+  * Đảm bảo quy trình phát hành an toàn với kịch bản kiểm tra khói (Smoke Test) và khôi phục sự cố (Rollback) dưới 5 phút.
 
 ---
 
-## 1. Approach & Deployment Architecture (Chiến lược & Topology Triển khai)
+## 2. Approach Decisions (Quyết định Tiếp cận Triển khai)
 
-* **Mô hình Hỗn hợp (Hybrid Host/Container Architecture)**:
-  * **Cụm Dịch vụ Máy chủ & Web (Containerized)**: PostgreSQL 16, Spring Boot Backend và Web Portal Nginx được đóng gói và điều phối tự động thông qua Docker Compose (`docker-compose.yml`) trong mạng nội bộ ảo `fas-net`.
-  * **Trạm Điểm danh Biên (Native Desktop Host)**: Ứng dụng Kiosk chạy trực tiếp trên hệ điều hành máy trạm (Windows 11 / Linux) để có quyền truy cập trực tiếp phần cứng camera quang học với độ trễ thấp nhất ($< 15\text{ ms}$) và khai thác tập lệnh vector CPU AVX2.
+| ID | Quyết định Tiếp cận Triển khai | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
+| :--- | :--- | :--- | :---: | :---: |
+| `APC-SYS-013` | Mô hình lai (Hybrid Host/Container Architecture): Cụm máy chủ chạy Docker, Kiosk chạy Native Host. | Container hóa Backend/DB/Web giúp cô lập môi trường và dễ mở rộng; Kiosk chạy native trên OS máy trạm để tối ưu giao tiếp camera USB độ trễ $< 15\text{ms}$ và tập lệnh vector CPU AVX2. | `ARC-SYS-001`, `STK-022` | Approved |
+| `APC-SYS-014` | Chiến lược phát hành Blue/Green với Docker Container. | Giảm thiểu thời gian gián đoạn (Downtime $\approx 0$), cho phép chuyển đổi tức thì giữa các phiên bản Backend và Web. | `NFR-SYS-006`, `STK-022` | Approved |
+| `APC-SYS-015` | Quy trình Rollback tự động dựa trên kết quả Smoke Test. | Nếu kiểm tra sau triển khai không phản hồi mã 200 trong vòng 60s, hệ thống tự động hoàn nguyên container trước đó. | `RSK-SYS-001`, `NFR-SYS-006` | Approved |
 
 ---
 
-## 2. Deployment Work Items (Danh mục Hạng mục Triển khai)
+## 3. Environment Architecture (Kiến trúc & Topology Môi trường)
+
+* **Cụm Dịch vụ Máy chủ & Web (Containerized)**:
+  * Mạng ảo nội bộ Docker: `fas-net` (Bridge Network).
+  * `fas-postgres`: CSDL PostgreSQL 16 Alpine, ánh xạ cổng 5432, lưu trữ persistent qua docker volume `pgdata`.
+  * `fas-backend`: Ứng dụng Spring Boot Java 21, ánh xạ cổng 8080.
+  * `fas-web`: Nginx Web Server đóng gói SPA ReactJS, ánh xạ cổng 3000/80, reverse proxy `/api` và `/ws` tới backend.
+* **Trạm Điểm danh Biên (Native Desktop Host)**:
+  * Máy trạm Windows 11 / Linux cấu hình tối thiểu Intel Core i3 Gen 8, 8GB RAM, camera USB 720p 30 FPS.
+  * File thực thi độc lập `FAS_Kiosk.exe` kết nối mạng LAN tới `fas-backend:8080`.
+
+---
+
+## 4. Deployment Work Items (Danh mục Hạng mục Triển khai)
 
 | ID | Hạng mục Triển khai (Work Item) | Mô tả Kỹ thuật Chi tiết | Covers / Uses | Depends on | Tiêu chí Hoàn tất (Done when) | Trạng thái |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -29,21 +52,20 @@
 
 ---
 
-## 3. Post-Deployment Verification & Smoke Tests (Kiểm tra Sau Triển khai)
+## 5. Verification & Rollback (Kiểm tra & Phục hồi Sự cố)
 
+### 5.1. Kịch bản Kiểm tra Sau Triển khai (Smoke Tests)
 1. **Kiểm tra Sức khỏe Máy chủ (Health Check)**:
    ```bash
    curl -f http://localhost:8080/actuator/health
    # Kỳ vọng: {"status":"UP","components":{"db":{"status":"UP"}}}
    ```
 2. **Kiểm tra Kênh STOMP WebSocket**:
-   * Mở trình duyệt truy cập `http://localhost:3000/dashboard`, kiểm tra console log xác nhận kết nối STOMP thành công (`Connected to ws://localhost:8080/ws`).
+   * Mở trình duyệt truy cập `http://localhost:3000/dashboard`, xác nhận kết nối STOMP thành công (`Connected to ws://localhost:8080/ws`).
 3. **Kiểm tra Trạm Kiosk**:
-   * Khởi chạy `FAS_Kiosk.exe`, kiểm tra biểu tượng trạng thái mạng chuyển màu Xanh (Online), đồng hồ số nhảy giây và viền Oval hiển thị nét đứt màu Xám.
+   * Khởi chạy `FAS_Kiosk.exe`, kiểm tra biểu tượng mạng chuyển màu Xanh (Online), đồng hồ số nhảy giây và viền Oval hiển thị nét đứt màu Xám.
 
----
-
-## 4. Rollback & Disaster Recovery (Quy trình Dự phòng & Khôi phục Sự cố)
+### 5.2. Kế hoạch Dự phòng & Phục hồi Sự cố (Rollback Procedures)
 
 | Sự cố Phát sinh (Incident) | Mức độ | Hành động Rollback & Phục hồi Tức thì |
 | :--- | :---: | :--- |

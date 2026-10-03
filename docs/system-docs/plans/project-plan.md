@@ -1,15 +1,24 @@
-# PROJECT PLAN — Kế hoạch Tổng thể & Quản trị Dự án
-
-> **Mã tài liệu:** `PLN-PRJ-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Xác lập lịch trình tổng thể, các giai đoạn và mốc dự án (`PRJ-SYS-`), phân bổ nguồn lực, các quyết định cách tiếp cận (`APC-SYS-`) và ma trận quản lý rủi ro (`RSK-SYS-`) cho toàn bộ giải pháp Monorepo.
-
+---
+title: System Project Plan
+version: 1.0
+status: Approved
+owner: Project Manager
 ---
 
-## 1. Approach & Lifecycle (Cách Tiếp cận & Vòng đời Dự án)
+# PROJECT PLAN — Kế hoạch Tổng thể & Quản trị Dự án
+
+## 1. Scope & Objectives (Phạm vi & Mục tiêu Dự án)
+
+* **Phạm vi dự án**: Thiết kế, phát triển và đóng gói toàn bộ giải pháp Face Attendance System bao gồm 3 phân hệ liên hoàn:
+  * Trạm điểm danh Kiosk App (Python/PySide6, Edge AI ONNX, SQLite WAL).
+  * Máy chủ Backend Service (Java 21/Spring Boot 3.3, PostgreSQL 16, WebSocket/STOMP, AES-256-GCM).
+  * Cổng quản trị Web Portal (Vue.js 3/Vite/TailwindCSS, Pinia, Chart.js).
+* **Mục tiêu kỹ thuật cốt lõi**:
+  * Tốc độ nhận diện điểm danh tại biên $\le 1.5\text{s}$, độ chính xác cosine threshold $\ge 0.65$, liveness threshold $\ge 0.85$.
+  * Vận hành ngoại tuyến $100\%$ khi mất mạng Internet, tự động đồng bộ khi khôi phục kết nối.
+  * Tuân thủ quy định bảo vệ dữ liệu cá nhân Nghị định 13/2023/NĐ-CP (Consent, Audit log, cron tiêu hủy 20 ngày).
+
+## 2. Approach & Lifecycle (Cách Tiếp cận & Vòng đời Dự án)
 
 | ID | Quyết định Cách Tiếp cận (Approach Decision) | Diễn giải & Nguyên tắc Thực thi | Nguồn tham chiếu (Basis) | Trạng thái |
 | :--- | :--- | :--- | :---: | :---: |
@@ -19,7 +28,7 @@
 
 ---
 
-## 2. Phases & Milestones (Giai đoạn & Mốc Dự án)
+## 3. Work Breakdown Structure & Milestones (Phân rã Công việc & Mốc Dự án)
 
 | ID | Giai đoạn / Mốc Dự án (Phase / Milestone) | Thời gian Dự kiến | Mục tiêu & Sản phẩm Bàn giao Cốt lõi | Trạng thái |
 | :--- | :--- | :---: | :--- | :---: |
@@ -31,7 +40,7 @@
 
 ---
 
-## 3. Roles & Responsibilities (Tổ chức & Phân công Nguồn lực)
+## 4. Resource & Ownership (Tổ chức & Phân công Nguồn lực)
 
 * **Kỹ sư Toàn quyền Kỹ thuật & Quản trị Dự án (`PRJ-ROLE-001` - nvdung)**:
   * Trách nhiệm: Đảm nhiệm 100% vai trò Full-stack & Applied AI Developer từ nghiên cứu thuật toán, lập trình mã nguồn, thiết kế CSDL, kiểm thử tự động đến viết tài liệu kỹ thuật.
@@ -39,7 +48,7 @@
 
 ---
 
-## 4. Risks & Mitigations (Quản lý Rủi ro Dự án)
+## 5. Risk Management (Quản trị Rủi ro Dự án)
 
 | ID | Rủi ro Tiềm ẩn (Risk Description) | Xác suất | Ảnh hưởng | Biện pháp Phòng ngừa & Ứng phó (Mitigation Strategy) |
 | :--- | :--- | :---: | :---: | :--- |

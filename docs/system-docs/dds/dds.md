@@ -1,11 +1,13 @@
+---
+title: Thiết kế Chi tiết & Kiến trúc Hệ thống (DDS)
+version: 1.0
+status: Approved
+owner: Lead System Architect
+---
+
 # DDS — Thiết kế Chi tiết & Kiến trúc Hệ thống (Detailed Design Specification)
 
-> **Mã tài liệu:** `DDS-FAS-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế kiến trúc kỹ thuật toàn diện, cấu trúc phân tầng (`ARC-SYS-`), các thuộc tính thiết kế xuyên suốt và các quyết định kỹ thuật cấp hệ thống (`DD-SYS-`) của Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS).
+Thiết kế kiến trúc kỹ thuật toàn diện, cấu trúc phân tầng (`ARC-SYS-`), các thuộc tính thiết kế xuyên suốt và các quyết định kỹ thuật cấp hệ thống (`DD-SYS-`) của Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS).
 
 ---
 
@@ -67,8 +69,8 @@ flowchart TB
 3. Kiosk ghi đệm bản ghi điểm danh vào bảng `offline_punches` trong SQLite WAL với timestamp thực tế.
 4. Kiosk phát thông báo "Điểm danh ngoại tuyến thành công" cho nhân viên (không làm gián đoạn luồng di chuyển).
 5. Luồng ngầm định kỳ 10 giây ping kiểm tra kết nối mạng.
-6. Khi mạng phục hồi, Kiosk gom lô tối đa 50 bản ghi (`is_synced = 0`) gửi `POST /api/v1/kiosk/sync-batch` lên Backend.
-7. Backend ghi nhận lô bản ghi vào PostgreSQL với mốc giờ gốc, trả về 200 OK. Kiosk cập nhật `is_synced = 1`.
+6. Khi mạng phục hồi, Kiosk gom lô tối đa 50 bản ghi (`status = 'PENDING'`) gửi `POST /api/v1/kiosk/sync-batch` lên Backend.
+7. Backend ghi nhận lô bản ghi vào PostgreSQL với mốc giờ gốc, trả về 200 OK. Kiosk cập nhật `status = 'SENT'`.
 
 ### 2.3. Luồng Tự Đăng ký Sinh trắc học & Nạp nóng Vector (Onboarding & Gallery Sync Flow)
 1. Nhân viên đăng nhập Web Portal $\rightarrow$ Ký xác nhận số thỏa thuận Informed Consent theo Luật 2025.

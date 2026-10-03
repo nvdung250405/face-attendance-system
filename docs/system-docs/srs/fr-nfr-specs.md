@@ -1,11 +1,13 @@
+---
+title: Đặc tả Yêu cầu Chức năng & Phi chức năng Hệ thống (FR/NFR)
+version: 1.0
+status: Approved
+owner: Requirements Lead
+---
+
 # FR/NFR SPECS — Đặc tả Yêu cầu Chức năng & Phi chức năng Hệ thống
 
-> **Mã tài liệu:** `SPEC-FR-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục 16 yêu cầu chức năng cốt lõi (`FR-SYS-`) và các yêu cầu phi chức năng đo lường được (`NFR-SYS-`) của toàn bộ hệ thống Monorepo, có gắn tiêu chí nghiệm thu định lượng (Acceptance Criteria).
+Đặc tả danh mục 16 yêu cầu chức năng cốt lõi (`FR-SYS-`) và các yêu cầu phi chức năng đo lường được (`NFR-SYS-`) của toàn bộ hệ thống Monorepo, có gắn tiêu chí nghiệm thu định lượng (Acceptance Criteria).
 
 ---
 

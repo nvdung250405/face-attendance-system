@@ -1,11 +1,13 @@
+---
+title: Nghiên cứu & Dữ liệu Bằng chứng (Research & Information)
+version: 1.0
+status: Approved
+owner: Research Lead
+---
+
 # INFO — Nghiên cứu & Dữ liệu Bằng chứng (Research & Information)
 
-> **Mã tài liệu:** `INFO-FAS-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Kho lưu trữ có cấu trúc các câu hỏi nghiên cứu, bối cảnh bài toán, danh mục nguồn khảo sát (`SRC-`), các phát hiện/sự thật khoa học (`INF-`), phân tích hệ quả và các khoảng trống nghiên cứu phục vụ khởi tạo dự án và đặc tả yêu cầu.
+Kho lưu trữ có cấu trúc các câu hỏi nghiên cứu, bối cảnh bài toán, danh mục nguồn khảo sát (`SRC-`), các phát hiện/sự thật khoa học (`INF-`), phân tích hệ quả và các khoảng trống nghiên cứu phục vụ khởi tạo dự án và đặc tả yêu cầu cho hệ thống Face Attendance System.
 
 ---
 

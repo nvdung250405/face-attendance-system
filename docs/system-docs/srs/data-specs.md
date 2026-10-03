@@ -1,11 +1,13 @@
+---
+title: Đặc tả Yêu cầu Dữ liệu Hệ thống (Data Specs)
+version: 1.0
+status: Approved
+owner: Data Architect
+---
+
 # DATA SPECS — Đặc tả Yêu cầu Dữ liệu Hệ thống
 
-> **Mã tài liệu:** `SPEC-DAT-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả các thực thể dữ liệu nghiệp vụ (`DATA-SYS-`), quy tắc toàn vẹn dữ liệu và chính sách bảo vệ vòng đời dữ liệu sinh trắc học theo Luật 2025 trên toàn hệ thống.
+Đặc tả các thực thể dữ liệu nghiệp vụ (`DATA-SYS-`), quy tắc toàn vẹn dữ liệu và chính sách bảo vệ vòng đời dữ liệu sinh trắc học theo Luật 2025 trên toàn hệ thống.
 
 ---
 

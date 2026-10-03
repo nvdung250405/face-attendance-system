@@ -1,11 +1,13 @@
+---
+title: Danh mục Công nghệ & Công cụ (Tech & Tool Stack)
+version: 1.0
+status: Approved
+owner: Lead System Architect
+---
+
 # STACK — Danh mục Công nghệ & Công cụ (Tech & Tool Stack)
 
-> **Mã tài liệu:** `STACK-FAS-01`  
-> **Cấp độ:** Cấp Hệ thống (System-Level)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Xác lập danh mục chuẩn hóa về công nghệ nền tảng (Tech Stack) và công cụ kỹ thuật (Tool Stack) được áp dụng trên toàn bộ hệ thống Monorepo, có gắn mã `STK-` và truy vết về các quyết định dự án (`PD-`).
+Xác lập danh mục chuẩn hóa về công nghệ nền tảng (Tech Stack) và công cụ kỹ thuật (Tool Stack) được áp dụng trên toàn bộ hệ thống Monorepo, có gắn mã `STK-` và truy vết về các quyết định dự án (`PD-`).
 
 ---
 
