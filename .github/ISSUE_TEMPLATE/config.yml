@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "📖 Tài liệu SDLC & Quy trình GitHub"
+    url: "https://github.com/nvdung250405/face-attendance-system/blob/develop/.github/github-docs.md"
+    about: "Xem quy chuẩn SDLC v2.0 và quy trình làm việc với GitHub trước khi tạo issue."

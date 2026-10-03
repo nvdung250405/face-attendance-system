@@ -1,0 +1,64 @@
+name: "Defect (Báo cáo Lỗi Kỹ thuật / Sai khác Đặc tả)"
+description: "Báo cáo lỗi phát hiện trong quá trình kiểm thử hoặc vận hành thực tế."
+title: "[DEFECT-<ID>] <Tóm tắt lỗi phát sinh>"
+labels: ["defect"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 🐛 Báo cáo Lỗi Kỹ thuật (Defect)
+        *Báo cáo lỗi cần chỉ rõ mã ca kiểm thử (`TST-`) hoặc điều khoản đặc tả (`FR-`, `NFR-`, `SPEC-`) bị vi phạm.*
+
+  - type: input
+    id: violated_id
+    attributes:
+      label: "Mã Test / Spec ID bị vi phạm"
+      description: "Nhập ID ca kiểm thử hoặc yêu cầu bị vi phạm (ví dụ: TST-KSK-001, FR-BKE-004, NFR-SYS-001)."
+      placeholder: "TST-KSK-001"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "Mức độ Nghiêm trọng (Severity)"
+      options:
+        - "P1 - Critical (Lỗi hệ thống tê liệt, mất dữ liệu, vỡ giao diện chặn luồng)"
+        - "P2 - Major (Lỗi chức năng chính không hoạt động nhưng có giải pháp thay thế)"
+        - "P3 - Minor (Lỗi giao diện nhỏ, không ảnh hưởng nghiệp vụ cốt lõi)"
+        - "P4 - Trivial (Góp ý thẩm mỹ, chính tả, cải tiến nhẹ)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: "Môi trường Phát hiện"
+      options:
+        - "Local Dev / Máy phát triển"
+        - "CI Pipeline / Test Runner"
+        - "Staging / Môi trường Thử nghiệm"
+        - "Production / Vận hành Thực tế"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: "Các Bước Tái hiện Lỗi (Steps to Reproduce)"
+      placeholder: |
+        1. Khởi động trạm Kiosk...
+        2. Đứng trước camera góc nghiêng 20 độ...
+        3. Quan sát thấy màn hình hiển thị...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_vs_actual
+    attributes:
+      label: "Hành vi Mong đợi vs Thực tế"
+      placeholder: |
+        - Mong đợi: Khung Oval chuyển màu vàng báo hiệu căn chỉnh theo UI-KSK-005.
+        - Thực tế: Hệ thống báo lỗi từ chối màu đỏ ngay lập tức.
+    validations:
+      required: true

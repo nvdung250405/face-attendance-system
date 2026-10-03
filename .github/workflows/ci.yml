@@ -1,3 +1,8 @@
+# Evidence: DPL-SYS-001
+# ==============================================================================
+# FAS Monorepo CI Pipeline (Tuân thủ github-docs.md mục 10)
+# ==============================================================================
+
 name: FAS Monorepo CI Pipeline
 
 on:
@@ -9,17 +14,50 @@ on:
     branches:
       - main
       - develop
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
+  # ----------------------------------------------------------------------------
+  # 0. Phân luồng thay đổi Monorepo (Path Filtering - github-docs.md 10.2)
+  # ----------------------------------------------------------------------------
+  changes:
+    name: Detect Affected Services
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      web: ${{ steps.filter.outputs.web }}
+      kiosk: ${{ steps.filter.outputs.kiosk }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'app/backend-service/**'
+            web:
+              - 'app/web-portal/**'
+            kiosk:
+              - 'app/kiosk-app/**'
+
   # ----------------------------------------------------------------------------
   # 1. CI Kiểm tra Máy chủ Backend (Java 21 / Spring Boot + PostgreSQL Service)
   # ----------------------------------------------------------------------------
   backend-ci:
     name: Backend Service CI (Java 21)
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     services:
@@ -71,6 +109,8 @@ jobs:
   # ----------------------------------------------------------------------------
   web-portal-ci:
     name: Web Portal CI (ReactJS / Vite)
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -100,6 +140,8 @@ jobs:
   # ----------------------------------------------------------------------------
   kiosk-app-ci:
     name: Kiosk Desktop CI (Python)
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.kiosk == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -133,3 +175,35 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: pytest tests/ -v
+
+  # ----------------------------------------------------------------------------
+  # 4. Job Tổng hợp Cổng kiểm định CI (ci-passed - github-docs.md 10.2)
+  # ----------------------------------------------------------------------------
+  ci-passed:
+    name: Monorepo CI Aggregation (ci-passed)
+    runs-on: ubuntu-latest
+    needs: [changes, backend-ci, web-portal-ci, kiosk-app-ci]
+    if: always()
+    steps:
+      - name: Evaluate Monorepo Status Checks
+        run: |
+          echo "============================================================"
+          echo "BÁO CÁO TỔNG HỢP KIỂM TRA CI MONOREPO (CI-PASSED GATEWAY)"
+          echo "============================================================"
+          echo "Backend Service CI: ${{ needs.backend-ci.result }}"
+          echo "Web Portal CI:      ${{ needs.web-portal-ci.result }}"
+          echo "Kiosk Desktop CI:   ${{ needs.kiosk-app-ci.result }}"
+          echo "============================================================"
+          
+          # Nếu bất kỳ job nào thất bại hoặc bị hủy -> Gatekeeper đánh rớt
+          if [ "${{ needs.backend-ci.result }}" = "failure" ] || \
+             [ "${{ needs.web-portal-ci.result }}" = "failure" ] || \
+             [ "${{ needs.kiosk-app-ci.result }}" = "failure" ] || \
+             [ "${{ needs.backend-ci.result }}" = "cancelled" ] || \
+             [ "${{ needs.web-portal-ci.result }}" = "cancelled" ] || \
+             [ "${{ needs.kiosk-app-ci.result }}" = "cancelled" ]; then
+            echo "❌ CỔNG CI THẤT BẠI: Phát hiện có phân hệ không vượt qua kiểm định!"
+            exit 1
+          fi
+
+          echo "✅ CỔNG CI THÀNH CÔNG: Mọi phân hệ hoạt động chuẩn xác hoặc được bỏ qua an toàn!"
