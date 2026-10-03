@@ -41,9 +41,11 @@ class CooldownTracker:
             if cooldown_duration is not None
             else settings.cooldown_seconds
         )
+        self.cleanup_interval: float = 300.0
+        self._last_cleanup: float = time.time()
         self._cache: dict[int, float] = {}
         self._lock = threading.Lock()
-        logger.info("CooldownTracker đã khởi tạo [duration=%d giây]", self.cooldown_duration)
+        logger.info("CooldownTracker đã khởi tạo [duration=%d giây, cleanup_interval=%.1fs]", self.cooldown_duration, self.cleanup_interval)
 
     def check_cooldown(
         self,
@@ -62,6 +64,18 @@ class CooldownTracker:
         now = current_time if current_time is not None else time.time()
 
         with self._lock:
+            # Tự động dọn dẹp các mục > 300s theo DATA-KSK-003
+            if (now - self._last_cleanup) >= self.cleanup_interval:
+                expired = [
+                    eid for eid, pt in self._cache.items()
+                    if (now - pt) >= self.cleanup_interval
+                ]
+                for eid in expired:
+                    del self._cache[eid]
+                self._last_cleanup = now
+                if expired:
+                    logger.info("Auto-cleanup đã xóa %d bản ghi Cooldown quá hạn 300s", len(expired))
+
             last_punch = self._cache.get(employee_id)
 
             if last_punch is None:

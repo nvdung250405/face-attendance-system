@@ -46,10 +46,11 @@ class KioskConfig:
     camera_fps: int = int(os.getenv("CAMERA_FPS", "30"))
 
     # 3. Ngưỡng AI & Nghiệp vụ điểm danh
-    liveness_threshold: float = float(os.getenv("LIVENESS_THRESHOLD", "0.70"))
+    liveness_threshold: float = float(os.getenv("LIVENESS_THRESHOLD", "0.85"))
     cosine_similarity_threshold: float = float(
         os.getenv("COSINE_SIMILARITY_THRESHOLD", "0.50")
     )
+    stability_seconds: float = float(os.getenv("STABILITY_SECONDS", "0.60"))
     cooldown_seconds: int = int(os.getenv("COOLDOWN_SECONDS", "120"))
     max_pin_attempts: int = int(os.getenv("MAX_PIN_ATTEMPTS", "5"))
     pin_lockout_minutes: int = int(os.getenv("PIN_LOCKOUT_MINUTES", "15"))

@@ -1,10 +1,14 @@
 """Module quản lý bộ nhớ đệm ma trận đặc trưng và so khớp Cosine 1:N cục bộ.
 
 Tài liệu tham chiếu:
-- BP-KIOSK-01 (Mục 1.2 & FR-01 - GalleryCacheManager)
-- DDS.md (Mục 3.2 - Bước 5: So khớp đặc trưng 1:N với ma trận RAM)
+- DATA-KSK-002: GalleryMatrix entity & architecture (docs/service-docs/kiosk-app/data/data-specs.md)
+- DATA DESIGN: Mục 2 - In-Memory NumPy Gallery Matrix Architecture (docs/service-docs/kiosk-app/data/data-design.md)
+- DATA BUILD PLAN: DBL-KSK-003 - NumPy RAM Matrix & Thread-safe Hot-Patching (docs/service-docs/kiosk-app/data/data-build-plan.md)
+- DATA TEST PLAN: TST-KSK-DAT-003, TST-KSK-DAT-004 (docs/service-docs/kiosk-app/data/data-test-plan.md)
 """
 
+import threading
+from typing import Any
 
 import numpy as np
 
@@ -28,113 +32,168 @@ class GalleryCacheManager:
             if default_threshold is not None
             else settings.cosine_similarity_threshold
         )
-        self._employee_ids: list[int] = []
+        self._lock = threading.Lock()
+        # Ánh xạ chỉ số dòng với employee_id kiểu int64 (DATA-KSK-002)
+        self._id_map: np.ndarray = np.empty((0,), dtype=np.int64)
         # Ma trận RAM kích thước (N, 512) kiểu float32
         self._embeddings_matrix: np.ndarray = np.empty((0, 512), dtype=np.float32)
+        # Bảng tra cứu thông tin nhanh metadata_registry: {emp_id: {"name": ..., "code": ..., "dept": ...}}
+        self._metadata_registry: dict[int, dict[str, Any]] = {}
+        # Số phiên bản của danh mục vector
+        self._gallery_version: int = 1
 
-    def load_gallery(self, records: list[tuple[int, np.ndarray]]) -> int:
-        """Tải toàn bộ danh mục nhân sự và vector 512D vào RAM.
+    @property
+    def gallery_version(self) -> int:
+        """Lấy phiên bản hiện tại của bộ đệm Gallery RAM."""
+        with self._lock:
+            return self._gallery_version
+
+    def load_gallery(
+        self,
+        records: list[tuple[int, np.ndarray]] | list[dict[str, Any]],
+        version: int | None = None,
+    ) -> int:
+        """Tải toàn bộ danh mục nhân sự và vector 512D vào RAM an toàn đa luồng.
 
         Args:
-            records: Danh sách các cặp (employee_id, embedding_512d).
+            records: Danh sách các tuple (employee_id, vector_512d) hoặc dict danh mục.
+            version: Phiên bản danh mục mới từ backend (nếu có).
 
         Returns:
             int: Số lượng nhân sự đã nạp thành công vào bộ nhớ.
         """
-        if not records:
-            self._employee_ids = []
-            self._embeddings_matrix = np.empty((0, 512), dtype=np.float32)
-            logger.info("Đã xóa trắng bộ nhớ đệm Gallery (0 nhân sự).")
-            return 0
+        with self._lock:
+            if not records:
+                self._id_map = np.empty((0,), dtype=np.int64)
+                self._embeddings_matrix = np.empty((0, 512), dtype=np.float32)
+                self._metadata_registry.clear()
+                self._gallery_version = version if version is not None else (self._gallery_version + 1)
+                logger.info("Đã xóa trắng bộ nhớ đệm Gallery (0 nhân sự).")
+                return 0
 
-        ids: list[int] = []
-        vectors: list[np.ndarray] = []
+            ids: list[int] = []
+            vectors: list[np.ndarray] = []
+            metadata_map: dict[int, dict[str, Any]] = {}
 
-        for emp_id, vec in records:
-            flat_vec = np.asarray(vec, dtype=np.float32).flatten()
-            if flat_vec.shape[0] != 512:
-                logger.warning(
-                    "Bỏ qua nhân viên %d: Vector đặc trưng không đúng 512 chiều (%dD)",
-                    emp_id,
-                    flat_vec.shape[0],
+            for item in records:
+                if isinstance(item, tuple):
+                    emp_id, vec = item
+                    meta = {}
+                elif isinstance(item, dict):
+                    emp_id = int(item.get("employee_id") if item.get("employee_id") is not None else item.get("id", 0))
+                    vec = item.get("vector")
+                    if vec is None:
+                        vec = item.get("embedding")
+                    meta = item.get("metadata") or {
+                        "name": item.get("name", ""),
+                        "code": item.get("code", f"NV-{emp_id}"),
+                        "dept": item.get("dept", ""),
+                    }
+                else:
+                    continue
+
+                if vec is None:
+                    continue
+
+                flat_vec = np.asarray(vec, dtype=np.float32).flatten()
+                if flat_vec.shape[0] != 512:
+                    logger.warning(
+                        "Bỏ qua nhân viên %d: Vector đặc trưng không đúng 512 chiều (%dD)",
+                        emp_id,
+                        flat_vec.shape[0],
+                    )
+                    continue
+
+                # Chuẩn hóa độ dài đơn vị L2 Norm (||u||_2 = 1.0)
+                norm = float(np.linalg.norm(flat_vec))
+                if norm > 1e-6:
+                    flat_vec = flat_vec / norm
+
+                ids.append(emp_id)
+                vectors.append(flat_vec)
+                metadata_map[emp_id] = meta
+
+            if vectors:
+                self._embeddings_matrix = np.ascontiguousarray(
+                    np.vstack(vectors), dtype=np.float32
                 )
-                continue
+                self._id_map = np.array(ids, dtype=np.int64)
+                self._metadata_registry = metadata_map
+            else:
+                self._embeddings_matrix = np.empty((0, 512), dtype=np.float32)
+                self._id_map = np.empty((0,), dtype=np.int64)
+                self._metadata_registry.clear()
 
-            # Đảm bảo vector chuẩn hóa độ dài đơn vị L2 Norm
-            norm = float(np.linalg.norm(flat_vec))
-            if norm > 1e-6:
-                flat_vec = flat_vec / norm
+            if version is not None:
+                self._gallery_version = version
+            else:
+                self._gallery_version += 1
 
-            ids.append(emp_id)
-            vectors.append(flat_vec)
-
-        self._employee_ids = ids
-        if vectors:
-            self._embeddings_matrix = np.ascontiguousarray(
-                np.vstack(vectors), dtype=np.float32
+            count = len(self._id_map)
+            mem_mb = self._embeddings_matrix.nbytes / (1024 * 1024)
+            logger.info(
+                "Đã nạp thành công Gallery RAM: %d nhân viên (Bộ nhớ ma trận: %.2f MB, version=%d)",
+                count,
+                mem_mb,
+                self._gallery_version,
             )
-        else:
-            self._embeddings_matrix = np.empty((0, 512), dtype=np.float32)
-
-        count = len(self._employee_ids)
-        mem_mb = self._embeddings_matrix.nbytes / (1024 * 1024)
-        logger.info(
-            "Đã nạp thành công Gallery RAM: %d nhân viên (Bộ nhớ ma trận: %.2f MB)",
-            count,
-            mem_mb,
-        )
-        return count
+            return count
 
     def match(
         self,
         query_vector: np.ndarray,
         threshold: float | None = None,
     ) -> tuple[int | None, float]:
-        """Thực hiện so khớp Cosine Similarity 1:N bằng tích vô hướng ma trận NumPy.
+        """Thực hiện so khớp Cosine Similarity 1:N bằng tích vô hướng ma trận NumPy (s = M . u^T).
 
-        Do toàn bộ vector trong ma trận RAM và query_vector đều đã được chuẩn hóa ||v|| = 1.0,
-        tích vô hướng s = M . u chính là hệ số tương đồng Cosine chuẩn xác.
+        Tuân thủ DATA-KSK-002 & TST-KSK-DAT-003: Phép tính hoàn tất < 2ms cho 1,000 nhân sự.
 
         Args:
             query_vector: Vector 512D khuôn mặt quét được từ camera.
             threshold: Ngưỡng chấp nhận (nếu None thì lấy ngưỡng mặc định).
 
         Returns:
-            tuple[Optional[int], float]: (employee_id, max_score) nếu >= threshold,
-                                         ngược lại (None, max_score).
+            tuple[int | None, float]: (employee_id, max_score) nếu >= threshold,
+                                      ngược lại (None, max_score).
         """
         match_thresh = threshold if threshold is not None else self.threshold
 
-        if len(self._employee_ids) == 0 or self._embeddings_matrix.shape[0] == 0:
-            return (None, 0.0)
+        with self._lock:
+            if len(self._id_map) == 0 or self._embeddings_matrix.shape[0] == 0:
+                return (None, 0.0)
 
-        q = np.asarray(query_vector, dtype=np.float32).flatten()
-        if q.shape[0] != 512:
-            return (None, 0.0)
+            q = np.asarray(query_vector, dtype=np.float32).flatten()
+            if q.shape[0] != 512:
+                return (None, 0.0)
 
-        # Đảm bảo query_vector có L2 Norm = 1.0
-        q_norm = float(np.linalg.norm(q))
-        if q_norm > 1e-6:
-            q = q / q_norm
+            # Chuẩn hóa L2 Norm = 1.0
+            q_norm = float(np.linalg.norm(q))
+            if q_norm > 1e-6:
+                q = q / q_norm
 
-        # Tính tích vô hướng song song đa luồng qua NumPy BLAS: (N, 512) x (512,) -> (N,)
-        scores = np.dot(self._embeddings_matrix, q)
+            # Tính tích vô hướng song song vector hóa qua NumPy BLAS: (N, 512) x (512,) -> (N,)
+            scores = np.dot(self._embeddings_matrix, q)
+            best_idx = int(np.argmax(scores))
+            best_score = float(scores[best_idx])
 
-        best_idx = int(np.argmax(scores))
-        best_score = float(scores[best_idx])
+            if best_score >= match_thresh:
+                matched_emp_id = int(self._id_map[best_idx])
+                return (matched_emp_id, best_score)
 
-        if best_score >= match_thresh:
-            matched_emp_id = self._employee_ids[best_idx]
-            return (matched_emp_id, best_score)
+            return (None, best_score)
 
-        return (None, best_score)
-
-    def add_or_update(self, employee_id: int, vector: np.ndarray) -> None:
-        """Thêm mới hoặc cập nhật vector khuôn mặt của nhân viên vào bộ đệm RAM.
+    def add_or_update(
+        self,
+        employee_id: int,
+        vector: np.ndarray,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Cơ chế nạp nóng không khóa dừng (Thread-Safe Hot-Patching) theo chuẩn data-design.md.
 
         Args:
             employee_id: Mã định danh nhân viên.
             vector: Vector đặc trưng 512D mới.
+            metadata: Thông tin hồ sơ đệm ({code, name, dept}).
         """
         v = np.asarray(vector, dtype=np.float32).flatten()
         if v.shape[0] != 512:
@@ -144,29 +203,41 @@ class GalleryCacheManager:
         if norm > 1e-6:
             v = v / norm
 
-        if employee_id in self._employee_ids:
-            idx = self._employee_ids.index(employee_id)
-            self._embeddings_matrix[idx] = v
-            logger.info("Cập nhật vector khuôn mặt cho nhân viên ID: %d", employee_id)
-        else:
-            self._employee_ids.append(employee_id)
-            if self._embeddings_matrix.shape[0] == 0:
-                self._embeddings_matrix = np.ascontiguousarray(
-                    v.reshape(1, 512), dtype=np.float32
-                )
+        with self._lock:
+            idx = np.where(self._id_map == employee_id)[0]
+            if len(idx) > 0:
+                self._embeddings_matrix[idx[0]] = v
+                logger.info("Cập nhật vector khuôn mặt cho nhân viên ID: %d", employee_id)
             else:
-                self._embeddings_matrix = np.ascontiguousarray(
-                    np.vstack([self._embeddings_matrix, v.reshape(1, 512)]),
-                    dtype=np.float32,
-                )
-            logger.info("Thêm mới nhân viên ID: %d vào Gallery RAM", employee_id)
+                if self._embeddings_matrix.shape[0] == 0:
+                    self._embeddings_matrix = np.ascontiguousarray(
+                        v.reshape(1, 512), dtype=np.float32
+                    )
+                    self._id_map = np.array([employee_id], dtype=np.int64)
+                else:
+                    self._embeddings_matrix = np.ascontiguousarray(
+                        np.vstack([self._embeddings_matrix, v.reshape(1, 512)]),
+                        dtype=np.float32,
+                    )
+                    self._id_map = np.append(self._id_map, employee_id)
+                logger.info("Thêm mới nhân viên ID: %d vào Gallery RAM", employee_id)
 
-    def add_or_update_employee(self, employee_id: int, vector: np.ndarray) -> None:
-        """Bí danh (alias) tương thích cho add_or_update."""
-        self.add_or_update(employee_id, vector)
+            if metadata is not None:
+                self._metadata_registry[employee_id] = metadata
+
+            self._gallery_version += 1
+
+    def add_or_update_employee(
+        self,
+        employee_id: int,
+        vector: np.ndarray,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Bí danh tương thích cho add_or_update."""
+        self.add_or_update(employee_id, vector, metadata=metadata)
 
     def remove(self, employee_id: int) -> bool:
-        """Xóa nhân viên khỏi bộ đệm RAM.
+        """Xóa nhân sự khỏi bộ đệm RAM an toàn theo chuẩn data-design.md Mục 2.3.
 
         Args:
             employee_id: Mã định danh nhân viên cần xóa.
@@ -174,15 +245,29 @@ class GalleryCacheManager:
         Returns:
             bool: True nếu tìm thấy và xóa thành công, False nếu không tồn tại.
         """
-        if employee_id not in self._employee_ids:
-            return False
+        with self._lock:
+            idx = np.where(self._id_map == employee_id)[0]
+            if len(idx) == 0:
+                return False
 
-        idx = self._employee_ids.index(employee_id)
-        self._employee_ids.pop(idx)
-        self._embeddings_matrix = np.delete(self._embeddings_matrix, idx, axis=0)
-        logger.info("Đã xóa nhân viên ID: %d khỏi Gallery RAM", employee_id)
-        return True
+            self._embeddings_matrix = np.delete(self._embeddings_matrix, idx[0], axis=0)
+            self._id_map = np.delete(self._id_map, idx[0])
+            self._metadata_registry.pop(employee_id, None)
+            self._gallery_version += 1
+            logger.info("Đã xóa nhân viên ID: %d khỏi Gallery RAM (version=%d)", employee_id, self._gallery_version)
+            return True
+
+    def get_metadata(self, employee_id: int) -> dict[str, Any] | None:
+        """Tra cứu thông tin nhân sự nhanh từ hashmap metadata_registry."""
+        with self._lock:
+            return self._metadata_registry.get(employee_id)
 
     def get_count(self) -> int:
         """Lấy tổng số lượng nhân viên hiện có trong bộ nhớ RAM."""
-        return len(self._employee_ids)
+        with self._lock:
+            return len(self._id_map)
+
+    def get_all_ids(self) -> list[int]:
+        """Lấy danh sách tất cả employee_id trong danh mục."""
+        with self._lock:
+            return [int(x) for x in self._id_map]
