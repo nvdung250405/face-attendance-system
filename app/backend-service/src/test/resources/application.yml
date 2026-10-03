@@ -1,0 +1,41 @@
+# ==============================================================================
+# TEST ENVIRONMENT CONFIGURATION (H2 In-Memory Database)
+# ==============================================================================
+
+spring:
+  application:
+    name: backend-service-test
+
+  datasource:
+    url: jdbc:h2:mem:fas_test_db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+  flyway:
+    enabled: false
+
+server:
+  port: 0
+
+fas:
+  security:
+    jwt-secret: 4a8f9c2d1e0b5a7c3e6d8f1a2b4c6e8d0f2a4b6c8e0d2f4a6b8c0d2e4f6a8b0c
+    jwt-expiration-hours: 8
+    encryption-master-key: 9f8e7d6c5b4a3a2b1c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+
+  kiosk:
+    secret-token: Kiosk_Test_Token_2026
+
+  attendance:
+    cooldown-seconds: 120
+    grace-period-minutes: 15
+
+  compliance:
+    data-retention-days: 20
