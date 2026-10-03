@@ -19,7 +19,8 @@ spring:
     show-sql: false
 
   flyway:
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
 
 server:
   port: 0
