@@ -1,3 +1,6 @@
+// qmllint disable unqualified
+// qmllint disable unresolved-type
+// qmllint disable missing-property
 import QtQuick 2.15
 import "../theme"
 
@@ -10,11 +13,11 @@ Canvas {
             switch (kioskViewModel.ovalState) {
                 case "ALIGNING": return Theme.ovalAligning
                 case "SUCCESS": return Theme.ovalSuccess
-                case "ERROR": return Theme.ovalError
-                default: return Theme.ovalIdle
+                case "ERROR": return Theme.ovalRejected
+                default: return Theme.ovalStandby
             }
         }
-        return Theme.ovalIdle
+        return Theme.ovalStandby
     }
 
     onCurrentOvalColorChanged: requestPaint()

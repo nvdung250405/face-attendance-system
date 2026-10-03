@@ -97,8 +97,24 @@ QtObject {
     readonly property int fontCaption: 14               // Chú thích nhỏ
 
     // =========================================================================
-    // 5. TƯƠNG THÍCH NGƯỢC (BACKWARD COMPATIBILITY)
+    // 5. TƯƠNG THÍCH NGƯỢC & DESIGN TOKENS CHUẨN SDLC (UI-UX DESIGN)
     // =========================================================================
+    // Dark Glassmorphism tokens
+    readonly property color colorBgCanvas: "#0B0F17"
+    readonly property color colorSurfacePanel: "#111827"
+    readonly property color colorSurfaceGlass: Qt.rgba(0.118, 0.161, 0.231, 0.85)
+    readonly property color colorBorderSubtle: Qt.rgba(1.0, 1.0, 1.0, 0.10)
+    readonly property color colorTextPrimary: "#F8FAFC"
+    readonly property color colorTextSecondary: "#94A3B8"
+
+    // Oval 4-State tokens (Figma & Specs)
+    readonly property color ovalStandby: "#64748B"
+    readonly property color ovalAligning: "#F59E0B"
+    readonly property color ovalSuccess: "#10B981"
+    readonly property color ovalRejected: "#EF4444"
+    readonly property color laserPulseScan: Qt.rgba(0.063, 0.725, 0.506, 0.65)
+
+    // Backward compatibility
     readonly property color accentPurple: brandPurple
     readonly property color accentPurpleSoft: brandPurpleSoft
     readonly property color accentPurpleGlow: brandPurpleGlow
@@ -122,7 +138,6 @@ QtObject {
     readonly property color surfaceVariant: "#E5E7EB"
     readonly property color primary: brandPurple
     readonly property color accentColor: brandPurple
-    readonly property color ovalIdle: brandPurple
-    readonly property color ovalSuccess: statusSuccess
-    readonly property color ovalError: statusError
+    readonly property color ovalIdle: ovalStandby
+    readonly property color ovalError: ovalRejected
 }
