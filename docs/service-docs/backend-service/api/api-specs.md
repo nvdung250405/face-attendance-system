@@ -7,29 +7,32 @@ owner: Backend Lead & API Architect
 
 # API SPECS — Đặc tả Giao diện Truyền thông Phân hệ Backend
 
+Đặc tả các giao diện lập trình ứng dụng RESTful API và kênh truyền thông thời gian thực WebSocket STOMP do phân hệ Backend cung cấp cho máy trạm Kiosk và Web Portal.
+
+---
 
 ## 1. Provided REST Interfaces (Các Giao diện REST Cung cấp)
 
-| ID | Tên Giao diện | Phương thức & URL | Mục đích Kỹ thuật & Nghiệp vụ | Phân quyền / Xác thực |
-| :--- | :--- | :--- | :--- | :--- |
-| `API-BE-001` | Xác thực Đăng nhập Hệ thống | `POST /api/v1/auth/login` | Cấp phát cặp Access Token và Refresh Token cho người dùng Web. | Public (Rate limit 10 req/phút) |
-| `API-BE-002` | Làm mới Mã Token Truy cập | `POST /api/v1/auth/refresh` | Cấp phát Access Token mới từ Refresh Token hợp lệ. | Public |
-| `API-BE-003` | Tiếp nhận Điểm danh Từ Kiosk | `POST /api/v1/kiosk/punch` | Nhận bản ghi điểm danh đơn lẻ tức thì từ trạm Kiosk. | Kiosk Secret Token (`X-Kiosk-Id`) |
-| `API-BE-004` | Tiếp nhận Đồng bộ Bù Ngoại tuyến | `POST /api/v1/kiosk/sync-batch` | Tiếp nhận gói lô tối đa 50 bản ghi điểm danh ngoại tuyến khi mạng phục hồi. | Kiosk Secret Token (`X-Kiosk-Id`) |
-| `API-BE-005` | Cung cấp Danh mục Vector ArcFace | `GET /api/v1/kiosk/gallery` | Cung cấp toàn bộ danh mục vector sinh trắc học để nạp vào RAM Kiosk. | Kiosk Secret Token (`X-Kiosk-Id`) |
-| `API-BE-006` | Xác minh Mã OTP Kích hoạt | `POST /api/v1/kiosk/verify-otp` | Thẩm định mã OTP 6 số để mở khóa camera quét mặt trên trạm Kiosk. | Kiosk Secret Token (`X-Kiosk-Id`) |
-| `API-BE-007` | Tiếp nhận Vector Mẫu Mới | `POST /api/v1/kiosk/enroll-face` | Tiếp nhận vector 512D mới kèm OTP để mã hóa lưu CSDL và kích hoạt NV. | Kiosk Secret Token (`X-Kiosk-Id`) |
-| `API-BE-008` | Quản lý & Báo cáo Điểm danh | `GET /api/v1/admin/attendance` | Truy vấn, lọc, xuất báo cáo lịch sử điểm danh nhân sự cho HR. | Bearer JWT (Role `HR_MANAGER`, `ADMIN`) |
-| `API-BE-009` | Tra cứu Điểm danh Cá nhân | `GET /api/v1/employee/attendance`| Nhân viên tra cứu lịch sử chấm công theo tháng của chính mình. | Bearer JWT (Role `EMPLOYEE`) |
-| `API-BE-010` | Ký Cam kết Dữ liệu Sinh trắc | `POST /api/v1/employee/consent` | Ghi nhận chữ ký điện tử Informed Consent và tự động sinh mã OTP 48h. | Bearer JWT (Role `EMPLOYEE`) |
-| `API-BE-011` | Quản lý Danh sách Nhân sự | `GET /api/v1/admin/employees` | Quản lý danh sách nhân viên, phòng ban và trạng thái kích hoạt khuôn mặt. | Bearer JWT (Role `HR_MANAGER`, `ADMIN`) |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `API-BE-001` | Cung cấp giao diện `POST /api/v1/auth/login` xác thực tài khoản và cấp phát cặp Access Token (1h) & Refresh Token (7 ngày). | REST | Must | `API-SYS-001`, `FR-BE-001` | Trả về HTTP 200 kèm Access Token và Refresh Token khi đăng nhập đúng; trả về 401 ProblemDetails khi sai thông tin. | Approved |
+| `API-BE-002` | Cung cấp giao diện `POST /api/v1/auth/refresh` làm mới Access Token từ Refresh Token hợp lệ mà không cần đăng nhập lại. | REST | Must | `API-SYS-002`, `FR-BE-001` | Trả về HTTP 200 kèm Access Token mới; từ chối khi Refresh Token hết hạn hoặc không hợp lệ. | Approved |
+| `API-BE-003` | Cung cấp giao diện `POST /api/v1/kiosk/punch` tiếp nhận sự kiện điểm danh đơn lẻ tức thì từ trạm Kiosk. | REST | Must | `API-SYS-005`, `FR-BE-002` | Xác thực `X-Kiosk-Id`, phản hồi $\le 100\text{ ms}$; kiểm tra cooldown 120s và tính toán ca làm việc. | Approved |
+| `API-BE-004` | Cung cấp giao diện `POST /api/v1/kiosk/sync-batch` tiếp nhận gói lô tối đa 50 bản ghi điểm danh ngoại tuyến khi mạng phục hồi. | REST | Must | `API-SYS-006`, `FR-BE-003` | Tiếp nhận gói lô, thực thi batch insert với `ON CONFLICT DO NOTHING`, trả về danh sách ID đã lưu thành công. | Approved |
+| `API-BE-005` | Cung cấp giao diện `GET /api/v1/kiosk/gallery` cung cấp toàn bộ danh mục vector ArcFace 512D đã kích hoạt để nạp vào RAM Kiosk. | REST | Must | `API-SYS-007`, `FR-BE-004` | Trả về danh sách nhân viên ACTIVE kèm vector 512D đã giải mã; xác thực qua Kiosk Secret Token. | Approved |
+| `API-BE-006` | Cung cấp giao diện `POST /api/v1/kiosk/verify-otp` thẩm định mã OTP 6 số để mở khóa camera quét mặt trên trạm Kiosk. | REST | Must | `API-SYS-009`, `FR-BE-005` | Trả về HTTP 200 kèm thông tin nhân sự khi OTP hợp lệ và còn hạn 48h; trả về 400/404 khi OTP sai hoặc hết hạn. | Approved |
+| `API-BE-007` | Cung cấp giao diện `POST /api/v1/kiosk/enroll-face` tiếp nhận vector 512D mới kèm OTP để mã hóa lưu CSDL và kích hoạt hồ sơ. | REST | Must | `API-SYS-010`, `FR-BE-006` | Mã hóa vector AES-256-GCM, cập nhật trạng thái ACTIVE, đánh dấu OTP đã dùng và bắn thông báo hoàn tất qua STOMP. | Approved |
+| `API-BE-008` | Cung cấp giao diện `GET /api/v1/admin/attendance` truy vấn, lọc, xuất báo cáo lịch sử điểm danh nhân sự cho HR và Quản trị. | REST | Must | `API-SYS-011`, `FR-BE-008` | Phân quyền vai trò `HR_MANAGER`/`ADMIN`, hỗ trợ phân trang `Pageable`, lọc theo ngày, phòng ban và xuất báo cáo. | Approved |
+| `API-BE-009` | Cung cấp giao diện `GET /api/v1/employee/attendance` cho phép nhân viên tra cứu lịch sử chấm công theo tháng của chính mình. | REST | Must | `API-SYS-012`, `FR-BE-008` | Phân quyền vai trò `EMPLOYEE`, chỉ trả về các bản ghi thuộc về người dùng đang đăng nhập. | Approved |
+| `API-BE-010` | Cung cấp giao diện `POST /api/v1/employee/consent` ghi nhận chữ ký điện tử Informed Consent và tự động sinh mã OTP 48h. | REST | Must | `API-SYS-013`, `FR-BE-005` | Lưu vết IP và thời điểm ký vào audit log, sinh mã OTP 6 số lưu CSDL và trả về cho nhân viên. | Approved |
+| `API-BE-011` | Cung cấp giao diện `GET /api/v1/admin/employees` quản lý danh sách nhân sự, phòng ban và trạng thái kích hoạt khuôn mặt. | REST | Must | `API-SYS-014`, `FR-BE-001` | Trả về danh sách nhân viên kèm trạng thái hồ sơ (`PENDING_CONSENT`, `ACTIVE`, `TERMINATED`). | Approved |
 
 ---
 
 ## 2. WebSocket STOMP Channels (Kênh Đẩy Dữ liệu Thời gian thực)
 
-| ID | Tên Kênh / Topic | Chiều Dữ liệu | Mục đích Truyền thông |
-| :--- | :--- | :---: | :--- |
-| `API-BE-012` | `/topic/kiosk-gallery` | Server $\rightarrow$ Kiosk | Bắn thông báo cập nhật vector mới (ADD) hoặc vô hiệu hóa vector (DELETE) vào RAM Kiosk. |
-| `API-BE-013` | `/topic/live-attendance` | Server $\rightarrow$ Web | Đẩy bản tin sự kiện điểm danh trực tiếp lên bảng Dashboard của nhân sự. |
-| `API-BE-014` | `/topic/enrollment/{otp}` | Server $\rightarrow$ Web | Thông báo trạng thái đăng ký khuôn mặt tại Kiosk thành công để tự đóng Modal trên Web nhân viên. |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `API-BE-012` | Kênh STOMP Topic `/topic/kiosk-gallery`: Phát thông báo cập nhật vector mới (ADD) hoặc vô hiệu hóa vector (DELETE) tới Kiosk. | WebSocket | Must | `API-SYS-015`, `FR-BE-007` | Kiosk nhận được bản tin cập nhật trong $\le 50\text{ ms}$ để tự động nạp/xóa vector trong RAM không cần khởi động lại. | Approved |
+| `API-BE-013` | Kênh STOMP Topic `/topic/live-attendance`: Đẩy bản tin sự kiện điểm danh trực tiếp lên bảng Dashboard của nhân sự. | WebSocket | Must | `API-SYS-016`, `FR-BE-007` | Dashboard Web Portal nhận được sự kiện trong $\le 50\text{ ms}$ kể từ khi Backend xử lý xong bản ghi punch. | Approved |
+| `API-BE-014` | Kênh STOMP Topic `/topic/enrollment/{otp}`: Thông báo trạng thái đăng ký khuôn mặt tại Kiosk thành công về Web của nhân viên. | WebSocket | Must | `API-SYS-016`, `FR-BE-007` | Web Portal nhân viên tự động đóng modal hướng dẫn và chuyển trạng thái hoàn tất ngay khi Kiosk hoàn thành nạp mẫu. | Approved |

@@ -93,11 +93,11 @@ graph TD
     MultiTabSync -.->|Cập nhật trạng thái| AuthStore
 ```
 
-| ID Thành phần | Lớp Kỹ thuật | Trách nhiệm Kiến trúc | Xử lý Ngoại lệ Biên |
-| :--- | :--- | :--- | :--- |
-| `DTD-WEB-001` | `SafeLocalStorage` | Đóng gói `window.localStorage` với JSON parse/serialize tự động; tiêm prefix định danh `fas_`. | Bắt lỗi `QuotaExceededError` hoặc chế độ Private Browsing, tự động fallback sang `MemoryStore`. |
-| `DTD-WEB-002` | `MultiTabSync` | Lắng nghe `window.addEventListener('storage', ...)` để tự động đăng xuất hoặc cập nhật phiên trên mọi tab đang mở khi có 1 tab logout. | Tránh hiện tượng 1 tab đã đổi mật khẩu/đăng xuất nhưng các tab khác vẫn gửi request với token cũ. |
-| `DTD-WEB-003` | `SafeSessionStorage` | Quản lý phiên tạm thời cho quy trình Ký cam kết & hiển thị OTP; tự động hủy khi đóng tab. | Không lưu trữ các dữ liệu nhạy cảm kéo dài quá phiên làm việc. |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DTD-WEB-001` | SafeLocalStorage | Đóng gói `window.localStorage` với JSON parse/serialize tự động; tiêm prefix định danh `fas_` và tự động fallback sang `MemoryStore` khi gặp lỗi Quota hoặc Private Browsing. | `DATA-WEB-001`, `DATA-WEB-002` | `ARC-003` | `DD-SYS-003` | Accepted |
+| `DTD-WEB-002` | MultiTabSync | Cơ chế lắng nghe `window.addEventListener('storage', ...)` để tự động đồng bộ đăng xuất hoặc cập nhật phiên trên mọi tab đang mở khi có 1 tab logout. | `DTD-WEB-001` | `ARC-003` | `DD-SYS-003` | Accepted |
+| `DTD-WEB-003` | SafeSessionStorage | Đóng gói `window.sessionStorage` quản lý phiên tạm thời cho quy trình Ký cam kết & hiển thị OTP; tự động hủy khi đóng tab. | `DATA-WEB-003` | `ARC-003` | `DD-SYS-003` | Accepted |
 
 ---
 

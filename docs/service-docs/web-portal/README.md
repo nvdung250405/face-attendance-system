@@ -28,31 +28,32 @@ Tuân thủ cấu trúc tài liệu cấp dịch vụ quy định tại [docs/sd
 docs/service-docs/web-portal/
 │
 ├── README.md                      # [Tài liệu hiện tại] Cẩm nang & Bản đồ định hướng phân hệ Web Portal
+├── foundation-setup-plan.md       # Thiết lập môi trường Node.js, Vite & TypeScript (FND-WEB-)
+├── build-plan.md                  # Kế hoạch xây dựng & tích hợp tổng thể phân hệ Web Portal (Aggregate, BLD-WEB-)
 │
-├── core/                          # [Bắt buộc] Khối quản lý trạng thái, routing & nghiệp vụ client
-│   ├── fsp.md                     # Thiết lập môi trường Node.js, Vite & TypeScript (FND-WEB-)
+├── fr-nfr/                        # [Bắt buộc] Khối quản lý trạng thái, routing & nghiệp vụ client
 │   ├── fr-nfr-specs.md            # Yêu cầu chức năng (FR-WEB-) & phi chức năng (NFR-WEB-)
 │   ├── fr-nfr-design.md           # Thiết kế kiến trúc SPA & quản lý phiên (SOL-WEB-)
-│   ├── fr-nfr-build-plan.md       # Kế hoạch thi công module cốt lõi (CBL-WEB-)
-│   └── fr-nfr-test-plan.md        # Kế hoạch kiểm thử định tuyến & nghiệp vụ (TST-WEB-)
+│   ├── fr-nfr-build-plan.md       # Kế hoạch thi công module cốt lõi (BLD-WEB-012..016)
+│   └── fr-nfr-test-plan.md        # Kế hoạch kiểm thử định tuyến & nghiệp vụ (TST-WEB-013..018)
 │
 ├── data/                          # [Bước 1: DATA] Lưu trữ Client Storage & TanStack Query Cache
 │   ├── data-specs.md              # Đặc tả thực thể lưu trữ Local/Session & Query Cache (DATA-WEB-)
 │   ├── data-design.md             # Thiết kế TypeScript contracts, Storage Adapter & Cache keys (DTD-WEB-)
-│   ├── data-build-plan.md         # Kế hoạch thi công tầng dữ liệu client (DBL-WEB-)
-│   └── data-test-plan.md          # Kế hoạch kiểm thử lưu trữ client & bộ đệm cache (TST-WEB-)
+│   ├── data-build-plan.md         # Kế hoạch thi công tầng dữ liệu client (BLD-WEB-001..003)
+│   └── data-test-plan.md          # Kế hoạch kiểm thử lưu trữ client & bộ đệm cache (TST-WEB-001..004)
 │
 ├── api/                           # [Bước 2: API] Giao tiếp REST API & WebSocket STOMP
 │   ├── api-specs.md               # Đặc tả các interface tiêu thụ & STOMP topics (API-WEB-)
 │   ├── api-design.md              # Thiết kế chi tiết từng trường, Refresh Interceptor & Hooks (APD-WEB-)
-│   ├── api-build-plan.md          # Kế hoạch thi công tầng truyền thông (ABL-WEB-)
-│   └── api-test-plan.md           # Kế hoạch kiểm thử Axios Client & WebSocket Hooks (TST-WEB-)
+│   ├── api-build-plan.md          # Kế hoạch thi công tầng truyền thông (BLD-WEB-009..011)
+│   └── api-test-plan.md           # Kế hoạch kiểm thử Axios Client & WebSocket Hooks (TST-WEB-009..012)
 │
 └── ui-ux/                         # [Bước 3: UI/UX] Giao diện người dùng Web Responsive & Design Tokens
     ├── ui-ux-specs.md             # Đặc tả hành trình người dùng & tương tác Web (UI-WEB-)
     ├── ui-ux-design.md            # Thiết kế Design Tokens Tailwind, layout components & modals (UXD-WEB-)
-    ├── ui-ux-build-plan.md        # Kế hoạch thi công giao diện React (UBL-WEB-)
-    └── ui-ux-test-plan.md         # Kế hoạch kiểm thử giao diện & tính khả dụng responsive (TST-WEB-)
+    ├── ui-ux-build-plan.md        # Kế hoạch thi công giao diện React (BLD-WEB-004..008)
+    └── ui-ux-test-plan.md         # Kế hoạch kiểm thử giao diện & tính khả dụng responsive (TST-WEB-005..008)
 ```
 
 ---
@@ -61,21 +62,22 @@ docs/service-docs/web-portal/
 
 | Nhánh Facet | Tập tin Tài liệu | Mã Leaf | ID Prefix Sở hữu | Nguồn Tham chiếu Upstream |
 | :--- | :--- | :---: | :---: | :--- |
-| **Trang chủ** | [README.md](README.md) | `WEB-HUB` | — | `docs/meta.md`, `system-docs/dds/dds.md` (`ARC-SYS-003`) |
-| **Core** | [core/fsp.md](core/fsp.md) | `SVC-FSP` | `FND-WEB-` | `system-docs/plans/foundation-setup-plan.md`, `tech-tool-stack.md` |
-| **Core** | [core/fr-nfr-specs.md](core/fr-nfr-specs.md) | `SVC-SPEC`| `FR-WEB-`, `NFR-WEB-` | `system-docs/srs/fr-nfr-specs.md` (`FR-SYS-001..006`) |
-| **Core** | [core/fr-nfr-design.md](core/fr-nfr-design.md) | `SVC-DES` | `SOL-WEB-` | `core/fr-nfr-specs.md`, `system-docs/dds/fr-nfr-design.md` |
-| **Core** | [core/fr-nfr-build-plan.md](core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-WEB-` | `core/fr-nfr-design.md` (`SOL-WEB-001..006`) |
-| **Core** | [core/fr-nfr-test-plan.md](core/fr-nfr-test-plan.md) | `SVC-TST` | `TST-WEB-` | `core/fr-nfr-specs.md` (trực tiếp) |
+| **Trang chủ** | [README.md](README.md) | `WEB-HUB` | — | `docs/meta.md`, `system-docs/dds/dds.md` (`ARC-003`) |
+| **Toàn Service** | [foundation-setup-plan.md](foundation-setup-plan.md) | `SVC-FSP` | `FND-WEB-` | `system-docs/plans/foundation-setup-plan.md`, `tech-tool-stack.md` |
+| **Toàn Service** | [build-plan.md](build-plan.md) | `SVC-BLD` | `BLD-WEB-` | `data-build-plan.md`, `fr-nfr-build-plan.md`, `api-build-plan.md`, `ui-ux-build-plan.md`, `foundation-setup-plan.md` |
+| **FR/NFR** | [fr-nfr/fr-nfr-specs.md](fr-nfr/fr-nfr-specs.md) | `SVC-SPEC`| `FR-WEB-`, `NFR-WEB-` | `system-docs/srs/fr-nfr-specs.md` (`FR-SYS-007..014`, `NFR-SYS-001..007`) |
+| **FR/NFR** | [fr-nfr/fr-nfr-design.md](fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-WEB-` | `fr-nfr/fr-nfr-specs.md`, `system-docs/dds/fr-nfr-design.md` |
+| **FR/NFR** | [fr-nfr/fr-nfr-build-plan.md](fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `BLD-WEB-` | `fr-nfr/fr-nfr-design.md` (`SOL-WEB-001..005`) |
+| **FR/NFR** | [fr-nfr/fr-nfr-test-plan.md](fr-nfr/fr-nfr-test-plan.md) | `SVC-TST` | `TST-WEB-` | `fr-nfr/fr-nfr-specs.md` (trực tiếp) |
 | **Data** | [data/data-specs.md](data/data-specs.md) | `SVC-SPEC`| `DATA-WEB-` | `system-docs/srs/data-specs.md` (`DATA-SYS-001..003`) |
 | **Data** | [data/data-design.md](data/data-design.md) | `SVC-DES` | `DTD-WEB-` | `data/data-specs.md`, `system-docs/dds/data-design.md` |
-| **Data** | [data/data-build-plan.md](data/data-build-plan.md) | `SVC-BLD` | `DBL-WEB-` | `data/data-design.md` (`DTD-WEB-001..003`) |
+| **Data** | [data/data-build-plan.md](data/data-build-plan.md) | `SVC-BLD` | `BLD-WEB-` | `data/data-design.md` (`DTD-WEB-001..003`) |
 | **Data** | [data/data-test-plan.md](data/data-test-plan.md) | `SVC-TST` | `TST-WEB-` | `data/data-specs.md` (trực tiếp) |
 | **API** | [api/api-specs.md](api/api-specs.md) | `SVC-SPEC`| `API-WEB-` | `system-docs/srs/api-specs.md` (`API-SYS-001..003`) |
 | **API** | [api/api-design.md](api/api-design.md) | `SVC-DES` | `APD-WEB-` | `api/api-specs.md`, `system-docs/dds/api-design.md` |
-| **API** | [api/api-build-plan.md](api/api-build-plan.md) | `SVC-BLD` | `ABL-WEB-` | `api/api-design.md` (`APD-WEB-001..003`) |
+| **API** | [api/api-build-plan.md](api/api-build-plan.md) | `SVC-BLD` | `BLD-WEB-` | `api/api-design.md` (`APD-WEB-001..003`) |
 | **API** | [api/api-test-plan.md](api/api-test-plan.md) | `SVC-TST` | `TST-WEB-` | `api/api-specs.md` (trực tiếp) |
 | **UI/UX** | [ui-ux/ui-ux-specs.md](ui-ux/ui-ux-specs.md) | `SVC-SPEC`| `UI-WEB-` | `system-docs/srs/ui-ux-specs.md` (`UI-SYS-001..003`) |
 | **UI/UX** | [ui-ux/ui-ux-design.md](ui-ux/ui-ux-design.md) | `SVC-DES` | `UXD-WEB-` | `ui-ux/ui-ux-specs.md`, `system-docs/dds/ui-ux-design.md` |
-| **UI/UX** | [ui-ux/ui-ux-build-plan.md](ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `UBL-WEB-` | `ui-ux/ui-ux-design.md` (`UXD-WEB-001..005`) |
+| **UI/UX** | [ui-ux/ui-ux-build-plan.md](ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `BLD-WEB-` | `ui-ux/ui-ux-design.md` (`UXD-WEB-001..005`) |
 | **UI/UX** | [ui-ux/ui-ux-test-plan.md](ui-ux/ui-ux-test-plan.md) | `SVC-TST` | `TST-WEB-` | `ui-ux/ui-ux-specs.md` (trực tiếp) |

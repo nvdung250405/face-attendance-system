@@ -35,14 +35,14 @@ Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD
 
 ## 2. Screens & Component Layout (Bố cục Màn hình & Thành phần)
 
-| ID | Thành phần Giao diện | Định nghĩa & Bố cục Kỹ thuật | Uses | Realizes | Decisions | Trạng thái |
-| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
-| `UXD-SYS-001` | Khung nhìn Trực quan Kiosk (9:16) | Giao diện toàn màn hình gồm 3 khu vực: HeaderBar (Logo, đồng hồ số, network status), CameraPanel (luồng video + Oval) và FooterBar (phím chức năng F2, F3). | `STK-002` | `UI-SYS-014` | `DD-UXD-001` | Approved |
-| `UXD-SYS-002` | Vùng Canvas Căn chỉnh Khung Oval | Khung oval cố định tại trung tâm camera (kích thước chuẩn $470 \times 604\text{ px}$), hiển thị thông điệp điều hướng trực quan phía trên đầu khung oval. | `STK-002` | `UI-SYS-007` đến `UI-SYS-010` | `DD-UXD-002` | Approved |
-| `UXD-SYS-003` | Thẻ Kết quả Điểm danh Nổi (Toast Card) | Card thông tin bo góc $16\text{ px}$, nền mờ kính (Glassmorphism), trượt mượt mà từ cạnh dưới lên trong $2.5\text{ s}$ khi nhận diện thành công. | `STK-002` | `UI-SYS-011` | `DD-UXD-001` | Approved |
-| `UXD-SYS-004` | Hộp thoại Bàn phím Số ảo PIN Pad | Modal popup chính giữa màn hình, chứa lưới phím số $3\times 4$ kích thước tối thiểu $60\times 60\text{ px}$, hỗ trợ cảm ứng điện dung nhạy bén. | `STK-002` | `UI-SYS-012` | `DD-UXD-001` | Approved |
-| `UXD-SYS-005` | Màn hình Live Monitoring Dashboard (Web) | Giao diện quản trị thời gian thực gồm: Thẻ thống kê tổng quân số, Biểu đồ tiến độ và Bảng danh sách lượt chấm cuộn mượt mà không reload trang. | `STK-017`, `STK-018` | `UI-SYS-004`, `FR-SYS-015` | `DD-SYS-004` | Approved |
-| `UXD-SYS-006` | Modal Ký Cam kết Informed Consent (Web) | Hộp thoại bắt buộc với checkbox xác nhận, hiển thị đầy đủ văn bản pháp lý Luật 2025, nút "Đồng ý và Kích hoạt" chỉ sáng khi đã tích chọn. | `STK-017` | `UI-SYS-005`, `FR-SYS-007` | `DD-SYS-003` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `UXD-SYS-001` | Khung nhìn Trực quan Kiosk (9:16) | Giao diện toàn màn hình gồm 3 khu vực: HeaderBar (Logo, đồng hồ số, network status), CameraPanel (luồng video + Oval) và FooterBar (phím chức năng F2, F3). | `STK-002` | `UI-SYS-014` | `DD-SYS-009` | Accepted |
+| `UXD-SYS-002` | Vùng Canvas Căn chỉnh Khung Oval | Khung oval cố định tại trung tâm camera (kích thước chuẩn $470 \times 604\text{ px}$), hiển thị thông điệp điều hướng trực quan phía trên đầu khung oval. | `STK-002` | `UI-SYS-007`, `UI-SYS-008`, `UI-SYS-009`, `UI-SYS-010` | `DD-SYS-010` | Accepted |
+| `UXD-SYS-003` | Thẻ Kết quả Điểm danh Nổi (Toast Card) | Card thông tin bo góc $16\text{ px}$, nền mờ kính (Glassmorphism), trượt mượt mà từ cạnh dưới lên trong $2.5\text{ s}$ khi nhận diện thành công. | `STK-002` | `UI-SYS-011` | `DD-SYS-009` | Accepted |
+| `UXD-SYS-004` | Hộp thoại Bàn phím Số ảo PIN Pad | Modal popup chính giữa màn hình, chứa lưới phím số $3\times 4$ kích thước tối thiểu $60\times 60\text{ px}$, hỗ trợ cảm ứng điện dung nhạy bén. | `STK-002` | `UI-SYS-012` | `DD-SYS-009` | Accepted |
+| `UXD-SYS-005` | Màn hình Live Monitoring Dashboard (Web) | Giao diện quản trị thời gian thực gồm: Thẻ thống kê tổng quân số, Biểu đồ tiến độ và Bảng danh sách lượt chấm cuộn mượt mà không reload trang. | `STK-017`, `STK-018` | `UI-SYS-004`, `FR-SYS-015` | `DD-SYS-004` | Accepted |
+| `UXD-SYS-006` | Modal Ký Cam kết Informed Consent (Web) | Hộp thoại bắt buộc với checkbox xác nhận, hiển thị đầy đủ văn bản pháp lý Luật 2025, nút "Đồng ý và Kích hoạt" chỉ sáng khi đã tích chọn. | `STK-017` | `UI-SYS-005`, `FR-SYS-007` | `DD-SYS-003` | Accepted |
 
 ---
 
@@ -75,8 +75,8 @@ Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD
 
 ## 4. UI/UX Design Decisions (Quyết định Thiết kế Giao diện)
 
-| ID | Quyết định Thiết kế Giao diện | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: |
-| `DD-UXD-001` | Lựa chọn phong cách thiết kế Dark Modern UI kết hợp hiệu ứng kính mờ Glassmorphism. | Mang lại trải nghiệm cao cấp, chuyên nghiệp cho sảnh doanh nghiệp, đồng thời dịu mắt người dùng khi đứng trước camera. | `UI-SYS-014` | Approved |
-| `DD-UXD-002` | Quy định màu Vàng hổ phách (`#F59E0B`) cho toàn bộ các thông điệp và viền căn chỉnh trung gian. | Giúp người dùng phân biệt rõ ràng giữa "Đang hỗ trợ căn chỉnh" (Vàng) với "Thành công" (Xanh) và "Lỗi/Giả mạo" (Đỏ). | `UI-SYS-008` | Approved |
-| `DD-UXD-003` | Áp dụng quy trình tự đăng ký In-Viewport Bước 2: Tự ẩn popup để dùng toàn màn hình camera chính. | Giúp người dùng tập trung nhìn thẳng vào camera chính thay vì bị phân tâm bởi ô camera nhỏ trên hộp thoại popup. | `UI-SYS-003` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DD-SYS-009` | Phong cách Dark Modern UI & Glassmorphism | Áp dụng phong cách giao diện Dark Modern UI kết hợp hiệu ứng kính mờ Glassmorphism cho Kiosk và Web mang lại trải nghiệm cao cấp. | `STK-002`, `STK-017` | `UI-SYS-014` | - | Accepted |
+| `DD-SYS-010` | Màu Vàng hổ phách cho trạng thái căn chỉnh | Quy định màu Vàng hổ phách (`#F59E0B`) cho thông điệp điều hướng và viền Oval ở trạng thái căn chỉnh trung gian giúp phân biệt rõ ràng. | `STK-002` | `UI-SYS-008` | - | Accepted |
+| `DD-SYS-011` | Quy trình đăng ký tự ẩn popup In-Viewport | Thiết kế quy trình đăng ký khuôn mặt tự động ẩn modal OTP để sử dụng toàn màn hình camera chính giúp người dùng tập trung. | `STK-002` | `UI-SYS-003` | - | Accepted |

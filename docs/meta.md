@@ -49,70 +49,73 @@ docs/
     │
     ├── backend-service/                         # Phân hệ Máy chủ Doanh nghiệp (Java 21, Spring Boot, PostgreSQL)
     │   ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Backend
-    │   ├── core/                                # [Bắt buộc] Nghiệp vụ máy chủ & Bảo mật
-    │   │   ├── fsp.md                           # Foundation Setup Plan riêng của Backend (FND-BE-)
+    │   ├── foundation-setup-plan.md             # Foundation Setup Plan riêng của Backend (FND-BE-)
+    │   ├── build-plan.md                        # Kế hoạch build tổng của Backend, aggregate các facet (BLD-BE-)
+    │   ├── fr-nfr/                              # [Bắt buộc] Nghiệp vụ máy chủ & Bảo mật
     │   │   ├── fr-nfr-specs.md                  # Yêu cầu nghiệp vụ chấm công, bảo mật (FR-BE-, NFR-BE-)
     │   │   ├── fr-nfr-design.md                 # Thiết kế component, cơ chế mã hóa AES (SOL-BE-)
-    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công nghiệp vụ Backend (BLD-BE-)
-    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử nghiệp vụ Backend (TST-BE-)
+    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công nghiệp vụ Backend (BLD-BE-012..015)
+    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử nghiệp vụ Backend (TST-BE-012..016)
     │   ├── data/                                # [Kích hoạt] Quản lý lưu trữ CSDL trung tâm
     │   │   ├── data-specs.md                    # Thực thể CSDL PostgreSQL, quy tắc toàn vẹn (DATA-BE-)
     │   │   ├── data-design.md                   # Lược đồ DDL PostgreSQL 16 8 bảng, chỉ mục (DTD-BE-)
-    │   │   ├── data-build-plan.md               # Kế hoạch migration CSDL và cấu hình cache (BLD-BE-)
-    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL và toàn vẹn dữ liệu (TST-BE-)
+    │   │   ├── data-build-plan.md               # Kế hoạch migration CSDL và cấu hình cache (BLD-BE-001..004)
+    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL và toàn vẹn dữ liệu (TST-BE-001..005)
     │   └── api/                                 # [Kích hoạt] Cung cấp REST API & STOMP Broker
     │       ├── api-specs.md                     # Đặc tả 11 REST Endpoints & 3 STOMP Topics (API-BE-)
     │       ├── api-design.md                    # Thiết kế chi tiết từng trường payload, Controller (APD-BE-)
-    │       ├── api-build-plan.md                # Kế hoạch thi công API Controllers & STOMP (BLD-BE-)
-    │       └── api-test-plan.md                 # Kế hoạch kiểm thử hợp đồng API (TST-BE-)
+    │       ├── api-build-plan.md                # Kế hoạch thi công API Controllers & STOMP (BLD-BE-005..011)
+    │       └── api-test-plan.md                 # Kế hoạch kiểm thử hợp đồng API (TST-BE-006..011)
     │
     ├── kiosk-app/                               # Phân hệ Trạm Điểm danh Cận biên (Python 3, PySide6, OpenCV)
     │   ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Kiosk
-    │   ├── core/                                # [Bắt buộc] Pipeline Thị giác Máy tính & AI Biên
-    │   │   ├── fsp.md                           # Foundation Setup Plan riêng của Kiosk (FND-KSK-)
+    │   ├── foundation-setup-plan.md             # Foundation Setup Plan riêng của Kiosk (FND-KSK-)
+    │   ├── build-plan.md                        # Kế hoạch build tổng của Kiosk, aggregate các facet (BLD-KSK-)
+    │   ├── fr-nfr/                              # [Bắt buộc] Pipeline Thị giác Máy tính & AI Biên
     │   │   ├── fr-nfr-specs.md                  # Yêu cầu phát hiện mặt, liveness, so khớp (FR-KSK-, NFR-KSK-)
     │   │   ├── fr-nfr-design.md                 # Thiết kế pipeline YuNet, MiniFASNet, ArcFace (SOL-KSK-)
-    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công pipeline thị giác biên (BLD-KSK-)
-    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử thị giác máy tính và AI (TST-KSK-)
+    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công pipeline thị giác biên (BLD-KSK-013..017)
+    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử thị giác máy tính và AI (TST-KSK-017..021)
     │   ├── data/                                # [Kích hoạt] CSDL ngoại tuyến SQLite WAL & Ma trận RAM
     │   │   ├── data-specs.md                    # Thực thể SQLite offline_punches, GalleryMatrix (DATA-KSK-)
     │   │   ├── data-design.md                   # Lược đồ SQLite WAL, Cosine Matcher, Atomic Swap (DTD-KSK-)
-    │   │   ├── data-build-plan.md               # Kế hoạch thi công CSDL cục bộ và RAM matrix (BLD-KSK-)
-    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL cục bộ và ma trận (TST-KSK-)
+    │   │   ├── data-build-plan.md               # Kế hoạch thi công CSDL cục bộ và RAM matrix (BLD-KSK-001..004)
+    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL cục bộ và ma trận (TST-KSK-001..005)
     │   ├── api/                                 # [Kích hoạt] Tiêu thụ REST API & Lắng nghe STOMP
     │   │   ├── api-specs.md                     # Đặc tả giao diện tiêu thụ và topic lắng nghe (API-KSK-)
     │   │   ├── api-design.md                    # Thiết kế HTTP Client httpx, Offline Sync, STOMP (APD-KSK-)
-    │   │   ├── api-build-plan.md                # Kế hoạch thi công tầng mạng và sync worker (BLD-KSK-)
-    │   │   └── api-test-plan.md                 # Kế hoạch kiểm thử truyền thông mạng Kiosk (TST-KSK-)
+    │   │   ├── api-build-plan.md                # Kế hoạch thi công tầng mạng và sync worker (BLD-KSK-009..012)
+    │   │   └── api-test-plan.md                 # Kế hoạch kiểm thử truyền thông mạng Kiosk (TST-KSK-011..016)
     │   └── ui-ux/                               # [Kích hoạt] Màn hình Cảm ứng Dọc 9:16 (Figma 1080x1920)
     │       ├── ui-ux-specs.md                   # Hành trình điểm danh, máy trạng thái Oval 4 màu (UI-KSK-)
     │       ├── ui-ux-design.md                  # Design Tokens, tỷ lệ co giãn S, hình học vector (UXD-KSK-)
-    │       ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện QML (BLD-KSK-)
-    │       └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và tương tác chạm (TST-KSK-)
+    │       ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện QML (BLD-KSK-005..008)
+    │       └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và tương tác chạm (TST-KSK-006..010)
     │
     └── web-portal/                              # Phân hệ Cổng Web Quản trị & Người dùng (React, TypeScript)
         ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Web Portal
-        ├── core/                                # [Bắt buộc] Định tuyến, Phân quyền & Quản lý Phiên
-        │   ├── fsp.md                           # Foundation Setup Plan riêng của Web Portal (FND-WEB-)
+        ├── foundation-setup-plan.md             # Foundation Setup Plan riêng của Web Portal (FND-WEB-)
+        ├── build-plan.md                        # Kế hoạch build tổng của Web Portal, aggregate các facet (BLD-WEB-)
+        ├── fr-nfr/                              # [Bắt buộc] Định tuyến, Phân quyền & Quản lý Phiên
         │   ├── fr-nfr-specs.md                  # Yêu cầu quản trị phân quyền, giám sát (FR-WEB-, NFR-WEB-)
         │   ├── fr-nfr-design.md                 # Thiết kế SPA architecture, Auth guards (SOL-WEB-)
-        │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công khung nghiệp vụ client (BLD-WEB-)
-        │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử nghiệp vụ và định tuyến (TST-WEB-)
+        │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công khung nghiệp vụ client (BLD-WEB-012..016)
+        │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử nghiệp vụ và định tuyến (TST-WEB-013..018)
         ├── data/                                # [Kích hoạt] Lưu trữ Trình duyệt & TanStack Query Cache
         │   ├── data-specs.md                    # Thực thể Local/SessionStorage, Query Cache (DATA-WEB-)
         │   ├── data-design.md                   # TypeScript contracts, Storage Adapter, Cache keys (DTD-WEB-)
-        │   ├── data-build-plan.md               # Kế hoạch thi công tầng dữ liệu máy trạm (BLD-WEB-)
-        │   └── data-test-plan.md                # Kế hoạch kiểm thử lưu trữ client và cache (TST-WEB-)
+        │   ├── data-build-plan.md               # Kế hoạch thi công tầng dữ liệu máy trạm (BLD-WEB-001..003)
+        │   └── data-test-plan.md                # Kế hoạch kiểm thử lưu trữ client và cache (TST-WEB-001..004)
         ├── api/                                 # [Kích hoạt] Tiêu thụ REST API & Lắng nghe STOMP
         │   ├── api-specs.md                     # Đặc tả 6 REST Endpoints & 2 STOMP Topics tiêu thụ (API-WEB-)
         │   ├── api-design.md                    # Thiết kế Axios Client, Mutex Refresh Interceptor (APD-WEB-)
-        │   ├── api-build-plan.md                # Kế hoạch thi công Axios client và STOMP hooks (BLD-WEB-)
-        │   └── api-test-plan.md                 # Kế hoạch kiểm thử giao tiếp mạng Web (TST-WEB-)
+        │   ├── api-build-plan.md                # Kế hoạch thi công Axios client và STOMP hooks (BLD-WEB-009..011)
+        │   └── api-test-plan.md                 # Kế hoạch kiểm thử giao tiếp mạng Web (TST-WEB-009..012)
         └── ui-ux/                               # [Kích hoạt] Giao diện Web Responsive Đa màn hình
             ├── ui-ux-specs.md                   # Hành trình người dùng, quy trình ký cam kết OTP (UI-WEB-)
             ├── ui-ux-design.md                  # Tailwind Tokens Indigo SaaS, Admin Shell, Modals (UXD-WEB-)
-            ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện React/Tailwind (BLD-WEB-)
-            └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và độ phản hồi (TST-WEB-)
+            ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện React/Tailwind (BLD-WEB-004..008)
+            └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và độ phản hồi (TST-WEB-005..008)
 ```
 
 ---
@@ -146,26 +149,27 @@ docs/
 
 ### 2.2. Cấp Dịch vụ (Service-Level Registry)
 
-Áp dụng quy tắc ma trận **chiều dọc** quy định tại Mục 2.1 & Mục 10 của `sdlc-docs.md`: Mỗi facet khi tồn tại **bắt buộc phải có đủ bộ tứ 4 leaf** (`specs → design → build-plan → test-plan`).
+Áp dụng quy tắc ma trận **chiều dọc** quy định tại Mục 2.1 & Mục 10 của `sdlc-docs.md`: Mỗi facet khi tồn tại **bắt buộc phải có đủ bộ tứ 4 leaf** (`specs → design → build-plan → test-plan`). Ở gốc mỗi `service-docs/` có thêm hai leaf toàn service: `foundation-setup-plan.md` và `build-plan.md` (aggregate).
 
 | Leaf Type | Tên Tệp Chuẩn | Trách nhiệm Kỹ thuật | Upstream | Downstream |
 | :--- | :--- | :--- | :--- | :--- |
-| **Foundation** | `core/fsp.md` | Kế hoạch chuẩn bị môi trường, công cụ riêng của service | System Foundation Plan, STACK | Service Build Plans |
-| **Core Specs** | `core/fr-nfr-specs.md` | Năng lực nghiệp vụ và chất lượng thuộc trách nhiệm service | System Specs, ARC- | Core Design, Core Test |
-| **Core Design** | `core/fr-nfr-design.md` | Cấu trúc component, logic và cơ chế chất lượng service | Core Specs, STACK | Core Build Plan |
-| **Core Build** | `core/fr-nfr-build-plan.md` | Kế hoạch phân rã thi công nghiệp vụ service | Core Design | Quá trình Build |
-| **Core Test** | `core/fr-nfr-test-plan.md` | Kế hoạch kiểm thử nghiệp vụ cốt lõi của service | Core Specs | Quá trình Test |
+| **Foundation (Toàn service)** | `foundation-setup-plan.md` | Kế hoạch chuẩn bị môi trường, công cụ riêng của service | System Foundation Plan, STACK | Service Build Plan |
+| **Service Build (Aggregate)** | `build-plan.md` | Gom các facet build plan, xác định dependency và thứ tự wave, chuẩn hóa thành task | Các facet build plan, Foundation | Quá trình Build |
+| **FR/NFR Specs** | `fr-nfr/fr-nfr-specs.md` | Năng lực nghiệp vụ và chất lượng thuộc trách nhiệm service | System Specs, ARC- | FR/NFR Design, Test Plan |
+| **FR/NFR Design** | `fr-nfr/fr-nfr-design.md` | Cấu trúc component, logic và cơ chế chất lượng service | FR/NFR Specs, STACK | FR/NFR Build Plan |
+| **FR/NFR Build** | `fr-nfr/fr-nfr-build-plan.md` | Kế hoạch phân rã thi công nghiệp vụ service | FR/NFR Design, Foundation | Service Build Plan |
+| **FR/NFR Test** | `fr-nfr/fr-nfr-test-plan.md` | Kế hoạch kiểm thử nghiệp vụ cốt lõi của service | FR/NFR Specs | Quá trình Test |
 | **Data Specs** | `data/data-specs.md` | Thực thể dữ liệu, quy tắc toàn vẹn, vòng đời của service | System Data Spec, ARC- | Data Design, Data Test |
 | **Data Design** | `data/data-design.md` | Lược đồ CSDL, cấu trúc bảng, chỉ mục, migration của service | Data Specs, STACK | Data Build Plan |
-| **Data Build** | `data/data-build-plan.md` | Kế hoạch khởi tạo CSDL, migration và lưu trữ của service | Data Design | Quá trình Build |
+| **Data Build** | `data/data-build-plan.md` | Kế hoạch khởi tạo CSDL, migration và lưu trữ của service | Data Design, Foundation | Service Build Plan |
 | **Data Test** | `data/data-test-plan.md` | Kế hoạch kiểm thử tầng dữ liệu và lưu trữ của service | Data Specs | Quá trình Test |
 | **API Specs** | `api/api-specs.md` | Ranh giới giao tiếp, interface cung cấp/tiêu thụ của service | System API Spec, ARC- | API Design, API Test |
 | **API Design** | `api/api-design.md` | Endpoint, schema dữ liệu, client wrapper, sequence của service | API Specs, STACK | API Build Plan |
-| **API Build** | `api/api-build-plan.md` | Kế hoạch thi công các client/controller giao tiếp của service | API Design | Quá trình Build |
+| **API Build** | `api/api-build-plan.md` | Kế hoạch thi công các client/controller giao tiếp của service | API Design, Foundation | Service Build Plan |
 | **API Test** | `api/api-test-plan.md` | Kế hoạch kiểm thử hợp đồng giao tiếp của service | API Specs | Quá trình Test |
 | **UI/UX Specs** | `ui-ux/ui-ux-specs.md` | Tác vụ người dùng, luồng tương tác, phản hồi của service | System UI Spec, ARC- | UI Design, UI Test |
 | **UI/UX Design**| `ui-ux/ui-ux-design.md` | Design tokens, layout, tỷ lệ co giãn, hình học của service | UI Specs, STACK | UI Build Plan |
-| **UI/UX Build** | `ui-ux/ui-ux-build-plan.md` | Kế hoạch thi công giao diện của service | UI Design | Quá trình Build |
+| **UI/UX Build** | `ui-ux/ui-ux-build-plan.md` | Kế hoạch thi công giao diện của service | UI Design, Foundation | Service Build Plan |
 | **UI/UX Test** | `ui-ux/ui-ux-test-plan.md` | Kế hoạch kiểm thử giao diện và tương tác người dùng | UI Specs | Quá trình Test |
 
 ---
@@ -215,10 +219,12 @@ owner: <vai trò chịu trách nhiệm>
 | `APC-` | Quyết định cách tiếp cận (Approach) | Mọi leaf plan | Có (`SYS`, `BE`, `KSK`, `WEB`) |
 | `PRJ-` | Giai đoạn / Mốc dự án | `system-docs/plans/project-plan.md` | Không |
 | `RSK-` | Rủi ro dự án | `system-docs/plans/project-plan.md` | Không |
-| `FND-` | Công việc chuẩn bị nền tảng | `*/foundation-setup-plan.md`, `fsp.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `FND-` | Công việc chuẩn bị nền tảng | `*/foundation-setup-plan.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
 | `BLD-` | Công việc thi công / Build | `*/build-plan.md`, `*-build-plan.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
 | `TST-` | Ca kiểm thử / Test item | `*/test-plan.md`, `*-test-plan.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
 | `DPL-` | Công việc triển khai / Vận hành | `system-docs/plans/deploy-plan.md` | Không |
+
+> *Quy tắc Dãy số Thống nhất (Section 12, line 872)*: Mỗi cặp `(TYPE, SCOPE)` có một dãy số duy nhất, dùng chung giữa các leaf cùng prefix. Ví dụ: toàn bộ work item thi công trong các build plan facet và service build plan của phân hệ Backend sử dụng chung một dãy thống nhất `BLD-BE-001..`, tương tự cho `TST-BE-001..`, `BLD-KSK-001..`, `TST-KSK-001..`, `BLD-WEB-001..`, `TST-WEB-001..`. Không đặt tiền tố tùy tiện theo facet.
 
 ---
 
@@ -239,6 +245,10 @@ owner: <vai trò chịu trách nhiệm>
 * **Work Items Schema (`*-build-plan.md`, `foundation-setup-plan.md`, `deploy-plan.md`)**:
   ```text
   ID | Name | Description | Covers | Depends on | Done when | Status
+  ```
+* **Build Order Schema (`service-docs/build-plan.md`)**:
+  ```text
+  Wave | Includes | Depends on | Done when
   ```
 * **Test Items Schema (`*-test-plan.md`)**:
   ```text
@@ -266,10 +276,12 @@ owner: <vai trò chịu trách nhiệm>
 * `Requires`: Ràng buộc điều kiện tiên quyết trong `tech-tool-stack.md`.
 * `Applies to`: Phạm vi áp dụng của phần tử công nghệ (System hoặc mã Service).
 
-### 4.3. Quy tắc Không mồ côi (Zero Orphan Rule)
+### 4.3. Quy tắc Không mồ côi & Quản trị Phụ thuộc (Zero Orphan & Dependency Governance)
 * Mọi Design element bắt buộc có `Realizes` trỏ về Spec item hợp lệ.
 * Mọi Work item trong Build Plan bắt buộc có `Covers` trỏ về Design element hợp lệ (trừ `Gate`).
 * Mọi Requirement trong Spec bắt buộc có Design element hiện thực (hoặc được phân bổ xuống Service qua `Basis`) và **bắt buộc có ít nhất một Test item cover**.
+* **Phụ thuộc nội bộ Facet**: Work item trong một facet build plan (`*-build-plan.md`) chỉ được phép `Depends on` các item cùng facet hoặc `FND-`; tuyệt đối không trỏ chéo sang facet khác.
+* **Điều phối tổng thể**: Mọi work item `FND-` và `BLD-` của service bắt buộc phải xuất hiện trong bảng `Build Order` của `service-docs/build-plan.md`. Quan hệ phụ thuộc xuyên facet chỉ được khai báo duy nhất tại đây.
 
 ---
 

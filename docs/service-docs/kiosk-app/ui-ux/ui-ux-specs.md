@@ -7,80 +7,45 @@ owner: Product Designer & UI/UX Specialist
 
 # UI/UX SPECS — Đặc tả Giao diện & Trải nghiệm Phân hệ Kiosk
 
-
-## 1. Hành trình Trải nghiệm Người dùng (User Journeys & Tasks)
-
-### `UI-KSK-001` — Hành trình Điểm danh Khuôn mặt Siêu tốc (Fast Face Attendance)
-* **Đối tượng**: Cán bộ nhân viên chấm công hàng ngày tại cổng ra vào văn phòng.
-* **Thời lượng mục tiêu**: $\le 1.0\text{ s}$ từ khi bước vào tầm ngắm đến khi nhận thông báo thành công.
-* **Luồng tương tác**:
-  1. Người dùng bước tới trước trạm Kiosk ở khoảng cách $0.6 - 1.2\text{ m}$.
-  2. Người dùng nhìn thẳng vào khung Oval ở trung tâm màn hình.
-  3. Khung Oval chuyển từ viền Xám (Chờ) sang Vàng (Căn chỉnh) nếu vị trí chưa chuẩn, hoặc trực tiếp sang Xanh lá kèm quét sóng Pulse Scan khi đạt chuẩn góc nhìn và độ sắc nét.
-  4. Trạm Kiosk phát âm thanh "Tít" ngắn ($100\text{ ms}, 880\text{ Hz}$).
-  5. Thẻ kết quả nổi (Result Card) trượt lên hiển thị: Họ tên, Mã nhân viên, Ảnh nhận diện, Giờ chấm công và huy hiệu "Đúng giờ".
-  6. Thẻ tự động ẩn sau $2.5\text{ s}$; màn hình trở về trạng thái chờ sẵn sàng đón lượt quẹt tiếp theo.
+Đặc tả các hành trình trải nghiệm người dùng (`UI-KSK-`), máy trạng thái chỉ báo thị giác khung Oval, quy chuẩn kích thước điểm chạm cảm ứng và phím tắt phần cứng cho máy trạm Kiosk.
 
 ---
 
-### `UI-KSK-002` — Hành trình Điểm danh Bằng Mã PIN Dự phòng (PIN Backup Punch)
-* **Đối tượng**: Nhân viên gặp sự cố y tế (băng bó vết thương mặt), ánh sáng môi trường quá bất lợi hoặc hệ thống camera gặp trục trặc kỹ thuật.
-* **Luồng tương tác**:
-  1. Người dùng nhấn nút cảm ứng "Nhập mã PIN (F2)" trên Dock điều khiển (hoặc nhấn phím F2).
-  2. Hộp thoại PIN Pad Modal mở ra ở trung tâm màn hình, làm mờ hậu cảnh ($16\text{ px}$ blur).
-  3. Người dùng chạm các nút số lớn ($88 \times 88\text{ px}$) để nhập 6 chữ số cá nhân. Mỗi lần chạm phát phản hồi đổi màu nút và hiển thị chấm tròn bảo mật.
-  4. Sau khi nhập đủ 6 số, hệ thống tự động kiểm tra mã hash PIN trong CSDL SQLite cục bộ:
-     * *Đúng*: Khung modal đóng lại, phát tiếng "Tít" thành công, thẻ kết quả nổi xuất hiện $2.5\text{ s}$.
-     * *Sai*: Hiển thị dòng chữ cảnh báo đỏ "Mã PIN không chính xác (Còn lại X lần thử)", rung lắc modal nhẹ trong $300\text{ ms}$. Khóa chức năng PIN trong $15\text{ phút}$ nếu nhập sai quá 5 lần liên tiếp.
+## 1. User Journeys & Interaction Specs (Đặc tả Hành trình Người dùng)
+
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `UI-KSK-001` | Hành trình Điểm danh Khuôn mặt Siêu tốc: Người dùng đứng trước Kiosk (0.6 - 1.2m), nhìn vào Oval, nhận diện thành công $\le 1.0\text{ s}$ và thẻ kết quả hiển thị $2.5\text{ s}$. | Journey | Must | `UI-SYS-001`, `FR-SYS-001` | Nhận diện và hiển thị kết quả thành công trong vòng <= 1.0s; thẻ kết quả tự ẩn sau 2.5s. | Approved |
+| `UI-KSK-002` | Hành trình Điểm danh Bằng Mã PIN Dự phòng: Chạm nút PIN (F2), mở hộp thoại PIN Pad làm mờ hậu cảnh 16px, nút bấm lớn $88\times 88\text{ px}$, khóa 15p sau 5 lần sai. | Journey | Must | `UI-SYS-002`, `FR-SYS-004` | Nhập đúng PIN 6 số điểm danh thành công; nhập sai 5 lần tự động khóa 15 phút kèm đếm ngược. | Approved |
+| `UI-KSK-003` | Hành trình Tự Kích hoạt & Đăng ký Khuôn mặt In-Viewport 3 Bước: Bước 1 nhập OTP $\rightarrow$ Bước 2 modal tự ẩn để lộ camera chính chụp 3 ảnh $\rightarrow$ Bước 3 xác nhận hoàn tất. | Journey | Must | `UI-SYS-003`, `FR-SYS-009` | Popup tự ẩn ở Bước 2 để lộ trọn vẹn camera chính; chụp 3 ảnh chuẩn và hiện lại popup ở Bước 3. | Approved |
 
 ---
 
-### `UI-KSK-003` — Hành trình Tự Kích hoạt & Đăng ký Khuôn mặt In-Viewport (3-Step Enrollment)
-* **Đối tượng**: Nhân viên mới gia nhập công ty hoặc nhân viên cần cập nhật lại diện mạo.
-* **Luồng tương tác**:
-  1. Người dùng nhấn nút "Đăng ký khuôn mặt (F3)" trên trạm Kiosk.
-  2. **Bước 1 (Xác thực OTP)**: Modal hiển thị ô nhập mã OTP 6 số do HR hoặc Cổng thông tin Web cung cấp. Người dùng nhập mã $\rightarrow$ Kiosk gọi `POST /api/v1/kiosk/verify-otp`.
-  3. **Bước 2 (Thu thập Mẫu In-Viewport)**: Modal đăng ký tạm thời **tự động ẩn hoàn toàn (Opacity = 0)** để nhường trọn vẹn không gian hiển thị cho camera chính và khung Oval lớn.
-     * Màn hình hiển thị hướng dẫn: "Vui lòng giữ thẳng mặt, Kiosk đang chụp 3 ảnh chất lượng cao".
-     * Thanh tiến trình hiển thị $1/3 \rightarrow 2/3 \rightarrow 3/3$.
-     * Khung hình chỉ được chụp khi đạt đồng thời các tiêu chuẩn: Độ phân giải mặt $\ge 112\times 112\text{ px}$, góc nghiêng $\le 15^\circ$, độ mờ nét Laplacian $\ge 100$, không nhắm mắt.
-  4. **Bước 3 (Xác nhận & Hoàn tất)**: Modal tự động hiện lại; hiển thị thông báo "Đăng ký thành công!", ảnh chân dung đã lưu và nút "Hoàn tất". Kiosk tự nạp vector mới vào RAM ngay lập tức.
-
----
-
-## 2. Máy Trạng thái Khung Oval (Oval State Machine & Feedback)
-
-Khung Oval là tâm điểm thị giác định hướng hành vi của người dùng tại Kiosk, sở hữu 4 trạng thái tương tác độc lập:
+## 2. Oval State Machine & Visual Feedback (Máy Trạng thái Khung Oval)
 
 ```mermaid
 stateDiagram-v2
     [*] --> Standby: Khởi động ứng dụng
     Standby --> Aligning: Phát hiện mặt trong camera
     Aligning --> Standby: Người dùng rời khỏi góc nhìn
-    Aligning --> Success: Mặt chuẩn + Liveness Pass + Match >= 0.65
-    Aligning --> Rejected: Liveness Fail / Face Anti-Spoofing / Match < 0.65
+    Aligning --> Success: Mặt chuẩn + Liveness Pass + Match >= 0.50
+    Aligning --> Rejected: Liveness Fail / Anti-Spoofing / Match < 0.50
     Success --> Standby: Sau 2.5 giây hiển thị kết quả
     Rejected --> Standby: Sau 2.0 giây cảnh báo lỗi
 ```
 
-| Mã Trạng thái | Tên Trạng thái | Màu Viền & Độ Dày | Hiệu ứng Hoạt họa (Animation) | Chỉ báo Văn bản (Badge Banner) | Phản hồi Âm thanh |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `UI-KSK-004` | **Chờ (Standby)** | `#64748B` (Xám Slate)<br>Nét đứt $3\text{ px}$ | Xoay nhẹ hoặc tĩnh lặng tiết kiệm năng lượng | "Vui lòng nhìn thẳng vào khung oval" | Không phát âm thanh |
-| `UI-KSK-005` | **Căn chỉnh (Aligning)** | `#F59E0B` (Vàng Hổ phách)<br>Nét liền $4\text{ px}$ | Đường viền sáng mạch lạc, thở nhẹ (Glow breathing) | Thay đổi linh hoạt theo lỗi tư thế:<br>• "Đến gần hơn một chút"<br>• "Lùi ra xa một chút"<br>• "Nghiêng đầu thẳng lại"<br>• "Vui lòng bỏ khẩu trang/kính râm" | Không phát âm thanh |
-| `UI-KSK-006` | **Thành công (Success)** | `#10B981` (Xanh Emerald)<br>Nét liền $5\text{ px}$ | **Pulse Scan**: Tia sáng laser xanh quét dọc từ trên xuống dưới khung Oval | "Nhận diện thành công!" kèm tên nhân viên | Phát tiếng "Tít" trong trẻo $880\text{ Hz}$ ($100\text{ ms}$) |
-| `UI-KSK-007` | **Từ chối (Rejected)** | `#EF4444` (Đỏ Cảnh báo)<br>Nét liền $5\text{ px}$ | **Shake Animation**: Khung Oval rung lắc nhẹ theo trục hoành trong $300\text{ ms}$ | "Ảnh không hợp lệ / Giả mạo"<br>hoặc "Không tìm thấy hồ sơ nhân viên" | Phát 2 tiếng "Bíp - Bíp" trầm $300\text{ Hz}$ |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `UI-KSK-004` | Trạng thái Chờ (Standby): Khung Oval hiển thị viền nét đứt 3px màu xám Slate `#64748B`, thông báo "Vui lòng nhìn thẳng vào khung oval", không phát âm thanh. | VisualState | Must | `UI-SYS-001`, `FR-KSK-001` | Hiển thị viền xám tĩnh lặng khi không có người; tiết kiệm CPU và tài nguyên GPU. | Approved |
+| `UI-KSK-005` | Trạng thái Căn chỉnh (Aligning): Khung Oval hiển thị viền nét liền 4px màu vàng Hổ phách `#F59E0B`, glow breathing, hiển thị thông báo hướng dẫn tư thế (cự ly, góc nghiêng). | VisualState | Must | `UI-SYS-001`, `FR-KSK-001` | Đổi viền vàng khi phát hiện mặt nhưng chưa đạt góc nghiêng hoặc cự ly; hiện thông báo hướng dẫn. | Approved |
+| `UI-KSK-006` | Trạng thái Thành công (Success): Khung Oval hiển thị viền nét liền 5px màu xanh Emerald `#10B981`, hiệu ứng Pulse Scan laser quét dọc, phát âm thanh "Tít" 880Hz 100ms. | VisualState | Must | `UI-SYS-001`, `FR-KSK-001` | Đổi viền xanh, kích hoạt tia laser quét dọc và phát âm thanh xác nhận khi nhận diện đúng. | Approved |
+| `UI-KSK-007` | Trạng thái Từ chối (Rejected): Khung Oval hiển thị viền nét liền 5px màu đỏ Rose `#EF4444`, hiệu ứng rung lắc 300ms, phát âm thanh cảnh báo trầm "Bíp - Bíp" 300Hz. | VisualState | Must | `UI-SYS-001`, `FR-KSK-002` | Đổi viền đỏ, rung lắc nhẹ 300ms và phát cảnh báo âm thanh khi phát hiện giả mạo hoặc không khớp. | Approved |
 
 ---
 
-## 3. Quy chuẩn Khả năng Tiếp cận & Trải nghiệm Cảm ứng (Accessibility & Touch Standards)
+## 3. Accessibility & Hardware Hotkeys (Khả năng Tiếp cận & Phím tắt)
 
-1. **Kích thước Điểm Chạm (Hit Target)**:
-   * Toàn bộ các nút bấm cảm ứng trên màn hình chính và trong modal có kích thước vật lý tối thiểu $\ge 48 \times 48\text{ px}$, khuyến nghị $88 \times 88\text{ px}$ đối với phím số PIN Pad.
-   * Khoảng cách tối thiểu giữa hai điểm chạm lân cận: $\ge 16\text{ px}$ nhằm triệt tiêu hiện tượng chạm nhầm.
-2. **Độ tương phản Thị giác (Visual Contrast)**:
-   * Tỷ lệ tương phản chữ trên nền đạt chuẩn WCAG 2.1 AA tối thiểu $4.5:1$ đối với văn bản thông thường và $3:1$ đối với văn bản kích thước lớn ($\ge 24\text{ px}$).
-3. **Phím tắt Phần cứng (Hardware Hotkeys)**:
-   * Kiosk hỗ trợ đồng thời màn hình cảm ứng và bàn phím vật lý/bàn phím số gắn ngoài:
-     * Phím `F2`: Mở/Đóng hộp thoại PIN Pad.
-     * Phím `F3`: Mở/Đóng hộp thoại Đăng ký Khuôn mặt.
-     * Phím `Esc`: Đóng toàn bộ các modal đang hiển thị, quay về màn hình camera chính.
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `UI-KSK-008` | Quy chuẩn Điểm Chạm Cảm ứng & Độ Tương phản: Kích thước nút bấm tối thiểu $\ge 48\times 48\text{ px}$ (phím PIN $88\times 88\text{ px}$), khoảng cách $\ge 16\text{ px}$, tương phản WCAG 2.1 AA $\ge 4.5:1$. | Accessibility | Must | `UI-SYS-004`, `NFR-SYS-007` | Toàn bộ thành phần cảm ứng đạt kích thước tối thiểu, phông chữ dễ đọc ở cự ly 1m. | Approved |
+| `UI-KSK-009` | Hỗ trợ Phím tắt Phần cứng: Phím F2 mở/đóng PIN Pad, phím F3 mở/đóng Đăng ký khuôn mặt, phím Esc đóng toàn bộ modal quay về camera chính. | Interaction | Must | `UI-SYS-002`, `UI-SYS-003` | Nhấn F2/F3/Esc trên bàn phím vật lý kích hoạt hoặc đóng modal tương ứng tức thời. | Approved |

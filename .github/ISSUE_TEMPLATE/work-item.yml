@@ -13,7 +13,7 @@ body:
     id: work_item_id
     attributes:
       label: "Mã Work Item ID"
-      description: "Nhập ID work item theo đúng scheme (ví dụ: BLD-BKE-001, TST-KSK-002, DPL-SYS-001, FND-SYS-001)."
+      description: "Nhập ID work item theo đúng scheme (ví dụ: BLD-BKE-001, TST-KSK-002, DPL-001, FND-SYS-001)."
       placeholder: "BLD-BKE-001"
     validations:
       required: true
@@ -35,8 +35,8 @@ body:
     id: plan_reference
     attributes:
       label: "Đường dẫn tới tệp Plan sở hữu"
-      description: "Đường dẫn tới leaf Plan chứa work item này (ví dụ: docs/service-docs/backend-service/core/bp.md)."
-      placeholder: "docs/service-docs/backend-service/core/bp.md"
+      description: "Đường dẫn tới leaf Plan chứa work item này (ví dụ: docs/service-docs/backend-service/build-plan.md)."
+      placeholder: "docs/service-docs/backend-service/build-plan.md"
     validations:
       required: true
 

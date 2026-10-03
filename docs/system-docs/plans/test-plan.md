@@ -19,11 +19,11 @@ owner: QA Lead
 
 ## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử)
 
-| ID | Quyết định Tiếp cận Kiểm thử | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: |
-| `APC-SYS-010` | Kim tự tháp kiểm thử đa tầng liên tục (Unit $\rightarrow$ Component $\rightarrow$ Integration $\rightarrow$ System $\rightarrow$ Soak). | Đảm bảo phát hiện lỗi sớm ở tầng dưới, tối ưu chi phí sửa đổi và bảo đảm độ ổn định hệ thống. | `APC-SYS-002`, `NFR-SYS-001` | Approved |
-| `APC-SYS-011` | Kiểm thử tiêm lỗi cưỡng bức (Fault Injection Testing: ngắt mạng, mất camera, cúp điện). | Hệ thống chạy tại biên trong môi trường nhà máy/văn phòng có độ ổn định ngoại cảnh không đồng đều, bắt buộc phải tự phục hồi. | `NFR-SYS-006`, `RSK-SYS-001` | Approved |
-| `APC-SYS-012` | Kiểm thử ngâm tải bộ nhớ 8 giờ liên tục (Soak Testing) với luồng camera thật. | Phát hiện triệt để rò rỉ bộ nhớ (Memory Leak) từ các khung hình OpenCV/NumPy trước khi đưa vào vận hành thực tế. | `NFR-SYS-009`, `KPI-06` | Approved |
+| ID | Decision | Rationale | Basis | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| `APC-SYS-010` | Kim tự tháp kiểm thử đa tầng liên tục (Unit $\rightarrow$ Component $\rightarrow$ Integration $\rightarrow$ System $\rightarrow$ Soak). | Đảm bảo phát hiện lỗi sớm ở tầng dưới, tối ưu chi phí sửa đổi và bảo đảm độ ổn định hệ thống. | `APC-SYS-002`, `NFR-SYS-001` | Accepted |
+| `APC-SYS-011` | Kiểm thử tiêm lỗi cưỡng bức (Fault Injection Testing: ngắt mạng, mất camera, cúp điện). | Hệ thống chạy tại biên trong môi trường nhà máy/văn phòng có độ ổn định ngoại cảnh không đồng đều, bắt buộc phải tự phục hồi. | `NFR-SYS-006`, `RSK-001` | Accepted |
+| `APC-SYS-012` | Kiểm thử ngâm tải bộ nhớ 8 giờ liên tục (Soak Testing) với luồng camera thật. | Phát hiện triệt để rò rỉ bộ nhớ (Memory Leak) từ các khung hình OpenCV/NumPy trước khi đưa vào vận hành thực tế. | `NFR-SYS-009`, `PD-002` | Accepted |
 
 ---
 
@@ -41,28 +41,28 @@ owner: QA Lead
 
 ## 4. System Test Items (Ma trận Ca Kiểm thử Toàn diện Hệ thống)
 
-| ID | Tên Ca Kiểm thử (Test Item Title) | Covers Spec | Mức độ Test | Tiêu chí Đạt (Done when / Pass Criteria) | Trạng thái |
-| :--- | :--- | :--- | :---: | :--- | :---: |
-| `TST-SYS-001` | Kiểm thử Thu nhận Luồng Video Camera & FPS | `FR-SYS-001`, `NFR-SYS-002` | Unit / Component | Đọc khung hình ổn định qua DirectShow; duy trì $\ge 15\text{ FPS}$ liên tục trong 30 phút. | **Passed** |
-| `TST-SYS-002` | Kiểm thử Phát hiện Mặt & Góc Quay Euler | `FR-SYS-001`, `NFR-SYS-004` | Unit | YuNet phát hiện đúng khuôn mặt $\ge 120\times 120\text{ px}$; từ chối góc nghiêng $> 15^\circ$. | **Passed** |
-| `TST-SYS-003` | Kiểm thử Cổng Căn chỉnh Oval & Ổn định Thời gian | `FR-SYS-001`, `UI-SYS-001` | Functional / UX | Đạt độ lệch tâm $\le 120\text{ px}$, diện tích $25\% - 75\%$; giữ ổn định liên tục $0.5 - 1.0\text{ s}$ mới nhận diện. | **Passed** |
-| `TST-SYS-004` | Kiểm thử Chặn Ảnh In 2D Giả mạo (Print Attack) | `FR-SYS-002`, `NFR-SYS-005` | PAD / Security | Đưa ảnh in chân dung giấy A4 trước camera; MiniFASNet từ chối $S < 0.85$, viền đỏ cảnh báo. | **Passed** |
-| `TST-SYS-005` | Kiểm thử Chặn Video Phát lại (Replay Attack) | `FR-SYS-002`, `NFR-SYS-005` | PAD / Security | Phát video khuôn mặt qua màn hình điện thoại/iPad; hệ thống chặn đứng với độ chính xác $\ge 98\%$. | **Passed** |
-| `TST-SYS-006` | Kiểm thử Trích xuất ArcFace & So khớp RAM | `FR-SYS-003`, `NFR-SYS-001` | Unit / Integration | Vector 512D chuẩn hóa L2 = 1.0; so khớp Cosine ma trận 1,000 nhân sự hoàn tất $< 2\text{ ms}$. | **Passed** |
-| `TST-SYS-007` | Kiểm thử Bàn phím Số ảo PIN & Khóa 15 Phút | `FR-SYS-004`, `DATA-SYS-012` | UI / Security | Nhập đúng PIN 6 số ghi nhận thành công; nhập sai quá 5 lần liên tiếp tự khóa 15 phút. | **Passed** |
-| `TST-SYS-008` | Kiểm thử Chống Quét Trùng Lặp Cooldown 120s | `FR-SYS-005` | Functional | Quẹt liên tiếp trong 120s bị từ chối và hiển thị thông báo "Đã ghi nhận, vui lòng không quẹt lại". | **Passed** |
-| `TST-SYS-009` | Kiểm thử Hàng đợi Ngoại tuyến SQLite WAL | `FR-SYS-006`, `NFR-SYS-006` | Resiliency | Rút dây mạng, quẹt 20 lượt điểm danh; toàn bộ bản ghi lưu vào SQLite; tắt máy cưỡng bức không hỏng CSDL. | **Passed** |
-| `TST-SYS-010` | Kiểm thử Tự động Đồng bộ Bù Ngoại tuyến | `FR-SYS-006`, `API-SYS-013` | Integration | Cắm mạng lại; Kiosk tự gom lô tối đa 50 bản ghi gửi `sync-batch`; Backend ghi nhận đủ mốc giờ gốc. | Sẵn sàng |
-| `TST-SYS-011` | Kiểm thử Ký Thỏa thuận Informed Consent | `FR-SYS-007`, `DATA-SYS-007` | Compliance / Web | Nhân viên mới tích chọn đồng ý trên Web; lưu vết IP và timestamp vào `consent_audit_logs`. | Sẵn sàng |
-| `TST-SYS-012` | Kiểm thử Xác thực Mã Onboarding OTP 48h | `FR-SYS-008`, `DATA-SYS-011` | Security | Nhập đúng OTP mở khóa nạp mặt; nhập OTP sai hoặc quá hạn 48h báo lỗi từ chối rõ ràng. | Sẵn sàng |
-| `TST-SYS-013` | Kiểm thử Quy trình Tự Đăng ký In-Viewport | `FR-SYS-009`, `UI-SYS-003` | Functional / UX | Nhập OTP $\rightarrow$ Popup tự ẩn $\rightarrow$ Chụp 3 ảnh chuẩn trên camera chính $\rightarrow$ Mở lại ở Bước 3. | **Passed** |
-| `TST-SYS-014` | Kiểm thử Mã hóa Dữ liệu Tĩnh AES-256-GCM | `FR-SYS-010`, `SRS-001` | Security | Cột `template_vector_encrypted` trong PostgreSQL lưu ciphertext BYTEA; giải mã đúng khi nạp Kiosk. | Sẵn sàng |
-| `TST-SYS-015` | Kiểm thử Tự động Xóa Dữ liệu sau 20 Ngày | `FR-SYS-011`, `DATA-SYS-013` | Compliance | Nhân viên nghỉ việc quá 20 ngày; cron job quét xóa sạch vector khỏi CSDL và ghi log kiểm toán. | Sẵn sàng |
-| `TST-SYS-016` | Kiểm thử Tính Ca kíp & Ân hạn 15 Phút | `FR-SYS-012` | Business Rule | Chấm công trong vòng 15p đầu ca tính đúng giờ (`ON_TIME`); sau 15p tính đi muộn (`LATE`). | Sẵn sàng |
-| `TST-SYS-017` | Kiểm thử Phát sóng STOMP lên Live Dashboard | `FR-SYS-013`, `NFR-SYS-003` | Realtime / E2E | Kiosk chấm công thành công; bản ghi xuất hiện trên Dashboard Web trong vòng $\le 200\text{ ms}$. | Sẵn sàng |
-| `TST-SYS-018` | Kiểm thử Nạp nóng Vector vào RAM Kiosk | `FR-SYS-014` | Integration | Nhân viên mới đăng ký trên trạm A; trạm B nhận bản tin STOMP nạp vector vào RAM ngay lập tức. | Sẵn sàng |
-| `TST-SYS-019` | Kiểm thử Duyệt Giải trình & Xuất Báo cáo | `FR-SYS-016`, `SRS-007` | Functional / Security | HR duyệt đơn giải trình; xuất file Excel bảng công kiểm tra không chứa mã độc Formula Injection. | Sẵn sàng |
-| `TST-SYS-020` | Kiểm thử Ngâm tải Bộ nhớ Liên tục 8 Giờ | `NFR-SYS-009`, `KPI-06` | Soak Testing | Chạy ứng dụng Kiosk với camera hoạt động thật liên tục 8h; mức RAM duy trì ổn định $\Delta \le 10\%$. | Sẵn sàng |
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `TST-SYS-001` | Kiểm thử Thu nhận Luồng Video Camera & FPS | Đọc khung hình ổn định qua DirectShow; duy trì $\ge 15\text{ FPS}$ liên tục trong 30 phút. | `FR-SYS-001`, `NFR-SYS-002` | `BLD-SYS-001` | Không giật lag khung hình; FPS trung bình $\ge 15$. | Done |
+| `TST-SYS-002` | Kiểm thử Phát hiện Mặt & Góc Quay Euler | YuNet phát hiện đúng khuôn mặt $\ge 120\times 120\text{ px}$; từ chối góc nghiêng $> 15^\circ$. | `FR-SYS-001`, `NFR-SYS-004` | `BLD-SYS-001` | Phát hiện mặt chuẩn xác; từ chối khi vượt ngưỡng Euler. | Done |
+| `TST-SYS-003` | Kiểm thử Cổng Căn chỉnh Oval & Ổn định Thời gian | Đạt độ lệch tâm $\le 120\text{ px}$, diện tích $25\% - 75\%$; giữ ổn định liên tục $0.5 - 1.0\text{ s}$ mới nhận diện. | `FR-SYS-001`, `UI-SYS-001` | `BLD-SYS-002` | Chuyển trạng thái Oval chính xác sau thời gian giữ ổn định. | Done |
+| `TST-SYS-004` | Kiểm thử Chặn Ảnh In 2D Giả mạo (Print Attack) | Đưa ảnh in chân dung giấy A4 trước camera; MiniFASNet từ chối $S < 0.85$, viền đỏ cảnh báo. | `FR-SYS-002`, `NFR-SYS-005` | `BLD-SYS-001` | Điểm liveness < 0.85, hiển thị viền đỏ và từ chối chấm công. | Done |
+| `TST-SYS-005` | Kiểm thử Chặn Video Phát lại (Replay Attack) | Phát video khuôn mặt qua màn hình điện thoại/iPad; hệ thống chặn đứng với độ chính xác $\ge 98\%$. | `FR-SYS-002`, `NFR-SYS-005` | `BLD-SYS-001` | Chặn video phát lại đạt độ chính xác $\ge 98\%$. | Done |
+| `TST-SYS-006` | Kiểm thử Trích xuất ArcFace & So khớp RAM | Vector 512D chuẩn hóa L2 = 1.0; so khớp Cosine ma trận 1,000 nhân sự hoàn tất $< 2\text{ ms}$. | `FR-SYS-003`, `NFR-SYS-001` | `BLD-SYS-001` | Tính toán Cosine similarity ma trận RAM $< 2\text{ ms}$. | Done |
+| `TST-SYS-007` | Kiểm thử Bàn phím Số ảo PIN & Khóa 15 Phút | Nhập đúng PIN 6 số ghi nhận thành công; nhập sai quá 5 lần liên tiếp tự khóa 15 phút. | `FR-SYS-004`, `DATA-SYS-012` | `BLD-SYS-002` | Khóa bàn phím 15 phút sau 5 lần nhập sai liên tiếp. | Done |
+| `TST-SYS-008` | Kiểm thử Chống Quét Trùng Lặp Cooldown 120s | Quẹt liên tiếp trong 120s bị từ chối và hiển thị thông báo "Đã ghi nhận, vui lòng không quẹt lại". | `FR-SYS-005` | `BLD-SYS-001` | Từ chối lượt quét thứ hai trong 120 giây. | Done |
+| `TST-SYS-009` | Kiểm thử Hàng đợi Ngoại tuyến SQLite WAL | Rút dây mạng, quẹt 20 lượt điểm danh; toàn bộ bản ghi lưu vào SQLite; tắt máy cưỡng bức không hỏng CSDL. | `FR-SYS-006`, `NFR-SYS-006` | `BLD-SYS-003` | RPO = 0, toàn bộ bản ghi còn nguyên vẹn trong SQLite WAL. | Done |
+| `TST-SYS-010` | Kiểm thử Tự động Đồng bộ Bù Ngoại tuyến | Cắm mạng lại; Kiosk tự gom lô tối đa 50 bản ghi gửi `sync-batch`; Backend ghi nhận đủ mốc giờ gốc. | `FR-SYS-006`, `API-SYS-013` | `BLD-SYS-003`, `BLD-SYS-006` | Đồng bộ 100% bản ghi với mốc giờ gốc không sai lệch. | Planned |
+| `TST-SYS-011` | Kiểm thử Ký Thỏa thuận Informed Consent | Nhân viên mới tích chọn đồng ý trên Web; lưu vết IP và timestamp vào `consent_audit_logs`. | `FR-SYS-007`, `DATA-SYS-007` | `BLD-SYS-008` | Ghi nhận văn bản thỏa thuận bất biến trong audit logs. | Planned |
+| `TST-SYS-012` | Kiểm thử Xác thực Mã Onboarding OTP 48h | Nhập đúng OTP mở khóa nạp mặt; nhập OTP sai hoặc quá hạn 48h báo lỗi từ chối rõ ràng. | `FR-SYS-008`, `DATA-SYS-011` | `BLD-SYS-006` | OTP dùng đúng 1 lần và từ chối khi hết hạn 48h. | Planned |
+| `TST-SYS-013` | Kiểm thử Quy trình Tự Đăng ký In-Viewport | Nhập OTP $\rightarrow$ Popup tự ẩn $\rightarrow$ Chụp 3 ảnh chuẩn trên camera chính $\rightarrow$ Mở lại ở Bước 3. | `FR-SYS-009`, `UI-SYS-003` | `BLD-SYS-002` | Luồng tự đăng ký 3 bước hoạt động trơn tru. | Done |
+| `TST-SYS-014` | Kiểm thử Mã hóa Dữ liệu Tĩnh AES-256-GCM | Cột `template_vector_encrypted` trong PostgreSQL lưu ciphertext BYTEA; giải mã đúng khi nạp Kiosk. | `FR-SYS-010`, `SRS-001` | `BLD-SYS-005` | Dữ liệu tĩnh được mã hóa kèm IV và Auth Tag đầy đủ. | Planned |
+| `TST-SYS-015` | Kiểm thử Tự động Xóa Dữ liệu sau 20 Ngày | Nhân viên nghỉ việc quá 20 ngày; cron job quét xóa sạch vector khỏi CSDL và ghi log kiểm toán. | `FR-SYS-011`, `DATA-SYS-013` | `BLD-SYS-005` | Xóa sạch vector sau 20 ngày kể từ ngày chấm dứt hợp đồng. | Planned |
+| `TST-SYS-016` | Kiểm thử Tính Ca kíp & Ân hạn 15 Phút | Chấm công trong vòng 15p đầu ca tính đúng giờ (`ON_TIME`); sau 15p tính đi muộn (`LATE`). | `FR-SYS-012` | `BLD-SYS-005` | Tính toán số phút đi muộn chính xác theo ca làm việc. | Planned |
+| `TST-SYS-017` | Kiểm thử Phát sóng STOMP lên Live Dashboard | Kiosk chấm công thành công; bản ghi xuất hiện trên Dashboard Web trong vòng $\le 200\text{ ms}$. | `FR-SYS-013`, `NFR-SYS-003` | `BLD-SYS-006`, `BLD-SYS-007` | Dashboard cập nhật dòng mới trong vòng $\le 200\text{ ms}$. | Planned |
+| `TST-SYS-018` | Kiểm thử Nạp nóng Vector vào RAM Kiosk | Nhân viên mới đăng ký trên trạm A; trạm B nhận bản tin STOMP nạp vector vào RAM ngay lập tức. | `FR-SYS-014` | `BLD-SYS-006` | Trạm Kiosk nạp nóng vector vào RAM ma trận tức thì. | Planned |
+| `TST-SYS-019` | Kiểm thử Duyệt Giải trình & Xuất Báo cáo | HR duyệt đơn giải trình; xuất file Excel bảng công kiểm tra không chứa mã độc Formula Injection. | `FR-SYS-016`, `SRS-007` | `BLD-SYS-008` | File Excel xuất ra được chèn dấu escape trước ký tự nguy hiểm. | Planned |
+| `TST-SYS-020` | Kiểm thử Ngâm tải Bộ nhớ Liên tục 8 Giờ | Chạy ứng dụng Kiosk với camera hoạt động thật liên tục 8h; mức RAM duy trì ổn định $\Delta \le 10\%$. | `NFR-SYS-009` | `BLD-SYS-001` | Sau 8 giờ chạy liên tục, dung lượng RAM Kiosk tăng $\le 10\%$. | Planned |
 
 ---
 

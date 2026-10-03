@@ -8,7 +8,18 @@ owner: Backend Lead & API Architect
 # API DESIGN — Thiết kế Chi tiết Giao diện & Hợp đồng API (API Contract Specification)
 
 
-## 1. Quy chuẩn Chung Toàn bộ API (Global API Conventions)
+## 1. API Design Elements & Architecture (Thành phần Thiết kế Giao tiếp API)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APD-BE-001` | Kiosk Interaction REST API Design | Thiết kế hợp đồng 5 API REST phục vụ máy trạm Kiosk (`/punch`, `/sync-batch`, `/gallery`, `/verify-otp`, `/enroll-face`) xác thực qua header `X-Kiosk-Id`. | `STK-011` | `API-BE-003`, `API-BE-004`, `API-BE-005`, `API-BE-006`, `API-BE-007` | `DD-SYS-001` | Accepted |
+| `APD-BE-002` | Web Portal REST API Design | Thiết kế hợp đồng các API REST phục vụ Web Portal (Auth, Admin Attendance, Employee Attendance, Consent Signing, Employee Management) xác thực JWT. | `STK-011` | `API-BE-001`, `API-BE-002`, `API-BE-008`, `API-BE-009`, `API-BE-010`, `API-BE-011` | `DD-SYS-001` | Accepted |
+| `APD-BE-003` | WebSocket STOMP Real-time Messaging Design | Thiết kế giao thức đẩy sự kiện hai chiều qua các topic `/topic/kiosk-gallery`, `/topic/live-attendance`, `/topic/enrollment/{otp}`. | `STK-012` | `API-BE-012`, `API-BE-013`, `API-BE-014` | `DD-SYS-001` | Accepted |
+| `APD-BE-004` | Global API Conventions & ProblemDetails Error Architecture | Chuẩn hóa định dạng bao bọc JSON, múi giờ ISO-8601, mã lỗi RFC 7807 ProblemDetails và bộ DTO validation. | `STK-011` | `API-SYS-017`, `API-SYS-018` | `DD-SYS-001` | Accepted |
+
+---
+
+## 2. Quy chuẩn Chung Toàn bộ API (Global API Conventions)
 
 * **Base URL**: `http://localhost:8080/api/v1` (Dev) hoặc `https://fas.company.com/api/v1` (Prod).
 * **Định dạng Nội dung**: `Content-Type: application/json; charset=UTF-8`.

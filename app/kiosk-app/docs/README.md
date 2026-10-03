@@ -13,13 +13,15 @@ Hệ thống tài liệu kỹ thuật của phân hệ Kiosk đã được chu�
 
 👉 **[Bấm vào đây để truy cập Bộ Tài liệu Chuẩn hóa Phân hệ Kiosk](../../../docs/service-docs/kiosk-app/README.md)**
 
-### Cấu trúc 4 Nhánh Facet Tài liệu Kiosk:
-1. **Core Business & Vision**:
-   - [Kế hoạch Thiết lập Nền tảng (FSP)](../../../docs/service-docs/kiosk-app/core/fsp.md)
-   - [Đặc tả Yêu cầu Chức năng & Phi chức năng (Specs)](../../../docs/service-docs/kiosk-app/core/fr-nfr-specs.md)
-   - [Thiết kế Kỹ thuật & Pipeline Thị giác (Design)](../../../docs/service-docs/kiosk-app/core/fr-nfr-design.md)
-   - [Kế hoạch Thi công Cốt lõi (Build Plan)](../../../docs/service-docs/kiosk-app/core/fr-nfr-build-plan.md)
-   - [Kế hoạch & Ma trận Kiểm thử Nội bộ (Test Plan)](../../../docs/service-docs/kiosk-app/core/test-plan.md)
+### Cấu trúc Tài liệu Kiosk Chuẩn hóa:
+* **Toàn Service**:
+  - [Kế hoạch Thiết lập Nền tảng (Foundation Setup)](../../../docs/service-docs/kiosk-app/foundation-setup-plan.md)
+  - [Kế hoạch Xây dựng & Tích hợp Tổng thể (Build Plan)](../../../docs/service-docs/kiosk-app/build-plan.md)
+1. **Nghiệp vụ Cốt lõi & Thị giác Biên (FR/NFR)**:
+   - [Đặc tả Yêu cầu Chức năng & Phi chức năng (Specs)](../../../docs/service-docs/kiosk-app/fr-nfr/fr-nfr-specs.md)
+   - [Thiết kế Kỹ thuật & Pipeline Thị giác (Design)](../../../docs/service-docs/kiosk-app/fr-nfr/fr-nfr-design.md)
+   - [Kế hoạch Thi công Cốt lõi (Build Plan)](../../../docs/service-docs/kiosk-app/fr-nfr/fr-nfr-build-plan.md)
+   - [Kế hoạch Kiểm thử Thị giác & Nghiệp vụ (Test Plan)](../../../docs/service-docs/kiosk-app/fr-nfr/fr-nfr-test-plan.md)
 2. **Giao diện Người dùng (UI/UX 9:16 Portrait)**:
    - [Đặc tả Trải nghiệm & Trạng thái Oval](../../../docs/service-docs/kiosk-app/ui-ux/ui-ux-specs.md)
    - [Thiết kế Bố cục QML & Design Tokens](../../../docs/service-docs/kiosk-app/ui-ux/ui-ux-design.md)

@@ -7,20 +7,19 @@ owner: Solution Architect
 
 # API DESIGN — Thiết kế Chi tiết Giao thức & Hợp đồng API
 
-
 ## 1. RESTful API Structure & Endpoints (Danh mục Điểm cuối API)
 
-| ID | Phương thức & Đường dẫn API | Xác thực Yêu cầu | Mục đích Nghiệp vụ | Uses | Realizes | Trạng thái |
-| :--- | :--- | :---: | :--- | :--- | :--- | :---: |
-| `APD-SYS-001` | `POST /api/v1/auth/login` | Public | Tiếp nhận tài khoản/mật khẩu, cấp phát mã JWT token và danh sách quyền RBAC. | `STK-011` | `SRS-006` | Approved |
-| `APD-SYS-002` | `POST /api/v1/kiosk/punch` | `X-Kiosk-Id` + Secret Token | Tiếp nhận một lượt điểm danh đơn lẻ thời gian thực từ trạm Kiosk. | `STK-011` | `API-SYS-001`, `API-SYS-012` | Approved |
-| `APD-SYS-003` | `POST /api/v1/kiosk/sync-batch` | `X-Kiosk-Id` + Secret Token | Tiếp nhận gói lô tối đa 50 bản ghi điểm danh bù ngoại tuyến. | `STK-011` | `API-SYS-002`, `API-SYS-013` | Approved |
-| `APD-SYS-004` | `GET /api/v1/kiosk/gallery` | `X-Kiosk-Id` + Secret Token | Trả về toàn bộ danh mục vector mẫu đã giải mã để nạp vào RAM Kiosk. | `STK-011`, `STK-015`| `API-SYS-003` | Approved |
-| `APD-SYS-005` | `POST /api/v1/kiosk/verify-otp`| `X-Kiosk-Id` + Secret Token | Xác minh mã kích hoạt OTP 6 số để mở khóa quét mặt tại trạm Kiosk. | `STK-011` | `API-SYS-004`, `API-SYS-014` | Approved |
-| `APD-SYS-006` | `POST /api/v1/kiosk/enroll-face`| `X-Kiosk-Id` + Secret Token | Tiếp nhận vector 512D mới kèm OTP để Backend mã hóa lưu CSDL. | `STK-011`, `STK-015`| `API-SYS-005`, `API-SYS-015` | Approved |
-| `APD-SYS-007` | `GET /api/v1/employees` | Bearer JWT (Role HR/Admin) | Lấy danh sách hồ sơ nhân sự có phân trang, tìm kiếm và lọc phòng ban. | `STK-011` | `API-SYS-008` | Approved |
-| `APD-SYS-008` | `POST /api/v1/compliance/consent`| Bearer JWT (Role Employee) | Ghi nhận văn bản thỏa thuận Informed Consent theo Luật 2025. | `STK-011` | `API-SYS-009`, `API-SYS-016` | Approved |
-| `APD-SYS-009` | `GET /api/v1/reports/export` | Bearer JWT (Role HR/Admin) | Kết xuất dữ liệu bảng công ra file Excel (.xlsx) đã làm sạch mã độc. | `STK-011` | `API-SYS-011`, `SOL-SYS-013` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `APD-SYS-001` | Đăng nhập Xác thực JWT (`POST /api/v1/auth/login`) | Tiếp nhận tài khoản/mật khẩu, cấp phát mã JWT token và danh sách quyền RBAC. | `STK-011` | `SRS-006` | `DD-SYS-012` | Accepted |
+| `APD-SYS-002` | Điểm danh Trực tiếp Kiosk (`POST /api/v1/kiosk/punch`) | Tiếp nhận một lượt điểm danh đơn lẻ thời gian thực từ trạm Kiosk. | `STK-011` | `API-SYS-001`, `API-SYS-012` | `DD-SYS-012` | Accepted |
+| `APD-SYS-003` | Đồng bộ Bù Ngoại tuyến (`POST /api/v1/kiosk/sync-batch`) | Tiếp nhận gói lô tối đa 50 bản ghi điểm danh bù ngoại tuyến. | `STK-011` | `API-SYS-002`, `API-SYS-013` | `DD-SYS-013` | Accepted |
+| `APD-SYS-004` | Tải Danh mục Gallery (`GET /api/v1/kiosk/gallery`) | Trả về toàn bộ danh mục vector mẫu đã giải mã để nạp vào RAM Kiosk. | `STK-011`, `STK-015` | `API-SYS-003` | `DD-SYS-003` | Accepted |
+| `APD-SYS-005` | Xác thực Mã OTP Kiosk (`POST /api/v1/kiosk/verify-otp`) | Xác minh mã kích hoạt OTP 6 số để mở khóa quét mặt tại trạm Kiosk. | `STK-011` | `API-SYS-004`, `API-SYS-014` | `DD-SYS-012` | Accepted |
+| `APD-SYS-006` | Nạp Mẫu Sinh trắc học Kiosk (`POST /api/v1/kiosk/enroll-face`) | Tiếp nhận vector 512D mới kèm OTP để Backend mã hóa lưu CSDL. | `STK-011`, `STK-015` | `API-SYS-005`, `API-SYS-015` | `DD-SYS-003` | Accepted |
+| `APD-SYS-007` | Lấy Danh sách Nhân sự (`GET /api/v1/employees`) | Lấy danh sách hồ sơ nhân sự có phân trang, tìm kiếm và lọc phòng ban. | `STK-011` | `API-SYS-008` | `DD-SYS-012` | Accepted |
+| `APD-SYS-008` | Ký Cam kết Informed Consent (`POST /api/v1/compliance/consent`) | Ghi nhận văn bản thỏa thuận Informed Consent theo Luật 2025. | `STK-011` | `API-SYS-009`, `API-SYS-016` | `DD-SYS-003` | Accepted |
+| `APD-SYS-009` | Xuất Báo cáo Điểm danh Excel (`GET /api/v1/reports/export`) | Kết xuất dữ liệu bảng công ra file Excel (.xlsx) đã làm sạch mã độc. | `STK-011` | `API-SYS-011`, `SOL-SYS-013` | `DD-SYS-008` | Accepted |
 
 ---
 
@@ -97,8 +96,8 @@ owner: Solution Architect
 
 ## 4. API Design Decisions (Quyết định Thiết kế API)
 
-| ID | Quyết định Thiết kế API | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: |
-| `DD-APD-001` | Đóng gói toàn bộ phản hồi API theo chuẩn thống nhất `{success, code, message, data, timestamp}`. | Tạo tính nhất quán cho các client (Kiosk và Web), dễ dàng bắt lỗi và bóc tách dữ liệu phản hồi. | `API-SYS-012` | Approved |
-| `DD-APD-002` | Sử dụng phân số lô cố định tối đa 50 bản ghi cho mỗi request `sync-batch`. | Tránh quá tải payload JSON và nghẽn bộ nhớ đệm HTTP của máy chủ khi Kiosk ngoại tuyến dài ngày. | `API-SYS-013` | Approved |
-| `DD-APD-003` | Áp dụng WebSocket STOMP Broker chạy trực tiếp trong tiến trình Spring Boot (In-memory Simple Broker). | Tiết kiệm chi phí triển khai, không cần dựng cụm Message Queue rời (như RabbitMQ/Kafka) trong quy mô doanh nghiệp vừa và nhỏ. | `STK-014`, `PD-006` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DD-SYS-012` | Chuẩn hóa phản hồi API thống nhất | Đóng gói toàn bộ phản hồi API theo chuẩn thống nhất `{success, code, message, data, timestamp}` giúp đồng nhất việc xử lý lỗi. | `STK-011` | `API-SYS-012` | - | Accepted |
+| `DD-SYS-013` | Giới hạn kích thước gói đồng bộ 50 bản ghi | Sử dụng phân số lô cố định tối đa 50 bản ghi cho mỗi request `sync-batch` để tránh quá tải bộ nhớ và nghẽn HTTP khi ngoại tuyến lâu ngày. | `STK-011` | `API-SYS-013` | - | Accepted |
+| `DD-SYS-014` | In-memory STOMP Message Broker | Áp dụng WebSocket STOMP Broker chạy trực tiếp trong tiến trình Spring Boot (In-memory Simple Broker) tiết kiệm chi phí vận hành. | `STK-014` | `PD-006` | - | Accepted |

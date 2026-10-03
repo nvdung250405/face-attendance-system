@@ -13,34 +13,34 @@ owner: Data Architect
 
 ## 1. Data Entities (Thực thể Dữ liệu Nghiệp vụ)
 
-| ID | Tên Thực thể Dữ liệu | Ý nghĩa Nghiệp vụ & Phạm vi Sở hữu | Thuộc tính Cốt lõi | Nguồn Gốc Dữ liệu (Source of Truth) |
-| :--- | :--- | :--- | :--- | :--- |
-| `DATA-SYS-001` | Nhân viên (`Employee`) | Quản lý hồ sơ định danh, phòng ban, vai trò hệ thống, trạng thái công tác và mã PIN dự phòng. | `emp_code`, `full_name`, `email`, `department`, `role`, `status`, `pin_hash`, `pin_locked_until`, `terminated_date`. | CSDL PostgreSQL (Nhập liệu từ HR qua Web Portal). |
-| `DATA-SYS-002` | Ca Làm việc (`Shift`) | Định nghĩa khung giờ làm việc chuẩn, thời gian ân hạn và trạng thái kích hoạt của ca kíp. | `shift_code`, `shift_name`, `start_time`, `end_time`, `grace_period_minutes` (15p), `is_active`. | CSDL PostgreSQL (Thiết lập từ HR qua Web Portal). |
-| `DATA-SYS-003` | Phân công Ca (`EmployeeShift`) | Ánh xạ nhân viên với ca làm việc cụ thể theo khoảng thời gian hiệu lực. | `employee_id`, `shift_id`, `effective_from`, `effective_to`. | CSDL PostgreSQL (Phân ca từ HR qua Web Portal). |
-| `DATA-SYS-004` | Lượt Điểm danh (`AttendanceRecord`)| Bản ghi lịch sử chấm công thực tế của nhân viên qua khuôn mặt hoặc mã PIN. | `employee_id`, `punch_date`, `punch_time`, `punch_type`, `verification_method`, `status`, `late_minutes`, `kiosk_id`, `confidence_score`, `is_synced_from_offline`. | Trạm Kiosk (Ghi nhận biên) $\rightarrow$ Backend PostgreSQL. |
-| `DATA-SYS-005` | Mẫu Sinh trắc học (`BiometricTemplate`)| Vector đặc trưng 512D đã được mã hóa đối xứng AES-256-GCM bảo vệ an toàn ở trạng thái tĩnh. | `employee_id`, `template_vector_encrypted` (BYTEA), `initialization_vector` (12 bytes), `auth_tag` (16 bytes), `model_version`, `is_active`. | Trạm Kiosk trích xuất $\rightarrow$ Backend mã hóa lưu CSDL. |
-| `DATA-SYS-006` | Mã OTP Kích hoạt (`EnrollmentOtp`) | Mã số kích hoạt 6 chữ số có hiệu lực giới hạn dùng để nhân viên tự nạp khuôn mặt tại trạm Kiosk. | `employee_id`, `otp_hash` (SHA-256), `expires_at` (48 giờ), `is_used`. | Backend sinh mã $\rightarrow$ Nhân viên mang ra Kiosk. |
-| `DATA-SYS-007` | Nhật ký Cam kết (`ConsentAuditLog`) | Bản ghi lưu vết pháp lý văn bản thỏa thuận Informed Consent điện tử theo Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15. | `employee_id`, `consent_version`, `agreed_at`, `ip_address`, `user_agent`, `legal_basis`. | Web Portal (Nhân viên ký nhận lần đầu). |
-| `DATA-SYS-008` | Đơn Giải trình Công (`ExcuseRequest`) | Đơn xin giải trình lý do đi muộn, về sớm hoặc quên chấm công của nhân viên. | `employee_id`, `attendance_date`, `reason`, `proof_file_path`, `status` (PENDING/APPROVED/REJECTED), `reviewed_by_id`, `review_comment`. | Web Portal (Nhân viên gửi $\rightarrow$ HR phê duyệt). |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DATA-SYS-001` | Quản lý thực thể Nhân viên (`Employee`) gồm định danh `emp_code`, họ tên, email, phòng ban, vai trò, trạng thái, hash mã PIN và hạn khóa PIN. | Entity | Must | `PD-001`, `INF-001` | CSDL lưu trữ đầy đủ các trường, `emp_code` và `email` không trùng lặp, nhập liệu từ Web Portal. | Approved |
+| `DATA-SYS-002` | Quản lý thực thể Ca làm việc (`Shift`) gồm mã ca, tên ca, giờ bắt đầu, giờ kết thúc, thời gian ân hạn đi muộn (15 phút) và cờ kích hoạt. | Entity | Must | `PD-001`, `INF-002` | Hỗ trợ ca làm việc cố định và ca gãy, cấu hình thời gian ân hạn linh hoạt từ HR Web Portal. | Approved |
+| `DATA-SYS-003` | Quản lý thực thể Phân ca (`EmployeeShift`) ánh xạ nhân viên với ca làm việc cụ thể theo khoảng thời gian hiệu lực `effective_from` đến `effective_to`. | Entity | Must | `PD-001`, `INF-002` | Không cho phép phân trùng ca cùng thời điểm cho 1 nhân viên; tự động áp dụng ca khi điểm danh. | Approved |
+| `DATA-SYS-004` | Quản lý thực thể Lượt điểm danh (`AttendanceRecord`) gồm mã nhân viên, ngày điểm danh, giờ bấm, loại bấm (IN/OUT), phương thức xác thực, trạng thái và cờ sync offline. | Entity | Must | `PD-001`, `PD-002`, `INF-003` | Ghi nhận chính xác nguồn điểm danh (Kiosk khuôn mặt / PIN), tự động tính số phút đi muộn/về sớm. | Approved |
+| `DATA-SYS-005` | Quản lý thực thể Mẫu sinh trắc học (`BiometricTemplate`) gồm vector đặc trưng 512D đã mã hóa AES-256-GCM, IV, Auth Tag, phiên bản model và trạng thái kích hoạt. | Entity | Must | `PD-005`, `PD-006`, `INF-004` | Vector mã hóa lưu dạng BYTEA, mỗi bản ghi kèm IV 12 bytes và Auth Tag 16 bytes riêng biệt, không lưu ảnh gốc. | Approved |
+| `DATA-SYS-006` | Quản lý thực thể Mã kích hoạt OTP (`EnrollmentOtp`) gồm mã nhân viên, chuỗi băm OTP (SHA-256), thời điểm hết hạn (48h) và cờ đánh dấu đã sử dụng. | Entity | Must | `PD-003`, `INF-008` | Mỗi mã chỉ kích hoạt 1 lần duy nhất; tự động hết hiệu lực sau đúng 48 giờ kể từ lúc sinh. | Approved |
+| `DATA-SYS-007` | Quản lý thực thể Nhật ký cam kết (`ConsentAuditLog`) lưu vết pháp lý văn bản thỏa thuận Informed Consent điện tử (phiên bản, thời điểm ký, IP, User Agent). | Entity | Must | `PD-005`, `INF-009` | Lưu trữ bất biến phục vụ kiểm toán tuân thủ Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15. | Approved |
+| `DATA-SYS-008` | Quản lý thực thể Đơn giải trình công (`ExcuseRequest`) gồm mã nhân viên, ngày điểm danh, lý do, đường dẫn minh chứng, trạng thái duyệt và phản hồi của HR. | Entity | Must | `PD-004`, `INF-011` | Cập nhật luồng PENDING -> APPROVED/REJECTED; tự động điều chỉnh bản ghi công khi được duyệt. | Approved |
 
 ---
 
 ## 2. Data Rules & Validation (Quy tắc Dữ liệu & Tính Toàn vẹn)
 
-| ID | Quy tắc Toàn vẹn Dữ liệu | Ràng buộc Kỹ thuật Cụ thể | Hành vi Vi phạm / Xử lý |
-| :--- | :--- | :--- | :--- |
-| `DATA-SYS-009` | Duy nhất Định danh Nhân viên | Mã nhân viên `emp_code` và địa chỉ `email` bắt buộc phải là duy nhất trên toàn hệ thống (`UNIQUE, NOT NULL`). | Báo lỗi trùng lặp khi thêm mới hồ sơ nhân sự trên Web Portal. |
-| `DATA-SYS-010` | Chuẩn hóa Vector Đặc trưng 512D | Vector khuôn mặt phải có đúng 512 phần tử số thực kiểu `float32` và đạt chuẩn độ dài hình học $L_2\text{ Norm} = 1.0 \pm 10^{-4}$. | Từ chối nạp mẫu khuôn mặt vào hệ thống nếu sai kích thước hoặc chưa chuẩn hóa. |
-| `DATA-SYS-011` | Hiệu lực Mã Kích hoạt OTP | Mã kích hoạt OTP chỉ được sử dụng đúng 1 lần (`is_used = true`) và tự động hết hiệu lực sau đúng 48 giờ kể từ khi sinh mã. | Trả về thông báo lỗi "Mã kích hoạt không hợp lệ hoặc đã hết hạn" tại Kiosk. |
-| `DATA-SYS-012` | Bảo vệ Mã PIN Chống Brute-force | Nếu nhập sai mã PIN quá 5 lần liên tiếp, tài khoản điểm danh bằng PIN bị khóa cưỡng bức 15 phút (`pin_locked_until = now() + 15m`). | Bàn phím Kiosk từ chối thao tác và hiển thị thời gian đếm lùi mở khóa. |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DATA-SYS-009` | Duy nhất định danh nhân sự: trường `emp_code` và `email` bắt buộc phải là duy nhất trên toàn hệ thống (`UNIQUE, NOT NULL`). | Constraint | Must | `PD-001`, `INF-001` | Báo lỗi vi phạm ràng buộc toàn vẹn khi tạo mới hoặc cập nhật trùng lặp mã nhân viên hoặc email. | Approved |
+| `DATA-SYS-010` | Chuẩn hóa Vector sinh trắc học: mảng đặc trưng khuôn mặt phải có đúng 512 phần tử float32 và đạt chuẩn độ dài hình học $L_2\text{ Norm} = 1.0 \pm 10^{-4}$. | Constraint | Must | `PD-006`, `INF-004` | Từ chối nạp mẫu khuôn mặt vào hệ thống nếu sai kích thước 512D hoặc chưa chuẩn hóa độ dài hình học. | Approved |
+| `DATA-SYS-011` | Hiệu lực mã kích hoạt OTP: mã OTP chỉ sử dụng đúng 1 lần (`is_used = true`) và tự động hết hiệu lực sau đúng 48 giờ kể từ khi sinh mã. | Constraint | Must | `PD-003`, `INF-008` | Từ chối kích hoạt và trả về mã lỗi thích hợp khi OTP đã dùng hoặc quá hạn 48 giờ. | Approved |
+| `DATA-SYS-012` | Bảo vệ mã PIN chống Brute-force: khóa tài khoản điểm danh bằng PIN 15 phút nếu nhập sai mã PIN quá 5 lần liên tiếp. | Constraint | Must | `PD-008`, `INF-012` | Bàn phím Kiosk từ chối thao tác nhập PIN và hiển thị thời gian đếm lùi mở khóa cho nhân viên. | Approved |
 
 ---
 
 ## 3. Data Lifecycle & Protection (Vòng đời & Bảo vệ Dữ liệu)
 
-| ID | Chính sách Vòng đời Dữ liệu | Căn cứ Pháp lý & Kỹ thuật | Cơ chế Thực thi |
-| :--- | :--- | :--- | :--- |
-| `DATA-SYS-013` | Tiêu hủy Dữ liệu Sinh trắc học sau 20 ngày | Điều 17 Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15. | Khi nhân viên có trạng thái `TERMINATED` và `terminated_date <= CurrentDate - 20 days`, tiến trình tự động xóa sạch vĩnh viễn (Hard Delete) toàn bộ bản ghi liên quan trong `biometric_templates` và ghi log kiểm toán. |
-| `DATA-SYS-014` | Lưu trữ Lịch sử Điểm danh Tối thiểu 3 Năm | Bộ luật Lao động Việt Nam phục vụ thanh tra lao động. | Dữ liệu trong bảng `attendance_records` và `audit_logs` được lưu trữ vĩnh viễn trong CSDL trung tâm, không bị xóa tự động. |
-| `DATA-SYS-015` | Mã hóa Đối xứng AES-256-GCM Dữ liệu Tĩnh | Tiêu chuẩn mã hóa FIPS 197 / NIST SP 800-38D. | Vector đặc trưng được mã hóa trước khi ghi vào cột BYTEA của PostgreSQL; mỗi lần mã hóa sinh IV ngẫu nhiên 96-bit độc lập; Master Key nạp từ biến môi trường. |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DATA-SYS-013` | Tiêu hủy dữ liệu sinh trắc học sau 20 ngày: tự động xóa vĩnh viễn (Hard Delete) toàn bộ bản ghi mẫu khuôn mặt khi nhân viên nghỉ việc quá 20 ngày. | Retention | Must | `PD-005`, `INF-009` | Cronjob xóa sạch bản ghi `biometric_templates` của nhân viên `TERMINATED` có `terminated_date <= CurrentDate - 20 days` và ghi audit log. | Approved |
+| `DATA-SYS-014` | Lưu trữ lịch sử điểm danh tối thiểu 3 năm: dữ liệu chấm công và nhật ký kiểm toán không bị xóa tự động, phục vụ thanh tra lao động. | Retention | Must | `PD-001`, `INF-003` | CSDL trung tâm bảo lưu toàn vẹn dữ liệu `attendance_records` và `audit_logs` tối thiểu 3 năm theo Luật Lao động. | Approved |
+| `DATA-SYS-015` | Mã hóa đối xứng AES-256-GCM dữ liệu tĩnh: vector đặc trưng sinh trắc học bắt buộc mã hóa AES-256-GCM trước khi lưu trữ vào CSDL PostgreSQL. | Privacy | Must | `PD-005`, `INF-004` | Vector lưu dưới dạng nhị phân mã hóa kèm IV 96-bit ngẫu nhiên và khóa Master tách biệt trong biến môi trường. | Approved |

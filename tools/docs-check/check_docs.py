@@ -12,11 +12,10 @@ import re
 
 VALID_STATUSES = {
     "Draft",
-    "Review",
+    "In Review",
     "Approved",
     "Baselined",
     "Deprecated",
-    "Obsolete",
 }
 
 REQUIRED_FRONTMATTER_FIELDS = ["title", "version", "status", "owner"]

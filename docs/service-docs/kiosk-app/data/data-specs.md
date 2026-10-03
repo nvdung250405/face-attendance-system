@@ -7,13 +7,35 @@ owner: Edge Vision Lead & Data Engineer
 
 # DATA SPECS — Đặc tả Dữ liệu Cục bộ Phân hệ Kiosk
 
+Đặc tả các thực thể dữ liệu cục bộ, cấu trúc bộ nhớ RAM biên, hàng đợi ngoại tuyến SQLite và các quy tắc bảo vệ quyền riêng tư dữ liệu sinh trắc học trên trạm Kiosk.
+
+---
 
 ## 1. Local Data Entities (Thực thể Dữ liệu Cục bộ & Bộ nhớ Biên)
 
-### 1.1. Thực thể Hàng đợi Điểm danh Ngoại tuyến (`DATA-KSK-001` — `offline_punches`)
-Lưu trữ giao dịch chấm công trong CSDL SQLite cục bộ khi trạm Kiosk mất mạng Internet hoặc máy chủ Backend không phản hồi.
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `DATA-KSK-001` | Quản lý thực thể Hàng đợi Ngoại tuyến (`offline_punches`) lưu trữ toàn bộ giao dịch chấm công trong SQLite WAL cục bộ khi mất mạng. | Entity | Must | `DATA-SYS-004`, `PD-002` | Lưu employee_id, punch_timestamp ISO-8601, punch_type, verification_method, confidence_score, kiosk_id, is_synced (0/1), retry_count; bảo toàn dữ liệu RPO = 0. | Approved |
+| `DATA-KSK-002` | Quản lý thực thể Ma trận Gallery RAM (`GalleryMatrix`) duy trì thường trực $N \times 512$ vector ArcFace đã chuẩn hóa L2 để so khớp Cosine 1:N dưới 2ms. | Entity | Must | `DATA-SYS-005`, `PD-006` | Mảng numpy float32 kèm mảng id_map và hashmap metadata; hỗ trợ nạp nóng Atomic Swap mà không lock Camera Stream. | Approved |
+| `DATA-KSK-003` | Quản lý thực thể Bộ đệm Cooldown Biên (`LocalCooldownCache`) lưu trữ mốc giờ quẹt gần nhất của từng nhân viên trong RAM để chặn quẹt dồn dập. | Entity | Must | `DATA-SYS-012`, `PD-001` | Cửa sổ cooldown 120s; từ chối và báo "Đã ghi nhận" khi quẹt lặp; luồng nền tự dọn dẹp mục sau 300s. | Approved |
+| `DATA-KSK-004` | Quản lý thực thể Cấu hình Vận hành Trạm (`KioskConfig`) lưu trữ các tham số camera, URL backend, secret token và các ngưỡng AI từ biến môi trường. | Entity | Must | `DATA-SYS-001`, `PD-001` | Nạp đúng KIOSK_ID, BACKEND_URL, CAMERA_DEVICE_INDEX, ngưỡng similarity 0.50, liveness 0.85, stability 0.60s. | Approved |
 
-| Tên Thuộc tính | Kiểu Dữ liệu SQLite | Ràng buộc | Giá trị Mặc định | Mô tả & Ý nghĩa Nghiệp vụ |
+---
+
+## 2. Local Storage Rules & Privacy Protection (Quy tắc Lưu trữ & Bảo vệ Quyền riêng tư)
+
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `DATA-KSK-005` | Nguyên tắc Không Lưu Ảnh Thô (Zero Raw Image Retention tại biên): Tuyệt đối không lưu khung hình camera hay ảnh crop khuôn mặt xuống đĩa cứng Kiosk. | Privacy | Must | `DATA-SYS-005`, `PD-005` | Khung hình và crop chỉ nằm trong RAM trong chu kỳ suy luận (< 350ms) và được giải phóng ngay lập tức sau khi hoàn tất. | Approved |
+| `DATA-KSK-006` | Quy tắc Vòng đời Hàng đợi Ngoại tuyến (Offline Queue Retention): Dọn dẹp bản ghi đã đồng bộ sau 30 ngày, bảo toàn vĩnh viễn bản ghi chưa gửi. | Retention | Must | `DATA-SYS-014`, `PD-002` | Bản ghi có is_synced = 1 tự động xóa sau 30 ngày; bản ghi có is_synced = 0 được bảo lưu vĩnh viễn đến khi gửi thành công. | Approved |
+
+---
+
+## 3. Detailed Data Dictionaries (Từ điển Thuộc tính & Cấu trúc Dữ liệu Chi tiết)
+
+### 3.1. Cấu trúc Bảng SQLite `offline_punches` (`DATA-KSK-001`)
+
+| Thuộc tính | Kiểu dữ liệu SQLite | Ràng buộc | Giá trị mặc định | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `INTEGER` | PRIMARY KEY AUTOINCREMENT | Tự tăng | Khóa chính định danh cục bộ của bản ghi điểm danh ngoại tuyến. |
 | `employee_id` | `INTEGER` | NOT NULL | — | Mã định danh số của nhân viên trong CSDL trung tâm (`1042`). |
@@ -26,48 +48,32 @@ Lưu trữ giao dịch chấm công trong CSDL SQLite cục bộ khi trạm Kios
 | `retry_count` | `INTEGER` | NOT NULL | `0` | Số lần gửi bù thất bại (dùng để tính toán độ lùi Exponential Backoff). |
 | `created_at` | `TEXT` | NOT NULL | `(datetime('now'))` | Thời điểm ghi bản ghi vào CSDL cục bộ (UTC). |
 
-### 1.2. Thực thể Ma trận Danh mục Vector Trong Bộ nhớ RAM (`DATA-KSK-002` — `GalleryMatrix`)
-Cấu trúc dữ liệu số học tối ưu hóa bằng thư viện NumPy, duy trì thường trực trong bộ nhớ RAM của ứng dụng Kiosk để phục vụ so khớp Cosine 1:N tức thời dưới 2 mili-giây.
+### 3.2. Cấu trúc Ma trận Bộ nhớ RAM `GalleryMatrix` (`DATA-KSK-002`)
 
-| Thành phần Cấu trúc | Kiểu Dữ liệu / Cấu trúc | Kích thước / Dung lượng | Mô tả & Chức năng |
+| Thành phần | Kiểu dữ liệu | Dung lượng | Mô tả & Chức năng |
 | :--- | :--- | :--- | :--- |
-| `feature_matrix` ($\mathbf{M}$) | `numpy.ndarray` (`float32`) | $N \times 512$ ($\sim 2\text{ MB}$ cho $1,000$ nhân sự) | Ma trận chứa $N$ vector đặc trưng khuôn mặt 512 chiều đã được chuẩn hóa độ dài ($L_2 = 1.0$). |
-| `id_map` | `numpy.ndarray` (`int64`) | $N$ phần tử | Mảng 1 chiều ánh xạ chỉ số dòng $i$ trong ma trận $\mathbf{M}$ với `employee_id` tương ứng. |
-| `metadata_registry` | `dict[int, dict]` (Hashmap) | $N$ mục | Bảng tra cứu thông tin nhanh: `{emp_id: {"code": "NV-1042", "name": "Ngô Văn Dũng", "dept": "Phòng Kỹ thuật"}}`. |
-| `gallery_version` | `int` | 8 bytes | Số phiên bản của danh mục vector, dùng để đối soát tính mới với Backend. |
+| `feature_matrix` | `numpy.ndarray` (`float32`) | $N \times 512$ (~2 MB cho 1,000 NV) | Ma trận chứa $N$ vector đặc trưng khuôn mặt 512D chuẩn hóa $L_2 = 1.0$. |
+| `id_map` | `numpy.ndarray` (`int64`) | $N$ phần tử | Mảng 1 chiều ánh xạ chỉ số dòng $i$ với `employee_id` tương ứng. |
+| `metadata_registry` | `dict[int, dict]` (Hashmap) | $N$ mục | Bảng tra cứu: `{emp_id: {"code": "NV-1042", "name": "Ngô Văn Dũng", "dept": "Phòng Kỹ thuật"}}`. |
+| `gallery_version` | `int` | 8 bytes | Số phiên bản của danh mục vector dùng để đối soát tính mới với Backend. |
 
-### 1.3. Thực thể Bộ đệm Cooldown Biên (`DATA-KSK-003` — `LocalCooldownCache`)
-Bộ đệm trong RAM ngăn chặn việc quẹt thẻ trùng lặp dồn dập tại trạm Kiosk trong khoảng thời gian ngắn.
+### 3.3. Cấu trúc Bộ đệm Cooldown `LocalCooldownCache` (`DATA-KSK-003`)
 
-| Thành phần Cấu trúc | Kiểu Cấu trúc | Quy tắc Quản lý | Mô tả & Ý nghĩa |
+| Thành phần | Kiểu cấu trúc | Quy tắc quản lý | Mô tả & Ý nghĩa |
 | :--- | :--- | :--- | :--- |
-| `cooldown_dict` | `dict[int, float]` | Hashmap `{employee_id: epoch_timestamp}` | Lưu trữ mốc thời gian (giây) của lần chấm công thành công gần nhất của nhân sự. |
-| `cooldown_window` | Hằng số `120.0` (giây) | Ngưỡng kiểm tra | Nếu `CurrentTime - last_punch_time < 120.0`, trạm từ chối quẹt và phát thông báo "Đã ghi nhận". |
-| `cleanup_interval` | `300.0` (giây) | Tác vụ dọn dẹp định kỳ | Luồng nền tự động xóa các mục có `CurrentTime - last_punch_time > 300.0` để giải phóng RAM. |
+| `cooldown_dict` | `dict[int, float]` | Hashmap `{employee_id: epoch_timestamp}` | Lưu trữ mốc thời gian chấm công thành công gần nhất. |
+| `cooldown_window` | Hằng số `120.0` (giây) | Ngưỡng kiểm tra | Nếu `CurrentTime - last_punch_time < 120.0`, từ chối và hiển thị "Đã ghi nhận". |
+| `cleanup_interval` | `300.0` (giây) | Tác vụ dọn dẹp định kỳ | Tự động xóa các mục có `CurrentTime - last_punch_time > 300.0` để giải phóng RAM. |
 
-### 1.4. Thực thể Cấu hình Vận hành Trạm (`DATA-KSK-004` — `KioskConfig`)
-Bộ tham số cấu hình cục bộ nạp từ file `.env` hoặc file cấu hình khi ứng dụng Kiosk khởi chạy.
+### 3.4. Cấu hình Vận hành Trạm `KioskConfig` (`DATA-KSK-004`)
 
-| Tên Tham số | Kiểu Dữ liệu | Giá trị Mặc định | Ý nghĩa & Mục đích Cấu hình |
+| Tham số | Kiểu dữ liệu | Giá trị mặc định | Ý nghĩa & Mục đích |
 | :--- | :--- | :--- | :--- |
 | `KIOSK_ID` | `string` | `"KIOSK-HN-01"` | Mã định danh duy nhất của trạm Kiosk. |
 | `BACKEND_URL` | `string` | `"http://localhost:8080"` | Địa chỉ gốc của máy chủ trung tâm Backend. |
-| `KIOSK_SECRET_TOKEN` | `string` | — | Khóa bí mật dùng để xác thực các request gửi lên Backend. |
-| `CAMERA_DEVICE_INDEX` | `int` | `0` | Chỉ số phần cứng của camera quang học USB (DirectShow). |
+| `KIOSK_SECRET_TOKEN` | `string` | — | Khóa bí mật dùng để xác thực API với Backend. |
+| `CAMERA_DEVICE_INDEX` | `int` | `0` | Chỉ số phần cứng của camera USB (DirectShow). |
 | `CAMERA_WIDTH` / `HEIGHT`| `int` | `1280` / `720` | Độ phân giải khung hình thu nhận từ webcam. |
-| `SIMILARITY_THRESHOLD`| `float` | `0.50` | Ngưỡng Cosine Similarity tối thiểu để xác nhận nhận diện đúng khuôn mặt. |
-| `LIVENESS_THRESHOLD` | `float` | `0.85` | Ngưỡng xác thực thực thể sống MiniFASNet tối thiểu để chống ảnh/video giả mạo. |
-| `STABILITY_SECONDS` | `float` | `0.60` | Thời gian giữ ổn định liên tục trong khung Oval trước khi kích hoạt nhận diện. |
-
----
-
-## 2. Local Storage Rules & Privacy Protection (Quy tắc Lưu trữ & Bảo vệ Quyền riêng tư)
-
-* **Nguyên tắc Tuyệt đối Không Lưu Ảnh Thô (Zero Raw Image Retention)**:
-  * Không bao giờ lưu trữ khung hình camera (`np.ndarray`), ảnh crop khuôn mặt hay tệp `.jpg`/`.png` xuống ổ đĩa cục bộ của trạm Kiosk.
-  * Mọi dữ liệu hình ảnh chỉ tồn tại tạm thời trong bộ nhớ RAM trong chu kỳ suy luận ($< 350\text{ ms}$) và được bộ thu gom rác giải phóng ngay lập tức.
-* **Quy tắc Vòng đời Hàng đợi Ngoại tuyến (Offline Queue Retention)**:
-  * Khi mất mạng, bản ghi được lưu với `is_synced = 0`.
-  * Sau khi đồng bộ bù thành công lên Backend, bản ghi được cập nhật `is_synced = 1`.
-  * Các bản ghi đã đồng bộ (`is_synced = 1`) được lưu trữ tại biên tối đa 30 ngày phục vụ đối soát, sau đó được tự động dọn dẹp bằng câu lệnh:
-    `DELETE FROM offline_punches WHERE is_synced = 1 AND created_at < datetime('now', '-30 days');`
+| `SIMILARITY_THRESHOLD`| `float` | `0.50` | Ngưỡng Cosine Similarity tối thiểu để xác nhận danh tính. |
+| `LIVENESS_THRESHOLD` | `float` | `0.85` | Ngưỡng liveness MiniFASNet tối thiểu chống giả mạo. |
+| `STABILITY_SECONDS` | `float` | `0.60` | Thời gian giữ ổn định trong Oval trước khi nhận diện. |

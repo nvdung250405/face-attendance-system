@@ -11,41 +11,41 @@ owner: Integration Architect
 
 ---
 
-## 1. Interface Register (Sổ Đăng ký Giao diện Hệ thống)
+## 1. Interfaces (Danh mục Giao diện Hệ thống)
 
-| ID | Giao diện Truyền thông | Bên Cung cấp (Provider) | Bên Tiêu thụ (Consumer) | Mục đích Kỹ thuật & Nghiệp vụ | Giao thức Khuyến nghị |
-| :--- | :--- | :---: | :---: | :--- | :---: |
-| `API-SYS-001` | Giao diện Điểm danh Trực tiếp | `backend-service` | `kiosk-app` | Tiếp nhận bản ghi điểm danh đơn lẻ thời gian thực từ trạm Kiosk. | HTTPS REST (POST) |
-| `API-SYS-002` | Giao diện Đồng bộ Bù Ngoại tuyến | `backend-service` | `kiosk-app` | Tiếp nhận lô dữ liệu điểm danh ngoại tuyến khi trạm Kiosk khôi phục mạng. | HTTPS REST (POST) |
-| `API-SYS-003` | Giao diện Tải Danh mục Vector Mẫu | `backend-service` | `kiosk-app` | Cung cấp toàn bộ danh mục vector đặc trưng nhân sự để nạp RAM Kiosk. | HTTPS REST (GET) |
-| `API-SYS-004` | Giao diện Kích hoạt OTP Đăng ký | `backend-service` | `kiosk-app` | Xác thực mã OTP 6 số để mở khóa tiến trình quét mặt tại Kiosk. | HTTPS REST (POST) |
-| `API-SYS-005` | Giao diện Nạp Vector Khuôn mặt Mới | `backend-service` | `kiosk-app` | Tiếp nhận vector 512D mới kèm OTP để Backend mã hóa lưu CSDL. | HTTPS REST (POST) |
-| `API-SYS-006` | Kênh Đẩy Cập nhật Danh mục Mẫu | `backend-service` | `kiosk-app` | Phát thông điệp nạp nóng vector mới hoặc xóa vector nhân sự thôi việc vào RAM. | WebSocket STOMP (Topic) |
-| `API-SYS-007` | Kênh Phát sóng Điểm danh Thời gian thực | `backend-service` | `web-portal` | Đẩy sự kiện điểm danh tức thời từ Kiosk lên Live Dashboard trên Web. | WebSocket STOMP (Topic) |
-| `API-SYS-008` | Giao diện Quản trị Nhân sự & Ca kíp | `backend-service` | `web-portal` | Quản lý hồ sơ nhân viên, phân ca làm việc và đổi trạng thái thôi việc. | HTTPS REST (CRUD) |
-| `API-SYS-009` | Giao diện Ký Cam kết Informed Consent | `backend-service` | `web-portal` | Ghi nhận văn bản thỏa thuận xử lý dữ liệu sinh trắc học theo Luật 2025. | HTTPS REST (POST) |
-| `API-SYS-010` | Giao diện Bảng công & Duyệt Giải trình | `backend-service` | `web-portal` | Truy vấn bảng chấm công, nộp và duyệt đơn giải trình đi muộn/về sớm. | HTTPS REST (GET/POST/PUT) |
-| `API-SYS-011` | Giao diện Kết xuất Báo cáo Bảng công | `backend-service` | `web-portal` | Kết xuất dữ liệu bảng công ra file Excel/CSV an toàn chống Formula Injection. | HTTPS REST (GET stream) |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| `API-SYS-001` | Phân hệ Backend phải cung cấp giao diện tiếp nhận bản ghi điểm danh đơn lẻ thời gian thực từ trạm Kiosk. | Interfaces | Must | `PD-001`, `FR-SYS-001` | Tiếp nhận và phản hồi kết quả xác thực chấm công trong vòng $\le 100\text{ ms}$. | Approved |
+| `API-SYS-002` | Phân hệ Backend phải cung cấp giao diện tiếp nhận gói lô dữ liệu điểm danh ngoại tuyến khi trạm Kiosk khôi phục kết nối mạng. | Interfaces | Must | `PD-004`, `FR-SYS-006` | Tiếp nhận gói lô tối đa 50 bản ghi/lần, xử lý theo giao dịch an toàn (atomic batch transaction). | Approved |
+| `API-SYS-003` | Phân hệ Backend phải cung cấp giao diện truy vấn toàn bộ danh mục vector đặc trưng khuôn mặt mẫu nhân sự để phục vụ nạp RAM Kiosk. | Interfaces | Must | `PD-002`, `FR-SYS-003` | Trả về danh sách vector 512D chuẩn hóa kèm định danh nhân viên và số phiên bản gallery. | Approved |
+| `API-SYS-004` | Phân hệ Backend phải cung cấp giao diện xác thực mã kích hoạt Onboarding OTP 6 số để mở khóa tiến trình quét mặt tại Kiosk. | Interfaces | Must | `PD-007`, `FR-SYS-008` | Xác thực đúng mã băm OTP còn hiệu lực 48 giờ; trả về thông tin nhân viên để mở camera. | Approved |
+| `API-SYS-005` | Phân hệ Backend phải cung cấp giao diện tiếp nhận vector đặc trưng 512D mới kèm OTP để mã hóa lưu CSDL và kích hoạt nhân sự. | Interfaces | Must | `PD-005`, `FR-SYS-009` | Tiếp nhận vector 512D, kiểm chuẩn L2 Norm = 1.0, mã hóa AES-256-GCM và kích hoạt hồ sơ. | Approved |
+| `API-SYS-006` | Phân hệ Backend phải cung cấp kênh đẩy thông điệp hai chiều để đồng bộ cập nhật danh mục vector mẫu tới mạng lưới các trạm Kiosk. | Interfaces | Must | `PD-006`, `FR-SYS-014` | Phát thông báo nạp nóng vector mới hoặc xóa vector nhân sự thôi việc vào RAM tức thời. | Approved |
+| `API-SYS-007` | Phân hệ Backend phải cung cấp kênh phát sóng sự kiện điểm danh thời gian thực tức thì lên Cổng Web Quản trị. | Interfaces | Must | `PD-006`, `FR-SYS-013` | Đẩy sự kiện JSON ngay khi giao dịch điểm danh được chấp nhận; độ trễ truyền phát $\le 200\text{ ms}$. | Approved |
+| `API-SYS-008` | Phân hệ Backend phải cung cấp giao diện quản trị danh mục hồ sơ nhân sự, phòng ban, ca kíp và trạng thái công tác cho HR. | Interfaces | Must | `ACT-002`, `FR-SYS-012` | Hỗ trợ phân trang, tìm kiếm đa tiêu chí, tạo mới và cập nhật trạng thái làm việc. | Approved |
+| `API-SYS-009` | Phân hệ Backend phải cung cấp giao diện tiếp nhận chữ ký điện tử văn bản thỏa thuận Informed Consent từ nhân viên. | Interfaces | Must | `PD-005`, `FR-SYS-007` | Ghi nhận sự đồng thuận tự nguyện, lưu vết mốc thời gian, IP và User-Agent theo Luật 2025. | Approved |
+| `API-SYS-010` | Phân hệ Backend phải cung cấp giao diện truy vấn bảng chấm công, nộp đơn và phê duyệt/từ chối đơn giải trình công. | Interfaces | Must | `ACT-002`, `FR-SYS-016` | Cho phép nhân viên nộp đơn kèm lý do; HR xem xét và duyệt thay đổi dữ liệu công. | Approved |
+| `API-SYS-011` | Phân hệ Backend phải cung cấp giao diện kết xuất báo cáo dữ liệu bảng công định dạng file an toàn chống Formula Injection. | Interfaces | Must | `ACT-002`, `SRS-007` | Kết xuất file bảng tính .xlsx đã vô hiệu hóa ký tự macro công thức nguy hiểm. | Approved |
 
 ---
 
-## 2. Operations & Contract Specifications (Hợp đồng Thao tác & Ràng buộc Dữ liệu)
+## 2. Operations & Contracts (Hợp đồng Thao tác & Ràng buộc Dữ liệu)
 
-| ID | Thao tác Nghiệp vụ | Dữ liệu Đầu vào Bắt buộc (Inputs) | Dữ liệu Trả về Kỳ vọng (Outputs) | Hành vi Xử lý Lỗi / Ngoại lệ |
-| :--- | :--- | :--- | :--- | :--- |
-| `API-SYS-012` | Ghi nhận Điểm danh (`punch`) | `employeeId` (int), `punchTimestamp` (ISO-8601), `verificationMethod` (FACE/PIN), `confidenceScore` (float), `kioskId` (string). | Trạng thái chấp thuận `PUNCH_ACCEPTED`, mã bản ghi `recordId`, thời gian thực `punchTime`, trạng thái công `ON_TIME / LATE`. | Trả về `COOLDOWN_REJECTED` nếu quẹt dồn trong 120s; `EMPLOYEE_NOT_FOUND` nếu không tồn tại; `SHIFT_UNASSIGNED` nếu chưa gán ca. |
-| `API-SYS-013` | Đồng bộ Bù Ngoại tuyến (`sync-batch`) | Danh sách mảng tối đa 50 phần tử chứa các bản ghi điểm danh ngoại tuyến có cấu trúc giống thao tác `punch`. | Số lượng bản ghi nạp thành công `syncedCount`, danh sách mã bản ghi đã ghi nhận để Kiosk cập nhật trạng thái `is_synced = 1`. | Bỏ qua các bản ghi trùng lặp thời gian; xử lý theo giao dịch an toàn (Atomic Batch Transaction). |
-| `API-SYS-014` | Xác minh OTP Đăng ký (`verify-otp`) | Chuỗi mã số `otp` (6 chữ số). | Trạng thái hợp lệ `is_valid`, thông tin nhân viên (`employeeId`, `fullName`, `empCode`). | Trả về `OTP_INVALID` nếu sai mã; `OTP_EXPIRED` nếu quá hạn 48 giờ; `OTP_ALREADY_USED` nếu đã từng sử dụng. |
-| `API-SYS-015` | Nạp Vector Mới (`enroll-face`) | `otp` (chuỗi 6 số), `faceVector` (mảng 512 số thực `float32`), `kioskId` (string). | Trạng thái `ENROLL_SUCCESS`, mã định danh mẫu `templateId`. | Từ chối `INVALID_VECTOR_DIMENSION` nếu không đúng 512 chiều; từ chối nếu độ chuẩn hóa $L_2\text{ Norm} \neq 1.0 \pm 10^{-4}$. |
-| `API-SYS-016` | Ký Cam kết Đồng thuận (`consent`) | `agreed` (boolean, bắt buộc true), `consentVersion` (chuỗi phiên bản chính sách). | Trạng thái `CONSENT_RECORDED`, mốc thời gian ký nhận điện tử `agreedAt`. | Tự động bắt địa chỉ IP và User-Agent từ request header; từ chối nếu `agreed == false`. |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| `API-SYS-012` | Thao tác ghi nhận điểm danh (`punch`) phải tiếp nhận dữ liệu định danh, mốc thời gian, phương thức và trả về trạng thái chấp thuận cùng giờ tính công. | Operations & Contracts | Must | `API-SYS-001` | Đầu vào: employeeId, timestamp, method (FACE/PIN), score, kioskId. Trả về: PUNCH_ACCEPTED, recordId, punchTime, status. Trả về lỗi nếu vi phạm Cooldown 120s hoặc chưa gán ca. | Approved |
+| `API-SYS-013` | Thao tác đồng bộ bù ngoại tuyến (`sync-batch`) phải tiếp nhận mảng danh sách tối đa 50 bản ghi ngoại tuyến và xác nhận các bản ghi đã nạp thành công. | Operations & Contracts | Must | `API-SYS-002` | Xử lý nguyên khối (atomic batch); bỏ qua trùng lặp mốc thời gian; trả về số lượng nạp thành công để Kiosk đánh dấu is_synced = 1. | Approved |
+| `API-SYS-014` | Thao tác xác minh mã kích hoạt OTP (`verify-otp`) phải thẩm định mã 6 số và trả về trạng thái hợp lệ cùng thông tin nhân viên. | Operations & Contracts | Must | `API-SYS-004` | Kiểm tra đúng mã hash SHA-256; từ chối nếu mã sai, đã sử dụng hoặc hết hạn 48 giờ. | Approved |
+| `API-SYS-015` | Thao tác nạp vector mới (`enroll-face`) phải tiếp nhận mã OTP và mảng số thực 512 chiều, thực hiện lưu trữ bảo mật và kích hoạt tài khoản. | Operations & Contracts | Must | `API-SYS-005` | Từ chối nếu vector sai kích thước 512D hoặc độ dài L2 Norm sai lệch $> 10^{-4}$; trả về templateId sau khi lưu CSDL thành công. | Approved |
+| `API-SYS-016` | Thao tác ký cam kết đồng thuận (`consent`) phải ghi nhận sự đồng ý hợp pháp của nhân viên và tự động sinh mã OTP 48 giờ. | Operations & Contracts | Must | `API-SYS-009` | Yêu cầu trường agreed = true; tự động bóc tách IP, User-Agent từ request; sinh mã OTP 6 số ngẫu nhiên. | Approved |
 
 ---
 
 ## 3. Interface Constraints (Ràng buộc Giao diện Toàn cục)
 
-* **Chuẩn Định dạng**: 100% nội dung trao đổi qua REST API sử dụng định dạng JSON mã hóa UTF-8.
-* **Chuẩn Định dạng Thời gian**: Toàn bộ mốc thời gian bắt buộc tuân thủ chuẩn ISO-8601 có múi giờ cụ thể (Ví dụ: `2026-10-02T08:00:00.123+07:00`).
-* **Bảo vệ và Xác thực**:
-  * Giao tiếp Kiosk $\rightarrow$ Backend: Bắt buộc đính kèm header `X-Kiosk-Id` và Bearer Secret Token trong header `Authorization`.
-  * Giao tiếp Web Portal $\rightarrow$ Backend: Bắt buộc đính kèm mã thông báo Bearer JWT Token được cấp phát sau khi đăng nhập.
-* **Cơ chế Giới hạn Tần suất (Rate Limiting)**: Áp dụng giới hạn tối đa 60 requests/phút đối với các endpoint công khai (Login, OTP verification) để ngăn chặn tấn công dò quét brute-force.
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| `API-SYS-017` | Toàn bộ giao diện trao đổi dữ liệu phải sử dụng định dạng tiêu chuẩn JSON được mã hóa ký tự UTF-8. | Interface Constraints | Must | `PD-001` | 100% request và response body là JSON hợp lệ; Content-Type: application/json; charset=UTF-8. | Approved |
+| `API-SYS-018` | Toàn bộ các trường mốc thời gian trao đổi qua giao diện phải tuân thủ chuẩn ISO-8601 kèm múi giờ rõ ràng. | Interface Constraints | Must | `SRS-008` | Định dạng chuỗi: `YYYY-MM-DDTHH:mm:ss.sss+07:00`; không dùng timestamp số nguyên thiếu ngữ cảnh múi giờ. | Approved |
+| `API-SYS-019` | Mọi giao diện truyền thông phải áp dụng cơ chế xác thực danh tính bắt buộc theo vai trò và kênh kết nối. | Interface Constraints | Must | `SRS-002`, `SRS-006` | Trạm Kiosk sử dụng Secret Token và X-Kiosk-Id; Cổng Web sử dụng Bearer JWT Token thời hạn $\le 8\text{ giờ}$. | Approved |
+| `API-SYS-020` | Các giao diện tiếp nhận dữ liệu công khai phải áp dụng cơ chế giới hạn tần suất (Rate Limiting) để chống tấn công brute-force. | Interface Constraints | Must | `SRS-005` | Giới hạn tối đa 60 requests/phút trên mỗi địa chỉ IP đối với các thao tác đăng nhập và xác minh OTP. | Approved |

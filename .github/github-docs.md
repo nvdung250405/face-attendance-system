@@ -381,7 +381,7 @@ Nó có các điểm chạm với Plan, luôn theo chiều **Plan → tài liệ
 | Điểm chạm | Chiều trace | Ghi ở đâu |
 |---|---|---|
 | Chọn GitHub làm VCS/CI | Điều kiện áp dụng của tài liệu này trỏ về `STK-` | `tech-tool-stack.md`, `meta.md` (mục 1.4) |
-| Thiết lập repo theo tài liệu này | Work item `FND-` (Repository & Scaffolding, Access & Configuration) `Covers` `STK-`; `Done when` tham chiếu checklist mục 16 | `foundation-setup-plan.md` hoặc `fsp.md` |
+| Thiết lập repo theo tài liệu này | Work item `FND-` (Repository & Scaffolding, Access & Configuration) `Covers` `STK-`; `Done when` tham chiếu checklist mục 16 | `foundation-setup-plan.md` |
 | Cách làm việc (branch, commit, review, CI, deploy) | `APC-` của Plan trích mục tương ứng ở tài liệu này (mục 12.2) | Plan `Approach` |
 | Evidence của build, test, deploy | Evidence → `BLD-`, `TST-`, `DPL-`, `FND-` (mục 12.3) | Chính evidence |
 
@@ -409,7 +409,7 @@ Evidence mang ID work item để công cụ sinh ma trận nối được với 
 | Nhánh | `<type>/<ID>-<slug>` | `feat/BLD-ORD-003-create-order` |
 | Commit | Footer `Refs:` | `Refs: BLD-ORD-003` |
 | Pull request | Hậu tố trong tiêu đề, và mục "ID liên quan" | `feat(ORD): create order [BLD-ORD-003]` |
-| Workflow của sản phẩm | Comment đầu file nêu ID work item | `# Evidence: DPL-SYS-002` |
+| Workflow của sản phẩm | Comment đầu file nêu ID work item | `# Evidence: DPL-002` |
 | Test report | ID trong marker/tag/annotation của framework test | Test case gắn `TST-ORD-012` |
 | Release | Release notes liệt kê các `DPL-` hoàn thành | — |
 
@@ -485,7 +485,7 @@ Closes #
 |---|---|
 | `work-item.yml` | ID work item, liên kết tới leaf Plan, `Depends on` đã Done chưa, SCOPE (trỏ tới `Done when`, không chép) |
 | `change-request.yml` | ID bị đổi, lý do, impact dự kiến, phương án thay thế |
-| `new-service.yml` | Mã service (SCOPE), loại unit, facet cần dùng (`core` luôn có; `data`, `api`, `ui-ux` theo responsibility), `ARC-` của service đã Approved chưa |
+| `new-service.yml` | Mã service (SCOPE), loại unit, facet cần dùng (`fr-nfr/`, `foundation-setup-plan.md` và `build-plan.md` luôn có; `data`, `api`, `ui-ux` theo responsibility), `ARC-` của service đã Approved chưa |
 | `defect.yml` | ID bị vi phạm (`TST-` hoặc Spec ID), môi trường, bước tái hiện, mức độ |
 
 ## 13.3. Ruleset và branch protection

@@ -8,7 +8,19 @@ owner: Product Designer & UI/UX Specialist
 # UI/UX DESIGN — Thiết kế Chi tiết Giao diện Phân hệ Kiosk
 
 
-## 1. Hệ thống Design Tokens & Định lượng Giao diện (Design Tokens)
+## 1. UI/UX Design Elements & Architecture (Thành phần Thiết kế Giao diện Kiosk)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `UXD-KSK-001` | Oval Guide & Dynamic State Machine Component | Thành phần `OvalGuide.qml` vẽ elip vector $470 \times 604\text{ px}$ với 4 trạng thái thị giác (Standby, Aligning, Success, Rejected) và hiệu ứng Pulse Scan. | `STK-003` | `UI-KSK-001`, `UI-KSK-004`, `UI-KSK-005`, `UI-KSK-006`, `UI-KSK-007` | `DD-SYS-004` | Accepted |
+| `UXD-KSK-002` | Result Card Overlay Component | Thành phần `ResultCard.qml` nổi kính mờ Glassmorphism $2.5\text{ s}$ hiển thị ảnh avatar, họ tên, mã NV, phòng ban và huy hiệu đúng giờ/đi muộn. | `STK-003` | `UI-KSK-001` | `DD-SYS-004` | Accepted |
+| `UXD-KSK-003` | Backup PIN Pad Touch Dialog Component | Thành phần `PinPadDialog.qml` bàn phím số ảo cảm ứng phím lớn $88\times 88\text{ px}$, nền mờ 16px, đếm ngược khóa 15 phút và phím tắt F2. | `STK-003` | `UI-KSK-002`, `UI-KSK-008`, `UI-KSK-009` | `DD-SYS-006` | Accepted |
+| `UXD-KSK-004` | In-Viewport 3-Step Enrollment Dialog | Thành phần `EnrollmentDialog.qml` hỗ trợ quy trình 3 bước tự ẩn nhường trọn camera chính ở Bước 2 và phím tắt F3. | `STK-003` | `UI-KSK-003`, `UI-KSK-009` | `DD-SYS-007` | Accepted |
+| `UXD-KSK-005` | Dynamic Proportional Scaling Engine & Design Tokens | Động cơ co giãn tỷ lệ động $S = \min(W/1080, H/1920)$, bảng màu Dark Glassmorphism, phông chữ Inter đạt chuẩn WCAG 2.1 AA. | `STK-003` | `UI-KSK-008` | `DD-SYS-004` | Accepted |
+
+---
+
+## 2. Hệ thống Design Tokens & Định lượng Giao diện (Design Tokens)
 
 ### 1.1. Bảng Mã Màu Chuẩn (Color Tokens)
 

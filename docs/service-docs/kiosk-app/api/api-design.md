@@ -46,11 +46,12 @@ graph TD
     StompWorker -->|7. Hot-patching ADD/DELETE| RAMGallery
 ```
 
-| ID Thành phần | Lớp / Module Kỹ thuật | Trách nhiệm Kiến trúc | Công nghệ Sử dụng | Giao diện Thực thi |
-| :--- | :--- | :--- | :--- | :---: |
-| `APD-KSK-001` | `KioskHttpClient` | Thực hiện các lệnh gọi REST API đồng bộ/bất đồng bộ với timeout $3.0\text{ s}$; tự động tiêm Header xác thực (`X-Kiosk-Id`, Bearer Token); ánh xạ mã lỗi HTTP sang Ngoại lệ Nghiệp vụ (Domain Exceptions). | `httpx.Client` (Connection Pooling) | `API-KSK-001` đến `API-KSK-005` |
-| `APD-KSK-002` | `KioskStompWorker` | Luồng nền `QThread` duy trì kết nối WebSocket STOMP tới Backend qua `stomp.py`, lắng nghe topic `/topic/kiosk-gallery`; tự động kết nối lại khi đứt kết nối (Exponential Backoff); phát tín hiệu nạp nóng vector. | `QThread`, `stomp.py` | `API-KSK-006` |
-| `APD-KSK-003` | `OfflineSyncWorker` | Luồng nền `QThread` quét hàng đợi SQLite `offline_punches` mỗi $10\text{ s}$, gom tối đa 50 bản ghi gửi `sync-batch` và cập nhật trạng thái `SENT` khi máy chủ phản hồi thành công. | `QThread`, SQLite Connection | `API-KSK-002` |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APD-KSK-001` | `KioskHttpClient` REST Client Wrapper | Thực hiện các lệnh gọi REST API đồng bộ/bất đồng bộ với timeout 3.0s; tự động tiêm Header xác thực (`X-Kiosk-Id`, Bearer Token); ánh xạ mã lỗi HTTP sang domain exceptions. | `STK-007` | `API-KSK-001`, `API-KSK-002`, `API-KSK-003`, `API-KSK-004`, `API-KSK-005` | `DD-SYS-001` | Accepted |
+| `APD-KSK-002` | `KioskStompWorker` Real-time Receiver | Luồng nền `QThread` duy trì kết nối WebSocket STOMP tới Backend qua `stomp.py`, lắng nghe `/topic/kiosk-gallery`; tự động kết nối lại và phát tín hiệu nạp nóng vector. | `STK-008`, `STK-003` | `API-KSK-006` | `DD-SYS-001` | Accepted |
+| `APD-KSK-003` | `OfflineSyncWorker` Batch Uploader | Luồng nền `QThread` quét hàng đợi SQLite `offline_punches` mỗi 10s, gom tối đa 50 bản ghi gửi `sync-batch` và cập nhật trạng thái đã gửi thành công. | `STK-005`, `STK-003` | `API-KSK-002` | `DD-SYS-005` | Accepted |
+| `APD-KSK-004` | REST API Field-by-Field Contracts & Error Mapping | Quy chuẩn định dạng JSON, validation tham số và ánh xạ mã lỗi HTTP ProblemDetails cho toàn bộ các endpoint của trạm Kiosk. | `STK-007` | `API-SYS-017`, `API-SYS-018` | `DD-SYS-001` | Accepted |
 
 ---
 

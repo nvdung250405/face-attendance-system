@@ -8,7 +8,18 @@ owner: Database Architect & Backend Lead
 # DATA DESIGN — Thiết kế Dữ liệu Trung tâm Phân hệ Backend
 
 
-## 1. Relational Database Schema (PostgreSQL 16 DDL Script)
+## 1. Data Design Elements & Architecture (Thành phần Thiết kế Dữ liệu)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DTD-BE-001` | Relational Database Schema & DDL | Lược đồ 8 bảng CSDL PostgreSQL 16 chuẩn 3NF kèm quan hệ khóa ngoại, ràng buộc toàn vẹn và trigger audit. | `STK-013`, `STK-014` | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-004`, `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-008` | `DD-SYS-003` | Accepted |
+| `DTD-BE-002` | Database Indexing Strategy | Bộ chỉ mục B-tree tối ưu truy vấn tra cứu chấm công theo nhân viên, mốc giờ, kiosk và OTP lookup. | `STK-013` | `DATA-BE-009`, `DATA-BE-014`, `NFR-BE-001` | `DD-SYS-001` | Accepted |
+| `DTD-BE-003` | In-Memory Caffeine Cooldown Cache | Kiến trúc bộ nhớ đệm chống quẹt thẻ dồn dập (TTL 120s) trên khóa `cooldown:punch:{userId}:{date}`. | `STK-011` | `DATA-BE-012`, `FR-BE-002` | `DD-SYS-002` | Accepted |
+| `DTD-BE-004` | Connection Pooling & HikariCP Configuration | Cấu hình pool kết nối HikariCP tối đa 20 kết nối cho thông lượng cao và tải 50 Kiosk đồng thời. | `STK-011`, `STK-013` | `NFR-BE-001`, `NFR-BE-002` | `DD-SYS-001` | Accepted |
+
+---
+
+## 2. Relational Database Schema (PostgreSQL 16 DDL Script)
 
 Hệ thống CSDL được chuẩn hóa ở mức 3NF, áp dụng khóa ngoại, chỉ mục hiệu năng và ràng buộc toàn vẹn:
 

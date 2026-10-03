@@ -19,21 +19,21 @@ owner: Product Designer & QA Lead
 
 ## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử Giao diện)
 
-| ID | Quyết định Tiếp cận Kiểm thử Giao diện | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
+| ID | Decision | Rationale | Basis | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| `APC-KSK-UX-01` | Sử dụng `pytest-qt` kiểm thử tự động tương tác chạm và tín hiệu QML. | Mô phỏng chính xác sự kiện chạm màn hình, gõ phím ảo và kiểm tra trạng thái hiển thị của các thành phần đồ họa. | `STK-002`, `UI-KSK-001` | Approved |
-| `APC-KSK-UX-02` | Kiểm định hiển thị trực quan đa độ phân giải (Visual Regression: 720x1280, 1080x1920, 2160x3840). | Bảo đảm công thức tỷ lệ co giãn $S = \min(W/1080, H/1920)$ không làm biến dạng hình học vector và phông chữ. | `UXD-KSK-001`, `NFR-KSK-002` | Approved |
+| `APC-KSK-007` | Sử dụng `pytest-qt` kiểm thử tự động tương tác chạm và tín hiệu QML. | Mô phỏng chính xác sự kiện chạm màn hình, gõ phím ảo và kiểm tra trạng thái hiển thị của các thành phần đồ họa. | `STK-003`, `UI-KSK-001` | Accepted |
+| `APC-KSK-008` | Kiểm định hiển thị trực quan đa độ phân giải (Visual Regression: 720x1280, 1080x1920, 2160x3840). | Bảo đảm công thức tỷ lệ co giãn $S = \min(W/1080, H/1920)$ không làm biến dạng hình học vector và phông chữ. | `UXD-KSK-005`, `NFR-KSK-002` | Accepted |
 
 ---
 
 ## 3. UI/UX Test Items (Danh mục Ca Kiểm thử Giao diện Kiosk)
 
-| ID | Tên Ca Kiểm thử | Covers Spec | Mức độ Test | Tiêu chí Đạt (Pass Criteria) | Trạng thái |
-| :--- | :--- | :--- | :---: | :--- | :---: |
-| `TST-KSK-UX-001` | Kiểm thử Máy trạng thái Khung Oval 4 Màu | `UI-KSK-001`, `UXD-KSK-002` | Component / GUI | Chuyển đổi chính xác 4 màu: Xám (Chờ) $\rightarrow$ Vàng (Căn chỉnh) $\rightarrow$ Xanh (Thành công) $\rightarrow$ Đỏ (Từ chối). | **Passed** |
-| `TST-KSK-UX-002` | Kiểm thử Co giãn Tỷ lệ Động $S$ (Scaling Test) | `UXD-KSK-001` | Visual / UI | Thay đổi kích thước cửa sổ; tỷ lệ 9:16 giữ nguyên không bị méo; phông chữ co giãn mượt mà. | **Passed** |
-| `TST-KSK-UX-003` | Kiểm thử Bàn phím Ảo PIN Pad & Khóa 15 Phút | `UI-KSK-002`, `UXD-KSK-003` | GUI / Security | Bấm số phản hồi âm thanh; nhập sai 5 lần hiện đếm ngược khóa 15 phút, vô hiệu hóa phím bấm. | **Passed** |
-| `TST-KSK-UX-004` | Kiểm thử Luồng Tự Đăng ký In-Viewport | `UI-KSK-003`, `UXD-KSK-004` | Journey / UX | Nhập OTP hợp lệ $\rightarrow$ Dialog tự ẩn để lộ camera chính $\rightarrow$ Chụp 3 ảnh chuẩn $\rightarrow$ Hiện lại dialog thành công. | **Passed** |
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `TST-KSK-005` | Kiểm thử Máy trạng thái Khung Oval 4 Màu | Kiểm tra chuyển đổi 4 trạng thái thị giác: Standby $\rightarrow$ Aligning $\rightarrow$ Success $\rightarrow$ Rejected. | `UI-KSK-001`, `UXD-KSK-001` | `BLD-KSK-006` | Chuyển đổi chính xác 4 màu; hiệu ứng Pulse Scan và Shake hoạt động trơn tru. | Done |
+| `TST-KSK-006` | Kiểm thử Co giãn Tỷ lệ Động $S$ (Scaling Test) | Kiểm tra công thức $S = \min(W/1080, H/1920)$ trên các độ phân giải HD, Full HD và 4K. | `UXD-KSK-005`, `UI-KSK-008` | `BLD-KSK-005` | Tỷ lệ 9:16 giữ nguyên không bị méo; phông chữ co giãn mượt mà; không tràn viền. | Done |
+| `TST-KSK-007` | Kiểm thử Bàn phím Ảo PIN Pad & Khóa 15 Phút | Kiểm tra tương tác bàn phím số cảm ứng $88\times 88\text{ px}$ và cơ chế khóa 15 phút. | `UI-KSK-002`, `UXD-KSK-003` | `BLD-KSK-008` | Bấm số phản hồi âm thanh; nhập sai 5 lần hiện đếm ngược khóa 15 phút, vô hiệu hóa phím bấm. | Done |
+| `TST-KSK-008` | Kiểm thử Luồng Tự Đăng ký In-Viewport | Kiểm tra quy trình 3 bước tự ẩn dialog nhường trọn camera chính ở Bước 2. | `UI-KSK-003`, `UXD-KSK-004` | `BLD-KSK-008` | Nhập OTP hợp lệ $\rightarrow$ Dialog tự ẩn để lộ camera chính $\rightarrow$ Chụp 3 ảnh chuẩn $\rightarrow$ Hiện lại dialog thành công. | Done |
 
 ---
 

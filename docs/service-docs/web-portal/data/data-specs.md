@@ -10,12 +10,12 @@ owner: Web Lead & Frontend Architect
 
 ## 1. Danh mục Thực thể Lưu trữ Phía Client (Client Storage Entities)
 
-| ID Thực thể | Tên Vùng Dữ liệu | Cơ chế Lưu trữ | Mục đích Nghiệp vụ & Kỹ thuật | Thời gian Tồn tại (TTL) |
-| :--- | :--- | :--- | :--- | :--- |
-| `DATA-WEB-001` | Phiên Xác thực (`auth_session`) | Browser `LocalStorage` | Lưu trữ cặp khóa `accessToken`, `refreshToken`, mốc hết hạn `expiresAt` và thông tin rút gọn người dùng (`user`). | Tồn tại cho đến khi Logout hoặc Refresh Token bị vô hiệu hóa. |
-| `DATA-WEB-002` | Tùy chọn Giao diện (`ui_preferences`) | Browser `LocalStorage` | Lưu trữ trạng thái đóng/mở thanh Sidebar (`sidebarCollapsed: boolean`) và bộ lọc bảng mặc định. | Vĩnh viễn (hoặc khi người dùng xóa cache trình duyệt). |
-| `DATA-WEB-003` | Trạng thái Ký Cam kết Tạm (`consent_flow`) | Browser `SessionStorage` | Lưu trạng thái các bước trong quy trình ký cam kết điện tử của nhân viên (`hasReadPolicy`, `otpCode`, `sessionExpiry`). | Xóa bỏ ngay khi đóng tab hoặc hoàn tất quy trình kích hoạt. |
-| `DATA-WEB-004` | Bộ nhớ đệm Truy vấn (`query_cache`) | In-Memory (TanStack Query) | Bộ đệm RAM trình duyệt lưu trữ kết quả các API: Danh sách chấm công, Thống kê Dashboard, Hồ sơ nhân viên. | Cấu hình theo từng khóa truy vấn ($0\text{ s}$ đến $300\text{ s}$). |
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| `DATA-WEB-001` | Quản lý phiên xác thực `auth_session` trong Browser `LocalStorage` bao gồm cặp token, mốc hết hạn và hồ sơ người dùng. | Storage | Must | `SRS-001`, `ARC-003` | Token & user info lưu an toàn, tự xóa khi logout hoặc vô hiệu hóa. | Approved |
+| `DATA-WEB-002` | Quản lý tùy chọn giao diện `ui_preferences` trong Browser `LocalStorage` bao gồm trạng thái sidebar và kích thước trang. | Storage | Should | `SRS-003` | Trạng thái thu gọn menu và bộ lọc bảng lưu bền vững qua các phiên. | Approved |
+| `DATA-WEB-003` | Quản lý trạng thái ký cam kết tạm `consent_flow` trong Browser `SessionStorage` bao gồm điều khoản, OTP và mã QR. | Storage | Must | `SRS-001`, `ARC-003` | Dữ liệu phiên ký cam kết tự động xóa ngay khi đóng tab hoặc kích hoạt xong. | Approved |
+| `DATA-WEB-004` | Quản lý bộ nhớ đệm truy vấn `query_cache` qua In-Memory TanStack Query với chính sách staleTime và invalidation linh hoạt. | Cache | Must | `SRS-003`, `ARC-003` | Dữ liệu live staleTime 0ms, cache tự động cập nhật khi có STOMP event. | Approved |
 
 ---
 

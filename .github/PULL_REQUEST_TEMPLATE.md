@@ -5,8 +5,8 @@
 
 ## 2. ID liên quan
 <!-- 
-  - Tài liệu: ID item bị đổi (ví dụ FR-BKE-001, DDS-SYS-002).
-  - Code: work item (ví dụ BLD-BKE-001, TST-KSK-001, DPL-SYS-001).
+  - Tài liệu: ID item bị đổi (ví dụ FR-BKE-001, DD-SYS-001).
+  - Code: work item (ví dụ BLD-BKE-001, TST-KSK-001, DPL-001).
   - Hệ thống tài liệu: ghi "none". 
 -->
 ID: 

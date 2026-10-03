@@ -19,11 +19,11 @@ owner: Release Engineer
 
 ## 2. Approach Decisions (Quyết định Tiếp cận Triển khai)
 
-| ID | Quyết định Tiếp cận Triển khai | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: |
-| `APC-SYS-013` | Mô hình lai (Hybrid Host/Container Architecture): Cụm máy chủ chạy Docker, Kiosk chạy Native Host. | Container hóa Backend/DB/Web giúp cô lập môi trường và dễ mở rộng; Kiosk chạy native trên OS máy trạm để tối ưu giao tiếp camera USB độ trễ $< 15\text{ms}$ và tập lệnh vector CPU AVX2. | `ARC-SYS-001`, `STK-022` | Approved |
-| `APC-SYS-014` | Chiến lược phát hành Blue/Green với Docker Container. | Giảm thiểu thời gian gián đoạn (Downtime $\approx 0$), cho phép chuyển đổi tức thì giữa các phiên bản Backend và Web. | `NFR-SYS-006`, `STK-022` | Approved |
-| `APC-SYS-015` | Quy trình Rollback tự động dựa trên kết quả Smoke Test. | Nếu kiểm tra sau triển khai không phản hồi mã 200 trong vòng 60s, hệ thống tự động hoàn nguyên container trước đó. | `RSK-SYS-001`, `NFR-SYS-006` | Approved |
+| ID | Decision | Rationale | Basis | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| `APC-SYS-013` | Mô hình lai (Hybrid Host/Container Architecture): Cụm máy chủ chạy Docker, Kiosk chạy Native Host. | Container hóa Backend/DB/Web giúp cô lập môi trường và dễ mở rộng; Kiosk chạy native trên OS máy trạm để tối ưu giao tiếp camera USB độ trễ $< 15\text{ms}$ và tập lệnh vector CPU AVX2. | `ARC-001`, `STK-022` | Accepted |
+| `APC-SYS-014` | Chiến lược phát hành Blue/Green với Docker Container. | Giảm thiểu thời gian gián đoạn (Downtime $\approx 0$), cho phép chuyển đổi tức thì giữa các phiên bản Backend và Web. | `NFR-SYS-006`, `STK-022` | Accepted |
+| `APC-SYS-015` | Quy trình Rollback tự động dựa trên kết quả Smoke Test. | Nếu kiểm tra sau triển khai không phản hồi mã 200 trong vòng 60s, hệ thống tự động hoàn nguyên container trước đó. | `RSK-001`, `NFR-SYS-006` | Accepted |
 
 ---
 
@@ -42,13 +42,13 @@ owner: Release Engineer
 
 ## 4. Deployment Work Items (Danh mục Hạng mục Triển khai)
 
-| ID | Hạng mục Triển khai (Work Item) | Mô tả Kỹ thuật Chi tiết | Covers / Uses | Depends on | Tiêu chí Hoàn tất (Done when) | Trạng thái |
+| ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
-| `DPL-SYS-001` | Khởi tạo Container CSDL PostgreSQL | Khởi chạy container `fas-postgres` (PostgreSQL 16-alpine) gắn volume bền vững `pgdata`, cấu hình user/pass và database `fas_db`. | `STK-012`, `STK-022` | `FND-SYS-006` | Cổng 5432 mở; pg_isready trả về 0; volume `pgdata` được mount thành công. | Sẵn sàng |
-| `DPL-SYS-002` | Triển khai Container Máy chủ Backend | Đóng gói Java 21 Spring Boot thành container `fas-backend`, nạp biến môi trường `ENCRYPTION_MASTER_KEY` và kết nối với CSDL. | `STK-010`, `STK-011` | `DPL-SYS-001` | Cổng 8080 mở; Flyway hoàn tất migration; endpoint `/actuator/health` trả về `{"status":"UP"}`. | Sẵn sàng |
-| `DPL-SYS-003` | Triển khai Container Web Portal Nginx | Đóng gói bản build tĩnh ReactJS vào container `fas-web` (Nginx), cấu hình Reverse Proxy chuyển tiếp `/api` và `/ws` về backend. | `STK-017`, `STK-019` | `DPL-SYS-002` | Cổng 3000 / 80 mở; trình duyệt truy cập tải trang đăng nhập thành công; proxy API thông suốt. | Sẵn sàng |
-| `DPL-SYS-004` | Đóng gói Tệp Thực thi Kiosk Desktop | Sử dụng PyInstaller biên dịch toàn bộ mã nguồn Kiosk và tài nguyên assets thành file thực thi độc lập `FAS_Kiosk.exe`. | `STK-001`, `STK-024` | `BLD-SYS-002` | File thực thi khởi động thành công trên máy tính Windows mà không cần cài sẵn môi trường Python. | Sẵn sàng |
-| `DPL-SYS-005` | Xác minh Sức khỏe Toàn hệ thống (Smoke Check) | Thực hiện 1 lượt điểm danh thử nghiệm: Quét mặt tại Kiosk $\rightarrow$ Backend ghi CSDL $\rightarrow$ Hiển thị trên Web Live Dashboard. | `ARC-SYS-001` đến `ARC-SYS-004` | `DPL-SYS-001` đến `DPL-SYS-004` | Dữ liệu hiển thị trên Web trong vòng $\le 1.2\text{ s}$; âm thanh Kiosk phát "Tít" chính xác. | Sẵn sàng |
+| `DPL-001` | Khởi tạo Container CSDL PostgreSQL | Khởi chạy container `fas-postgres` (PostgreSQL 16-alpine) gắn volume bền vững `pgdata`, cấu hình user/pass và database `fas_db`. | `STK-012`, `STK-022` | `FND-SYS-006` | Cổng 5432 mở; pg_isready trả về 0; volume `pgdata` được mount thành công. | Planned |
+| `DPL-002` | Triển khai Container Máy chủ Backend | Đóng gói Java 21 Spring Boot thành container `fas-backend`, nạp biến môi trường `ENCRYPTION_MASTER_KEY` và kết nối với CSDL. | `STK-010`, `STK-011` | `DPL-001` | Cổng 8080 mở; Flyway hoàn tất migration; endpoint `/actuator/health` trả về `{"status":"UP"}`. | Planned |
+| `DPL-003` | Triển khai Container Web Portal Nginx | Đóng gói bản build tĩnh ReactJS vào container `fas-web` (Nginx), cấu hình Reverse Proxy chuyển tiếp `/api` và `/ws` về backend. | `STK-017`, `STK-019` | `DPL-002` | Cổng 3000 / 80 mở; trình duyệt truy cập tải trang đăng nhập thành công; proxy API thông suốt. | Planned |
+| `DPL-004` | Đóng gói Tệp Thực thi Kiosk Desktop | Sử dụng PyInstaller biên dịch toàn bộ mã nguồn Kiosk và tài nguyên assets thành file thực thi độc lập `FAS_Kiosk.exe`. | `STK-001`, `STK-024` | `BLD-SYS-002` | File thực thi khởi động thành công trên máy tính Windows mà không cần cài sẵn môi trường Python. | Planned |
+| `DPL-005` | Xác minh Sức khỏe Toàn hệ thống (Smoke Check) | Thực hiện 1 lượt điểm danh thử nghiệm: Quét mặt tại Kiosk $\rightarrow$ Backend ghi CSDL $\rightarrow$ Hiển thị trên Web Live Dashboard. | `ARC-001`, `ARC-002`, `ARC-003`, `ARC-004` | `DPL-001`, `DPL-002`, `DPL-003`, `DPL-004` | Dữ liệu hiển thị trên Web trong vòng $\le 1.2\text{ s}$; âm thanh Kiosk phát "Tít" chính xác. | Planned |
 
 ---
 

@@ -4,7 +4,7 @@ Tài liệu tham chiếu:
 - API SPECS: API-KSK-006 - STOMP Topic /topic/kiosk-gallery (docs/service-docs/kiosk-app/api/api-specs.md)
 - API DESIGN: APD-KSK-002 & Mục 3 - Thiết kế Kênh WebSocket STOMP (docs/service-docs/kiosk-app/api/api-design.md)
 - API BUILD PLAN: ABL-KSK-002 (docs/service-docs/kiosk-app/api/api-build-plan.md)
-- FR-KSK-008: Realtime Gallery Hot-Patching (docs/service-docs/kiosk-app/core/fr-nfr-specs.md)
+- FR-KSK-008: Realtime Gallery Hot-Patching (docs/service-docs/kiosk-app/fr-nfr/fr-nfr-specs.md)
 """
 
 import json

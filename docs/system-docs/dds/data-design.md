@@ -7,20 +7,19 @@ owner: Data Architect
 
 # DATA DESIGN — Thiết kế Chi tiết Dữ liệu & Lưu trữ Hệ thống
 
-
 ## 1. Enterprise Database Model (Lược đồ CSDL Quan hệ PostgreSQL 16+)
 
-| ID | Tên Bảng CSDL | Khóa Chính (PK) | Khóa Ngoại (FK) & Ràng buộc | Chỉ mục Hiệu năng (Indexes) | Realizes | Trạng thái |
-| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
-| `DTD-SYS-001` | `employees` | `id` (BIGSERIAL) | `emp_code` (UK), `email` (UK) | `idx_employees_status` ON (`status`) | `DATA-SYS-001`, `DATA-SYS-009` | Approved |
-| `DTD-SYS-002` | `shifts` | `id` (BIGSERIAL) | `shift_code` (UK, NOT NULL) | B-Tree mặc định | `DATA-SYS-002` | Approved |
-| `DTD-SYS-003` | `employee_shifts` | `id` (BIGSERIAL) | FK `employee_id` $\rightarrow$ `employees(id)`<br/>FK `shift_id` $\rightarrow$ `shifts(id)` | B-Tree ON (`employee_id`, `effective_from`) | `DATA-SYS-003` | Approved |
-| `DTD-SYS-004` | `attendance_records` | `id` (BIGSERIAL) | FK `employee_id` $\rightarrow$ `employees(id)` | `idx_attendance_emp_date` ON (`employee_id`, `punch_date`)<br/>`idx_attendance_punch_time` ON (`punch_time` DESC) | `DATA-SYS-004` | Approved |
-| `DTD-SYS-005` | `biometric_templates`| `id` (BIGSERIAL) | FK `employee_id` $\rightarrow$ `employees(id)`<br/>`template_vector_encrypted` (BYTEA) | `idx_biometric_emp_active` ON (`employee_id`, `is_active`) | `DATA-SYS-005`, `DATA-SYS-010` | Approved |
-| `DTD-SYS-006` | `enrollment_otps` | `id` (BIGSERIAL) | FK `employee_id` $\rightarrow$ `employees(id)`<br/>`otp_hash` (VARCHAR 64) | `idx_otp_hash_active` ON (`otp_hash`, `is_used`, `expires_at`) | `DATA-SYS-006`, `DATA-SYS-011` | Approved |
-| `DTD-SYS-007` | `consent_audit_logs` | `id` (BIGSERIAL) | FK `employee_id` $\rightarrow$ `employees(id)` | B-Tree ON (`employee_id`, `agreed_at`) | `DATA-SYS-007` | Approved |
-| `DTD-SYS-008` | `compliance_audit_logs`| `id` (BIGSERIAL)| Ghi nhận hành vi xóa dữ liệu 20 ngày | B-Tree ON (`performed_at` DESC) | `DATA-SYS-013` | Approved |
-| `DTD-SYS-009` | `excuse_requests` | `id` (BIGSERIAL) | FK `employee_id` $\rightarrow$ `employees(id)` | B-Tree ON (`employee_id`, `status`) | `DATA-SYS-008` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DTD-SYS-001` | Bảng `employees` | Bảng lưu trữ hồ sơ nhân viên, mã số, phòng ban, vai trò, hash mã PIN; PK `id`, Unique (`emp_code`, `email`), index trên `status`. | `STK-012` | `DATA-SYS-001`, `DATA-SYS-009` | - | Accepted |
+| `DTD-SYS-002` | Bảng `shifts` | Bảng định nghĩa danh mục ca làm việc, giờ bắt đầu/kết thúc, thời gian ân hạn 15p; PK `id`, Unique `shift_code`. | `STK-012` | `DATA-SYS-002` | `DD-SYS-007` | Accepted |
+| `DTD-SYS-003` | Bảng `employee_shifts` | Bảng phân công ca làm việc cho nhân viên theo mốc ngày hiệu lực; PK `id`, FK `employee_id`, FK `shift_id`, index (`employee_id`, `effective_from`). | `STK-012` | `DATA-SYS-003` | - | Accepted |
+| `DTD-SYS-004` | Bảng `attendance_records` | Bảng lưu trữ lịch sử điểm danh thực tế (vào/ra, phương thức mặt/PIN, trạng thái, phút muộn); PK `id`, FK `employee_id`, index (`employee_id`, `punch_date`) và `punch_time`. | `STK-012` | `DATA-SYS-004` | `DD-SYS-006` | Accepted |
+| `DTD-SYS-005` | Bảng `biometric_templates` | Bảng lưu trữ mẫu vector khuôn mặt 512D mã hóa AES-256-GCM; PK `id`, FK `employee_id`, cột `template_vector_encrypted` (BYTEA), IV và Auth Tag riêng. | `STK-012`, `STK-015` | `DATA-SYS-005`, `DATA-SYS-010` | `DD-SYS-003`, `DD-SYS-015`, `DD-SYS-016` | Accepted |
+| `DTD-SYS-006` | Bảng `enrollment_otps` | Bảng quản lý mã OTP kích hoạt đăng ký khuôn mặt hạn 48h; PK `id`, FK `employee_id`, chuỗi băm `otp_hash`, index (`otp_hash`, `is_used`, `expires_at`). | `STK-012` | `DATA-SYS-006`, `DATA-SYS-011` | - | Accepted |
+| `DTD-SYS-007` | Bảng `consent_audit_logs` | Bảng lưu vết văn bản thỏa thuận Informed Consent theo Luật 2025; PK `id`, FK `employee_id`, IP, User Agent, mốc thời gian ký. | `STK-012` | `DATA-SYS-007` | `DD-SYS-003` | Accepted |
+| `DTD-SYS-008` | Bảng `compliance_audit_logs` | Bảng lưu vết kiểm toán hành vi tiêu hủy dữ liệu sinh trắc học sau 20 ngày; PK `id`, chi tiết hành vi, người thực hiện, thời điểm xóa. | `STK-012` | `DATA-SYS-013` | `DD-SYS-003` | Accepted |
+| `DTD-SYS-009` | Bảng `excuse_requests` | Bảng quản lý đơn giải trình công (quên chấm/đi muộn); PK `id`, FK `employee_id`, lý do, file minh chứng, trạng thái duyệt. | `STK-012` | `DATA-SYS-008` | - | Accepted |
 
 ---
 
@@ -57,8 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_offline_sync ON offline_punches(is_synced, id);
 
 ## 3. Data Design Decisions (Quyết định Thiết kế Dữ liệu)
 
-| ID | Quyết định Thiết kế Dữ liệu | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: |
-| `DD-DTD-001` | Lưu trữ vector đặc trưng mã hóa dưới dạng `BYTEA` thay vì kiểu vector chuyên dụng (như pgvector). | Vector chỉ được giải mã và nạp vào RAM Kiosk để so khớp tại biên (Edge-First), Backend không thực hiện tìm kiếm vector nên dùng BYTEA tiêu chuẩn giúp tối ưu bảo mật và không đòi hỏi extension ngoài. | `PD-002`, `PD-005` | Approved |
-| `DD-DTD-002` | Tách riêng Initialization Vector (IV 12 bytes) và Authentication Tag (16 bytes) thành các cột độc lập trong CSDL. | Giúp kiểm soát tính toàn vẹn của khối AES-256-GCM, hỗ trợ giải mã chuẩn mực không cần cắt ghép chuỗi nhị phân. | `SRS-001`, `STK-015` | Approved |
-| `DD-DTD-003` | Áp dụng chế độ Write-Ahead Logging (WAL) cho SQLite cục bộ tại Kiosk. | Cho phép tiến trình nhận diện ghi lượt chấm vào CSDL ngay cả khi luồng đồng bộ ngầm đang đọc dữ liệu, hoàn toàn không bị nghẽn (Zero Lock Contention). | `PD-004`, `INF-011` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DD-SYS-015` | Lưu vector mã hóa dưới dạng BYTEA | Lưu trữ vector đặc trưng mã hóa dưới dạng BYTEA thay vì kiểu vector chuyên dụng (pgvector) vì suy luận và so khớp diễn ra hoàn toàn tại biên. | `STK-012` | `PD-002`, `PD-005` | `DD-SYS-003` | Accepted |
+| `DD-SYS-016` | Phân tách cột độc lập cho IV và Auth Tag | Tách riêng Initialization Vector (IV 12 bytes) và Authentication Tag (16 bytes) thành các cột độc lập trong CSDL phục vụ giải mã chuẩn xác. | `STK-012`, `STK-015` | `SRS-001` | `DD-SYS-003` | Accepted |

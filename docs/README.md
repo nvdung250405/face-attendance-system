@@ -1,3 +1,10 @@
+---
+title: Master Documentation Portal
+version: 2.0
+status: Approved
+owner: Solution Architect & SDLC Governance Lead
+---
+
 # Danh mục Điều hướng Toàn bộ Bộ tài liệu SDLC (Master Documentation Portal)
 
 > - **Hệ thống**: Hệ thống Chấm công Khuôn mặt Doanh nghiệp (`face-attendance-system`)  
@@ -65,20 +72,24 @@ Tài liệu Cấp Dịch vụ đi sâu vào từng phân hệ độc lập trong
 | Nhánh Facet | Tài liệu | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
 | :--- | :--- | :---: | :---: | :--- |
 | **Hub** | [**`kiosk-app/README.md`**](service-docs/kiosk-app/README.md) | `KSK-HUB` | — | Tổng quan phân hệ Kiosk và cẩm nang điều hướng 4 facet. |
-| **Core** | [**`core/fsp.md`**](service-docs/kiosk-app/core/fsp.md) | `SVC-FSP` | `FND-KSK-` | Môi trường ảo Python, thư viện PySide6/OpenCV, kiểm định mô hình ONNX. |
-| **Core** | [**`core/fr-nfr-specs.md`**](service-docs/kiosk-app/core/fr-nfr-specs.md) | `SVC-SPEC` | `FR-KSK-`, `NFR-KSK-` | Yêu cầu thị giác YuNet, MiniFASNet, ArcFace, bàn phím PIN, đệm 120s. |
-| **Core** | [**`core/fr-nfr-design.md`**](service-docs/kiosk-app/core/fr-nfr-design.md) | `SVC-DES` | `SOL-KSK-` | Thiết kế pipeline thị giác biên, kiểm chuẩn Oval và hàng đợi SQLite WAL. |
-| **Core** | [**`core/fr-nfr-build-plan.md`**](service-docs/kiosk-app/core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-KSK-` | Kế hoạch thi công module camera worker, AI detector, RAM matcher. |
-| **Core** | [**`core/test-plan.md`**](service-docs/kiosk-app/core/test-plan.md) | `SVC-TST` | `TST-KSK-` | Ma trận kiểm thử đơn vị, chống giả mạo PAD và kiểm thử ngâm tải RAM 8h. |
+| **Toàn Service** | [**`foundation-setup-plan.md`**](service-docs/kiosk-app/foundation-setup-plan.md) | `SVC-FSP` | `FND-KSK-` | Môi trường ảo Python, thư viện PySide6/OpenCV, kiểm định mô hình ONNX. |
+| **Toàn Service** | [**`build-plan.md`**](service-docs/kiosk-app/build-plan.md) | `SVC-BLD` | `BLD-KSK-` | Kế hoạch build tổng của Kiosk, điều phối thứ tự wave và chuẩn hóa task. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-specs.md`**](service-docs/kiosk-app/fr-nfr/fr-nfr-specs.md) | `SVC-SPEC` | `FR-KSK-`, `NFR-KSK-` | Yêu cầu thị giác YuNet, MiniFASNet, ArcFace, bàn phím PIN, đệm 120s. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-design.md`**](service-docs/kiosk-app/fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-KSK-` | Thiết kế pipeline thị giác biên, kiểm chuẩn Oval và hàng đợi SQLite WAL. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-build-plan.md`**](service-docs/kiosk-app/fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-KSK-` | Kế hoạch thi công module camera worker, AI detector, RAM matcher. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-test-plan.md`**](service-docs/kiosk-app/fr-nfr/fr-nfr-test-plan.md) | `SVC-TST` | `TST-KSK-` | Ma trận kiểm thử đơn vị, chống giả mạo PAD và kiểm thử ngâm tải RAM 8h. |
 | **UI/UX** | [**`ui-ux/ui-ux-specs.md`**](service-docs/kiosk-app/ui-ux/ui-ux-specs.md) | `SVC-SPEC` | `UI-KSK-` | Hành trình điểm danh, nhập PIN dự phòng và máy trạng thái Oval 4 màu. |
 | **UI/UX** | [**`ui-ux/ui-ux-design.md`**](service-docs/kiosk-app/ui-ux/ui-ux-design.md) | `SVC-DES` | `UXD-KSK-` | Design tokens QML, tỷ lệ co giãn động $1080\times 1920$, modal PIN và In-Viewport. |
 | **UI/UX** | [**`ui-ux/ui-ux-build-plan.md`**](service-docs/kiosk-app/ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `UBL-KSK-` | Kế hoạch thi công component QML, hiệu ứng sóng quét và âm thanh phản hồi. |
+| **UI/UX** | [**`ui-ux/ui-ux-test-plan.md`**](service-docs/kiosk-app/ui-ux/ui-ux-test-plan.md) | `SVC-TST` | `TST-KSK-` | Kế hoạch kiểm thử giao diện và tương tác chạm người dùng. |
 | **API** | [**`api/api-specs.md`**](service-docs/kiosk-app/api/api-specs.md) | `SVC-SPEC` | `API-KSK-` | Đặc tả interface HTTP tiêu thụ (`punch`, `sync-batch`, `gallery`) và STOMP. |
 | **API** | [**`api/api-design.md`**](service-docs/kiosk-app/api/api-design.md) | `SVC-DES` | `APD-KSK-` | Thiết kế HTTP Client (`httpx`), luồng STOMP worker và đồng bộ bù ngoại tuyến. |
 | **API** | [**`api/api-build-plan.md`**](service-docs/kiosk-app/api/api-build-plan.md) | `SVC-BLD` | `ABL-KSK-` | Kế hoạch thi công HTTP client wrapper và worker đồng bộ ngầm. |
+| **API** | [**`api/api-test-plan.md`**](service-docs/kiosk-app/api/api-test-plan.md) | `SVC-TST` | `TST-KSK-` | Kế hoạch kiểm thử truyền thông mạng Kiosk và đồng bộ ngoại tuyến. |
 | **Data** | [**`data/data-specs.md`**](service-docs/kiosk-app/data/data-specs.md) | `SVC-SPEC` | `DATA-KSK-` | Thực thể hàng đợi `offline_punches` và ma trận bộ nhớ RAM NumPy. |
 | **Data** | [**`data/data-design.md`**](service-docs/kiosk-app/data/data-design.md) | `SVC-DES` | `DTD-KSK-` | Lược đồ bảng SQLite WAL, cơ chế PRAGMA tối ưu và công thức tích vô hướng. |
 | **Data** | [**`data/data-build-plan.md`**](service-docs/kiosk-app/data/data-build-plan.md) | `SVC-BLD` | `DBL-KSK-` | Kế hoạch thi công bảng CSDL cục bộ và module quản lý RAM gallery. |
+| **Data** | [**`data/data-test-plan.md`**](service-docs/kiosk-app/data/data-test-plan.md) | `SVC-TST` | `TST-KSK-` | Kế hoạch kiểm thử CSDL SQLite WAL và ma trận RAM. |
 
 ---
 
@@ -88,17 +99,20 @@ Tài liệu Cấp Dịch vụ đi sâu vào từng phân hệ độc lập trong
 | Nhánh Facet | Tài liệu | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
 | :--- | :--- | :---: | :---: | :--- |
 | **Hub** | [**`backend-service/README.md`**](service-docs/backend-service/README.md) | `BE-HUB` | — | Tổng quan phân hệ Backend và cẩm nang điều hướng 3 facet. |
-| **Core** | [**`core/fsp.md`**](service-docs/backend-service/core/fsp.md) | `SVC-FSP` | `FND-BE-` | Môi trường Java 21 LTS, cấu hình Maven, Spring Boot Starter và Flyway. |
-| **Core** | [**`core/fr-nfr-specs.md`**](service-docs/backend-service/core/fr-nfr-specs.md) | `SVC-SPEC` | `FR-BE-`, `NFR-BE-` | Xác thực RBAC, xử lý điểm danh, mã hóa vector sinh trắc học, độ trễ $\le 100\text{ ms}$. |
-| **Core** | [**`core/fr-nfr-design.md`**](service-docs/backend-service/core/fr-nfr-design.md) | `SVC-DES` | `SOL-BE-` | Security filter chain, Biometric crypto service, STOMP event broadcaster. |
-| **Core** | [**`core/fr-nfr-build-plan.md`**](service-docs/backend-service/core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-BE-` | Kế hoạch thi công JWT provider, attendance engine và aspect audit trail. |
-| **Core** | [**`core/test-plan.md`**](service-docs/backend-service/core/test-plan.md) | `SVC-TST` | `TST-BE-` | Ca kiểm thử JUnit 5, MockMvc, Testcontainers PostgreSQL và kiểm thử tải. |
-| **API** | [**`api/api-specs.md`**](service-docs/backend-service/api/api-specs.md) | `SVC-SPEC` | `API-BE-` | Danh mục REST endpoints (`punch`, `sync-batch`, `gallery`, `consent`) và STOMP topics. |
-| **API** | [**`api/api-design.md`**](service-docs/backend-service/api/api-design.md) | `SVC-DES` | `APD-BE-` | Thiết kế REST Controllers, Record DTOs, Validation và STOMP Broker. |
-| **API** | [**`api/api-build-plan.md`**](service-docs/backend-service/api/api-build-plan.md) | `SVC-BLD` | `ABL-BE-` | Kế hoạch thi công API Controllers, WebSocket handlers và global exception. |
+| **Toàn Service** | [**`foundation-setup-plan.md`**](service-docs/backend-service/foundation-setup-plan.md) | `SVC-FSP` | `FND-BE-` | Môi trường Java 21 LTS, cấu hình Maven, Spring Boot Starter và Flyway. |
+| **Toàn Service** | [**`build-plan.md`**](service-docs/backend-service/build-plan.md) | `SVC-BLD` | `BLD-BE-` | Kế hoạch build tổng của Backend, điều phối thứ tự wave và chuẩn hóa task. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-specs.md`**](service-docs/backend-service/fr-nfr/fr-nfr-specs.md) | `SVC-SPEC` | `FR-BE-`, `NFR-BE-` | Xác thực RBAC, xử lý điểm danh, mã hóa vector sinh trắc học, độ trễ $\le 100\text{ ms}$. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-design.md`**](service-docs/backend-service/fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-BE-` | Security filter chain, Biometric crypto service, STOMP event broadcaster. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-build-plan.md`**](service-docs/backend-service/fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-BE-` | Kế hoạch thi công JWT provider, attendance engine và aspect audit trail. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-test-plan.md`**](service-docs/backend-service/fr-nfr/fr-nfr-test-plan.md) | `SVC-TST` | `TST-BE-` | Ca kiểm thử JUnit 5, MockMvc, Testcontainers PostgreSQL và kiểm thử tải. |
 | **Data** | [**`data/data-specs.md`**](service-docs/backend-service/data/data-specs.md) | `SVC-SPEC` | `DATA-BE-` | Thực thể `users`, `biometric_templates`, `attendance_logs`, `audit_logs`. |
 | **Data** | [**`data/data-design.md`**](service-docs/backend-service/data/data-design.md) | `SVC-DES` | `DTD-BE-` | Lược đồ bảng PostgreSQL 16, chỉ mục khóa ngoại và cấu hình kết nối HikariCP. |
 | **Data** | [**`data/data-build-plan.md`**](service-docs/backend-service/data/data-build-plan.md) | `SVC-BLD` | `DBL-BE-` | Kế hoạch thi công script Flyway migration và Spring Data JPA Repositories. |
+| **Data** | [**`data/data-test-plan.md`**](service-docs/backend-service/data/data-test-plan.md) | `SVC-TST` | `TST-BE-` | Kế hoạch kiểm thử tính toàn vẹn CSDL và migration. |
+| **API** | [**`api/api-specs.md`**](service-docs/backend-service/api/api-specs.md) | `SVC-SPEC` | `API-BE-` | Danh mục REST endpoints (`punch`, `sync-batch`, `gallery`, `consent`) và STOMP topics. |
+| **API** | [**`api/api-design.md`**](service-docs/backend-service/api/api-design.md) | `SVC-DES` | `APD-BE-` | Thiết kế REST Controllers, Record DTOs, Validation và STOMP Broker. |
+| **API** | [**`api/api-build-plan.md`**](service-docs/backend-service/api/api-build-plan.md) | `SVC-BLD` | `ABL-BE-` | Kế hoạch thi công API Controllers, WebSocket handlers và global exception. |
+| **API** | [**`api/api-test-plan.md`**](service-docs/backend-service/api/api-test-plan.md) | `SVC-TST` | `TST-BE-` | Kế hoạch kiểm thử hợp đồng REST API và STOMP. |
 
 ---
 
@@ -107,15 +121,22 @@ Tài liệu Cấp Dịch vụ đi sâu vào từng phân hệ độc lập trong
 
 | Nhánh Facet | Tài liệu | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
 | :--- | :--- | :---: | :---: | :--- |
-| **Hub** | [**`web-portal/README.md`**](service-docs/web-portal/README.md) | `WEB-HUB` | — | Tổng quan phân hệ Web Portal và cẩm nang điều hướng 3 facet. |
-| **Core** | [**`core/fsp.md`**](service-docs/web-portal/core/fsp.md) | `SVC-FSP` | `FND-WEB-` | Môi trường Node.js 20+, cấu hình Vite 5, React 18/19 TypeScript và Tailwind. |
-| **Core** | [**`core/fr-nfr-specs.md`**](service-docs/web-portal/core/fr-nfr-specs.md) | `SVC-SPEC` | `FR-WEB-`, `NFR-WEB-` | Đăng nhập phân quyền, ký cam kết Consent, nhận sự kiện STOMP, xuất file Excel/PDF. |
-| **Core** | [**`core/fr-nfr-design.md`**](service-docs/web-portal/core/fr-nfr-design.md) | `SVC-DES` | `SOL-WEB-` | Quản lý phiên Zustand, React Router guards, STOMP hook và động cơ xuất file. |
-| **Core** | [**`core/fr-nfr-build-plan.md`**](service-docs/web-portal/core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-WEB-` | Kế hoạch thi công Auth store, module cam kết, STOMP client và báo cáo. |
-| **Core** | [**`core/test-plan.md`**](service-docs/web-portal/core/test-plan.md) | `SVC-TST` | `TST-WEB-` | Ca kiểm thử Vitest, React Testing Library, kiểm thử luồng E2E và responsive. |
-| **UI/UX** | [**`ui-ux/ui-ux-specs.md`**](service-docs/web-portal/ui-ux/ui-ux-specs.md) | `SVC-SPEC` | `UI-WEB-` | Luồng ký cam kết, thẻ thống kê KPI, bảng Live Table và lịch biểu cá nhân. |
-| **UI/UX** | [**`ui-ux/ui-ux-design.md`**](service-docs/web-portal/ui-ux/ui-ux-design.md) | `SVC-DES` | `UXD-WEB-` | Bảng màu Tailwind, typography Inter, cấu trúc Sidebar/Header và modal dialogs. |
-| **UI/UX** | [**`ui-ux/ui-ux-build-plan.md`**](service-docs/web-portal/ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `UBL-WEB-` | Kế hoạch thi công bộ thành phần Base UI, trang Dashboard và Calendar view. |
+| **Hub** | [**`web-portal/README.md`**](service-docs/web-portal/README.md) | `WEB-HUB` | — | Tổng quan phân hệ Web Portal và cẩm nang điều hướng 4 facet. |
+| **Toàn Service** | [**`foundation-setup-plan.md`**](service-docs/web-portal/foundation-setup-plan.md) | `SVC-FSP` | `FND-WEB-` | Môi trường Node.js 20+, cấu hình Vite 5, React 18/19 TypeScript và Tailwind. |
+| **Toàn Service** | [**`build-plan.md`**](service-docs/web-portal/build-plan.md) | `SVC-BLD` | `BLD-WEB-` | Kế hoạch build tổng của Web Portal, điều phối thứ tự wave và chuẩn hóa task. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-specs.md`**](service-docs/web-portal/fr-nfr/fr-nfr-specs.md) | `SVC-SPEC` | `FR-WEB-`, `NFR-WEB-` | Đăng nhập phân quyền, ký cam kết Consent, nhận sự kiện STOMP, xuất file Excel/PDF. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-design.md`**](service-docs/web-portal/fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-WEB-` | Quản lý phiên Zustand, React Router guards, STOMP hook và động cơ xuất file. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-build-plan.md`**](service-docs/web-portal/fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-WEB-` | Kế hoạch thi công Auth store, module cam kết, STOMP client và báo cáo. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-test-plan.md`**](service-docs/web-portal/fr-nfr/fr-nfr-test-plan.md) | `SVC-TST` | `TST-WEB-` | Ca kiểm thử Vitest, React Testing Library, kiểm thử luồng E2E và responsive. |
+| **Data** | [**`data/data-specs.md`**](service-docs/web-portal/data/data-specs.md) | `SVC-SPEC` | `DATA-WEB-` | Thực thể Local/SessionStorage và TanStack Query Cache. |
+| **Data** | [**`data/data-design.md`**](service-docs/web-portal/data/data-design.md) | `SVC-DES` | `DTD-WEB-` | TypeScript contracts, Storage Adapter và cấu trúc khóa cache. |
+| **Data** | [**`data/data-build-plan.md`**](service-docs/web-portal/data/data-build-plan.md) | `SVC-BLD` | `DBL-WEB-` | Kế hoạch thi công tầng lưu trữ client và bộ đệm cache. |
+| **Data** | [**`data/data-test-plan.md`**](service-docs/web-portal/data/data-test-plan.md) | `SVC-TST` | `TST-WEB-` | Kế hoạch kiểm thử lưu trữ client và bộ đệm cache. |
 | **API** | [**`api/api-specs.md`**](service-docs/web-portal/api/api-specs.md) | `SVC-SPEC` | `API-WEB-` | Đặc tả interface tiêu thụ (`auth`, `attendance`, `consent`) và đăng ký STOMP topic. |
 | **API** | [**`api/api-design.md`**](service-docs/web-portal/api/api-design.md) | `SVC-DES` | `APD-WEB-` | Thiết kế Axios client instance, tự động làm mới token và hook `useStompListener`. |
 | **API** | [**`api/api-build-plan.md`**](service-docs/web-portal/api/api-build-plan.md) | `SVC-BLD` | `ABL-WEB-` | Kế hoạch thi công Axios wrapper, API services và STOMP provider. |
+| **API** | [**`api/api-test-plan.md`**](service-docs/web-portal/api/api-test-plan.md) | `SVC-TST` | `TST-WEB-` | Kế hoạch kiểm thử Axios client và WebSocket STOMP hooks. |
+| **UI/UX** | [**`ui-ux/ui-ux-specs.md`**](service-docs/web-portal/ui-ux/ui-ux-specs.md) | `SVC-SPEC` | `UI-WEB-` | Luồng ký cam kết, thẻ thống kê KPI, bảng Live Table và lịch biểu cá nhân. |
+| **UI/UX** | [**`ui-ux/ui-ux-design.md`**](service-docs/web-portal/ui-ux/ui-ux-design.md) | `SVC-DES` | `UXD-WEB-` | Bảng màu Tailwind, typography Inter, cấu trúc Sidebar/Header và modal dialogs. |
+| **UI/UX** | [**`ui-ux/ui-ux-build-plan.md`**](service-docs/web-portal/ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `UBL-WEB-` | Kế hoạch thi công bộ thành phần Base UI, trang Dashboard và Calendar view. |
+| **UI/UX** | [**`ui-ux/ui-ux-test-plan.md`**](service-docs/web-portal/ui-ux/ui-ux-test-plan.md) | `SVC-TST` | `TST-WEB-` | Kế hoạch kiểm thử giao diện và độ phản hồi đa thiết bị. |

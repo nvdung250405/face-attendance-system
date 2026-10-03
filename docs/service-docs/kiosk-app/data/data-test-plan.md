@@ -19,21 +19,21 @@ owner: Edge Vision QA Lead
 
 ## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử Dữ liệu Kiosk)
 
-| ID | Quyết định Tiếp cận Kiểm thử Dữ liệu | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
+| ID | Decision | Rationale | Basis | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| `APC-KSK-DAT-01` | Kiểm thử đa tiến trình đồng thời (Concurrent Read/Write Testing) trên SQLite WAL. | Xác nhận cơ chế WAL cho phép luồng nhận diện ghi điểm danh ngay cả khi worker đồng bộ đang đọc dữ liệu đệm. | `DTD-KSK-001`, `STK-009` | Approved |
-| `APC-KSK-DAT-02` | Đo lường hiệu năng vector hóa với ma trận NumPy kích thước lớn ($N = 2,000$). | Đảm bảo hệ thống vẫn giữ được tốc độ phản hồi tức thì khi quy mô doanh nghiệp tăng gấp đôi. | `DATA-KSK-002`, `NFR-KSK-001` | Approved |
+| `APC-KSK-005` | Kiểm thử đa tiến trình đồng thời (Concurrent Read/Write Testing) trên SQLite WAL. | Xác nhận cơ chế WAL cho phép luồng nhận diện ghi điểm danh ngay cả khi worker đồng bộ đang đọc dữ liệu đệm. | `DTD-KSK-001`, `STK-005` | Accepted |
+| `APC-KSK-006` | Đo lường hiệu năng vector hóa với ma trận NumPy kích thước lớn ($N = 2,000$). | Đảm bảo hệ thống vẫn giữ được tốc độ phản hồi tức thì khi quy mô doanh nghiệp tăng gấp đôi. | `DATA-KSK-002`, `NFR-KSK-001` | Accepted |
 
 ---
 
 ## 3. Data Test Items (Danh mục Ca Kiểm thử Dữ liệu Kiosk)
 
-| ID | Tên Ca Kiểm thử | Covers Spec | Mức độ Test | Tiêu chí Đạt (Pass Criteria) | Trạng thái |
-| :--- | :--- | :--- | :---: | :--- | :---: |
-| `TST-KSK-DAT-001` | Kiểm thử Khởi tạo & Cấu hình PRAGMA WAL | `DTD-KSK-001` | Component | `PRAGMA journal_mode` trả về `wal`; sinh các file `.wal` và `.shm` phụ trợ chính xác. | **Passed** |
-| `TST-KSK-DAT-002` | Kiểm thử Ghi Hàng đợi Ngoại tuyến & Đọc Lô 50 | `DATA-KSK-001` | Integration | Ghi đệm bản ghi hoàn tất $< 5\text{ms}$; lấy danh sách chưa đồng bộ trả về tối đa 50 bản ghi. | **Passed** |
-| `TST-KSK-DAT-003` | Kiểm thử Tốc độ So khớp Ma trận RAM NumPy | `DATA-KSK-002`, `DTD-KSK-002` | Unit / Perf | Ma trận $1,000 \times 512$ thực hiện nhân vector hoàn tất $< 2\text{ms}$; trả về đúng top 1 similarity. | **Passed** |
-| `TST-KSK-DAT-004` | Kiểm thử Nạp Nóng Vector (Atomic Swap) | `DATA-KSK-002` | Unit / Concurrency | Cập nhật ma trận vector mới trong RAM trong khi luồng đọc camera đang chạy không gây crash hoặc giật lag. | **Passed** |
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `TST-KSK-001` | Kiểm thử Khởi tạo & Cấu hình PRAGMA WAL | Kiểm tra khởi tạo file CSDL và cấu hình nhật ký ghi trước. | `DTD-KSK-001` | `BLD-KSK-001` | `PRAGMA journal_mode` trả về `wal`; sinh các file `.wal` và `.shm` phụ trợ chính xác. | Done |
+| `TST-KSK-002` | Kiểm thử Ghi Hàng đợi Ngoại tuyến & Đọc Lô 50 | Kiểm tra ghi đệm và bốc lô 50 bản ghi tuần tự khi mất mạng. | `DATA-KSK-001`, `DATA-KSK-006` | `BLD-KSK-002` | Ghi đệm bản ghi hoàn tất $< 5\text{ ms}$; lấy danh sách chưa đồng bộ trả về tối đa 50 bản ghi. | Done |
+| `TST-KSK-003` | Kiểm thử Tốc độ So khớp Ma trận RAM NumPy | Kiểm tra phép nhân ma trận Cosine Similarity 1,000 nhân sự. | `DATA-KSK-002`, `DTD-KSK-002` | `BLD-KSK-003` | Ma trận $1,000 \times 512$ thực hiện nhân vector hoàn tất $< 2\text{ ms}$; trả về đúng top 1 similarity. | Done |
+| `TST-KSK-004` | Kiểm thử Nạp Nóng Vector (Atomic Swap) | Kiểm tra cập nhật vector mới vào RAM mà không làm giật luồng camera. | `DATA-KSK-002`, `DTD-KSK-002` | `BLD-KSK-003` | Cập nhật ma trận vector mới trong RAM trong khi luồng đọc camera đang chạy không gây crash hoặc giật lag. | Done |
 
 ---
 

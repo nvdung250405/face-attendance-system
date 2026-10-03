@@ -8,7 +8,22 @@ owner: Web Lead & Frontend Architect
 # API SPECS — Đặc tả Giao diện Truyền thông Phân hệ Web Portal
 
 
-## 1. Danh mục Giao diện REST Tiêu thụ (Consumed REST Interfaces)
+## 1. Specification Schema (Đặc tả Giao diện API Phân hệ Web Portal)
+
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| `API-WEB-001` | Giao diện REST xác thực đăng nhập qua `POST /api/v1/auth/login`. | REST | Must | `SRS-001`, `ARC-003` | Nhận Access/Refresh Token và thông tin user; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-002` | Giao diện REST làm mới access token qua `POST /api/v1/auth/refresh`. | REST | Must | `SRS-001`, `ARC-003` | Đổi Refresh Token lấy Access Token mới trong suốt; SLA $\le 300\text{ ms}$. | Approved |
+| `API-WEB-003` | Giao diện REST ký cam kết sinh trắc qua `POST /api/v1/employee/consent`. | REST | Must | `SRS-001`, `ARC-003` | Nhận mã OTP 6 số và mã QR kích hoạt tại Kiosk; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-004` | Giao diện REST tra cứu điểm danh toàn công ty qua `GET /api/v1/admin/attendance`. | REST | Must | `SRS-003`, `ARC-003` | Phân trang, lọc theo ngày/phòng ban/trạng thái; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-005` | Giao diện REST tra cứu điểm danh cá nhân qua `GET /api/v1/employee/attendance`. | REST | Should | `SRS-003`, `ARC-003` | Trả về tổng kết tháng và chi tiết các lượt quẹt; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-006` | Giao diện REST tra cứu danh mục nhân sự qua `GET /api/v1/admin/employees`. | REST | Must | `SRS-003`, `ARC-003` | Phân trang danh sách nhân sự và trạng thái sinh trắc; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-007` | Kênh WebSocket STOMP nhận điểm danh trực tiếp qua topic `/topic/live-attendance`. | WebSocket | Must | `SRS-003`, `ARC-003` | Nhận event và chèn dòng lên đầu Live Table tức thời. | Approved |
+| `API-WEB-008` | Kênh WebSocket STOMP nhận thông báo kích hoạt qua topic `/topic/enrollment/{otp}`. | WebSocket | Must | `SRS-001`, `ARC-003` | Tự đóng modal OTP và chuyển trạng thái ACTIVE khi quét xong tại Kiosk. | Approved |
+
+---
+
+## 2. Danh mục Giao diện REST Tiêu thụ (Consumed REST Interfaces)
 
 Toàn bộ các yêu cầu HTTP gửi từ Web Portal lên Backend đều tuân thủ:
 * Base URL: `http://localhost:8080/api/v1` (Môi trường Dev) hoặc URL cấu hình qua biến môi trường `VITE_API_BASE_URL`.
@@ -27,7 +42,7 @@ Toàn bộ các yêu cầu HTTP gửi từ Web Portal lên Backend đều tuân 
 
 ---
 
-## 2. Danh mục Kênh WebSocket STOMP Đăng ký (Subscribed STOMP Topics)
+## 3. Danh mục Kênh WebSocket STOMP Đăng ký (Subscribed STOMP Topics)
 
 * **Điểm cuối Bắt tay (Handshake Endpoint)**: `ws://localhost:8080/ws-attendance` (kèm SockJS fallback).
 * **Header Bắt tay STOMP**: `Authorization: Bearer <accessToken>`.
@@ -39,7 +54,7 @@ Toàn bộ các yêu cầu HTTP gửi từ Web Portal lên Backend đều tuân 
 
 ---
 
-## 3. Đặc tả Tham số & Biên Dữ liệu (Interface Input/Output Specifications)
+## 4. Đặc tả Tham số & Biên Dữ liệu (Interface Input/Output Specifications)
 
 ### 3.1. `API-WEB-001` — `POST /api/v1/auth/login`
 * **Payload đầu vào (Request)**:

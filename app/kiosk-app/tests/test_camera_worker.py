@@ -1,8 +1,8 @@
 """Bộ ca kiểm thử tự động cho CameraWorker QThread.
 
 Tài liệu tham chiếu:
-- FR-NFR TEST PLAN: TST-KSK-001, TST-KSK-009 (docs/service-docs/kiosk-app/core/fr-nfr-test-plan.md)
-- FR-NFR SPECS: FR-KSK-001, NFR-KSK-002, NFR-KSK-005 (docs/service-docs/kiosk-app/core/fr-nfr-specs.md)
+- FR-NFR TEST PLAN: TST-KSK-001, TST-KSK-009 (docs/service-docs/kiosk-app/fr-nfr/fr-nfr-test-plan.md)
+- FR-NFR SPECS: FR-KSK-001, NFR-KSK-002, NFR-KSK-005 (docs/service-docs/kiosk-app/fr-nfr/fr-nfr-specs.md)
 """
 
 from unittest.mock import MagicMock, patch

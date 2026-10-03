@@ -74,13 +74,13 @@ graph TD
 
 ## 3. Thiết kế Chi tiết Các Thành phần Giao diện Trọng yếu
 
-| ID Thành phần | Tên Thành phần | Đặc tả Bố cục & Hành vi Trực quan | Realizes |
-| :--- | :--- | :--- | :---: |
-| `UXD-WEB-001` | Khung Bố cục Quản trị (Admin Shell) | Cấu trúc Sidebar 260px + TopHeader 64px + Content responsive; hỗ trợ thu gọn sidebar mượt mà với chuyển động CSS $200\text{ ms}$. | `UI-WEB-001` |
-| `UXD-WEB-002` | Hộp thoại Cam kết & Hiển thị OTP | Modal chia 2 giai đoạn: Giai đoạn 1 khóa nút Submit đến khi cuộn hết văn bản; Giai đoạn 2 hiển thị mã OTP 6 số font $48\text{ px}$ + mã QR $200\times 200\text{ px}$ + tự động kích hoạt Confetti khi nhận STOMP event. | `UI-WEB-002` |
-| `UXD-WEB-003` | Lưới 4 Thẻ Chỉ số KPI | Hàng 4 thẻ card bo góc $12\text{ px}$, chứa icon chuyên biệt, con số font $32\text{ px}$ bold và tỷ lệ phần trăm thay đổi so với hôm trước. | `UI-WEB-003` |
-| `UXD-WEB-004` | Bảng Dữ liệu Trực tiếp (Live Table) | Bảng chấm công thời gian thực với tiêu đề dính (Sticky Header). Dòng mới chèn vào đầu bảng tự động kích hoạt hiệu ứng chớp sáng nền xanh ngọc (`emerald-50`) trong $1.5\text{ s}$. | `UI-WEB-003` |
-| `UXD-WEB-005` | Khung Lịch biểu Cá nhân (Calendar Grid) | Lưới 7 cột theo các thứ trong tuần; mỗi ô ngày hiển thị giờ vào/ra và huy hiệu màu tương ứng; nhấp chuột để mở Drawer chi tiết bên phải. | `UI-WEB-005` |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `UXD-WEB-001` | Admin Shell Layout | Cấu trúc Sidebar 260px (thu gọn 72px) + TopHeader 64px + Content responsive; hỗ trợ thu gọn sidebar mượt mà với chuyển động CSS 200ms. | `UI-WEB-001` | `ARC-003` | `DD-SYS-003` | Accepted |
+| `UXD-WEB-002` | Hộp thoại Cam kết & Hiển thị OTP | Modal chia 2 giai đoạn: Giai đoạn 1 khóa nút Submit đến khi cuộn hết văn bản; Giai đoạn 2 hiển thị mã OTP 6 số font 48px + mã QR 200x200px + tự động đóng khi nhận STOMP event. | `UI-WEB-002` | `ARC-003` | `DD-SYS-003` | Accepted |
+| `UXD-WEB-003` | Lưới 4 Thẻ Chỉ số KPI | Hàng 4 thẻ card bo góc 12px, chứa icon chuyên biệt, con số font 32px bold và tỷ lệ phần trăm thay đổi so với hôm trước. | `UI-WEB-003` | `ARC-003` | `DD-SYS-004` | Accepted |
+| `UXD-WEB-004` | Bảng Dữ liệu Trực tiếp (Live Table) | Bảng chấm công thời gian thực với tiêu đề dính (Sticky Header). Dòng mới chèn vào đầu bảng tự động kích hoạt hiệu ứng chớp sáng nền xanh ngọc (`emerald-50`) trong 1.5s. | `UI-WEB-003` | `ARC-003` | `DD-SYS-004` | Accepted |
+| `UXD-WEB-005` | Khung Lịch biểu Cá nhân (Calendar Grid) | Lưới 7 cột theo các thứ trong tuần; mỗi ô ngày hiển thị giờ vào/ra và huy hiệu màu tương ứng; nhấp chuột để mở Drawer chi tiết bên phải. | `UI-WEB-005` | `ARC-003` | `DD-SYS-003` | Accepted |
 
 ---
 

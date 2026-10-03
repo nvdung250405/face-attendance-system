@@ -49,11 +49,11 @@ graph TD
     StompClient -->|Dispatch Event| Hooks
 ```
 
-| ID Thành phần | Lớp Kỹ thuật | Trách nhiệm Kiến trúc | Công nghệ Sử dụng | Giao diện Thực thi |
-| :--- | :--- | :--- | :--- | :---: |
-| `APD-WEB-001` | `ApiClient` | Đóng gói thư viện `axios` với baseURL `VITE_API_BASE_URL`, timeout $10.0\text{ s}$; cấu hình bộ chặn Request Interceptor tự động gán Bearer Token. | `axios` | `API-WEB-001` đến `API-WEB-006` |
-| `APD-WEB-002` | `TokenRefreshInterceptor` | Bộ chặn Response Interceptor bắt mã HTTP 401, tạm hoãn các request song song vào một hàng đợi (Promise Queue), thực hiện gọi `POST /auth/refresh` bằng Refresh Token; sau khi có token mới thì giải phóng hàng đợi và thử lại toàn bộ requests thất bại. | `axios.interceptors` | `API-WEB-002` |
-| `APD-WEB-003` | `StompWebSocketService` | Quản lý kết nối STOMP over WebSocket (với SockJS fallback) tới `/ws-attendance`, tự động kết nối lại khi mất mạng (Exponential Backoff); cung cấp các hàm subscribe/unsubscribe an toàn theo vòng đời component. | `@stomp/stompjs`, `sockjs-client` | `API-WEB-007`, `API-WEB-008` |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APD-WEB-001` | ApiClient | Đóng gói thư viện `axios` với baseURL `VITE_API_BASE_URL`, timeout $10.0\text{ s}$; cấu hình bộ chặn Request Interceptor tự động gán Bearer Token. | `API-WEB-001` đến `API-WEB-006` | `ARC-003` | `DD-SYS-001` | Accepted |
+| `APD-WEB-002` | TokenRefreshInterceptor | Bộ chặn Response Interceptor bắt mã HTTP 401, tạm hoãn các request song song vào Promise Queue, gọi `POST /auth/refresh` bằng Refresh Token; sau khi có token mới giải phóng hàng đợi và retry requests. | `API-WEB-002` | `ARC-003` | `DD-SYS-001` | Accepted |
+| `APD-WEB-003` | StompWebSocketService | Quản lý kết nối STOMP over WebSocket (SockJS fallback) tới `/ws-attendance`, tự động kết nối lại khi mất mạng (Exponential Backoff); cung cấp các hàm subscribe/unsubscribe an toàn. | `API-WEB-007`, `API-WEB-008` | `ARC-003` | `DD-SYS-004` | Accepted |
 
 ---
 

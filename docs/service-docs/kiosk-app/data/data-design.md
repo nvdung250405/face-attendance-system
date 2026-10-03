@@ -8,9 +8,20 @@ owner: Edge Vision Lead & System Architect
 # DATA DESIGN — Thiết kế Dữ liệu Cục bộ Phân hệ Kiosk
 
 
-## 1. Local Database Schema & Performance Tuning (`kiosk_local.db`)
+## 1. Local Data Design Elements & Architecture (Thành phần Thiết kế Dữ liệu Biên)
 
-CSDL SQLite cục bộ được sử dụng làm hàng đợi bền vững bảo đảm dữ liệu điểm danh không bị thất thoát ($\text{RPO} = 0$) khi mất mạng hoặc cúp điện đột ngột.
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DTD-KSK-001` | SQLite Offline Queue Schema & WAL PRAGMA Tuning | Thiết kế bảng `offline_punches` và chỉ mục B-tree trên SQLite cục bộ, kích hoạt WAL mode và busy_timeout 5000ms. | `STK-005` | `DATA-KSK-001`, `DATA-KSK-006` | `DD-SYS-005` | Accepted |
+| `DTD-KSK-002` | In-Memory NumPy Gallery Matrix Architecture | Thiết kế lớp `FaceGalleryManager` lưu trữ ma trận $N \times 512$ `float32`, nhân ma trận Cosine Similarity dưới 2ms cho 1,000 nhân sự. | `STK-004` | `DATA-KSK-002` | `DD-SYS-006` | Accepted |
+| `DTD-KSK-003` | Local Edge Cooldown Cache Architecture | Thiết kế bộ đệm RAM `LocalCooldownCache` lưu mốc thời gian chấm công gần nhất, áp dụng cửa sổ 120s và tự động dọn dẹp sau 300s. | `STK-001` | `DATA-KSK-003` | `DD-SYS-002` | Accepted |
+| `DTD-KSK-004` | Zero-Disk Image Memory Pipeline | Cơ chế cô lập khung hình camera và ảnh crop trong bộ nhớ RAM, giải phóng tức thì sau chu kỳ suy luận (< 350ms). | `STK-002` | `DATA-KSK-005` | `DD-SYS-003` | Accepted |
+
+---
+
+## 2. Local Database Schema & Performance Tuning (`kiosk_local.db`)
+
+CSDL SQLite cục bộ được sử dụng làm hàng đợi bền vững bảo đảm dữ liệu điểm danh không bị thất thoát ($\text{RPO} = 0$) khi mất mạng hoặc cúp điện đột ngột:
 
 ### 1.1. DDL Script Tạo Bảng & Chỉ mục
 ```sql

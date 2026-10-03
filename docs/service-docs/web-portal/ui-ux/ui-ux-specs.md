@@ -8,7 +8,19 @@ owner: Product Designer & UI/UX Specialist
 # UI/UX SPECS — Đặc tả Giao diện & Trải nghiệm Phân hệ Web Portal
 
 
-## 1. Hành trình Người dùng & Nhiệm vụ Trực quan (User Tasks & Journeys)
+## 1. Specification Schema (Đặc tả Yêu cầu Giao diện & Trải nghiệm Web)
+
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| `UI-WEB-001` | Giao diện đăng nhập và điều hướng phân quyền theo Role (`HR_MANAGER`, `EMPLOYEE`, `ADMIN`). | Auth / Routing | Must | `SRS-003`, `ARC-003` | Điều hướng chuẩn xác theo vai trò; hiển thị spinner nạp dữ liệu trên nút đăng nhập. | Approved |
+| `UI-WEB-002` | Quy trình ký cam kết điện tử Informed Consent và hiển thị mã OTP 6 số kích hoạt kèm QR Code. | Consent / OTP | Must | `SRS-001`, `SRS-003` | Khóa backdrop; cuộn hết văn bản mới cho ký; tự đóng modal khi quét mặt thành công tại Kiosk. | Approved |
+| `UI-WEB-003` | Bảng điều khiển giám sát chấm công trực tiếp cho HR nhận dữ liệu qua STOMP WebSocket. | Dashboard / Live | Must | `SRS-003`, `ARC-003` | Thẻ KPI tự nhảy số; hàng mới chèn lên đầu bảng có hiệu ứng đổi màu nổi bật trong 1.5s. | Approved |
+| `UI-WEB-004` | Tra cứu lịch sử điểm danh đa tiêu chí và hỗ trợ kết xuất báo cáo Excel (.xlsx) / PDF. | History / Report | Should | `SRS-003` | Bộ lọc đa chiều; phân trang mượt mà; xuất file chuẩn định dạng và màu sắc. | Approved |
+| `UI-WEB-005` | Bảng công và lịch chấm công cá nhân theo tháng cho nhân viên. | Employee Portal | Should | `SRS-003` | Giao diện lịch trực quan; tô màu theo trạng thái; nhấp chuột xem Drawer chi tiết ngày tức thời. | Approved |
+
+---
+
+## 2. Hành trình Người dùng & Nhiệm vụ Trực quan (User Tasks & Journeys)
 
 ### `UI-WEB-001` — Đăng nhập & Điều hướng Phân quyền (Authentication & Role Guard)
 * **Đối tượng**: Cán bộ nhân viên (`EMPLOYEE`), Quản lý Nhân sự (`HR_MANAGER`), Quản trị viên (`ADMIN`).

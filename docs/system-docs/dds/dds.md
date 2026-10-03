@@ -15,12 +15,12 @@ Thiết kế kiến trúc kỹ thuật toàn diện, cấu trúc phân tầng (`
 
 ### 1.1. Cấu trúc Phân tầng (3-Tier Distributed Architecture)
 
-| ID | Tên Khối Kiến trúc | Định nghĩa & Trách nhiệm Hệ thống | Công nghệ / Nền tảng (Uses) | Hiện thực hóa Yêu cầu (Realizes) | Quyết định Chi phối (Decisions) | Trạng thái |
-| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
-| `ARC-SYS-001` | Tầng Biên: Trạm Kiosk Desktop (`kiosk-app`) | Thu nhận luồng camera video, thực thi pipeline AI cục bộ, so khớp ma trận RAM, bàn phím số PIN và hàng đợi ngoại tuyến SQLite WAL. | `STK-001`, `STK-002`, `STK-003`, `STK-004`, `STK-008`, `STK-009` | `FR-SYS-001`, `FR-SYS-002`, `FR-SYS-003`, `FR-SYS-004`, `FR-SYS-006` | `DD-SYS-001`, `DD-SYS-002` | Approved |
-| `ARC-SYS-002` | Tầng Trung tâm: Dịch vụ Máy chủ (`backend-service`) | Quản lý ca kíp, tính toán giờ công, bộ đệm Cooldown 120s, mã hóa AES-256-GCM, phát sóng STOMP và cron job tiêu hủy sau 20 ngày. | `STK-010`, `STK-011`, `STK-012`, `STK-013`, `STK-014`, `STK-015` | `FR-SYS-005`, `FR-SYS-010`, `FR-SYS-011`, `FR-SYS-012`, `FR-SYS-013`, `FR-SYS-014` | `DD-SYS-003`, `DD-SYS-004` | Approved |
-| `ARC-SYS-003` | Tầng Trình diễn: Cổng Web Quản trị (`web-portal`) | Giao diện Live Monitoring Dashboard thời gian thực, quản lý nhân viên, phân ca, phê duyệt giải trình, ký Consent và xuất báo cáo an toàn. | `STK-016`, `STK-017`, `STK-018`, `STK-019` | `FR-SYS-007`, `FR-SYS-008`, `FR-SYS-015`, `FR-SYS-016` | `DD-SYS-004` | Approved |
-| `ARC-SYS-004` | Tầng Dữ liệu Bền vững (PostgreSQL Enterprise DB) | Quản lý bền vững toàn bộ dữ liệu quan hệ ACID chuẩn 3NF: nhân sự, ca kíp, bảng công và vector mã hóa BYTEA. | `STK-012` | `DATA-SYS-001` đến `DATA-SYS-008` | `DD-SYS-003` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `ARC-001` | Tầng Biên: Trạm Kiosk Desktop (`kiosk-app`) | Thu nhận luồng camera video, thực thi pipeline AI cục bộ, so khớp ma trận RAM, bàn phím số PIN và hàng đợi ngoại tuyến SQLite WAL. | `STK-001`, `STK-002`, `STK-003`, `STK-004`, `STK-008`, `STK-009` | `FR-SYS-001`, `FR-SYS-002`, `FR-SYS-003`, `FR-SYS-004`, `FR-SYS-006` | `DD-SYS-001`, `DD-SYS-002` | Accepted |
+| `ARC-002` | Tầng Trung tâm: Dịch vụ Máy chủ (`backend-service`) | Quản lý ca kíp, tính toán giờ công, bộ đệm Cooldown 120s, mã hóa AES-256-GCM, phát sóng STOMP và cron job tiêu hủy sau 20 ngày. | `STK-010`, `STK-011`, `STK-012`, `STK-013`, `STK-014`, `STK-015` | `FR-SYS-005`, `FR-SYS-010`, `FR-SYS-011`, `FR-SYS-012`, `FR-SYS-013`, `FR-SYS-014` | `DD-SYS-003`, `DD-SYS-004` | Accepted |
+| `ARC-003` | Tầng Trình diễn: Cổng Web Quản trị (`web-portal`) | Giao diện Live Monitoring Dashboard thời gian thực, quản lý nhân viên, phân ca, phê duyệt giải trình, ký Consent và xuất báo cáo an toàn. | `STK-016`, `STK-017`, `STK-018`, `STK-019` | `FR-SYS-007`, `FR-SYS-008`, `FR-SYS-015`, `FR-SYS-016` | `DD-SYS-004` | Accepted |
+| `ARC-004` | Tầng Dữ liệu Bền vững (PostgreSQL Enterprise DB) | Quản lý bền vững toàn bộ dữ liệu quan hệ ACID chuẩn 3NF: nhân sự, ca kíp, bảng công và vector mã hóa BYTEA. | `STK-012` | `DATA-SYS-001`, `DATA-SYS-002`, `DATA-SYS-003`, `DATA-SYS-004`, `DATA-SYS-005`, `DATA-SYS-006`, `DATA-SYS-007`, `DATA-SYS-008` | `DD-SYS-003` | Accepted |
 
 ### 1.2. Topology Triển khai Hệ thống
 
@@ -90,9 +90,9 @@ flowchart TB
 
 ## 3. System Design Decisions (Quyết định Thiết kế Cấp Hệ thống)
 
-| ID | Quyết định Thiết kế (System Decision) | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: |
-| `DD-SYS-001` | Thực thi suy luận AI hoàn toàn tại biên trên CPU với tập lệnh AVX2, không phụ thuộc GPU. | Đạt độ trễ $\le 350\text{ ms}$, tiết kiệm 95% băng thông mạng và giảm chi phí đầu tư thiết bị của doanh nghiệp xuống 0 VNĐ. | `PD-002`, `INF-006` | Approved |
-| `DD-SYS-002` | Áp dụng cơ chế lưu trữ cục bộ SQLite chế độ Write-Ahead Logging (WAL) tại trạm Kiosk. | Đảm bảo tính bền vững dữ liệu khi mất điện đột ngột ($\text{RPO} = 0$), hỗ trợ đọc và ghi đồng thời non-blocking. | `PD-004`, `INF-011` | Approved |
-| `DD-SYS-003` | Mã hóa đối xứng AES-256-GCM ở trạng thái tĩnh cho toàn bộ vector mẫu với Master Key độc lập trong biến môi trường. | Đáp ứng tuyệt đối quy chuẩn pháp lý bắt buộc của Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15 của Việt Nam. | `PD-005`, `INF-009` | Approved |
-| `DD-SYS-004` | Sử dụng giao thức WebSocket STOMP làm kênh truyền thông đẩy thời gian thực hai chiều giữa Backend, Web và Kiosk. | Thay thế hoàn toàn HTTP Polling định kỳ, giảm tải CPU máy chủ và giảm độ trễ hiển thị Dashboard xuống dưới 200 ms. | `PD-006`, `INF-003` | Approved |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `DD-SYS-001` | Suy luận AI tại biên trên CPU (AVX2) | Thực thi suy luận AI hoàn toàn tại biên trên CPU với tập lệnh AVX2, không phụ thuộc GPU, đạt độ trễ $\le 350\text{ ms}$, tiết kiệm 95% băng thông mạng. | `STK-004`, `STK-008` | `PD-002`, `INF-006` | - | Accepted |
+| `DD-SYS-002` | Lưu trữ cục bộ SQLite WAL tại Kiosk | Áp dụng cơ chế lưu trữ cục bộ SQLite chế độ Write-Ahead Logging (WAL) tại trạm Kiosk đảm bảo $\text{RPO} = 0$ khi mất điện đột ngột và non-blocking read/write. | `STK-009` | `PD-004`, `INF-011` | - | Accepted |
+| `DD-SYS-003` | Mã hóa đối xứng AES-256-GCM dữ liệu tĩnh | Mã hóa đối xứng AES-256-GCM ở trạng thái tĩnh cho toàn bộ vector mẫu 512D với Master Key độc lập trong biến môi trường theo Luật 2025. | `STK-015` | `PD-005`, `INF-009` | - | Accepted |
+| `DD-SYS-004` | Kênh truyền thông thời gian thực WebSocket STOMP | Sử dụng giao thức WebSocket STOMP làm kênh truyền thông đẩy thời gian thực hai chiều giữa Backend, Web Portal và Kiosk. | `STK-014` | `PD-006`, `INF-003` | - | Accepted |

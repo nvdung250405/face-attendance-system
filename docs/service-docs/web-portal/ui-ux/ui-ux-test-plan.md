@@ -21,19 +21,19 @@ owner: Product Designer & QA Lead
 
 | ID | Quyết định Tiếp cận Kiểm thử Giao diện | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
 | :--- | :--- | :--- | :---: | :---: |
-| `APC-WEB-UX-01` | Kiểm thử đa thiết bị (Cross-device Testing) bằng Playwright Headless Browser. | Tự động chụp ảnh so sánh pixel (Visual Snapshot) trên các viewport: Mobile ($390\times 844$), Tablet ($820\times 1180$), Desktop ($1440\times 900$). | `STK-015`, `UI-WEB-001` | Approved |
-| `APC-WEB-UX-02` | Kiểm định tương tác Modal và khả năng tiếp cận (Accessibility - a11y testing). | Đảm bảo các modal có bẫy tiêu điểm (Focus Trap), hỗ trợ đóng bằng phím ESC và phím Tab hoạt động chuẩn mực. | `UXD-WEB-004`, `NFR-WEB-002` | Approved |
+| `APC-WEB-003` | Kiểm thử đa thiết bị (Cross-device Testing) bằng Playwright Headless Browser. | Tự động chụp ảnh so sánh pixel (Visual Snapshot) trên các viewport: Mobile ($390\times 844$), Tablet ($820\times 1180$), Desktop ($1440\times 900$). | `STK-015`, `UI-WEB-001` | Approved |
+| `APC-WEB-004` | Kiểm định tương tác Modal và khả năng tiếp cận (Accessibility - a11y testing). | Đảm bảo các modal có bẫy tiêu điểm (Focus Trap), hỗ trợ đóng bằng phím ESC và phím Tab hoạt động chuẩn mực. | `UXD-WEB-002`, `NFR-WEB-002` | Approved |
 
 ---
 
 ## 3. UI/UX Test Items (Danh mục Ca Kiểm thử Giao diện Web)
 
-| ID | Tên Ca Kiểm thử | Covers Spec | Mức độ Test | Tiêu chí Đạt (Pass Criteria) | Trạng thái |
-| :--- | :--- | :--- | :---: | :--- | :---: |
-| `TST-WEB-UX-001` | Kiểm thử Khung Bố cục Admin Shell Responsive | `UI-WEB-001`, `UXD-WEB-001` | Visual / GUI | Sidebar thu gọn/mở rộng mượt; trên Mobile chuyển thành Drawer menu trượt; nội dung không bị tràn ngang. | **Passed** |
-| `TST-WEB-UX-002` | Kiểm thử Live Dashboard Row Highlight & KPI | `UI-WEB-003`, `UXD-WEB-003` | Component / Animation| Bắn sự kiện điểm danh mới; hàng mới chớp sáng màu vàng trong 3s rồi hòa vào bảng; số KPI tăng tức thì. | **Passed** |
-| `TST-WEB-UX-003` | Kiểm thử Modal Ký Cam kết Informed Consent | `UI-WEB-002`, `UXD-WEB-004` | Journey / Flow | Nhân viên đọc điều khoản $\rightarrow$ Ký điện tử $\rightarrow$ Modal hiển thị OTP 6 số và mã QR; nút Copy hoạt động tốt. | **Passed** |
-| `TST-WEB-UX-004` | Kiểm thử Lịch Biểu Chấm công Cá nhân | `UI-WEB-004`, `UXD-WEB-005` | Component | Hiển thị dạng lưới tháng; các ô phân biệt rõ màu xanh (đúng giờ), vàng (đi muộn), xám (nghỉ lễ/phép). | **Passed** |
+| ID | Name | Covers | Level | Pass Criteria | Status |
+| :--- | :--- | :--- | :---: | | :---: |
+| `TST-WEB-005` | Kiểm thử Khung Bố cục Admin Shell Responsive | `UI-WEB-001`, `UXD-WEB-001` | Visual / GUI | Sidebar thu gọn/mở rộng mượt; trên Mobile chuyển thành Drawer menu trượt; nội dung không bị tràn ngang. | Done |
+| `TST-WEB-006` | Kiểm thử Live Dashboard Row Highlight & KPI | `UI-WEB-003`, `UXD-WEB-003`, `UXD-WEB-004` | Component / Animation | Bắn sự kiện điểm danh mới; hàng mới chớp sáng màu xanh ngọc trong 1.5s; số KPI tăng tức thì. | Done |
+| `TST-WEB-007` | Kiểm thử Modal Ký Cam kết Informed Consent | `UI-WEB-002`, `UXD-WEB-002` | Journey / Flow | Nhân viên đọc điều khoản $\rightarrow$ Ký điện tử $\rightarrow$ Modal hiển thị OTP 6 số và mã QR; nút Copy hoạt động tốt. | Done |
+| `TST-WEB-008` | Kiểm thử Lịch Biểu Chấm công Cá nhân | `UI-WEB-005`, `UXD-WEB-005` | Component | Hiển thị dạng lưới tháng; các ô phân biệt rõ màu xanh (đúng giờ), vàng (đi muộn), xám (nghỉ lễ/phép). | Done |
 
 ---
 

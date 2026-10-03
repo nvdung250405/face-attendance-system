@@ -21,19 +21,19 @@ owner: Web QA Lead
 
 | ID | Quyết định Tiếp cận Kiểm thử Dữ liệu Client | Lý do & Phân tích Đánh đổi (Rationale) | Nguồn tham chiếu (Basis) | Trạng thái |
 | :--- | :--- | :--- | :---: | :---: |
-| `APC-WEB-DAT-01` | Sử dụng Vitest kết hợp jsdom để kiểm thử tương tác Storage APIs. | Giả lập môi trường trình duyệt chuẩn, cho phép kiểm tra chi tiết các sự kiện StorageEvent và serialization. | `STK-015`, `DATA-WEB-001` | Approved |
-| `APC-WEB-DAT-02` | Kiểm thử biên (Edge Case Testing) khi LocalStorage bị khóa hoặc đầy dung lượng (QuotaExceededError). | Ngăn chặn hiện tượng ứng dụng bị crash khi người dùng mở web trong chế độ bảo mật nghiêm ngặt. | `DTD-WEB-001`, `NFR-WEB-001` | Approved |
+| `APC-WEB-001` | Sử dụng Vitest kết hợp jsdom để kiểm thử tương tác Storage APIs. | Giả lập môi trường trình duyệt chuẩn, cho phép kiểm tra chi tiết các sự kiện StorageEvent và serialization. | `STK-015`, `DATA-WEB-001` | Approved |
+| `APC-WEB-002` | Kiểm thử biên (Edge Case Testing) khi LocalStorage bị khóa hoặc đầy dung lượng (QuotaExceededError). | Ngăn chặn hiện tượng ứng dụng bị crash khi người dùng mở web trong chế độ bảo mật nghiêm ngặt. | `DTD-WEB-001`, `NFR-WEB-001` | Approved |
 
 ---
 
 ## 3. Data Test Items (Danh mục Ca Kiểm thử Dữ liệu Client)
 
-| ID | Tên Ca Kiểm thử | Covers Spec | Mức độ Test | Tiêu chí Đạt (Pass Criteria) | Trạng thái |
+| ID | Name | Covers | Level | Pass Criteria | Status |
 | :--- | :--- | :--- | :---: | :--- | :---: |
-| `TST-WEB-DAT-001` | Kiểm thử TypeScript Contracts & Validation | `DATA-WEB-001` đến `DATA-WEB-004` | Unit | Toàn bộ dữ liệu JSON từ API serialize/deserialize chính xác vào các interface TypeScript mà không mất trường. | **Passed** |
-| `TST-WEB-DAT-002` | Kiểm thử Safe Storage Adapter & Fallback RAM | `DTD-WEB-001` | Unit / Resiliency | Khi LocalStorage ném lỗi; adapter tự động chuyển sang lưu tạm trong RAM; không làm dừng luồng ứng dụng. | **Passed** |
-| `TST-WEB-DAT-003` | Kiểm thử Đồng bộ Trạng thái Phiên Đa Tab | `DTD-WEB-001` | Integration | Kích hoạt sự kiện logout trên Tab 1; Tab 2 tự động xóa token và chuyển hướng về màn hình đăng nhập. | **Passed** |
-| `TST-WEB-DAT-004` | Kiểm thử TanStack Query Realtime Injection | `DATA-WEB-004` | Integration / Cache | Nhận sự kiện WebSocket mới; hook tự động chèn bản ghi vào đầu danh sách cache mà không refetch toàn bộ API. | **Passed** |
+| `TST-WEB-001` | Kiểm thử TypeScript Contracts & Validation | `DATA-WEB-001`, `DATA-WEB-002`, `DATA-WEB-003`, `DATA-WEB-004` | Unit | Toàn bộ dữ liệu JSON từ API serialize/deserialize chính xác vào các interface TypeScript mà không mất trường. | Done |
+| `TST-WEB-002` | Kiểm thử Safe Storage Adapter & Fallback RAM | `DTD-WEB-001` | Unit / Resiliency | Khi LocalStorage ném lỗi; adapter tự động chuyển sang lưu tạm trong RAM; không làm dừng luồng ứng dụng. | Done |
+| `TST-WEB-003` | Kiểm thử Đồng bộ Trạng thái Phiên Đa Tab | `DTD-WEB-001`, `DTD-WEB-002` | Integration | Kích hoạt sự kiện logout trên Tab 1; Tab 2 tự động xóa token và chuyển hướng về màn hình đăng nhập. | Done |
+| `TST-WEB-004` | Kiểm thử TanStack Query Realtime Injection | `DATA-WEB-004` | Integration / Cache | Nhận sự kiện WebSocket mới; hook tự động chèn bản ghi vào đầu danh sách cache mà không refetch toàn bộ API. | Done |
 
 ---
 
