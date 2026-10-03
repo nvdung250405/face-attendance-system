@@ -1,0 +1,44 @@
+name: "Change Request (Yêu cầu Thay đổi Item Baselined)"
+description: "Đề xuất sửa đổi một item thuộc leaf đã Baselined theo sdlc-docs.md mục 14.3."
+title: "[CR-<ID>] <Tóm tắt yêu cầu thay đổi>"
+labels: ["change-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 🔄 Quy trình Thay đổi Item Đã Baselined
+        *Item thuộc leaf đã Baselined chỉ được phép sửa đổi thông qua Issue Change Request và phải được Code Owner chấp thuận.*
+
+  - type: input
+    id: target_item_id
+    attributes:
+      label: "Mã Item ID bị thay đổi"
+      description: "Nhập ID của item cần thay đổi (ví dụ: FR-SYS-001, DDS-SYS-002, SPEC-BKE-003)."
+      placeholder: "FR-SYS-001"
+    validations:
+      required: true
+
+  - type: textarea
+    id: change_reason
+    attributes:
+      label: "Lý do Yêu cầu Thay đổi"
+      description: "Tại sao cần thay đổi item này? Vấn đề thực tế hoặc yêu cầu nghiệp vụ mới là gì?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact_analysis
+    attributes:
+      label: "Phân tích Tác động (Impact Analysis)"
+      description: "Những downstream items nào sẽ bị ảnh hưởng (các item có Basis, Realizes, Covers, Uses trỏ vào ID này)?"
+      placeholder: "Ảnh hưởng tới DDS-..., BLD-..., TST-..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative_options
+    attributes:
+      label: "Phương án Thay thế Đã cân nhắc"
+      description: "Có những giải pháp nào khác được cân nhắc trước khi quyết định thay đổi item này không?"
+    validations:
+      required: false

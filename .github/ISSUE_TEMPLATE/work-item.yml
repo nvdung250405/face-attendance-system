@@ -1,0 +1,61 @@
+name: "Work Item (Thực thi Kế hoạch)"
+description: "Thực thi một work item được định nghĩa trong Plan (FND-, BLD-, TST-, DPL-)."
+title: "[<ID>] <Tóm tắt công việc>"
+labels: ["work-item"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 📋 Quy chuẩn Thực thi Work Item
+        *Issue là bản thực thi, không phải bản sao chép nội dung. Mọi đặc tả chi tiết nằm tại Plan tương ứng.*
+
+  - type: input
+    id: work_item_id
+    attributes:
+      label: "Mã Work Item ID"
+      description: "Nhập ID work item theo đúng scheme (ví dụ: BLD-BKE-001, TST-KSK-002, DPL-SYS-001, FND-SYS-001)."
+      placeholder: "BLD-BKE-001"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: "Phân hệ / Scope"
+      description: "Chọn phân hệ bị tác động."
+      options:
+        - "SYS (Toàn hệ thống)"
+        - "BKE (Backend Service)"
+        - "KSK (Kiosk Desktop App)"
+        - "WEB (Web Management Portal)"
+    validations:
+      required: true
+
+  - type: input
+    id: plan_reference
+    attributes:
+      label: "Đường dẫn tới tệp Plan sở hữu"
+      description: "Đường dẫn tới leaf Plan chứa work item này (ví dụ: docs/service-docs/backend-service/core/bp.md)."
+      placeholder: "docs/service-docs/backend-service/core/bp.md"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: definition_of_ready
+    attributes:
+      label: "Tiêu chí Sẵn sàng (Definition of Ready)"
+      description: "Xác nhận các điều kiện tiên quyết trước khi bắt đầu thực thi."
+      options:
+        - label: "Mọi work item trong `Depends on` đã chuyển sang trạng thái `Done`"
+          required: true
+        - label: "Thiết kế kiến trúc liên quan (`ARC-` / `DDS-`) đã được Approved"
+          required: true
+
+  - type: textarea
+    id: execution_notes
+    attributes:
+      label: "Ghi chú Thực thi & Phương án Tiếp cận"
+      description: "Nêu phương án kỹ thuật, tham chiếu tới tiêu chí nghiệm thu (Done when) của Plan (không sao chép toàn bộ nội dung)."
+      placeholder: "Thực hiện theo tiêu chuẩn APC-... Nghiệm thu khi đạt..."
+    validations:
+      required: false

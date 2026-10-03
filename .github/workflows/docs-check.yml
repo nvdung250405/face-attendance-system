@@ -1,0 +1,48 @@
+# Evidence: DPL-SYS-001
+# ==============================================================================
+# Workflow Kiểm tra Toàn vẹn Tài liệu SDLC (github-docs.md mục 10.3)
+# ==============================================================================
+
+name: Docs Check
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'docs/**'
+      - '.github/**'
+      - 'tools/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'docs/**'
+      - '.github/**'
+      - 'tools/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docs-check:
+    name: SDLC Documentation Validation (docs-check)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run SDLC Docs Integrity Check
+        run: python tools/docs-check/check_docs.py

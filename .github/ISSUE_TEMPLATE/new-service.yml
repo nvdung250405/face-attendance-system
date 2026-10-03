@@ -1,0 +1,47 @@
+name: "New Service / Unit (Thêm Phân hệ Mới)"
+description: "Quy trình đăng ký và khởi tạo phân hệ dịch vụ mới theo sdlc-docs.md mục 14.2."
+title: "[NEW-SERVICE] <Tên dịch vụ mới> (<SCOPE>)"
+labels: ["new-service"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 🚀 Khởi tạo Phân hệ Dịch vụ Mới
+        *Mọi phân hệ mới trong kiến trúc Monorepo phải có mã SCOPE duy nhất và được phê duyệt kiến trúc tổng thể.*
+
+  - type: input
+    id: scope_code
+    attributes:
+      label: "Mã Service Scope (3-4 ký tự in hoa)"
+      description: "Ví dụ: REP (Reporting Service), NOT (Notification Service)."
+      placeholder: "REP"
+    validations:
+      required: true
+
+  - type: input
+    id: service_name
+    attributes:
+      label: "Tên Phân hệ Dịch vụ Đầy đủ"
+      placeholder: "Dịch vụ Báo cáo & Thống kê Tự động"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: architectural_approval
+    attributes:
+      label: "Phê duyệt Kiến trúc Tổng thể"
+      options:
+        - label: "Quyết định kiến trúc (`ARC-SYS-...`) bổ sung phân hệ này đã được Approved trong System DDS"
+          required: true
+
+  - type: checkboxes
+    id: required_facets
+    attributes:
+      label: "Các Facet Tài liệu Cần Thiết lập"
+      description: "Facet `core` luôn bắt buộc; các facet còn lại chọn theo trách nhiệm kỹ thuật."
+      options:
+        - label: "`core/` (Bắt buộc: FSP, FR, NFR, BP, TP)"
+          required: true
+        - label: "`data/` (Nếu phân hệ quản lý CSDL / mô hình dữ liệu riêng)"
+        - label: "`api/` (Nếu phân hệ cung cấp giao diện REST / gRPC / WebSocket)"
+        - label: "`ui-ux/` (Nếu phân hệ có giao diện người dùng Desktop/Web/Mobile)"

@@ -1,36 +1,41 @@
-### 1. Tiêu đề Pull Request & Loại thay đổi
-*Quy chuẩn tiêu đề: `<type>(<scope>): <mô tả ngắn> [#<mã-FR/Issue>]`*
+## 1. Loại thay đổi
+- [ ] Tài liệu (`docs/`)
+- [ ] Hệ thống tài liệu (`.github/`, `tools/`)
+- [ ] Code sản phẩm
 
-Chọn loại thay đổi áp dụng:
-- [ ] `feat`: Bổ sung tính năng mới
-- [ ] `fix`: Sửa lỗi phát sinh
-- [ ] `docs`: Cập nhật tài liệu kỹ thuật / SDLC
-- [ ] `refactor`: Tái cấu trúc mã nguồn không đổi hành vi
-- [ ] `test`: Bổ sung hoặc cập nhật ca kiểm thử
-- [ ] `chore`: Cập nhật dependency, cấu hình môi trường, CI/CD
+## 2. ID liên quan
+<!-- 
+  - Tài liệu: ID item bị đổi (ví dụ FR-BKE-001, DDS-SYS-002).
+  - Code: work item (ví dụ BLD-BKE-001, TST-KSK-001, DPL-SYS-001).
+  - Hệ thống tài liệu: ghi "none". 
+-->
+ID: 
 
-### 2. Liên kết Issue / Ticket
-- Liên kết: Closes #... hoặc Refs #...
-- Yêu cầu chức năng tham chiếu: `FR-xx` (trong `docs/requirements/FR.md`)
+Closes #
 
-### 3. Phân hệ bị ảnh hưởng
-- [ ] `app/kiosk-app`
+## 3. Phân hệ bị ảnh hưởng
 - [ ] `app/backend-service`
+- [ ] `app/kiosk-app`
 - [ ] `app/web-portal`
 - [ ] `infrastructure` / `docker`
 - [ ] `docs`
 
-### 4. Tóm tắt nội dung thay đổi kỹ thuật
-- Tóm tắt 3-5 ý chính về các thay đổi trong PR này:
-  1. ...
-  2. ...
-  3. ...
+## 4. Tóm tắt nội dung thay đổi kỹ thuật
+- Tóm tắt các thay đổi cốt lõi trong PR:
+  1. 
+  2. 
 
-### 5. Tiêu chí Tự đánh giá Bắt buộc (Self-Review Checklist theo BP.md)
+## 5. Phân tích tác động (Impact Analysis - Áp dụng khi sửa tài liệu)
+- Item trỏ tới ID thay đổi (`Basis`, `Realizes`, `Covers`, `Uses`, `Requires`): 
+- Downstream đã đồng bộ cập nhật: 
+
+## 6. Tiêu chí Tự đánh giá & Tuân thủ SDLC (Definition of Done)
 *Vui lòng tích chọn toàn bộ các mục trước khi yêu cầu review hoặc merge:*
-- [ ] **Kiến trúc**: Mã nguồn tuân thủ đúng kiến trúc đã thiết kế trong `docs/design/DDS.md`.
-- [ ] **Bảo mật**: Tuyệt đối không có thông tin mật mã, khóa bảo mật tĩnh (hardcoded secrets) trong code.
-- [ ] **Kiểm thử**: Đã bổ sung Unit test cho các nhánh điều kiện chính và ngoại lệ.
-- [ ] **Bao phủ mã**: Tỷ lệ bao phủ kiểm thử (Coverage) của module nghiệp vụ đạt $\ge 80\%$.
-- [ ] **Chất lượng mã**: Kiểm tra linter không còn cảnh báo lỗi (0 error, 0 warning nghiêm trọng).
-- [ ] **Đồng bộ tài liệu (Code-Doc Sync)**: Đã cập nhật tài liệu SDLC tương ứng trong cùng PR nếu có thay đổi cấu trúc bảng CSDL, thêm/sửa Endpoint API hoặc thay đổi quy tắc chấm công.
+- [ ] **Quy chuẩn Tiêu đề**: Tiêu đề PR đúng định dạng `<type>(<SCOPE>): <subject> [<ID>]`.
+- [ ] **Single Source of Truth**: Sửa tại owner, không sao chép nội dung (`sdlc-docs.md` 11.1).
+- [ ] **Đồng bộ Code-Doc**: Tài liệu liên quan đã được cập nhật trong cùng PR; `Status` và `version` đã cập nhật.
+- [ ] **Change Request**: Nếu sửa item `Baselined`, đã tham chiếu Issue Change Request (#...).
+- [ ] **Plan Update**: Nếu hoàn thành work item, `Status` của work item đã chuyển thành `Done` trong Plan tương ứng.
+- [ ] **Bốn Phép thử**: Đạt 4 phép thử: *Correct* (đúng tên), *Complete* (đủ nội dung), *Abstract* (trừu tượng), *Reusable* (tái sử dụng).
+- [ ] **Bảo mật**: Tuyệt đối không có mật mã tĩnh (hardcoded secrets / keys) trong mã nguồn.
+- [ ] **Kiểm thử tự động**: Toàn bộ pipeline CI (`ci-passed`) và `docs-check` đã xanh.
