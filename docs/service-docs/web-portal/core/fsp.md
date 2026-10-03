@@ -1,13 +1,12 @@
+---
+title: Web Portal Foundation Setup Plan
+version: 1.0
+status: Approved
+owner: Web Lead & DevOps Engineer
+---
+
 # FSP — Kế hoạch Thiết lập Nền tảng Phân hệ Web Portal (Foundation Setup Plan)
 
-> **Mã tài liệu:** `FSP-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả các hạng mục thiết lập môi trường phát triển Node.js, chuỗi công cụ Vite/React và cấu hình nền tảng (`FND-WEB-`) cho Cổng Quản lý & Người dùng Web.
-
----
 
 ## 1. Mục tiêu & Phạm vi (Objectives & Scope)
 

@@ -1,13 +1,12 @@
+---
+title: Kiosk Local Data Design
+version: 2.0
+status: Approved
+owner: Edge Vision Lead & System Architect
+---
+
 # DATA DESIGN — Thiết kế Dữ liệu Cục bộ Phân hệ Kiosk
 
-> **Mã tài liệu:** `DES-DAT-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết lược đồ CSDL cục bộ SQLite WAL `kiosk_local.db`, cấu hình tối ưu I/O, cấu trúc quản lý ma trận bộ nhớ RAM NumPy an toàn đa luồng và thuật toán so khớp Cosine 1:N.
-
----
 
 ## 1. Local Database Schema & Performance Tuning (`kiosk_local.db`)
 

@@ -1,13 +1,12 @@
+---
+title: Kiosk API Build Plan
+version: 2.0
+status: Approved
+owner: Edge Vision Lead
+---
+
 # API BUILD PLAN — Kế hoạch Thi công Tầng Mạng Phân hệ Kiosk
 
-> **Mã tài liệu:** `PLN-ABL-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công giao tiếp mạng (`ABL-KSK-`) của phân hệ Kiosk Desktop.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công Tầng Mạng)
 

@@ -1,13 +1,12 @@
+---
+title: Kiosk FR/NFR Detailed Design
+version: 1.0
+status: Approved
+owner: Edge Vision Lead & System Architect
+---
+
 # FR/NFR DESIGN — Thiết kế Kỹ thuật Phân hệ Kiosk
 
-> **Mã tài liệu:** `DES-FR-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết các thành phần giải pháp kỹ thuật (`SOL-KSK-`), pipeline thị giác máy tính và cơ chế chịu lỗi tại biên của trạm Kiosk.
-
----
 
 ## 1. Solution Components & Architecture (Thành phần Kỹ thuật Kiosk)
 

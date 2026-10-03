@@ -1,14 +1,12 @@
+---
+title: Kiosk App Documentation Hub
+version: 2.0
+status: Approved
+owner: Kiosk Technical Lead & Edge Vision Engineer
+---
+
 # TÀI LIỆU CẤP DỊCH VỤ — PHÂN HỆ KIOSK DESKTOP (`kiosk-app`)
 
-> **Mã phân hệ:** `SVC-KSK`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved / Canonical  
-> **Hệ thống chủ quản:** [face-attendance-system](../../system-docs/dds/dds.md)  
-> **Định vị kiến trúc:** `ARC-SYS-001` (Trạm Điểm danh Cận biên — Edge Attendance Station)
-
----
 
 ## 1. Giới thiệu Phân hệ & Trách nhiệm Kỹ thuật
 
@@ -32,26 +30,29 @@ docs/service-docs/kiosk-app/
 ├── README.md                      # [Tài liệu hiện tại] Cẩm nang & Bản đồ định hướng phân hệ
 │
 ├── core/                          # [Bắt buộc] Khối nghiệp vụ cốt lõi & Thị giác máy tính
-│   ├── fsp.md                     # Thiết lập môi trường ảo, công cụ & trọng số ONNX
+│   ├── fsp.md                     # Thiết lập môi trường ảo, công cụ & trọng số ONNX (FND-KSK-)
 │   ├── fr-nfr-specs.md            # Yêu cầu chức năng (FR-KSK-) & phi chức năng (NFR-KSK-)
 │   ├── fr-nfr-design.md           # Thiết kế giải pháp thị giác biên & hàng đợi (SOL-KSK-)
 │   ├── fr-nfr-build-plan.md       # Kế hoạch thi công module cốt lõi (CBL-KSK-)
-│   └── test-plan.md               # Kế hoạch kiểm thử nội bộ phân hệ (TST-KSK-)
+│   └── fr-nfr-test-plan.md        # Kế hoạch kiểm thử thị giác và nghiệp vụ (TST-KSK-)
 │
 ├── data/                          # [Bước 1: DATA] Lưu trữ CSDL cục bộ & Ma trận bộ nhớ RAM
 │   ├── data-specs.md              # Đặc tả thực thể dữ liệu cục bộ & quy tắc đệm (DATA-KSK-)
 │   ├── data-design.md             # Thiết kế DDL SQLite WAL & ma trận RAM (DTD-KSK-)
-│   └── data-build-plan.md         # Kế hoạch thi công tầng lưu trữ biên (DBL-KSK-)
+│   ├── data-build-plan.md         # Kế hoạch thi công tầng lưu trữ biên (DBL-KSK-)
+│   └── data-test-plan.md          # Kế hoạch kiểm thử CSDL SQLite WAL & ma trận RAM (TST-KSK-)
 │
 ├── api/                           # [Bước 2: API] Giao tiếp REST API & WebSocket STOMP
 │   ├── api-specs.md               # Đặc tả các interface tiêu thụ & nhận sự kiện (API-KSK-)
 │   ├── api-design.md              # Thiết kế chi tiết từng trường request/response (APD-KSK-)
-│   └── api-build-plan.md          # Kế hoạch thi công tầng truyền thông (ABL-KSK-)
+│   ├── api-build-plan.md          # Kế hoạch thi công tầng truyền thông (ABL-KSK-)
+│   └── api-test-plan.md           # Kế hoạch kiểm thử giao tiếp mạng & đồng bộ ngoại tuyến (TST-KSK-)
 │
 └── ui-ux/                         # [Bước 3: UI/UX] Giao diện cảm ứng 9:16 & Thiết kế Figma
     ├── ui-ux-specs.md             # Đặc tả hành trình người dùng & trạng thái Oval (UI-KSK-)
     ├── ui-ux-design.md            # Thiết kế token màu sắc, bố cục & pixel vector Figma (UXD-KSK-)
-    └── ui-ux-build-plan.md        # Kế hoạch thi công giao diện QML (UBL-KSK-)
+    ├── ui-ux-build-plan.md        # Kế hoạch thi công giao diện QML (UBL-KSK-)
+    └── ui-ux-test-plan.md         # Kế hoạch kiểm thử giao diện & phản hồi chạm (TST-KSK-)
 ```
 
 ---
@@ -65,13 +66,16 @@ docs/service-docs/kiosk-app/
 | **Core** | [core/fr-nfr-specs.md](core/fr-nfr-specs.md) | `SVC-SPEC`| `FR-KSK-`, `NFR-KSK-` | `system-docs/srs/fr-nfr-specs.md` (`FR-SYS-001..006`) |
 | **Core** | [core/fr-nfr-design.md](core/fr-nfr-design.md) | `SVC-DES` | `SOL-KSK-` | `core/fr-nfr-specs.md`, `system-docs/dds/fr-nfr-design.md` |
 | **Core** | [core/fr-nfr-build-plan.md](core/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-KSK-` | `core/fr-nfr-design.md` (`SOL-KSK-001..008`) |
-| **Core** | [core/test-plan.md](core/test-plan.md) | `SVC-TST` | `TST-KSK-` | `core/fr-nfr-specs.md` (trực tiếp) |
+| **Core** | [core/fr-nfr-test-plan.md](core/fr-nfr-test-plan.md) | `SVC-TST` | `TST-KSK-` | `core/fr-nfr-specs.md` (trực tiếp) |
 | **Data** | [data/data-specs.md](data/data-specs.md) | `SVC-SPEC`| `DATA-KSK-` | `system-docs/srs/data-specs.md` (`DATA-SYS-001..003`) |
 | **Data** | [data/data-design.md](data/data-design.md) | `SVC-DES` | `DTD-KSK-` | `data/data-specs.md`, `system-docs/dds/data-design.md` |
 | **Data** | [data/data-build-plan.md](data/data-build-plan.md) | `SVC-BLD` | `DBL-KSK-` | `data/data-design.md` (`DTD-KSK-001..002`) |
+| **Data** | [data/data-test-plan.md](data/data-test-plan.md) | `SVC-TST` | `TST-KSK-` | `data/data-specs.md` (trực tiếp) |
 | **API** | [api/api-specs.md](api/api-specs.md) | `SVC-SPEC`| `API-KSK-` | `system-docs/srs/api-specs.md` (`API-SYS-001..003`) |
 | **API** | [api/api-design.md](api/api-design.md) | `SVC-DES` | `APD-KSK-` | `api/api-specs.md`, `system-docs/dds/api-design.md` |
 | **API** | [api/api-build-plan.md](api/api-build-plan.md) | `SVC-BLD` | `ABL-KSK-` | `api/api-design.md` (`APD-KSK-001..003`) |
+| **API** | [api/api-test-plan.md](api/api-test-plan.md) | `SVC-TST` | `TST-KSK-` | `api/api-specs.md` (trực tiếp) |
 | **UI/UX** | [ui-ux/ui-ux-specs.md](ui-ux/ui-ux-specs.md) | `SVC-SPEC`| `UI-KSK-` | `system-docs/srs/ui-ux-specs.md` (`UI-SYS-001..003`) |
 | **UI/UX** | [ui-ux/ui-ux-design.md](ui-ux/ui-ux-design.md) | `SVC-DES` | `UXD-KSK-` | `ui-ux/ui-ux-specs.md`, `system-docs/dds/ui-ux-design.md` |
 | **UI/UX** | [ui-ux/ui-ux-build-plan.md](ui-ux/ui-ux-build-plan.md) | `SVC-BLD` | `UBL-KSK-` | `ui-ux/ui-ux-design.md` (`UXD-KSK-001..005`) |
+| **UI/UX** | [ui-ux/ui-ux-test-plan.md](ui-ux/ui-ux-test-plan.md) | `SVC-TST` | `TST-KSK-` | `ui-ux/ui-ux-specs.md` (trực tiếp) |

@@ -1,13 +1,12 @@
+---
+title: Backend FR/NFR Detailed Design
+version: 1.0
+status: Approved
+owner: Backend Lead & Software Architect
+---
+
 # FR/NFR DESIGN — Thiết kế Kỹ thuật Phân hệ Backend
 
-> **Mã tài liệu:** `DES-FR-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết các thành phần giải pháp kỹ thuật (`SOL-BE-`), luồng xử lý điểm danh và cơ chế bảo vệ dữ liệu sinh trắc học của Backend.
-
----
 
 ## 1. Solution Components & Architecture (Thành phần Kỹ thuật Backend)
 

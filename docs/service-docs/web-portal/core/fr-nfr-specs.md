@@ -1,13 +1,12 @@
+---
+title: Web Portal FR/NFR Specifications
+version: 1.0
+status: Approved
+owner: Web Lead & Requirements Analyst
+---
+
 # FR/NFR SPECS — Đặc tả Yêu cầu Chức năng & Phi chức năng Phân hệ Web Portal
 
-> **Mã tài liệu:** `SPEC-FR-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục yêu cầu chức năng (`FR-WEB-`) và phi chức năng (`NFR-WEB-`) thuộc phạm vi trách nhiệm của Cổng Quản lý & Người dùng Web Portal.
-
----
 
 ## 1. Functional Requirements (Yêu cầu Chức năng Web Portal)
 

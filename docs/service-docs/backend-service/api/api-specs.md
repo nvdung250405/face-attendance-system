@@ -1,13 +1,12 @@
+---
+title: Backend API Specifications
+version: 2.0
+status: Approved
+owner: Backend Lead & API Architect
+---
+
 # API SPECS — Đặc tả Giao diện Truyền thông Phân hệ Backend
 
-> **Mã tài liệu:** `SPEC-API-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các interface REST API và kênh WebSocket STOMP mà máy chủ trung tâm Backend cung cấp cho Kiosk Desktop và Web Portal.
-
----
 
 ## 1. Provided REST Interfaces (Các Giao diện REST Cung cấp)
 

@@ -1,13 +1,12 @@
+---
+title: Backend Foundation Setup Plan
+version: 1.0
+status: Approved
+owner: Backend Lead & DevOps
+---
+
 # FSP — Kế hoạch Thiết lập Nền tảng Phân hệ Backend (Foundation Setup Plan)
 
-> **Mã tài liệu:** `FSP-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả các hạng mục thiết lập môi trường thực thi Java, chuỗi công cụ Maven và cấu hình nền tảng (`FND-BE-`) cho phân hệ Máy chủ Doanh nghiệp.
-
----
 
 ## 1. Mục tiêu & Phạm vi (Objectives & Scope)
 

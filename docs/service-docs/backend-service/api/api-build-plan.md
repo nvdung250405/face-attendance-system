@@ -1,13 +1,12 @@
+---
+title: Backend API Build Plan
+version: 1.0
+status: Approved
+owner: Backend Lead
+---
+
 # API BUILD PLAN — Kế hoạch Thi công Giao tiếp Mạng Phân hệ Backend
 
-> **Mã tài liệu:** `PLN-ABL-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công giao tiếp mạng (`ABL-BE-`) của phân hệ Backend.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công Tầng Giao tiếp)
 

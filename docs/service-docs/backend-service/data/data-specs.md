@@ -1,13 +1,12 @@
+---
+title: Backend Data Specifications
+version: 2.0
+status: Approved
+owner: Data Architect & Backend Lead
+---
+
 # DATA SPECS — Đặc tả Dữ liệu Trung tâm Phân hệ Backend
 
-> **Mã tài liệu:** `SPEC-DAT-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục thực thể dữ liệu quan hệ (`DATA-BE-`), định dạng trường chi tiết, giá trị chuẩn hóa (Enums), quy tắc toàn vẹn và yêu cầu bảo vệ vòng đời dữ liệu của máy chủ Backend.
-
----
 
 ## 1. Central Data Entities & Attributes (Thực thể Dữ liệu & Thuộc tính Chi tiết)
 

@@ -1,13 +1,12 @@
+---
+title: Web Portal Core Build Plan
+version: 1.0
+status: Approved
+owner: Web Lead
+---
+
 # FR/NFR BUILD PLAN — Kế hoạch Thi công Cốt lõi Phân hệ Web Portal
 
-> **Mã tài liệu:** `PLN-BLD-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công chức năng cốt lõi (`CBL-WEB-`) của Cổng Web Portal.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công Web Cốt lõi)
 

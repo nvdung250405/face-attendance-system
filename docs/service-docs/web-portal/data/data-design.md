@@ -1,13 +1,12 @@
+---
+title: Web Portal Client Data Design
+version: 2.0
+status: Approved
+owner: Web Lead & Frontend Architect
+---
+
 # DATA DESIGN — Thiết kế Lược đồ Trạng thái & Lưu trữ Client Web Portal
 
-> **Mã tài liệu:** `DES-DATA-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết lược đồ dữ liệu TypeScript, cơ chế đồng bộ LocalStorage/SessionStorage đa tab và kiến trúc bộ nhớ đệm TanStack Query của Cổng Web Portal.
-
----
 
 ## 1. Mô hình Kiểu Dữ liệu Client (TypeScript Data Contracts)
 

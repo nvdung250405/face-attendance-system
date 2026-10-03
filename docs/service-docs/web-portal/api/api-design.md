@@ -1,13 +1,12 @@
+---
+title: Web Portal API Detailed Design
+version: 2.0
+status: Approved
+owner: Web Lead & Frontend Architect
+---
+
 # API DESIGN — Thiết kế Giao diện Truyền thông Phân hệ Web Portal
 
-> **Mã tài liệu:** `DES-API-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết kiến trúc Axios Client, bộ chặn tự động làm mới Token chống Race Condition và dịch vụ WebSocket STOMP nhận thông điệp thời gian thực cho Cổng Web Portal.
-
----
 
 ## 1. Kiến trúc Máy trạm Mạng Web Portal (Network Clients Architecture)
 

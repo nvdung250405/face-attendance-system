@@ -1,13 +1,12 @@
+---
+title: Web Portal UI/UX Specifications
+version: 2.0
+status: Approved
+owner: Product Designer & UI/UX Specialist
+---
+
 # UI/UX SPECS — Đặc tả Giao diện & Trải nghiệm Phân hệ Web Portal
 
-> **Mã tài liệu:** `SPEC-UI-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả hành trình người dùng (`UI-WEB-`), các tương tác giao diện và yêu cầu phản hồi thị giác trên Cổng Web Portal (Quản trị HR & Không gian Nhân viên).
-
----
 
 ## 1. Hành trình Người dùng & Nhiệm vụ Trực quan (User Tasks & Journeys)
 

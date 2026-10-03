@@ -1,13 +1,12 @@
+---
+title: Backend Data Design
+version: 2.0
+status: Approved
+owner: Database Architect & Backend Lead
+---
+
 # DATA DESIGN — Thiết kế Dữ liệu Trung tâm Phân hệ Backend
 
-> **Mã tài liệu:** `DES-DAT-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết lược đồ CSDL quan hệ PostgreSQL 16+, chỉ mục hiệu năng, kịch bản Flyway Migration, chiến lược bộ nhớ đệm Cooldown và cấu hình Connection Pool của Backend.
-
----
 
 ## 1. Relational Database Schema (PostgreSQL 16 DDL Script)
 

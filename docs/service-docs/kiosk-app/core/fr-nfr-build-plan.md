@@ -1,13 +1,12 @@
+---
+title: Kiosk Core Build Plan
+version: 1.0
+status: Approved
+owner: Edge Vision Lead
+---
+
 # FR/NFR BUILD PLAN — Kế hoạch Thi công Cốt lõi Phân hệ Kiosk
 
-> **Mã tài liệu:** `PLN-BLD-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công nghiệp vụ cốt lõi (`CBL-KSK-`) của phân hệ Kiosk Desktop.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công)
 

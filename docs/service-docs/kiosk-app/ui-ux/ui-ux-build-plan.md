@@ -1,13 +1,12 @@
+---
+title: Kiosk UI/UX Build Plan
+version: 2.0
+status: Approved
+owner: Edge Vision Lead & UI Engineer
+---
+
 # UI/UX BUILD PLAN — Kế hoạch Thi công Giao diện Phân hệ Kiosk
 
-> **Mã tài liệu:** `PLN-UBL-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công giao diện (`UBL-KSK-`) của phân hệ Kiosk Desktop.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công Giao diện)
 

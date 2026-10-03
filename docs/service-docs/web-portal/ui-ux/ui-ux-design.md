@@ -1,13 +1,12 @@
+---
+title: Web Portal UI/UX Detailed Design
+version: 2.0
+status: Approved
+owner: Product Designer & UI/UX Specialist
+---
+
 # UI/UX DESIGN — Thiết kế Chi tiết Giao diện Phân hệ Web Portal
 
-> **Mã tài liệu:** `DES-UI-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết hệ thống Design Tokens Tailwind CSS, bố cục cấu trúc Responsive, quy chuẩn linh kiện UI (Components) và các hộp thoại Modal cho Cổng Web Portal.
-
----
 
 ## 1. Hệ thống Design Tokens & Visual Language (Tailwind Tokens)
 

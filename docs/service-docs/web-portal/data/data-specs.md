@@ -1,13 +1,12 @@
+---
+title: Web Portal Client Data Specifications
+version: 2.0
+status: Approved
+owner: Web Lead & Frontend Architect
+---
+
 # DATA SPECS — Đặc tả Lưu trữ & Trạng thái Dữ liệu Cục bộ Web Portal
 
-> **Mã tài liệu:** `SPEC-DATA-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả các thực thể dữ liệu lưu trữ phía Client (LocalStorage, SessionStorage) và lược đồ bộ nhớ đệm trạng thái máy trạm (TanStack Query Cache).
-
----
 
 ## 1. Danh mục Thực thể Lưu trữ Phía Client (Client Storage Entities)
 

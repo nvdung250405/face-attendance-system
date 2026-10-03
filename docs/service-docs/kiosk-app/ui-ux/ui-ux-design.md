@@ -1,13 +1,12 @@
+---
+title: Kiosk UI/UX Detailed Design
+version: 2.0
+status: Approved
+owner: Product Designer & UI/UX Specialist
+---
+
 # UI/UX DESIGN — Thiết kế Chi tiết Giao diện Phân hệ Kiosk
 
-> **Mã tài liệu:** `DES-UI-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết hệ thống Design Tokens, tỷ lệ co giãn động (Proportional Scaling), cấu trúc layout và thông số pixel hình học vector trích xuất từ Figma cho trạm Kiosk Desktop.
-
----
 
 ## 1. Hệ thống Design Tokens & Định lượng Giao diện (Design Tokens)
 

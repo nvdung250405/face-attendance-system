@@ -1,13 +1,12 @@
+---
+title: Kiosk Local Data Specifications
+version: 2.0
+status: Approved
+owner: Edge Vision Lead & Data Engineer
+---
+
 # DATA SPECS — Đặc tả Dữ liệu Cục bộ Phân hệ Kiosk
 
-> **Mã tài liệu:** `SPEC-DAT-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả chi tiết các thực thể dữ liệu cục bộ (`DATA-KSK-`), cấu trúc ma trận bộ nhớ RAM, bộ đệm Cooldown biên và cấu hình máy trạm Kiosk Desktop.
-
----
 
 ## 1. Local Data Entities (Thực thể Dữ liệu Cục bộ & Bộ nhớ Biên)
 

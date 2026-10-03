@@ -1,13 +1,12 @@
+---
+title: Kiosk Local Data Build Plan
+version: 2.0
+status: Approved
+owner: Edge Vision Lead
+---
+
 # DATA BUILD PLAN — Kế hoạch Thi công Tầng Dữ liệu Cục bộ Kiosk
 
-> **Mã tài liệu:** `PLN-DBL-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công lưu trữ dữ liệu cục bộ (`DBL-KSK-`) của phân hệ Kiosk Desktop.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công Dữ liệu Cục bộ)
 

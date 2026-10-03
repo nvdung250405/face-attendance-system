@@ -1,13 +1,12 @@
+---
+title: Web Portal FR/NFR Detailed Design
+version: 1.0
+status: Approved
+owner: Web Lead & Frontend Architect
+---
+
 # FR/NFR DESIGN — Thiết kế Kỹ thuật Phân hệ Web Portal
 
-> **Mã tài liệu:** `DES-FR-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết kiến trúc SPA, quản lý trạng thái và các giải pháp kỹ thuật (`SOL-WEB-`) của Cổng Web Portal.
-
----
 
 ## 1. Solution Components & Architecture (Thành phần Kỹ thuật Web Portal)
 

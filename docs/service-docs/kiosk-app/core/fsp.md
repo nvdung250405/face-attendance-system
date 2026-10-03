@@ -1,13 +1,12 @@
+---
+title: Kiosk Foundation Setup Plan
+version: 1.0
+status: Approved
+owner: Edge Vision Lead & DevOps
+---
+
 # FSP — Kế hoạch Thiết lập Nền tảng Phân hệ Kiosk (Foundation Setup Plan)
 
-> **Mã tài liệu:** `FSP-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả các hạng mục thiết lập môi trường thực thi, chuỗi công cụ (toolchain) và cấu hình nền tảng (`FND-KSK-`) riêng biệt cho phân hệ Trạm Điểm danh Kiosk Desktop trước khi xây dựng mã nguồn.
-
----
 
 ## 1. Mục tiêu & Phạm vi (Objectives & Scope)
 

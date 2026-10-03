@@ -1,13 +1,12 @@
+---
+title: Kiosk API Detailed Design
+version: 2.0
+status: Approved
+owner: Edge Vision Lead & Network Engineer
+---
+
 # API DESIGN — Thiết kế Giao tiếp Mạng Phân hệ Kiosk
 
-> **Mã tài liệu:** `DES-API-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết kiến trúc Client giao tiếp mạng (`httpx`), hợp đồng dữ liệu từng trường, cơ chế chuyển tiếp ngoại tuyến (Offline Fallback) và luồng WebSocket STOMP Hot-Patching cho trạm Kiosk.
-
----
 
 ## 1. Kiến trúc Máy trạm Mạng Kiosk (Network Clients Architecture)
 

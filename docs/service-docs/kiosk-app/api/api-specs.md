@@ -1,13 +1,12 @@
+---
+title: Kiosk API Specifications
+version: 2.0
+status: Approved
+owner: Edge Vision Lead & Network Engineer
+---
+
 # API SPECS — Đặc tả Giao diện Truyền thông Phân hệ Kiosk
 
-> **Mã tài liệu:** `SPEC-API-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các giao diện mà trạm Kiosk tiêu thụ (Consumed Interfaces) từ Backend và kênh nhận dữ liệu đẩy thời gian thực WebSocket STOMP.
-
----
 
 ## 1. Danh mục Giao diện Tiêu thụ (Consumed Interfaces Summary)
 

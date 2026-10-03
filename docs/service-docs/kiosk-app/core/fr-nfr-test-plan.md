@@ -1,13 +1,11 @@
-# TEST PLAN — Kế hoạch Kiểm thử Nội bộ Phân hệ Kiosk
-
-> **Mã tài liệu:** `PLN-TST-KSK-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `kiosk-app`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục ca kiểm thử chức năng và phi chức năng nội bộ (`TST-KSK-`) của trạm Kiosk Desktop.
-
 ---
+title: Kiosk Core Test Plan
+version: 1.0
+status: Approved
+owner: Edge Vision QA Lead
+---
+
+# FR/NFR TEST PLAN — Kế hoạch Kiểm thử Nội bộ Phân hệ Kiosk
 
 ## 1. Approach & Frameworks (Công cụ & Phương pháp Kiểm thử)
 
@@ -17,7 +15,7 @@
 
 ---
 
-## 2. Kiosk Test Items (Danh mục Ca Kiểm thử Kiosk)
+## 2. Core Test Items (Danh mục Ca Kiểm thử Kiosk)
 
 | ID | Tên Ca Kiểm thử | Covers Spec | Mức độ Test | Tiêu chí Đạt (Pass Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :--- | :---: |

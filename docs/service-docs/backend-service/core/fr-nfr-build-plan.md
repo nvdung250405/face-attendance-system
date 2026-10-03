@@ -1,13 +1,12 @@
+---
+title: Backend Core Build Plan
+version: 1.0
+status: Approved
+owner: Backend Lead
+---
+
 # FR/NFR BUILD PLAN — Kế hoạch Thi công Cốt lõi Phân hệ Backend
 
-> **Mã tài liệu:** `PLN-BLD-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công nghiệp vụ cốt lõi (`CBL-BE-`) của máy chủ trung tâm Backend.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công Backend)
 

@@ -1,13 +1,11 @@
-# TEST PLAN — Kế hoạch Kiểm thử Nội bộ Phân hệ Web Portal
-
-> **Mã tài liệu:** `PLN-TST-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục ca kiểm thử chức năng và trải nghiệm nội bộ (`TST-WEB-`) của Cổng Web Portal.
-
 ---
+title: Web Portal Core Test Plan
+version: 1.0
+status: Approved
+owner: Web QA Lead
+---
+
+# FR/NFR TEST PLAN — Kế hoạch Kiểm thử Nội bộ Phân hệ Web Portal
 
 ## 1. Approach & Frameworks (Công cụ & Phương pháp Kiểm thử)
 
@@ -16,7 +14,7 @@
 
 ---
 
-## 2. Web Portal Test Items (Danh mục Ca Kiểm thử Web Portal)
+## 2. Core Test Items (Danh mục Ca Kiểm thử Web Portal)
 
 | ID | Tên Ca Kiểm thử | Covers Spec | Mức độ Test | Tiêu chí Đạt (Pass Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :--- | :---: |

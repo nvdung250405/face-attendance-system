@@ -1,13 +1,12 @@
+---
+title: Backend Data Build Plan
+version: 2.0
+status: Approved
+owner: Backend Lead
+---
+
 # DATA BUILD PLAN — Kế hoạch Thi công Tầng Dữ liệu Backend
 
-> **Mã tài liệu:** `PLN-DBL-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công cơ sở dữ liệu (`DBL-BE-`) của phân hệ Backend.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công CSDL)
 

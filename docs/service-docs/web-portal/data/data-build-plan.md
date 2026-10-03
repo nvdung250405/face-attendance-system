@@ -1,13 +1,12 @@
+---
+title: Web Portal Client Data Build Plan
+version: 2.0
+status: Approved
+owner: Web Lead
+---
+
 # DATA BUILD PLAN — Kế hoạch Thi công Tầng Dữ liệu Client Web Portal
 
-> **Mã tài liệu:** `PLN-DBL-WEB-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `web-portal`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục các hạng mục thi công tầng lưu trữ và quản lý trạng thái máy trạm (`DBL-WEB-`) của phân hệ Web Portal.
-
----
 
 ## 1. Approach & Sequencing (Chiến lược Thi công Dữ liệu Client)
 

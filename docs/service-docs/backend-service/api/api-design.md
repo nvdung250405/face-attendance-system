@@ -1,13 +1,12 @@
+---
+title: Backend API Detailed Design
+version: 2.0
+status: Approved
+owner: Backend Lead & API Architect
+---
+
 # API DESIGN — Thiết kế Chi tiết Giao diện & Hợp đồng API (API Contract Specification)
 
-> **Mã tài liệu:** `DES-API-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 2.0  
-> **Ngày hiệu lực:** 2026-10-03  
-> **Trạng thái:** Approved  
-> **Mục đích:** Thiết kế chi tiết từng trường dữ liệu (Field-by-field Data Contract), kiểu dữ liệu, ràng buộc validation, phản hồi thành công và mã lỗi cho toàn bộ REST API và WebSocket STOMP của Backend.
-
----
 
 ## 1. Quy chuẩn Chung Toàn bộ API (Global API Conventions)
 

@@ -1,13 +1,12 @@
+---
+title: Backend FR/NFR Specifications
+version: 1.0
+status: Approved
+owner: Backend Technical Lead & Requirements Analyst
+---
+
 # FR/NFR SPECS — Đặc tả Yêu cầu Chức năng & Phi chức năng Phân hệ Backend
 
-> **Mã tài liệu:** `SPEC-FR-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục yêu cầu chức năng (`FR-BE-`) và phi chức năng (`NFR-BE-`) thuộc phạm vi trách nhiệm của máy chủ trung tâm Backend.
-
----
 
 ## 1. Functional Requirements (Yêu cầu Chức năng Backend)
 

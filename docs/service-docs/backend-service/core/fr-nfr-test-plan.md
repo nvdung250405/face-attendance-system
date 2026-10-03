@@ -1,13 +1,11 @@
-# TEST PLAN — Kế hoạch Kiểm thử Nội bộ Phân hệ Backend
-
-> **Mã tài liệu:** `PLN-TST-BE-01`  
-> **Cấp độ:** Cấp Dịch vụ (Service-Level — `backend-service`)  
-> **Phiên bản:** 1.0  
-> **Ngày hiệu lực:** 2026-10-02  
-> **Trạng thái:** Approved  
-> **Mục đích:** Đặc tả danh mục ca kiểm thử chức năng và phi chức năng nội bộ (`TST-BE-`) của máy chủ trung tâm Backend.
-
 ---
+title: Backend Core Test Plan
+version: 1.0
+status: Approved
+owner: Backend QA Lead
+---
+
+# FR/NFR TEST PLAN — Kế hoạch Kiểm thử Nghiệp vụ Cốt lõi Backend
 
 ## 1. Approach & Frameworks (Công cụ & Phương pháp Kiểm thử)
 
@@ -16,7 +14,7 @@
 
 ---
 
-## 2. Backend Test Items (Danh mục Ca Kiểm thử Backend)
+## 2. Core Test Items (Danh mục Ca Kiểm thử Cốt lõi Backend)
 
 | ID | Tên Ca Kiểm thử | Covers Spec | Mức độ Test | Tiêu chí Đạt (Pass Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :--- | :---: |
