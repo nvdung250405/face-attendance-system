@@ -385,3 +385,37 @@ def test_kiosk_view_model_stability_resets_on_movement(qapp):
     assert "giữ thẳng mặt" in vm.message.lower()
 
 
+def test_nfr_ksk_001_full_pipeline_cycle_time(qapp):
+    """NFR-KSK-001: Tổng thời gian chu kỳ nhận diện trọn vòng đạt <= 350 ms."""
+    import time
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection()
+
+    liveness = MagicMock()
+    liveness.predict.return_value = 0.98
+
+    extractor = MagicMock()
+    extractor.align_face.return_value = np.zeros((112, 112, 3), dtype=np.uint8)
+    extractor.extract_vector.return_value = np.random.randn(512).astype(np.float32)
+
+    matcher = MagicMock()
+    matcher.match.return_value = (1001, 0.95)
+
+    vm = KioskViewModel(
+        detector=detector,
+        liveness_gate=liveness,
+        extractor=extractor,
+        gallery_matcher=matcher,
+        stability_threshold=1,
+    )
+    vm.setStandby(False)
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+
+    t0 = time.perf_counter()
+    vm.process_camera_frame(dummy_frame)
+    latency_ms = (time.perf_counter() - t0) * 1000.0
+
+    assert vm.ovalState == OvalState.SUCCESS
+    assert latency_ms < 350.0
+
+
