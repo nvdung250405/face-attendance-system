@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_department ON users(department);
-CREATE INDEX idx_users_terminated ON users(terminated_date) WHERE terminated_date IS NOT NULL;
+CREATE INDEX idx_users_terminated ON users(terminated_date);
 
 -- 2. Bảng ca làm việc
 CREATE TABLE IF NOT EXISTS shifts (
