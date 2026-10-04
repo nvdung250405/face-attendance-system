@@ -40,6 +40,7 @@ class YuNetFaceDetector:
         top_k: int = 5000,
         min_face_size: int = 120,
         max_angle_deg: float = 15.0,
+        input_size: tuple[int, int] = (320, 320),
     ) -> None:
         """Khởi tạo YuNetFaceDetector.
 
@@ -50,6 +51,7 @@ class YuNetFaceDetector:
             top_k: Số lượng khuôn mặt tối đa giữ lại trước NMS.
             min_face_size: Kích thước cạnh tối thiểu của bounding box (mặc định 120 px).
             max_angle_deg: Góc nghiêng tối đa cho phép của từng trục Euler (mặc định 15.0 độ).
+            input_size: Kích thước đầu vào chuẩn cho suy luận YuNet (mặc định 320x320 px).
         """
         self.model_path: Path = model_path or settings.yunet_model_path
         self.score_threshold: float = score_threshold
@@ -57,6 +59,7 @@ class YuNetFaceDetector:
         self.top_k: int = top_k
         self.min_face_size: int = min_face_size
         self.max_angle_deg: float = max_angle_deg
+        self.input_size: tuple[int, int] = input_size
 
         if not self.model_path.exists():
             raise FileNotFoundError(
@@ -64,8 +67,8 @@ class YuNetFaceDetector:
                 "Vui lòng chạy 'python scripts/download_models.py' để nạp mô hình."
             )
 
-        # Khởi tạo FaceDetectorYN với kích thước đầu vào tạm thời (320, 320)
-        self._current_input_size: tuple[int, int] = (320, 320)
+        # Khởi tạo FaceDetectorYN với kích thước đầu vào chuẩn (mặc định 320x320)
+        self._current_input_size: tuple[int, int] = self.input_size
         self._detector = cv2.FaceDetectorYN.create(
             model=str(self.model_path),
             config="",
@@ -77,8 +80,10 @@ class YuNetFaceDetector:
             target_id=cv2.dnn.DNN_TARGET_CPU,
         )
         logger.info(
-            "YuNetFaceDetector đã sẵn sàng [model=%s, min_size=%d, max_angle=%.1f°]",
+            "YuNetFaceDetector đã sẵn sàng [model=%s, input_size=%dx%d, min_size=%d, max_angle=%.1f°]",
             self.model_path.name,
+            self.input_size[0],
+            self.input_size[1],
             self.min_face_size,
             self.max_angle_deg,
         )
@@ -131,6 +136,10 @@ class YuNetFaceDetector:
     def detect(self, frame: np.ndarray) -> list[FaceDetectionResult]:
         """Thực hiện phát hiện khuôn mặt trên khung hình camera.
 
+        Khung hình được chuyển đổi về kích thước suy luận chuẩn (input_size) để đảm bảo
+        tốc độ thời gian thực (15-20ms), sau đó tọa độ bbox và landmarks được ánh xạ
+        ngược lại độ phân giải gốc của frame.
+
         Args:
             frame: Khung hình đầu vào (BGR numpy array).
 
@@ -141,14 +150,26 @@ class YuNetFaceDetector:
             return []
 
         h, w = frame.shape[:2]
+        target_w, target_h = self.input_size
 
-        # Cập nhật input_size động nếu kích thước khung hình thay đổi
-        if self._current_input_size != (w, h):
-            self._current_input_size = (w, h)
-            self._detector.setInputSize((w, h))
+        # Resize khung hình sang độ phân giải suy luận YuNet chuẩn
+        if (w, h) != (target_w, target_h):
+            det_frame = cv2.resize(
+                frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR
+            )
+            scale_x = w / float(target_w)
+            scale_y = h / float(target_h)
+        else:
+            det_frame = frame
+            scale_x = 1.0
+            scale_y = 1.0
+
+        if self._current_input_size != (target_w, target_h):
+            self._current_input_size = (target_w, target_h)
+            self._detector.setInputSize((target_w, target_h))
 
         # Thực thi suy luận phát hiện khuôn mặt qua YuNet
-        _, raw_faces = self._detector.detect(frame)
+        _, raw_faces = self._detector.detect(det_frame)
 
         if raw_faces is None or len(raw_faces) == 0:
             return []
@@ -157,22 +178,23 @@ class YuNetFaceDetector:
 
         for face_data in raw_faces:
             # face_data gồm 15 phần tử: [x, y, w, h, x1, y1, ..., x5, y5, score]
-            x, y, bw, bh = (
-                int(face_data[0]),
-                int(face_data[1]),
-                int(face_data[2]),
-                int(face_data[3]),
-            )
+            # Ánh xạ tọa độ từ det_frame ngược về tọa độ gốc của frame
+            x = int(face_data[0] * scale_x)
+            y = int(face_data[1] * scale_y)
+            bw = int(face_data[2] * scale_x)
+            bh = int(face_data[3] * scale_y)
             score = float(face_data[14])
 
-            # Trích xuất 5 điểm mốc đặc trưng (landmarks)
+            # Trích xuất 5 điểm mốc đặc trưng (landmarks) và ánh xạ về tọa độ gốc
             landmarks = face_data[4:14].reshape((5, 2)).astype(np.float32)
+            landmarks[:, 0] *= scale_x
+            landmarks[:, 1] *= scale_y
 
             # Ước lượng góc xoay Euler
             angles = self._estimate_euler_angles(landmarks)
             yaw, pitch, roll = angles
 
-            # Kiểm chuẩn kích thước diện tích >= 120x120 px
+            # Kiểm chuẩn kích thước diện tích >= 120x120 px trên frame gốc
             is_valid_size = (bw >= self.min_face_size) and (bh >= self.min_face_size)
 
             # Kiểm chuẩn góc quay <= 15 độ

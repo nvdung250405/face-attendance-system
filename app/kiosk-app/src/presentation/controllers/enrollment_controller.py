@@ -221,7 +221,8 @@ class EnrollmentController(QObject):
         liveness_score = 1.0
         if self.liveness_gate:
             try:
-                liveness_score = float(self.liveness_gate.predict(frame, detection.bbox))
+                res = self.liveness_gate.predict(frame, detection.bbox)
+                liveness_score = float(res.score)
             except Exception as exc:
                 logger.warning("Lỗi liveness predict trong enrollment: %s", exc)
                 liveness_score = 1.0

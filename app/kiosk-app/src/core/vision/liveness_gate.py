@@ -186,8 +186,8 @@ class MiniFASNetLivenessGate:
                 crop_bgr, self.target_size, interpolation=cv2.INTER_LINEAR
             )
 
-        # Chuyển đổi sang float32 theo quy chuẩn MiniFASNet (giữ nguyên dải [0, 255])
-        face_float = crop_bgr.astype(np.float32)
+        # Chuyển đổi sang float32 và chuẩn hóa về dải [0.0, 1.0] theo quy chuẩn MiniFASNet (ToTensor)
+        face_float = crop_bgr.astype(np.float32) / 255.0
 
         # Chuyển định dạng từ HWC (80, 80, 3) sang NCHW (1, 3, 80, 80)
         blob = np.transpose(face_float, (2, 0, 1))

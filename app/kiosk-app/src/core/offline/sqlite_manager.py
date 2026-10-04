@@ -110,10 +110,37 @@ class SQLiteQueueManager:
             finally:
                 conn.close()
 
+    def get_last_punch_type(self, employee_id: int) -> str | None:
+        """Lấy loại điểm danh gần nhất của nhân viên trong ngày hôm nay.
+
+        Args:
+            employee_id: Mã định danh nhân viên.
+
+        Returns:
+            str | None: 'CHECK_IN', 'CHECK_OUT' hoặc None nếu chưa điểm danh hôm nay.
+        """
+        today_prefix = datetime.now(UTC).strftime("%Y-%m-%d")
+        sql = """
+            SELECT punch_type
+            FROM offline_punches
+            WHERE employee_id = ? AND punch_timestamp LIKE ?
+            ORDER BY id DESC
+            LIMIT 1
+        """
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(sql, (employee_id, f"{today_prefix}%"))
+                row = cursor.fetchone()
+                return str(row["punch_type"]) if row else None
+            finally:
+                conn.close()
+
     def enqueue_punch(
         self,
         employee_id: int,
-        punch_type: str = "CHECK_IN",
+        punch_type: str = "AUTO",
         verification_method: str = "VERIFICATION_FACE",
         confidence_score: float | None = None,
         kiosk_id: str | None = None,
@@ -130,7 +157,7 @@ class SQLiteQueueManager:
 
         Args:
             employee_id: Mã định danh số của nhân viên trong CSDL trung tâm.
-            punch_type: Loại điểm danh ('CHECK_IN' hoặc 'CHECK_OUT').
+            punch_type: Loại điểm danh ('CHECK_IN', 'CHECK_OUT' hoặc 'AUTO' để tự đảo trạng thái).
             verification_method: Phương thức xác thực ('VERIFICATION_FACE' hoặc 'VERIFICATION_PIN').
             confidence_score: Điểm số tương đồng Cosine Similarity (0.0 - 1.0).
             kiosk_id: Mã định danh của trạm Kiosk thực hiện.
@@ -139,10 +166,14 @@ class SQLiteQueueManager:
         Returns:
             int: Khóa chính `id` của bản ghi đã lưu vào CSDL cục bộ.
         """
-        # Chuẩn hóa loại điểm danh và phương thức xác thực nếu caller truyền legacy
-        if punch_type in ("FACE", "PIN"):
+        # Tự động xác định CHECK_IN hay CHECK_OUT dựa trên lượt điểm danh trước đó trong ngày
+        if punch_type in ("AUTO", None, ""):
+            last_type = self.get_last_punch_type(employee_id)
+            punch_type = "CHECK_OUT" if last_type == "CHECK_IN" else "CHECK_IN"
+        elif punch_type in ("FACE", "PIN"):
             verification_method = "VERIFICATION_FACE" if punch_type == "FACE" else "VERIFICATION_PIN"
-            punch_type = "CHECK_IN"
+            last_type = self.get_last_punch_type(employee_id)
+            punch_type = "CHECK_OUT" if last_type == "CHECK_IN" else "CHECK_IN"
 
         p_time = punch_timestamp or punch_time or datetime.now(UTC).isoformat()
         score = confidence_score if confidence_score is not None else similarity_score

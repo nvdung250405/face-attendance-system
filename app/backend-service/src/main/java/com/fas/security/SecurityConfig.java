@@ -50,8 +50,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 1. Endpoint xác thực công khai
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        // 2. Endpoint tự phục vụ của trạm Kiosk (xác thực OTP và đăng ký mẫu)
-                        .requestMatchers("/api/v1/kiosk/verify-otp", "/api/v1/kiosk/enroll").permitAll()
+                        // 2. Endpoint tự phục vụ của trạm Kiosk (xác thực OTP, đăng ký mẫu, đồng bộ điểm danh)
+                        .requestMatchers("/api/v1/kiosk/**", "/api/v1/enrollment/**").permitAll()
                         // 3. Endpoint WebSocket STOMP
                         .requestMatchers("/ws/**", "/ws-attendance/**").permitAll()
                         // 4. Giám sát sức khỏe hệ thống Actuator

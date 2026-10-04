@@ -446,10 +446,13 @@ class KioskViewModel(QObject):
 
         # 8. Điểm danh thành công! Lưu vào SQLite WAL ngoại tuyến
         punch_time = datetime.now().strftime("%H:%M:%S")
+        last_punch = self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
+        punch_type = "CHECK_OUT" if last_punch == "CHECK_IN" else "CHECK_IN"
+
         if self.queue_manager:
             self.queue_manager.enqueue_punch(
                 employee_id=emp_id,
-                punch_type="CHECK_IN",
+                punch_type=punch_type,
                 verification_method="VERIFICATION_FACE",
                 confidence_score=score,
                 kiosk_id=settings.kiosk_id,
@@ -462,13 +465,15 @@ class KioskViewModel(QObject):
         self.lastResultChanged.emit()
 
         # Hiển thị thông báo thành công viền xanh lá
+        punch_label = "VÀO CA" if punch_type == "CHECK_IN" else "TAN CA"
         self.set_state(
             OvalState.SUCCESS,
-            f"Điểm danh thành công lúc {punch_time}!\nMã NV: {emp_id} (Độ tin cậy: {int(score * 100)}%)",
+            f"Điểm danh {punch_label} ({punch_type}) thành công lúc {punch_time}!\nMã NV: {emp_id} (Độ tin cậy: {int(score * 100)}%)",
         )
         self._trigger_hold(duration_sec=3.0)
         logger.info(
-            "Điểm danh THÀNH CÔNG nhân viên %d [score=%.3f, liveness=%.3f]",
+            "Điểm danh %s THÀNH CÔNG nhân viên %d [score=%.3f, liveness=%.3f]",
+            punch_type,
             emp_id,
             score,
             liveness_score,
@@ -506,12 +511,15 @@ class KioskViewModel(QObject):
             self.cooldown_tracker.record_punch(emp_id)
 
         punch_time = datetime.now().strftime("%H:%M:%S")
+        last_punch = self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
+        punch_type = "CHECK_OUT" if last_punch == "CHECK_IN" else "CHECK_IN"
+
         if self.queue_manager:
             self.queue_manager.enqueue_punch(
                 employee_id=emp_id,
-                punch_type="PIN",
-                similarity_score=1.0,
-                liveness_score=1.0,
+                punch_type=punch_type,
+                verification_method="VERIFICATION_PIN",
+                confidence_score=1.0,
                 kiosk_id=settings.kiosk_id,
             )
             self._update_pending_sync_count()
@@ -521,10 +529,11 @@ class KioskViewModel(QObject):
         self._last_score = 1.0
         self.lastResultChanged.emit()
 
+        punch_label = "VÀO CA" if punch_type == "CHECK_IN" else "TAN CA"
         self.set_state(
             OvalState.SUCCESS,
-            f"Điểm danh mã PIN thành công lúc {punch_time}!\nMã NV: {emp_id}",
+            f"Điểm danh {punch_label} ({punch_type}) mã PIN thành công lúc {punch_time}!\nMã NV: {emp_id}",
         )
         self._trigger_hold(duration_sec=3.0)
-        logger.info("Điểm danh mã PIN THÀNH CÔNG cho mã: %s", pin_code)
+        logger.info("Điểm danh mã PIN %s THÀNH CÔNG cho mã: %s", punch_type, pin_code)
 

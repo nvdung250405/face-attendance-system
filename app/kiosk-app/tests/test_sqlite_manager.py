@@ -296,3 +296,21 @@ class TestOfflineSyncWorker:
         )
         assert err_worker.check_health() is False
         err_worker.stop()
+
+    def test_auto_alternate_punch_type(self, queue_mgr):
+        """Kiểm thử tính năng tự động đảo chiều CHECK_IN -> CHECK_OUT khi gọi enqueue_punch với AUTO."""
+        emp_id = 999
+        assert queue_mgr.get_last_punch_type(emp_id) is None
+
+        # Lần 1: Chưa có punch hôm nay -> Tạo CHECK_IN
+        id1 = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
+        assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_IN"
+
+        # Lần 2: Lần trước là CHECK_IN -> Tạo CHECK_OUT
+        id2 = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
+        assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_OUT"
+
+        # Lần 3: Lần trước là CHECK_OUT -> Tạo CHECK_IN
+        id3 = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
+        assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_IN"
+
