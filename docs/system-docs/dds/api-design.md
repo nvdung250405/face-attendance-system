@@ -96,8 +96,8 @@ owner: Solution Architect
 
 ## 4. API Design Decisions (Quyết định Thiết kế API)
 
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `DD-SYS-012` | Chuẩn hóa phản hồi API thống nhất | Đóng gói toàn bộ phản hồi API theo chuẩn thống nhất `{success, code, message, data, timestamp}` giúp đồng nhất việc xử lý lỗi. | `STK-011` | `API-SYS-012` | - | Accepted |
-| `DD-SYS-013` | Giới hạn kích thước gói đồng bộ 50 bản ghi | Sử dụng phân số lô cố định tối đa 50 bản ghi cho mỗi request `sync-batch` để tránh quá tải bộ nhớ và nghẽn HTTP khi ngoại tuyến lâu ngày. | `STK-011` | `API-SYS-013` | - | Accepted |
-| `DD-SYS-014` | In-memory STOMP Message Broker | Áp dụng WebSocket STOMP Broker chạy trực tiếp trong tiến trình Spring Boot (In-memory Simple Broker) tiết kiệm chi phí vận hành. | `STK-014` | `PD-006` | - | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DD-SYS-012` | Đóng gói toàn bộ phản hồi API theo chuẩn thống nhất `{success, code, message, data, timestamp}`. | Đồng nhất việc bóc tách dữ liệu và bắt lỗi tập trung tại các client Kiosk và Web. | Trả về payload thô không bọc (raw POJO), Phản hồi khác nhau theo module | Toàn bộ các controller và exception handler phải tuân thủ đúng envelope format. | `API-SYS-012`, `APD-SYS-008` | Accepted |
+| `DD-SYS-013` | Giới hạn kích thước gói đồng bộ tối đa 50 bản ghi cho mỗi request `sync-batch`. | Tránh quá tải payload JSON, tràn bộ nhớ Heap và nghẽn HTTP khi Kiosk ngoại tuyến lâu ngày. | Gửi từng bản ghi đơn lẻ, Gửi toàn bộ 1 gói duy nhất không giới hạn | Kiosk phải chia nhỏ hàng đợi thành nhiều đợt gửi tuần tự khi mạng phục hồi. | `API-SYS-013`, `APD-SYS-002` | Accepted |
+| `DD-SYS-014` | Áp dụng WebSocket STOMP Broker chạy trực tiếp trong tiến trình Spring Boot (In-memory Simple Broker). | Tiết kiệm chi phí vận hành và tài nguyên phần cứng, không phải cài đặt message broker ngoài như RabbitMQ/Kafka. | Cài đặt cụm RabbitMQ/ActiveMQ rời, Dùng Redis Pub/Sub | Giới hạn khả năng scale đa máy chủ Backend nhưng tối ưu tuyệt đối cho hệ thống đơn cụm. | `PD-006`, `STK-014` | Accepted |

@@ -7,10 +7,11 @@ owner: Backend QA Lead
 
 # FR/NFR TEST PLAN — Kế hoạch Kiểm thử Nghiệp vụ Cốt lõi Backend
 
-## 1. Approach & Frameworks (Công cụ & Phương pháp Kiểm thử)
+## 1. Approach Decisions (Quyết định Phương pháp Kiểm thử)
 
-* **Framework**: JUnit 5, Mockito, Spring Boot Test, Testcontainers (PostgreSQL 16), MockMvc.
-* **Tiêu chuẩn hoàn thành**: 100% ca kiểm thử pass; độ bao phủ dòng lệnh gói dịch vụ cốt lõi $\ge 85\%$; không có cảnh báo bảo mật nghiêm trọng từ SonarQube/Trivy.
+| ID | Decision | Rationale | Basis | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| `APC-BE-006` | Chiến lược Kiểm thử Tự động Đa tầng Phân hệ Backend | Kết hợp 3 cấp độ kiểm thử: Unit Test (JUnit 5 + Mockito cô lập logic tính toán ca kíp và mã hóa); Integration Test (Spring Boot Test + Testcontainers PostgreSQL 16 tái tạo môi trường CSDL thực); Load Test (mô phỏng 500 RPS từ 50 Kiosk ảo). Tiêu chuẩn nghiệm thu: 100% test pass; độ bao phủ dòng lệnh service $\ge 85\%$; zero lỗ hổng bảo mật. | `NFR-BE-001`, `NFR-BE-002`, `STK-011` | Accepted |
 
 ---
 
@@ -18,11 +19,14 @@ owner: Backend QA Lead
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
-| `TST-BE-009` | Xác thực Đăng nhập & Sinh JWT Token | Kiểm tra xác thực tài khoản và cấp phát JWT token có thời hạn kèm phân quyền RBAC. | `FR-BE-001` | `BLD-BE-009` | Cấp phát token hợp lệ khi đúng thông tin; trả về 401 khi sai mật khẩu. | Done |
-| `TST-BE-010` | Tiếp nhận Điểm danh & Tính Phút Đi muộn | Kiểm tra tiếp nhận punch, tính toán ca kíp và ghi nhận trạng thái điểm danh. | `FR-BE-002`, `NFR-BE-001` | `BLD-BE-011` | Phản hồi trong $\le 100\text{ ms}$; phân loại trạng thái điểm danh chuẩn xác. | Done |
-| `TST-BE-011` | Xử lý Gói lô Đồng bộ Bù Ngoại tuyến | Kiểm tra tiếp nhận gói 50 bản ghi đồng bộ bù từ Kiosk và xử lý idempotency. | `FR-BE-003` | `BLD-BE-012` | Gửi gói 50 bản ghi lưu thành công 100%; không phát sinh bản ghi trùng lặp. | Done |
-| `TST-BE-012` | Mã hóa & Giải mã Vector AES-256-GCM | Kiểm tra bảo vệ vector ArcFace 512D với AES-256-GCM và IV ngẫu nhiên. | `FR-BE-004`, `FR-BE-006` | `BLD-BE-010` | Mã hóa và giải mã bảo toàn 100% dữ liệu gốc; sinh mới IV ngẫu nhiên mỗi lần mã hóa. | Done |
-| `TST-BE-013` | Vòng đời Phiên Đăng ký Khuôn mặt OTP | Kiểm tra luồng cấp phát và thẩm định OTP 6 số kích hoạt nạp mặt có hạn 48h. | `FR-BE-005`, `FR-BE-006` | `BLD-BE-013` | Chỉ tạo OTP khi có cam kết Consent; từ chối khi nhập sai hoặc hết hạn 48h. | Done |
-| `TST-BE-014` | Phát sóng Bản tin WebSocket STOMP | Kiểm tra phát sóng sự kiện điểm danh tức thời lên `/topic/live-attendance`. | `FR-BE-007` | `BLD-BE-014` | Subscriber nhận đúng JSON payload trên `/topic/live-attendance` trong $\le 50\text{ ms}$. | Done |
-| `TST-BE-015` | Kiểm tra Ghi vết Kiểm toán Bất biến | Kiểm tra Spring AOP tự động ghi nhận mọi biến động dữ liệu nhạy cảm vào `audit_logs`. | `FR-BE-008`, `NFR-BE-005` | `BLD-BE-015` | Cập nhật bản ghi điểm danh sinh ra đúng một dòng trong bảng `audit_logs`. | Done |
-| `TST-BE-016` | Kiểm thử Tải Điểm danh Đồng thời (Load Test) | Kiểm tra năng lực chịu tải đồng thời của máy chủ dưới áp lực 50 Kiosk. | `NFR-BE-002` | `BLD-BE-011` | Chịu tải $500\text{ req/s}$ với tỷ lệ lỗi HTTP 5xx $< 0.01\%$; CPU $\le 75\%$. | Done |
+| `TST-BE-009` | Xác thực Đăng nhập & Sinh JWT Token | Kiểm tra xác thực tài khoản và cấp phát JWT token có thời hạn kèm phân quyền RBAC (`ADMIN`, `HR_MANAGER`, `EMPLOYEE`). | `FR-BE-001` | `BLD-BE-009` | Cấp phát token hợp lệ khi đúng thông tin; trả về 401 Unauthorized khi sai mật khẩu; trả về 403 Forbidden khi truy cập trái quyền. | Done |
+| `TST-BE-010` | Tiếp nhận Điểm danh & Tính Phút Đi muộn | Kiểm tra tiếp nhận punch, tính toán ca kíp, ghi nhận trạng thái điểm danh và kiểm tra cooldown 120s phía server. | `FR-BE-002`, `NFR-BE-001` | `BLD-BE-011` | Phản hồi trong $\le 100\text{ ms}$; phân loại trạng thái điểm danh chuẩn xác; lượt quẹt lặp trong 120s bị chặn từ Caffeine cache. | Done |
+| `TST-BE-011` | Xử lý Gói lô Đồng bộ Bù Ngoại tuyến | Kiểm tra tiếp nhận gói 50 bản ghi đồng bộ bù từ Kiosk và xử lý idempotency chống trùng lặp. | `FR-BE-003` | `BLD-BE-012` | Gửi gói 50 bản ghi lưu thành công 100%; không phát sinh bản ghi trùng lặp; bảo toàn mốc thời gian thực tế của bản ghi ngoại tuyến. | Done |
+| `TST-BE-012` | Mã hóa & Giải mã Vector AES-256-GCM | Kiểm tra bảo vệ vector ArcFace 512D với AES-256-GCM và IV ngẫu nhiên 12-byte. | `FR-BE-004`, `FR-BE-006`, `NFR-BE-003` | `BLD-BE-010` | Mã hóa và giải mã bảo toàn 100% dữ liệu gốc; sinh mới IV ngẫu nhiên mỗi lần mã hóa; không bao giờ để lộ plaintext trên đĩa. | Done |
+| `TST-BE-013` | Vòng đời Phiên Đăng ký Khuôn mặt OTP | Kiểm tra luồng cấp phát và thẩm định OTP 6 số kích hoạt nạp mặt có hạn 48h sau khi ký Informed Consent. | `FR-BE-005`, `FR-BE-006` | `BLD-BE-013` | Chỉ tạo OTP khi có cam kết Consent; từ chối khi nhập sai hoặc hết hạn 48h; nạp vector hợp lệ kích hoạt trạng thái `ACTIVE`. | Done |
+| `TST-BE-014` | Phát sóng Bản tin WebSocket STOMP | Kiểm tra phát sóng sự kiện điểm danh tức thời lên `/topic/live-attendance` và cập nhật gallery lên `/topic/kiosk-gallery`. | `FR-BE-007` | `BLD-BE-014` | Subscriber nhận đúng JSON payload trên `/topic/live-attendance` và `/topic/kiosk-gallery` trong $\le 50\text{ ms}$. | Done |
+| `TST-BE-015` | Ghi vết Kiểm toán Bất biến & Chống Injection | Kiểm tra Spring AOP tự động ghi nhận mọi biến động dữ liệu nhạy cảm vào `audit_logs` và khử ký tự nguy hiểm khi xuất file Excel. | `FR-BE-008`, `NFR-BE-005` | `BLD-BE-015` | Cập nhật bản ghi điểm danh sinh đúng một dòng audit log có đầy đủ ngữ cảnh; file Excel được escape các ký tự đặc biệt (`=`, `+`, `-`, `@`). | Done |
+| `TST-BE-016` | Kiểm thử Tải Điểm danh Đồng thời (Load Test) | Kiểm tra năng lực chịu tải đồng thời của máy chủ dưới áp lực 50 trạm Kiosk gửi liên tục. | `NFR-BE-002` | `BLD-BE-011` | Chịu tải $\ge 500\text{ req/s}$ với tỷ lệ lỗi HTTP 5xx $< 0.01\%$; mức sử dụng CPU $\le 75\%$ trên cấu hình chuẩn. | Done |
+| `TST-BE-017` | Kiểm tra Tác vụ Tiêu hủy Dữ liệu Định kỳ | Kiểm tra Spring `@Scheduled` xóa cứng toàn bộ bản ghi `biometric_templates` của nhân viên thôi việc quá 20 ngày. | `FR-BE-009`, `NFR-BE-003` | `BLD-BE-017` | Bản ghi thôi việc $\le 20$ ngày được bảo toàn; bản ghi $> 20$ ngày bị xóa vĩnh viễn khỏi CSDL, không thể phục hồi. | Done |
+| `TST-BE-018` | Kiểm tra Kháng lỗi & Giám sát Sức khỏe Actuator | Kiểm tra phản hồi của endpoint `/actuator/health` và khả năng tự phục hồi kết nối CSDL khi có gián đoạn tạm thời. | `NFR-BE-004` | `BLD-BE-011` | Endpoint trả về `{"status":"UP"}` với thông tin PostgreSQL và Disk Space; tự động tái kết nối CSDL thành công trong $\le 5\text{ s}$. | Done |
+| `TST-BE-019` | Cổng Kiểm định Chất lượng Phân hệ Backend (Gate) | Tiêu chí chốt chặn nghiệm thu toàn bộ phân hệ Backend trước khi triển khai tích hợp hoặc phát hành sản phẩm. | `FR-BE-001`, `FR-BE-002`, `NFR-BE-001`, `NFR-BE-002` | `TST-BE-009`, `TST-BE-010`, `TST-BE-016`, `TST-BE-018` | 100% test cases pass; kiểm thử ngập tải không rò rỉ bộ nhớ; báo cáo SonarQube không có lỗ hổng Block/Critical. | Done |

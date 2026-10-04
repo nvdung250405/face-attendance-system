@@ -13,10 +13,12 @@ Kho lưu trữ có cấu trúc các câu hỏi nghiên cứu, bối cảnh bài 
 
 ## 1. Research Questions (Câu hỏi Nghiên cứu)
 
-1. **RQ-01 (Nghiệp vụ)**: Thực trạng gian lận chấm công (quẹt thẻ hộ, gian lận vị trí GPS) và gánh nặng đối soát thủ công của bộ phận nhân sự tại các doanh nghiệp Việt Nam diễn ra ở mức độ nào?
-2. **RQ-02 (Kỹ thuật Biên)**: Liệu các mô hình học sâu thị giác máy tính hiện đại có thể chạy suy luận thời gian thực ($\ge 15\text{ FPS}$, độ trễ $\le 350\text{ ms}$) trên CPU máy tính phổ thông với chi phí phần cứng 0 VNĐ mà không cần GPU rời hay không?
-3. **RQ-03 (Bảo mật Sinh trắc)**: Các kỹ thuật chống giả mạo thụ động (Passive Liveness Detection) có thể ngăn chặn hiệu quả các cuộc tấn công bằng ảnh in 2D và video phát lại trên thiết bị camera quang học thông thường theo tiêu chuẩn ISO/IEC 30107-3 không?
-4. **RQ-04 (Pháp lý & Quyền riêng tư)**: Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15 của Việt Nam quy định những nghĩa vụ bắt buộc nào đối với việc thu thập, lưu trữ, mã hóa và tiêu hủy dữ liệu sinh trắc học khuôn mặt?
+| ID | Question | Serves | Status |
+| :--- | :--- | :--- | :---: |
+| `RQ-001` | Thực trạng gian lận chấm công (quẹt thẻ hộ, gian lận GPS) và gánh nặng đối soát thủ công của bộ phận nhân sự tại doanh nghiệp Việt Nam ở mức độ nào? | `PD-001`, `INF-001`, `INF-002` | Resolved |
+| `RQ-002` | Liệu các mô hình học sâu thị giác máy tính hiện đại có thể chạy suy luận thời gian thực ($\ge 15\text{ FPS}$, độ trễ $\le 350\text{ ms}$) trên CPU máy tính phổ thông với chi phí phần cứng 0 VNĐ mà không cần GPU rời? | `PD-002`, `INF-006`, `INF-007` | Resolved |
+| `RQ-003` | Các kỹ thuật chống giả mạo thụ động (Passive Liveness Detection) có thể ngăn chặn hiệu quả các cuộc tấn công bằng ảnh in 2D và video phát lại trên thiết bị camera quang học thông thường theo ISO/IEC 30107-3 không? | `PD-003`, `INF-008` | Resolved |
+| `RQ-004` | Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15 của Việt Nam quy định những nghĩa vụ bắt buộc nào đối với việc thu thập, lưu trữ, mã hóa và tiêu hủy dữ liệu sinh trắc học khuôn mặt? | `PD-005`, `INF-009`, `INF-010` | Resolved |
 
 ---
 
@@ -31,59 +33,54 @@ Kho lưu trữ có cấu trúc các câu hỏi nghiên cứu, bối cảnh bài 
 
 ## 3. Source Register (Sổ Đăng ký Nguồn Khảo sát)
 
-| ID | Tên Nguồn / Tài liệu | Loại Nguồn | Ngày Thu thập | Độ Tin cậy | Mô tả / Đường dẫn |
-| :--- | :--- | :--- | :---: | :---: | :--- |
-| `SRC-001` | Báo cáo Thị trường Nhận diện Khuôn mặt (Grand View Research / MarketsandMarkets) | Báo cáo thị trường quốc tế | 2026-08-15 | Cao | Khảo sát quy mô thị trường sinh trắc học toàn cầu giai đoạn 2024-2030 (CAGR ~16.2%). |
-| `SRC-002` | Khảo sát Thực tế 50 Doanh nghiệp Sản xuất & Văn phòng tại Việt Nam | Khảo sát thực nghiệm | 2026-09-10 | Rất cao | Phỏng vấn sâu chuyên viên HR và nhân viên về gian lận thẻ từ, vân tay và gánh nặng đối soát. |
-| `SRC-003` | Nghiên cứu ArcFace: Additive Angular Margin Loss for Deep Face Recognition (CVPR) | Bài báo khoa học quốc tế | 2026-08-20 | Rất cao | Deng et al. (2019). Kiến trúc MobileFaceNet trích xuất vector 512 chiều tối ưu cho thiết bị biên. |
-| `SRC-004` | Nghiên cứu YuNet & OpenCV Zoo (CVPR / IEEE) | Bài báo khoa học quốc tế | 2026-08-22 | Rất cao | Mô hình phát hiện khuôn mặt siêu nhẹ (~230KB) hỗ trợ đo 5 điểm mốc và góc Euler. |
-| `SRC-005` | Nghiên cứu MiniFASNet: Lightweight Face Anti-Spoofing Networks (Zhang et al.) | Bài báo khoa học quốc tế | 2026-08-25 | Rất cao | Phân loại thực thể sống thụ động từ ảnh RGB đơn sắc, chống tấn công Presentation Attack (PAD). |
-| `SRC-006` | Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15 & Nghị định 356/2025/NĐ-CP | Văn bản quy phạm pháp luật | 2026-09-01 | Tuyệt đối | Quốc hội Việt Nam ban hành; hiệu lực từ 01/01/2026 quy định quản lý dữ liệu sinh trắc học nhạy cảm. |
-| `SRC-007` | Tiêu chuẩn Quốc tế ISO/IEC 30107-3 (Biometric Presentation Attack Detection) | Tiêu chuẩn quốc tế | 2026-08-28 | Tuyệt đối | Khung đánh giá tỷ lệ sai số tấn công giả mạo APCER và BPCER cho hệ thống sinh trắc học. |
-| `SRC-008` | Dữ liệu Đo kiểm Hiệu năng Thực nghiệm trên Phần cứng Baseline (Intel Core i5-12450H) | Đo kiểm thực nghiệm lab | 2026-09-20 | Rất cao | Benchmark thời gian suy luận YuNet + MiniFASNet + ArcFace trên CPU thuần. |
+| ID | Citation | Type | Published | Accessed | Reliability | Location | Status |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: |
+| `SRC-001` | Grand View Research / MarketsandMarkets. Báo cáo Quy mô Thị trường Sinh trắc học Toàn cầu 2024-2030 (CAGR ~16.2%). | Market Report | 2024-05 | 2026-08-15 | High | Online Market Report | Verified |
+| `SRC-002` | Nhóm Nghiên cứu FAS. Khảo sát Thực tế 50 Doanh nghiệp Sản xuất & Văn phòng tại Việt Nam về gian lận thẻ từ và gánh nặng đối soát. | Field Survey | 2026-09-05 | 2026-09-10 | Very High | Field Research Lab | Verified |
+| `SRC-003` | Deng et al. (2019). ArcFace: Additive Angular Margin Loss for Deep Face Recognition (CVPR). Kiến trúc MobileFaceNet trích xuất vector 512D. | Academic Paper | 2019-06 | 2026-08-20 | Very High | IEEE/CVF | Verified |
+| `SRC-004` | OpenCV Team. YuNet Face Detection in OpenCV Zoo. Mô hình phát hiện khuôn mặt siêu nhẹ (~230KB) hỗ trợ 5 landmarks và Euler angles. | Technical Paper | 2023-03 | 2026-08-22 | Very High | GitHub / OpenCV Zoo | Verified |
+| `SRC-005` | Zhang et al. MiniFASNet: Lightweight Face Anti-Spoofing Networks. Phân loại thực thể sống thụ động RGB chống Presentation Attack. | Academic Paper | 2020-07 | 2026-08-25 | Very High | arXiv:2005.04132 | Verified |
+| `SRC-006` | Quốc hội Việt Nam. Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15 & Nghị định 356/2025/NĐ-CP hướng dẫn thi hành. | Legal Document | 2025-06-25 | 2026-09-01 | Absolute | Cổng TTĐT Chính phủ | Verified |
+| `SRC-007` | ISO/IEC JTC 1/SC 37. ISO/IEC 30107-3: Information technology — Biometric presentation attack detection — Part 3: Testing and reporting. | International Standard | 2023-11 | 2026-08-28 | Absolute | ISO Standards Catalog | Verified |
+| `SRC-008` | Lab Nghiên cứu FAS. Dữ liệu Đo kiểm Hiệu năng Thực nghiệm trên Phần cứng Baseline (Intel Core i5-12450H CPU, 16GB RAM). | Benchmark Data | 2026-09-18 | 2026-09-20 | Very High | Internal Benchmark Log | Verified |
 
 ---
 
 ## 4. Findings (Các Phát hiện & Sự thật Thu thập được)
 
-| ID | Finding | Source | Confidence | Status |
-| :--- | :--- | :---: | :---: | :---: |
-| `INF-001` | 78% doanh nghiệp được khảo sát thừa nhận xảy ra tình trạng quẹt thẻ hộ (buddy punching) khi sử dụng thẻ từ RFID hoặc mã PIN, gây thất thoát chi phí quỹ lương đáng kể. | `SRC-002` | Rất cao | Verified |
-| `INF-002` | 62% doanh nghiệp sản xuất gặp phàn nàn về thiết bị vân tay do tay người lao động bị chai sần, bám dầu mỡ hoặc thời tiết hanh khô gây lỗi nhận diện và ùn tắc đầu ca. | `SRC-002` | Rất cao | Verified |
-| `INF-003` | Chuyên viên nhân sự mất trung bình 24 đến 36 giờ làm việc mỗi tháng cho việc trút dữ liệu thủ công từ các máy chấm công rời rạc, đối soát giải trình quên chấm và tổng hợp bảng công Excel. | `SRC-002` | Rất cao | Verified |
-| `INF-004` | Các thiết bị phần cứng chấm công khuôn mặt 3D/hồng ngoại chuyên dụng (ZKTeco, Ronald Jack, Hikvision) có chi phí đầu tư cao (15 - 30 triệu đồng/máy), sử dụng firmware đóng kín, khó tùy biến và khó tích hợp. | `SRC-001`, `SRC-002` | Cao | Verified |
-| `INF-005` | Các giải pháp chấm công di động (Mobile App kèm GPS) dễ bị gian lận bằng ứng dụng giả lập tọa độ (Fake GPS) và không phù hợp với các đơn vị công xưởng/nhà máy cấm mang điện thoại vào khu vực sản xuất. | `SRC-002` | Rất cao | Verified |
-| `INF-006` | Pipeline AI biên đạt tốc độ thời gian thực trên CPU thuần: YuNet (~15-20ms), MiniFASNet (~25-30ms), ArcFace (~40-50ms); tổng chu kỳ suy luận trọn vòng $\le 100\text{ ms}$ trên CPU Intel Core i5 thế hệ 12 không cần GPU rời. | `SRC-004`, `SRC-005`, `SRC-008` | Rất cao | Verified |
-| `INF-007` | So khớp ma trận vector 1:N trong bộ nhớ RAM cực nhanh: Ma trận $\mathbf{M} \in \mathbb{R}^{1000 \times 512}$ kiểu `float32` chỉ chiếm $\sim 2\text{ MB}$ RAM; tích vô hướng Cosine $1:1000$ bằng NumPy đạt thời gian $< 2\text{ ms}$. | `SRC-008` | Rất cao | Verified |
-| `INF-008` | Bộ lọc Liveness MiniFASNet chặn đứng $\ge 98\%$ các cuộc tấn công 2D, đạt tỷ lệ lỗi phân loại tấn công giả mạo $\text{APCER} \le 5\%$ đối với ảnh in màu giấy A4 và video phát lại trên màn hình theo chuẩn ISO/IEC 30107-3. | `SRC-005`, `SRC-007`, `SRC-008` | Rất cao | Verified |
-| `INF-009` | Dữ liệu khuôn mặt là Dữ liệu Cá nhân Nhạy cảm theo Điều 17 Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15; bắt buộc phải có văn bản thỏa thuận đồng thuận tự nguyện (Informed Consent) ghi nhận mốc thời gian, IP và User-Agent. | `SRC-006` | Tuyệt đối | Verified |
-| `INF-010` | Nghĩa vụ tiêu hủy vĩnh viễn trong thời hạn $\le 20\text{ ngày}$ theo Luật số 91/2025/QH15 khi nhân viên chấm dứt hợp đồng lao động; toàn bộ mẫu sinh trắc học khuôn mặt phải bị xóa bỏ hoàn toàn (Hard Delete). | `SRC-006` | Tuyệt đối | Verified |
-| `INF-011` | Hạ tầng mạng tại văn phòng/nhà máy thường xuyên gặp sự cố mất kết nối Internet tạm thời; hệ thống trạm điểm danh bắt buộc phải có khả năng vận hành ngoại tuyến và bảo toàn dữ liệu đạt chỉ số $\text{RPO} = 0$. | `SRC-002` | Rất cao | Verified |
-| `INF-012` | Luôn tồn tại tỷ lệ người dùng thay đổi diện mạo lớn (chấn thương, phẫu thuật thẩm mỹ) hoặc góc đứng camera không thuận lợi; hệ thống điểm danh cần kênh xác thực dự phòng bằng mã PIN trên màn hình cảm ứng để tránh nghẽn luồng di chuyển. | `SRC-002` | Cao | Verified |
+| ID | Statement | Type | Topic | Derived from | Confidence | Answers | Implication | Conflicts with | Status |
+| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :---: |
+| `INF-001` | 78% doanh nghiệp được khảo sát thừa nhận xảy ra tình trạng quẹt thẻ hộ (buddy punching) khi sử dụng thẻ từ RFID hoặc mã PIN, gây thất thoát quỹ lương. | Fact | Problem | `SRC-002` | Very High | `RQ-001` | Cần phương thức sinh trắc học không thể cho mượn | — | Verified |
+| `INF-002` | 62% doanh nghiệp sản xuất gặp phàn nàn về thiết bị vân tay do tay người lao động chai sần, bám dầu mỡ gây lỗi nhận diện và ùn tắc đầu ca. | Fact | Problem | `SRC-002` | Very High | `RQ-001` | Cần giải pháp nhận diện khuôn mặt không tiếp xúc | — | Verified |
+| `INF-003` | Chuyên viên nhân sự mất trung bình 24-36 giờ làm việc mỗi tháng để đối soát dữ liệu máy chấm công rời rạc và tổng hợp bảng công Excel. | Fact | Operations | `SRC-002` | Very High | `RQ-001` | Cần tự động hóa đồng bộ real-time và xuất báo cáo an toàn | — | Verified |
+| `INF-004` | Thiết bị phần cứng chấm công chuyên dụng (3D/IR) có chi phí đầu tư cao (15-30 triệu VNĐ/máy), firmware đóng kín, khó tích hợp. | Market Fact | Feasibility | `SRC-001`, `SRC-002` | High | `RQ-001` | Tối ưu hóa phần mềm trên phần cứng phổ thông giá rẻ | — | Verified |
+| `INF-005` | Giải pháp chấm công di động kèm GPS dễ bị gian lận Fake GPS và không phù hợp với nhà xưởng cấm mang điện thoại thông minh vào khu vực sản xuất. | Market Fact | Feasibility | `SRC-002` | Very High | `RQ-001` | Bắt buộc điểm danh tập trung tại trạm Kiosk cố định | — | Verified |
+| `INF-006` | Pipeline AI biên đạt tốc độ thời gian thực trên CPU thuần: YuNet (~15-20ms), MiniFASNet (~25-30ms), ArcFace (~40-50ms); tổng chu kỳ $\le 100\text{ ms}$ trên CPU i5 Gen 12. | Experimental | Technical | `SRC-004`, `SRC-005`, `SRC-008` | Very High | `RQ-002` | Khả thi chạy hoàn toàn trên CPU máy trạm không cần GPU | — | Verified |
+| `INF-007` | So khớp ma trận vector 1:N trong bộ nhớ RAM cực nhanh: Ma trận $\mathbf{M} \in \mathbb{R}^{1000 \times 512}$ `float32` chỉ chiếm $\sim 2\text{ MB}$ RAM; tích vô hướng Cosine $< 2\text{ ms}$. | Experimental | Technical | `SRC-008` | Very High | `RQ-002` | Phù hợp nạp nóng toàn bộ gallery vào RAM trạm Kiosk | — | Verified |
+| `INF-008` | Bộ lọc Liveness MiniFASNet chặn đứng $\ge 98\%$ các cuộc tấn công 2D, đạt $\text{APCER} \le 5\%$ đối với ảnh in màu giấy A4 và video phát lại màn hình theo ISO/IEC 30107-3. | Experimental | Security | `SRC-005`, `SRC-007`, `SRC-008` | Very High | `RQ-003` | Cổng chặn liveness thụ động đáp ứng tiêu chuẩn an ninh | — | Verified |
+| `INF-009` | Dữ liệu khuôn mặt là Dữ liệu Cá nhân Nhạy cảm theo Điều 17 Luật số 91/2025/QH15; bắt buộc phải có văn bản thỏa thuận Informed Consent ghi nhận mốc thời gian, IP và User-Agent. | Legal Fact | Compliance | `SRC-006` | Absolute | `RQ-004` | Xây dựng quy trình ký Consent điện tử có lưu vết kiểm toán | — | Verified |
+| `INF-010` | Nghĩa vụ tiêu hủy vĩnh viễn trong thời hạn $\le 20\text{ ngày}$ theo Luật số 91/2025/QH15 khi nhân viên thôi việc; toàn bộ mẫu sinh trắc học phải bị xóa bỏ hoàn toàn (Hard Delete). | Legal Fact | Compliance | `SRC-006` | Absolute | `RQ-004` | Xây dựng cron job tự động quét và xóa sạch vector sau 20 ngày | — | Verified |
+| `INF-011` | Hạ tầng mạng văn phòng/nhà máy thường xuyên gặp sự cố mất mạng tạm thời; hệ thống trạm điểm danh bắt buộc phải vận hành ngoại tuyến và bảo toàn dữ liệu $\text{RPO} = 0$. | Field Fact | Reliability | `SRC-002` | Very High | `RQ-001` | Cần CSDL hàng đợi ngoại tuyến SQLite WAL tại biên | — | Verified |
+| `INF-012` | Luôn tồn tại tỷ lệ người dùng thay đổi diện mạo lớn hoặc camera gặp sự cố ánh sáng; hệ thống cần kênh xác thực dự phòng bằng mã PIN trên màn cảm ứng để tránh nghẽn luồng. | Field Fact | UX/Reliability | `SRC-002` | High | `RQ-001` | Cung cấp bàn phím số PIN ảo có cơ chế chống brute-force | — | Verified |
 
 ---
 
 ## 5. Analysis & Implications (Phân tích & Hệ quả Kỹ thuật)
 
-1. **Từ `INF-001`, `INF-002`, `INF-006` $\rightarrow$ Định hướng Kiến trúc Edge-First**:
-   * Hệ thống sử dụng camera quang học phổ thông kết hợp ứng dụng máy trạm xử lý AI hoàn toàn tại biên, giải quyết triệt để quẹt thẻ hộ, giảm chi phí đầu tư thiết bị xuống mức 0 VNĐ bằng cách tận dụng máy trạm và webcam sẵn có.
-2. **Từ `INF-008` $\rightarrow$ Định hướng Cổng lọc Liveness Bắt buộc**:
-   * Cổng lọc MiniFASNet với ngưỡng an toàn $S_{\text{liveness}} \ge 0.85$ được tích hợp chặt chẽ trước bước trích xuất đặc trưng để loại bỏ nguy cơ giả mạo 2D.
-3. **Từ `INF-009`, `INF-010` $\rightarrow$ Định hướng Thiết kế Bảo mật & Tuân thủ**:
-   * Tuyệt đối không lưu trữ ảnh chụp thô trên máy trạm Kiosk.
-   * Toàn bộ vector đặc trưng lưu trên CSDL máy chủ phải được mã hóa chuẩn AES-256-GCM.
-   * Xây dựng chức năng ký Informed Consent trên Web và tác vụ tự động quét xóa vector quá hạn 20 ngày theo lịch trình định kỳ.
-4. **Từ `INF-011` $\rightarrow$ Định hướng Cơ chế Hàng đợi Ngoại tuyến (Offline Resiliency)**:
-   * Trạm Kiosk tích hợp CSDL cục bộ chế độ Write-Ahead Logging (WAL) để ghi đệm các lượt quẹt khi mất mạng và tự động đồng bộ bù khi có kết nối trở lại.
-5. **Từ `INF-012` $\rightarrow$ Định hướng Phương thức Dự phòng (Fallback Mechanism)**:
-   * Cung cấp bàn phím số ảo PIN 6 số trên màn hình cảm ứng Kiosk, tự động khóa 15 phút nếu nhập sai quá 5 lần để chống tấn công dò quét brute-force.
+| ID | Analysis | Derived from | Impacts | Status |
+| :--- | :--- | :---: | :--- | :---: |
+| `ANL-001` | Kết hợp camera quang học UVC với ứng dụng máy trạm xử lý Edge AI hoàn toàn tại biên giúp loại bỏ triệt để quẹt thẻ hộ, giảm chi phí đầu tư thiết bị xuống mức 0 VNĐ bằng cách tái sử dụng PC/webcam sẵn có. | `INF-001`, `INF-002`, `INF-006` | `PD-001`, `PD-002` | Accepted |
+| `ANL-002` | Tích hợp cổng lọc MiniFASNet với ngưỡng an toàn $S_{\text{liveness}} \ge 0.85$ ngay trước bước trích xuất đặc trưng loại bỏ triệt để nguy cơ gian lận bằng ảnh in màu và video phát lại theo chuẩn ISO/IEC 30107-3. | `INF-008` | `PD-003`, `SOL-SYS-004` | Accepted |
+| `ANL-003` | Ràng buộc bảo mật và quyền riêng tư theo Luật 91/2025/QH15 yêu cầu: tuyệt đối không lưu ảnh thô trên đĩa, mã hóa AES-256-GCM toàn bộ vector đặc trưng tại CSDL máy chủ, cung cấp quy trình ký Consent và cron job tiêu hủy sau 20 ngày. | `INF-009`, `INF-010` | `PD-005`, `SRS-001`, `SRS-003` | Accepted |
+| `ANL-004` | Hàng đợi lưu trữ cục bộ SQLite chế độ WAL tại trạm Kiosk bảo đảm tính bền vững dữ liệu khi mất điện hoặc mất mạng đột ngột ($\text{RPO} = 0$), hỗ trợ đọc/ghi đồng thời non-blocking và tự động đồng bộ bù khi có mạng trở lại. | `INF-011` | `PD-004`, `SOL-SYS-008` | Accepted |
+| `ANL-005` | Bàn phím số ảo PIN 6 số trên màn hình cảm ứng Kiosk kết hợp cơ chế tự động khóa 15 phút sau 5 lần nhập sai giải quyết dứt điểm điểm nghẽn di chuyển khi nhân viên thay đổi diện mạo hoặc camera sự cố mà vẫn an toàn trước brute-force. | `INF-012` | `PD-008`, `SOL-SYS-007` | Accepted |
 
 ---
 
 ## 6. Gaps & Open Questions (Khoảng trống Nghiên cứu)
 
-1. **Khả năng nhận diện trong điều kiện ánh sáng cực yếu ($< 50\text{ lux}$) hoặc ngược sáng gắt**:
-   * *Định hướng*: Tích hợp thuật toán đo độ sáng/sắc nét và viền Oval đổi màu vàng hổ phách hướng dẫn người dùng căn chỉnh góc đứng phù hợp.
-2. **Quy mô ma trận RAM khi số lượng nhân sự tăng lên trên 10,000 người**:
-   * *Định hướng*: Hiện tại ma trận 1,000 nhân sự chiếm ~2 MB RAM và $< 2\text{ ms}$; khi quy mô vượt 10,000 nhân sự sẽ nghiên cứu áp dụng phân vùng theo phòng ban hoặc cấu trúc HNSW/Faiss.
+| ID | Kind | Missing knowledge | Refers to | Blocks | Resolution | Status |
+| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| `GAP-001` | Performance Gap | Khả năng nhận diện chính xác trong điều kiện ánh sáng cực yếu ($< 50\text{ lux}$) hoặc ngược sáng gắt với camera thông thường. | `INF-006`, `SOL-SYS-003` | — | Tích hợp thuật toán đo Laplacian/độ sáng và viền Oval đổi màu vàng hổ phách hướng dẫn góc đứng phù hợp. | Resolved |
+| `GAP-002` | Scalability Gap | Tốc độ tính toán tích vô hướng Cosine trên CPU khi quy mô nhân sự tăng vượt 10,000 nhân sự trong ma trận RAM. | `INF-007`, `SOL-SYS-006` | — | Hiện tại ma trận 1,000 nhân sự chỉ mất $< 2\text{ ms}$; khi quy mô vượt 10,000 nhân sự sẽ nghiên cứu phân vùng phòng ban hoặc áp dụng cấu trúc chỉ mục HNSW/Faiss. | Open |
 

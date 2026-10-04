@@ -7,19 +7,34 @@ owner: Database Architect & Backend Lead
 
 # DATA DESIGN — Thiết kế Dữ liệu Trung tâm Phân hệ Backend
 
+## 1. Structure (Cấu trúc Mô hình & Lưu trữ Dữ liệu)
 
-## 1. Data Design Elements & Architecture (Thành phần Thiết kế Dữ liệu)
+### 1.1. Data Model (Mô hình Dữ liệu & Ràng buộc)
 
 | ID | Name | Definition | Uses | Realizes | Decisions | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
-| `DTD-BE-001` | Relational Database Schema & DDL | Lược đồ 8 bảng CSDL PostgreSQL 16 chuẩn 3NF kèm quan hệ khóa ngoại, ràng buộc toàn vẹn và trigger audit. | `STK-013`, `STK-014` | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-004`, `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-008` | `DD-SYS-003` | Accepted |
-| `DTD-BE-002` | Database Indexing Strategy | Bộ chỉ mục B-tree tối ưu truy vấn tra cứu chấm công theo nhân viên, mốc giờ, kiosk và OTP lookup. | `STK-013` | `DATA-BE-009`, `DATA-BE-014`, `NFR-BE-001` | `DD-SYS-001` | Accepted |
-| `DTD-BE-003` | In-Memory Caffeine Cooldown Cache | Kiến trúc bộ nhớ đệm chống quẹt thẻ dồn dập (TTL 120s) trên khóa `cooldown:punch:{userId}:{date}`. | `STK-011` | `DATA-BE-012`, `FR-BE-002` | `DD-SYS-002` | Accepted |
-| `DTD-BE-004` | Connection Pooling & HikariCP Configuration | Cấu hình pool kết nối HikariCP tối đa 20 kết nối cho thông lượng cao và tải 50 Kiosk đồng thời. | `STK-011`, `STK-013` | `NFR-BE-001`, `NFR-BE-002` | `DD-SYS-001` | Accepted |
+| `DTD-BE-001` | Lược đồ CSDL Quan hệ & DDL 3NF | Lược đồ 8 bảng CSDL PostgreSQL 16 chuẩn 3NF kèm quan hệ khóa ngoại, ràng buộc toàn vẹn, cờ audit và kiểu dữ liệu tối ưu. | `STK-013` | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-004`, `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-008` | `DD-SYS-003`, `DD-BE-005`, `DD-BE-006` | Accepted |
+| `DTD-BE-002` | Chiến lược Chỉ mục Hiệu năng B-Tree | Bộ chỉ mục B-tree tối ưu hóa truy vấn tra cứu điểm danh theo nhân viên, mốc giờ, kiosk, mã ca kíp và bảng kiểm toán. | `STK-013` | `DATA-BE-009`, `DATA-BE-014`, `NFR-BE-001` | `DD-SYS-001` | Accepted |
+
+### 1.2. Storage & Access (Lưu trữ, Caching & Quản lý Kết nối)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DTD-BE-003` | Kiến trúc Bộ nhớ đệm Cooldown Caffeine | Bộ nhớ đệm In-Memory Caffeine chống quẹt thẻ dồn dập (TTL 120s) trên khóa `cooldown:punch:{userId}:{date}`, giảm 95% tải tra cứu CSDL. | `STK-011` | `DATA-BE-012`, `FR-BE-002` | `DD-SYS-006`, `DD-BE-003` | Accepted |
+| `DTD-BE-004` | Cấu hình Kết nối CSDL HikariCP | Cấu hình pool kết nối HikariCP tối đa 20 kết nối cho thông lượng cao và tải 50 trạm Kiosk đồng thời, thời gian chờ $\le 5\text{ s}$. | `STK-011`, `STK-013` | `NFR-BE-001`, `NFR-BE-002` | `DD-SYS-001` | Accepted |
 
 ---
 
-## 2. Relational Database Schema (PostgreSQL 16 DDL Script)
+## 2. Behavior (Diễn biến Luồng & Vòng đời Dữ liệu)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DTD-BE-005` | Luồng Biến đổi & Mã hóa Dữ liệu Sinh trắc | Nhận vector 512D từ Kiosk $\rightarrow$ Thẩm định độ dài chuẩn $L_2\text{ Norm} = 1.0$ $\rightarrow$ Sinh ngẫu nhiên IV 12-byte $\rightarrow$ Mã hóa AES-256-GCM $\rightarrow$ Persist vào `biometric_templates` dạng `BYTEA` ciphertext kèm IV. | `DTD-BE-001`, `STK-010` | `DATA-BE-005`, `DATA-BE-010`, `DATA-BE-015` | `DD-SYS-003`, `DD-BE-007` | Accepted |
+| `DTD-BE-006` | Chu trình Tự động Dọn dẹp & Tiêu hủy Dữ liệu 20 Ngày | Spring `@Scheduled` chạy 01:00 hàng ngày $\rightarrow$ Quét bảng `users` tìm nhân sự có `terminated_date <= CURRENT_DATE - 20 days` $\rightarrow$ Xóa cứng (`HARD DELETE`) bản ghi `biometric_templates` $\rightarrow$ Ghi log bất biến vào `audit_logs`. | `DTD-BE-001`, `STK-011` | `DATA-BE-013`, `DATA-BE-014` | `DD-SYS-003`, `DD-BE-008` | Accepted |
+
+---
+
+## 3. Relational Database Schema (PostgreSQL 16 DDL Script)
 
 Hệ thống CSDL được chuẩn hóa ở mức 3NF, áp dụng khóa ngoại, chỉ mục hiệu năng và ràng buộc toàn vẹn:
 
@@ -150,7 +165,7 @@ CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id);
 
 ---
 
-## 2. In-Memory Cooldown & Cache Architecture (Chiến lược Bộ nhớ Đệm)
+## 4. In-Memory Cooldown & Cache Architecture (`Caffeine`)
 
 Để ngăn chặn tình trạng quẹt thẻ dồn dập (Double Punching) và bảo vệ máy chủ:
 * **Công nghệ Cache**: Sử dụng Caffeine Cache (trong tiến trình) kết hợp Redis Cache (nếu chạy đa instance).
@@ -163,7 +178,7 @@ CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id);
 
 ---
 
-## 3. Connection Pooling & Database Sizing (`HikariCP`)
+## 5. Connection Pooling & Database Sizing (`HikariCP`)
 
 Cấu hình tối ưu trong file cấu hình `application.yml` cho tải cao:
 
@@ -181,3 +196,14 @@ spring:
 ```
 
 * **Sizing tính toán**: Với 50 trạm Kiosk gửi tối đa 50 requests/s và thời gian thực thi truy vấn trung bình $\le 10\text{ ms}$, pool size 20 kết nối hoàn toàn đáp ứng được thông lượng $500\text{ RPS}$ với mức chiếm dụng tài nguyên CPU $< 15\%$.
+
+---
+
+## 6. Decisions (Quyết định Thiết kế Dữ liệu)
+
+| ID | Decision | Rationale | Basis | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| `DD-BE-005` | Chuẩn hóa 3NF và ràng buộc duy nhất tự nhiên `(user_id, punch_timestamp, punch_type)` cho bảng `attendance_logs` | Đảm bảo tính toàn vẹn dữ liệu ở cấp CSDL, hỗ trợ cơ chế Idempotency chống ghi trùng lặp khi trạm Kiosk gửi bù gói lô ngoại tuyến. | `DATA-BE-009`, `FR-BE-003` | Accepted |
+| `DD-BE-006` | Sử dụng Flyway Migration quản lý phiên bản schema thay cho auto DDL của Hibernate | Kiểm soát 100% các câu lệnh DDL thực thi trên Production, ngăn ngừa rủi ro tự động drop/alter cột làm mất dữ liệu nhạy cảm. | `DATA-BE-001`, `STK-013` | Accepted |
+| `DD-BE-007` | Lưu trữ vector sinh trắc dạng `BYTEA` (AES-256-GCM ciphertext + IV) thay vì pgvector trên CSDL PostgreSQL | Đáp ứng tuyệt đối yêu cầu bảo vệ dữ liệu ở trạng thái tĩnh (Encryption-at-Rest) theo Nghị định 13/2025; việc so khớp khuôn mặt 1:N được phân tán thực thi tại RAM Kiosk. | `DATA-BE-015`, `NFR-BE-003` | Accepted |
+| `DD-BE-008` | Thiết kế Append-Only cho bảng `audit_logs` với cấu trúc JSONB cho `before_state` và `after_state` | Bảo toàn tính bất biến của lịch sử kiểm toán phục vụ thanh tra, đồng thời linh hoạt lưu trữ biến động dữ liệu đa thực thể mà không cần can thiệp schema. | `DATA-BE-008`, `DATA-BE-014` | Accepted |

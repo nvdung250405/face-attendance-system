@@ -75,8 +75,8 @@ Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD
 
 ## 4. UI/UX Design Decisions (Quyết định Thiết kế Giao diện)
 
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `DD-SYS-009` | Phong cách Dark Modern UI & Glassmorphism | Áp dụng phong cách giao diện Dark Modern UI kết hợp hiệu ứng kính mờ Glassmorphism cho Kiosk và Web mang lại trải nghiệm cao cấp. | `STK-002`, `STK-017` | `UI-SYS-014` | - | Accepted |
-| `DD-SYS-010` | Màu Vàng hổ phách cho trạng thái căn chỉnh | Quy định màu Vàng hổ phách (`#F59E0B`) cho thông điệp điều hướng và viền Oval ở trạng thái căn chỉnh trung gian giúp phân biệt rõ ràng. | `STK-002` | `UI-SYS-008` | - | Accepted |
-| `DD-SYS-011` | Quy trình đăng ký tự ẩn popup In-Viewport | Thiết kế quy trình đăng ký khuôn mặt tự động ẩn modal OTP để sử dụng toàn màn hình camera chính giúp người dùng tập trung. | `STK-002` | `UI-SYS-003` | - | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DD-SYS-009` | Áp dụng phong cách giao diện Dark Modern UI kết hợp hiệu ứng kính mờ Glassmorphism cho Kiosk và Web. | Mang lại trải nghiệm thị giác hiện đại, giảm mỏi mắt cho người dùng và tiết kiệm năng lượng màn hình. | Giao diện Light Theme cổ điển, Thiết kế phẳng Flat Design | Cần tối ưu render đồ họa phần cứng OpenGL để tránh tụt FPS trên phần cứng yếu. | `UI-SYS-014` | Accepted |
+| `DD-SYS-010` | Quy định màu Vàng hổ phách (`#F59E0B`) cho thông điệp điều hướng và viền Oval ở trạng thái căn chỉnh trung gian. | Giúp người dùng phân biệt rõ ràng giữa trạng thái đang căn chỉnh với trạng thái thành công (Xanh) và thất bại (Đỏ). | Sử dụng màu Xanh dương, Sử dụng màu Trắng nét liền | Tăng độ trực quan sinh động theo chuẩn máy trạng thái 4 màu Oval. | `UI-SYS-008` | Accepted |
+| `DD-SYS-011` | Thiết kế quy trình đăng ký khuôn mặt tự động ẩn modal OTP ở Bước 2 để sử dụng toàn màn hình camera chính. | Tránh che khuất tầm nhìn camera và hướng dẫn người dùng căn chỉnh khuôn mặt vào đúng vị trí Oval chuẩn. | Mở cửa sổ popup riêng biệt, Thu nhỏ khung hình camera vào trong modal | Người dùng tập trung hoàn toàn vào khung Oval chính khi chụp 3 ảnh chuẩn. | `UI-SYS-003` | Accepted |

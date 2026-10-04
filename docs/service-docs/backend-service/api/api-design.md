@@ -7,19 +7,34 @@ owner: Backend Lead & API Architect
 
 # API DESIGN — Thiết kế Chi tiết Giao diện & Hợp đồng API (API Contract Specification)
 
+## 1. Structure (Cấu trúc Giao diện & Hợp đồng API)
 
-## 1. API Design Elements & Architecture (Thành phần Thiết kế Giao tiếp API)
+### 1.1. Interface Structure (Cấu trúc Giao thức & Tài nguyên)
 
 | ID | Name | Definition | Uses | Realizes | Decisions | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
-| `APD-BE-001` | Kiosk Interaction REST API Design | Thiết kế hợp đồng 5 API REST phục vụ máy trạm Kiosk (`/punch`, `/sync-batch`, `/gallery`, `/verify-otp`, `/enroll-face`) xác thực qua header `X-Kiosk-Id`. | `STK-011` | `API-BE-003`, `API-BE-004`, `API-BE-005`, `API-BE-006`, `API-BE-007` | `DD-SYS-001` | Accepted |
-| `APD-BE-002` | Web Portal REST API Design | Thiết kế hợp đồng các API REST phục vụ Web Portal (Auth, Admin Attendance, Employee Attendance, Consent Signing, Employee Management) xác thực JWT. | `STK-011` | `API-BE-001`, `API-BE-002`, `API-BE-008`, `API-BE-009`, `API-BE-010`, `API-BE-011` | `DD-SYS-001` | Accepted |
-| `APD-BE-003` | WebSocket STOMP Real-time Messaging Design | Thiết kế giao thức đẩy sự kiện hai chiều qua các topic `/topic/kiosk-gallery`, `/topic/live-attendance`, `/topic/enrollment/{otp}`. | `STK-012` | `API-BE-012`, `API-BE-013`, `API-BE-014` | `DD-SYS-001` | Accepted |
-| `APD-BE-004` | Global API Conventions & ProblemDetails Error Architecture | Chuẩn hóa định dạng bao bọc JSON, múi giờ ISO-8601, mã lỗi RFC 7807 ProblemDetails và bộ DTO validation. | `STK-011` | `API-SYS-017`, `API-SYS-018` | `DD-SYS-001` | Accepted |
+| `APD-BE-001` | Cấu trúc REST API Phân hệ Kiosk | Thiết kế hợp đồng 5 endpoint REST phục vụ trạm Kiosk (`/punch`, `/sync-batch`, `/gallery`, `/verify-otp`, `/enroll-face`), tiền tố URL `/api/v1/kiosk`, xác thực qua header `X-Kiosk-Id`. | `STK-011` | `API-BE-003`, `API-BE-004`, `API-BE-005`, `API-BE-006`, `API-BE-007` | `DD-SYS-001`, `DD-BE-010` | Accepted |
+| `APD-BE-002` | Cấu trúc REST API Cổng Web Portal | Thiết kế hợp đồng các endpoint REST phục vụ Web Portal (Auth, Admin Attendance, Employee Attendance, Consent Signing, Employee Management), xác thực Bearer JWT đa vai trò. | `STK-011` | `API-BE-001`, `API-BE-002`, `API-BE-008`, `API-BE-009`, `API-BE-010`, `API-BE-011` | `DD-SYS-001`, `DD-BE-009` | Accepted |
+| `APD-BE-003` | Cấu trúc Kênh Đẩy Dữ liệu STOMP | Thiết kế kênh WebSocket STOMP endpoint `/ws-attendance`, hỗ trợ SockJS fallback và cấu hình message broker tiền tố `/topic` phục vụ đẩy sự kiện thời gian thực tới Kiosk và Web. | `STK-012` | `API-BE-012`, `API-BE-013`, `API-BE-014` | `DD-SYS-004`, `DD-BE-011` | Accepted |
+
+### 1.2. Contracts (Mô hình Dữ liệu & Báo lỗi Toàn cục)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APD-BE-004` | Mô hình Hợp đồng Dữ liệu & ProblemDetails | Chuẩn hóa định dạng bao bọc JSON, múi giờ ISO-8601 (+07:00), mã lỗi RFC 7807 ProblemDetails và bộ DTO validation annotations (`@NotNull`, `@Size`, `@Pattern`). | `STK-011` | `API-BE-015`, `API-BE-016` | `DD-BE-009` | Accepted |
 
 ---
 
-## 2. Quy chuẩn Chung Toàn bộ API (Global API Conventions)
+## 2. Behavior (Diễn biến Luồng Giao tiếp, Xác thực & Idempotency)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APD-BE-005` | Xác thực & Lọc Kênh WebSocket STOMP | Client gửi frame `CONNECT` kèm header `Authorization` hoặc `X-Kiosk-Id` $\rightarrow$ `ChannelInterceptor` thẩm định $\rightarrow$ cho phép subscribe các topic `/topic/live-attendance`, `/topic/kiosk-gallery`. | `APD-BE-003`, `STK-012` | `API-BE-012`, `API-BE-013`, `API-BE-014`, `API-BE-015` | `DD-SYS-004`, `DD-BE-011` | Accepted |
+| `APD-BE-006` | Cơ chế Idempotency Xử lý Điểm danh | Tiếp nhận punch $\rightarrow$ đối chiếu khóa tự nhiên `(user_id, punch_timestamp, punch_type)` trên PostgreSQL và cache 120s $\rightarrow$ nếu trùng trả về HTTP 409 hoặc bỏ qua trong gói lô (`ON CONFLICT DO NOTHING`). | `APD-BE-001`, `STK-013` | `API-BE-003`, `API-BE-004` | `DD-SYS-006`, `DD-BE-012` | Accepted |
+
+---
+
+## 3. Quy chuẩn Chung Toàn bộ API (Global API Conventions)
 
 * **Base URL**: `http://localhost:8080/api/v1` (Dev) hoặc `https://fas.company.com/api/v1` (Prod).
 * **Định dạng Nội dung**: `Content-Type: application/json; charset=UTF-8`.
@@ -52,9 +67,9 @@ owner: Backend Lead & API Architect
 
 ---
 
-## 2. Hợp đồng Chi tiết Từng Endpoint REST (REST API Contracts)
+## 4. Hợp đồng Chi tiết Từng Endpoint REST (REST API Contracts)
 
-### 2.1. `POST /api/v1/auth/login` — Xác thực Đăng nhập Hệ thống
+### 4.1. `POST /api/v1/auth/login` — Xác thực Đăng nhập Hệ thống
 * **Mục đích**: Xác thực người dùng Web Portal (HR, Nhân viên), cấp cặp Access Token và Refresh Token.
 * **Xác thực**: Public (Không yêu cầu Token).
 * **Request Headers**: `Content-Type: application/json`
@@ -102,7 +117,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.2. `POST /api/v1/auth/refresh` — Làm mới Access Token
+### 4.2. `POST /api/v1/auth/refresh` — Làm mới Access Token
 * **Mục đích**: Đổi Refresh Token lấy Access Token mới khi Access Token hết hạn 1 giờ.
 * **Request Body**:
 | Tên Trường | Kiểu Dữ liệu | Bắt buộc | Mô tả & Ví dụ |
@@ -128,7 +143,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.3. `POST /api/v1/kiosk/punch` — Tiếp nhận Điểm danh Trực tiếp từ Kiosk
+### 4.3. `POST /api/v1/kiosk/punch` — Tiếp nhận Điểm danh Trực tiếp từ Kiosk
 * **Mục đích**: Ghi nhận một lượt chấm công khuôn mặt hoặc mã PIN ngay sau khi quét thành công tại Kiosk.
 * **Xác thực**: Yêu cầu Header `X-Kiosk-Id: <id>` và `Authorization: Bearer <SecretToken>`.
 * **Request Body**:
@@ -178,7 +193,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.4. `POST /api/v1/kiosk/sync-batch` — Đồng bộ Bù Ngoại tuyến từ Kiosk
+### 4.4. `POST /api/v1/kiosk/sync-batch` — Đồng bộ Bù Ngoại tuyến từ Kiosk
 * **Mục đích**: Đẩy lô các bản ghi điểm danh ngoại tuyến khi trạm Kiosk khôi phục mạng Internet.
 * **Xác thực**: Yêu cầu Header `X-Kiosk-Id` và Bearer Token của Kiosk.
 * **Request Body**:
@@ -236,7 +251,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.5. `GET /api/v1/kiosk/gallery` — Tải Danh mục Vector Mẫu Sinh trắc học
+### 4.5. `GET /api/v1/kiosk/gallery` — Tải Danh mục Vector Mẫu Sinh trắc học
 * **Mục đích**: Cung cấp toàn bộ danh mục vector ArcFace 512D của nhân viên `ACTIVE` để Kiosk nạp vào RAM.
 * **Xác thực**: Yêu cầu Header `X-Kiosk-Id` và Bearer Token của Kiosk.
 * **Response 200 OK**:
@@ -273,7 +288,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.6. `POST /api/v1/kiosk/verify-otp` — Xác minh Mã OTP Kích hoạt tại Kiosk
+### 4.6. `POST /api/v1/kiosk/verify-otp` — Xác minh Mã OTP Kích hoạt tại Kiosk
 * **Mục đích**: Kiểm tra mã OTP 6 số nhân viên nhập tại màn hình Kiosk để mở khóa camera quét mặt.
 * **Request Body**:
 ```json
@@ -304,7 +319,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.7. `POST /api/v1/kiosk/enroll-face` — Tiếp nhận Vector Mới Từ Kiosk
+### 4.7. `POST /api/v1/kiosk/enroll-face` — Tiếp nhận Vector Mới Từ Kiosk
 * **Mục đích**: Gửi vector 512D mới trích xuất từ camera Kiosk lên Backend để mã hóa AES-256-GCM lưu CSDL.
 * **Request Body**:
 | Tên Trường | Kiểu Dữ liệu | Bắt buộc | Ràng buộc | Mô tả & Ví dụ |
@@ -342,7 +357,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.8. `GET /api/v1/admin/attendance` — Quản lý & Báo cáo Lịch sử Điểm danh (HR)
+### 4.8. `GET /api/v1/admin/attendance` — Quản lý & Báo cáo Lịch sử Điểm danh (HR)
 * **Mục đích**: Phục vụ Cổng Web Portal tra cứu danh sách chấm công toàn công ty có phân trang và bộ lọc.
 * **Xác thực**: Bearer JWT với Role `HR_MANAGER` hoặc `ADMIN`.
 * **Query Parameters**:
@@ -391,7 +406,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.9. `GET /api/v1/employee/attendance` — Tra cứu Điểm danh Cá nhân (Nhân viên)
+### 4.9. `GET /api/v1/employee/attendance` — Tra cứu Điểm danh Cá nhân (Nhân viên)
 * **Mục đích**: Nhân viên đăng nhập xem bảng công và mốc giờ quẹt của chính mình trong tháng.
 * **Xác thực**: Bearer JWT với Role `EMPLOYEE`.
 * **Query Parameters**: `month` (`int`, 1-12, default tháng hiện tại), `year` (`int`, default năm hiện tại).
@@ -423,7 +438,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.10. `POST /api/v1/employee/consent` — Ký Thỏa thuận Informed Consent
+### 4.10. `POST /api/v1/employee/consent` — Ký Thỏa thuận Informed Consent
 * **Mục đích**: Nhân viên ký điện tử đồng thuận xử lý dữ liệu khuôn mặt theo Luật 2025; Backend sinh mã kích hoạt OTP và mã QR Code.
 * **Xác thực**: Bearer JWT (Role `EMPLOYEE`).
 * **Request Body**:
@@ -452,7 +467,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-### 2.11. `GET /api/v1/admin/employees` — Quản lý Danh sách Nhân sự (HR)
+### 4.11. `GET /api/v1/admin/employees` — Quản lý Danh sách Nhân sự (HR)
 * **Mục đích**: HR theo dõi danh sách nhân viên, phòng ban, và tình trạng đăng ký sinh trắc (`ACTIVE` / `PENDING_CONSENT` / `TERMINATED`).
 * **Xác thực**: Bearer JWT (Role `HR_MANAGER`, `ADMIN`).
 * **Query Parameters**: `page` (default 0), `size` (default 20), `status`, `department`, `keyword`.
@@ -488,12 +503,12 @@ owner: Backend Lead & API Architect
 
 ---
 
-## 3. Hợp đồng Kênh WebSocket STOMP (STOMP Events Contract)
+## 5. Hợp đồng Kênh WebSocket STOMP (STOMP Events Contract)
 
 * **Endpoint Bắt tay WebSocket**: `ws://localhost:8080/ws-attendance` (kèm SockJS fallback `http://localhost:8080/ws-attendance`).
 * **Header Kết nối STOMP**: `Authorization: Bearer <JWT>` (đối với Web) hoặc `X-Kiosk-Id` + Token (đối với Kiosk).
 
-### 3.1. Topic `/topic/live-attendance` — Đẩy Sự kiện Điểm danh Lên Web Dashboard
+### 5.1. Topic `/topic/live-attendance` — Đẩy Sự kiện Điểm danh Lên Web Dashboard
 * **Bên phát (Producer)**: `backend-service` (ngay sau khi ghi nhận điểm danh thành công).
 * **Bên nhận (Subscriber)**: `web-portal` (trang Live Monitoring Dashboard).
 * **Payload JSON**:
@@ -514,7 +529,7 @@ owner: Backend Lead & API Architect
 }
 ```
 
-### 3.2. Topic `/topic/kiosk-gallery` — Cập nhật Nạp Nóng Vector về Mạng Kiosk
+### 5.2. Topic `/topic/kiosk-gallery` — Cập nhật Nạp Nóng Vector về Mạng Kiosk
 * **Bên phát (Producer)**: `backend-service` (khi có nhân viên mới đăng ký khuôn mặt hoặc nhân viên thôi việc).
 * **Bên nhận (Subscriber)**: Tất cả trạm `kiosk-app` đang trực tuyến.
 * **Payload JSON (Trường hợp Thêm Vector mới - `ADD`)**:
@@ -538,7 +553,7 @@ owner: Backend Lead & API Architect
 }
 ```
 
-### 3.3. Topic `/topic/enrollment/{otp}` — Báo Hoàn tất Đăng ký về Web Nhân viên
+### 5.3. Topic `/topic/enrollment/{otp}` — Báo Hoàn tất Đăng ký về Web Nhân viên
 * **Bên phát (Producer)**: `backend-service` (ngay sau khi Kiosk nạp mặt thành công).
 * **Bên nhận (Subscriber)**: `web-portal` (trang cá nhân của nhân viên đang mở modal hiển thị OTP).
 * **Payload JSON**:
@@ -555,7 +570,7 @@ owner: Backend Lead & API Architect
 
 ---
 
-## 4. Từ điển Mã Lỗi Toàn hệ thống (Error Codes Dictionary)
+## 6. Từ điển Mã Lỗi Toàn hệ thống (Error Codes Dictionary)
 
 | Mã Lỗi (`code`) | HTTP Status | Tiêu đề Lỗi | Diễn giải & Hướng dẫn Khắc phục |
 | :--- | :---: | :--- | :--- |
@@ -571,3 +586,14 @@ owner: Backend Lead & API Architect
 | `EMPLOYEE_NOT_FOUND` | 404 | Không tìm thấy nhân sự | ID nhân viên không tồn tại trong CSDL. |
 | `DATA_INTEGRITY_VIOLATION` | 400 | Lỗi toàn vẹn dữ liệu | Vi phạm ràng buộc duy nhất (Unique Email hoặc Employee Code). |
 | `INTERNAL_SERVER_ERROR` | 500 | Lỗi hệ thống nội bộ | Xảy ra lỗi bất thường ngoài tầm kiểm soát; kiểm tra log máy chủ. |
+
+---
+
+## 7. Decisions (Quyết định Thiết kế Hợp đồng API)
+
+| ID | Decision | Rationale | Basis | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| `DD-BE-009` | Chuẩn hóa mô hình báo lỗi theo chuẩn RFC 7807 ProblemDetails | Đem lại cấu trúc lỗi máy đọc được (Machine-readable) đồng nhất cho mọi client Web và Kiosk, hỗ trợ chi tiết các trường vi phạm validation. | `API-BE-016`, `STK-011` | Accepted |
+| `DD-BE-010` | Sử dụng tiêu đề tùy biến `X-Kiosk-Id` kết hợp Secret Bearer Token cho máy trạm Kiosk | Định danh rõ ràng phần cứng máy trạm phát sinh giao dịch, cho phép vô hiệu hóa tức thời từng trạm Kiosk riêng biệt khi có rủi ro lộ khóa. | `API-BE-003`, `API-BE-015` | Accepted |
+| `DD-BE-011` | Cấu hình kênh STOMP chia tách tiền tố `/topic` (Public broadcast) và `/user` (Private unicast) | Tối ưu lưu lượng truyền thông thời gian thực: chỉ phát sóng dữ liệu chung tới subscriber liên quan, dữ liệu phiên OTP được cô lập cho người dùng đích. | `API-BE-012`, `API-BE-013`, `API-BE-014` | Accepted |
+| `DD-BE-012` | Giới hạn kích thước gói lô đồng bộ bù ngoại tuyến tối đa 50 bản ghi/request | Ngăn chặn hiện tượng nghẽn luồng kết nối và khóa bảng CSDL kéo dài khi hàng loạt trạm Kiosk đồng loạt gửi bù dữ liệu sau sự cố mất mạng diện rộng. | `API-BE-004`, `NFR-BE-001` | Accepted |

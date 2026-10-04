@@ -56,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_offline_sync ON offline_punches(is_synced, id);
 
 ## 3. Data Design Decisions (Quyết định Thiết kế Dữ liệu)
 
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `DD-SYS-015` | Lưu vector mã hóa dưới dạng BYTEA | Lưu trữ vector đặc trưng mã hóa dưới dạng BYTEA thay vì kiểu vector chuyên dụng (pgvector) vì suy luận và so khớp diễn ra hoàn toàn tại biên. | `STK-012` | `PD-002`, `PD-005` | `DD-SYS-003` | Accepted |
-| `DD-SYS-016` | Phân tách cột độc lập cho IV và Auth Tag | Tách riêng Initialization Vector (IV 12 bytes) và Authentication Tag (16 bytes) thành các cột độc lập trong CSDL phục vụ giải mã chuẩn xác. | `STK-012`, `STK-015` | `SRS-001` | `DD-SYS-003` | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DD-SYS-015` | Lưu trữ vector đặc trưng mã hóa dưới dạng BYTEA thay vì kiểu vector chuyên dụng (pgvector). | Toàn bộ suy luận và so khớp ma trận diễn ra tại biên Kiosk; Backend chỉ lưu trữ và chuyển tiếp bản ghi mã hóa. | Dùng extension pgvector, Lưu dạng chuỗi Base64 | Tiết kiệm chi phí mở rộng extension CSDL và tăng tốc độ đọc/ghi dữ liệu nhị phân. | `PD-002`, `PD-005` | Accepted |
+| `DD-SYS-016` | Tách riêng Initialization Vector (IV 12 bytes) và Authentication Tag (16 bytes) thành các cột độc lập trong CSDL. | Phục vụ giải mã chuẩn xác theo đặc tả NIST SP 800-38D AES-GCM và dễ dàng audit cấu trúc mã hóa. | Ghép chung IV + Tag + Ciphertext vào 1 blob nhị phân | Tăng độ rõ ràng về cấu trúc dữ liệu bảo mật, thuận tiện kiểm tra tính toàn vẹn độc lập. | `SRS-001`, `DD-SYS-003` | Accepted |
