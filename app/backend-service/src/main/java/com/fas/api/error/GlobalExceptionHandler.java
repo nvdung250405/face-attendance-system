@@ -111,9 +111,11 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleServletRequestBinding(ServletRequestBindingException ex, HttpServletRequest request) {
         List<InvalidParam> invalidParams = new ArrayList<>();
         if (ex instanceof MissingServletRequestParameterException missingParameter) {
-            invalidParams.add(new InvalidParam(missingParameter.getParameterName(), ex.getMessage()));
+            invalidParams.add(new InvalidParam(missingParameter.getParameterName(),
+                    "Thiếu tham số bắt buộc '%s'".formatted(missingParameter.getParameterName())));
         } else if (ex instanceof MissingRequestHeaderException missingHeader) {
-            invalidParams.add(new InvalidParam(missingHeader.getHeaderName(), ex.getMessage()));
+            invalidParams.add(new InvalidParam(missingHeader.getHeaderName(),
+                    "Thiếu header bắt buộc '%s'".formatted(missingHeader.getHeaderName())));
         }
 
         return problemDetail(ApiErrorCode.VALIDATION_FAILED, MISSING_BINDING_DETAIL, invalidParams, request);
