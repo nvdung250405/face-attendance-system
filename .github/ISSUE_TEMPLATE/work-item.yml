@@ -1,5 +1,5 @@
 name: "Work Item (Thực thi Kế hoạch)"
-description: "Thực thi một work item được định nghĩa trong Plan (FND-, BLD-, TST-, DPL-)."
+description: "Thực thi một work item được định nghĩa trong Plan (FND-, BLD-, TST-, DPL-, TASK-)."
 title: "[<ID>] <Tóm tắt công việc>"
 labels: ["work-item"]
 body:
@@ -13,7 +13,7 @@ body:
     id: work_item_id
     attributes:
       label: "Mã Work Item ID"
-      description: "Nhập ID work item theo đúng scheme (ví dụ: BLD-BKE-001, TST-KSK-002, DPL-001, FND-SYS-001)."
+      description: "Nhập ID work item theo đúng scheme (ví dụ: BLD-BKE-001, TST-KSK-002, DPL-001, FND-SYS-001, TASK-BKE-001)."
       placeholder: "BLD-BKE-001"
     validations:
       required: true

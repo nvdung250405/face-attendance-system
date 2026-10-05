@@ -130,7 +130,7 @@ Nguyên tắc chung:
 
 | Loại issue | Dùng khi | Mang ID | Template |
 |---|---|---|---|
-| Work item | Thực thi một work item của Plan | `FND-`, `BLD-`, `TST-`, `DPL-` | `work-item.yml` |
+| Work item | Thực thi một work item của Plan | `FND-`, `BLD-`, `TST-`, `DPL-`, `TASK-` | `work-item.yml` |
 | Change request | Đổi item đã Baselined (`sdlc-docs.md` 14.3) | ID item bị đổi | `change-request.yml` |
 | New service | Thêm unit mới (`sdlc-docs.md` 14.2) | Mã service (SCOPE) | `new-service.yml` |
 | Defect | Lỗi phát hiện khi kiểm thử hoặc vận hành | `TST-` hoặc Spec ID bị vi phạm | `defect.yml` |
@@ -303,7 +303,7 @@ Là một check của CI nhưng nằm ở workflow riêng vì thuộc owner khá
 | Front matter | 3.4 | Thiếu hoặc sai trường (`title`, `version`, `status`, `owner`); `status` ngoài tập giá trị |
 | ID scheme và duy nhất | 12 | ID sai prefix/scope; trùng; ID bị xóa hoặc tái sử dụng so với nhánh gốc |
 | Reference | 11.2 | `Basis`, `Realizes`, `Covers`, `Uses`, `Requires` trỏ tới ID không tồn tại |
-| Orphan | 13.2 | Design element thiếu `Realizes`; work item (trừ `Gate`) thiếu `Covers`; Requirement thiếu Design/phân bổ hoặc thiếu Test Item |
+| Orphan | 13.2 | Design element thiếu `Realizes`; work item (trừ `Gate` và `TASK-`) thiếu `Covers`; Requirement thiếu Design/phân bổ hoặc thiếu Test Item |
 | Cấu trúc cây | 2, 10 | Facet đã tồn tại thiếu một trong bốn leaf |
 | Change control | 3.4, 14.3 | Pull request sửa item thuộc leaf `Baselined` mà không tham chiếu issue change request |
 | Markdown và link | — | Lỗi lint; link hỏng |
