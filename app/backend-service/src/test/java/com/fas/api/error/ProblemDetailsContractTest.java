@@ -258,6 +258,19 @@ class ProblemDetailsContractTest {
     }
 
     @Test
+    @DisplayName("Thiếu tham số bắt buộc trả về 400 kèm tên tham số và lý do tiếng Việt")
+    void missingRequiredParameterShouldReturn400WithLocalizedReason() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/probe/admin/report"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        JsonNode body = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString());
+        assertThat(body.path("code").asText()).isEqualTo("VALIDATION_FAILED");
+        assertThat(invalidParamFields(body)).contains("month");
+        assertThat(reasonsFor(body, "month")).containsExactly("Thiếu tham số bắt buộc 'month'");
+    }
+
+    @Test
     @DisplayName("Tài nguyên không tồn tại giữ đúng HTTP 404 ProblemDetails thay vì bị chuyển thành lỗi 500")
     void unknownResourceShouldReturn404ProblemDetails() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v1/probe/khong-ton-tai"))
@@ -280,6 +293,7 @@ class ProblemDetailsContractTest {
         JsonNode body = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString());
         assertThat(body.path("code").asText()).isEqualTo("VALIDATION_FAILED");
         assertThat(invalidParamFields(body)).contains("X-Kiosk-Id");
+        assertThat(reasonsFor(body, "X-Kiosk-Id")).containsExactly("Thiếu header bắt buộc 'X-Kiosk-Id'");
     }
 
     @Test
