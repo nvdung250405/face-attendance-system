@@ -578,12 +578,16 @@ owner: Backend Lead & API Architect
 | `TOKEN_EXPIRED` | 401 | Token hết hạn | Access Token đã quá 1 giờ; cần gọi refresh token. |
 | `ACCESS_DENIED` | 403 | Không đủ quyền | Tài khoản không có vai trò phù hợp (Role Guard). |
 | `KIOSK_UNAUTHORIZED` | 401 | Trạm Kiosk chưa cấp phép | Khóa `X-Kiosk-Id` hoặc Secret Token không hợp lệ. |
+| `VALIDATION_FAILED` | 400 | Dữ liệu không hợp lệ | Request Body hoặc tham số request vi phạm ràng buộc Jakarta Validation; chi tiết từng trường vi phạm nằm trong `invalidParams`. |
 | `COOLDOWN_ACTIVE` | 409 | Chống quẹt trùng lặp | Lượt điểm danh trong vòng 120 giây trước đó đã được ghi nhận. |
 | `OTP_INVALID` | 400 | Mã OTP không đúng | Chuỗi 6 chữ số không khớp với phiên đăng ký. |
 | `OTP_EXPIRED` | 400 | Mã OTP đã hết hạn | Mã OTP đã vượt quá thời hạn 48 giờ kể từ lúc sinh. |
 | `OTP_ALREADY_USED` | 409 | Mã OTP đã sử dụng | Mã này đã được dùng để nạp khuôn mặt thành công trước đó. |
 | `INVALID_VECTOR_DIMENSION` | 400 | Sai kích thước vector | Vector gửi lên không đúng 512 phần tử float32. |
 | `EMPLOYEE_NOT_FOUND` | 404 | Không tìm thấy nhân sự | ID nhân viên không tồn tại trong CSDL. |
+| `RESOURCE_NOT_FOUND` | 404 | Không tìm thấy tài nguyên | Endpoint hoặc tài nguyên được yêu cầu không tồn tại trên máy chủ. |
+| `METHOD_NOT_ALLOWED` | 405 | Phương thức không được hỗ trợ | Phương thức HTTP không được hỗ trợ cho endpoint được gọi. |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | Định dạng nội dung không được hỗ trợ | Request Body không phải `application/json; charset=UTF-8`. |
 | `DATA_INTEGRITY_VIOLATION` | 400 | Lỗi toàn vẹn dữ liệu | Vi phạm ràng buộc duy nhất (Unique Email hoặc Employee Code). |
 | `INTERNAL_SERVER_ERROR` | 500 | Lỗi hệ thống nội bộ | Xảy ra lỗi bất thường ngoài tầm kiểm soát; kiểm tra log máy chủ. |
 
