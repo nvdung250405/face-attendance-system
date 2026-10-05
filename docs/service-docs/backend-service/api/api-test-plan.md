@@ -9,10 +9,10 @@ owner: Backend QA & API Lead
 
 ## 1. Approach Decisions (Quyết định Tiếp cận Kiểm thử API)
 
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :---: | :---: |
-| `APC-BE-003` | Sử dụng MockMvc kết hợp RestAssured để kiểm thử tự động hợp đồng API. | Cho phép kiểm tra toàn diện cả tầng Web MVC (Validation, Serialization) và tích hợp HTTP thực thụ. | `STK-011`, `API-BE-001` | Accepted |
-| `APC-BE-004` | Tích hợp kiểm thử tải mô phỏng Kiosk gửi punch đồng thời với Gatling. | Phát hiện sớm hiện tượng nghẽn luồng xử lý hoặc chậm trễ trên kênh WebSocket. | `NFR-BE-001`, `NFR-BE-002` | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-003` | Sử dụng MockMvc kết hợp RestAssured để kiểm thử tự động hợp đồng API | Cho phép kiểm tra toàn diện cả tầng Web MVC (Validation, Serialization) với MockMvc và tích hợp HTTP thực thụ qua RestAssured. | Chỉ kiểm thử thủ công qua Postman hoặc dùng TestRestTemplate (bị loại vì khó tự động hóa pipeline CI/CD và tốc độ chậm). | Triển khai song song `@WebMvcTest` gọn nhẹ cho validation/error handling và `@SpringBootTest(RANDOM_PORT)` cho kịch bản toàn trình end-to-end. | `STK-011`, `API-BE-001` | Accepted |
+| `APC-BE-004` | Tích hợp kiểm thử tải mô phỏng Kiosk gửi punch đồng thời với Gatling | Phát hiện sớm hiện tượng nghẽn luồng xử lý hoặc chậm trễ trên kênh WebSocket và hàng đợi tiếp nhận punch. | Dùng Apache JMeter hoặc kiểm thử tải thủ công (bị loại vì kịch bản XML cồng kềnh, khó quản lý phiên bản qua Git). | Kịch bản kiểm thử tải được lưu trữ dưới dạng mã nguồn (Code-as-Test); thực thi định kỳ trên môi trường lab độc lập, không làm chậm pipeline CI hàng ngày. | `NFR-BE-001`, `NFR-BE-002` | Accepted |
 
 ---
 
@@ -30,4 +30,12 @@ owner: Backend QA & API Lead
 ## 3. Defect Management (Quản lý Lỗi Giao diện API)
 
 * Sai lệch cấu trúc trường JSON (Schema Mismatch) hoặc mã lỗi sai được xếp loại **Critical (P1)** và phải được chỉnh sửa đồng bộ giữa Backend và Client.
+
+---
+
+## 4. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Tách biệt Cổng Mạng Kiểm thử STOMP WebSocket**: Kiểm thử luồng STOMP thời gian thực sử dụng `StandardWebSocketClient` kết nối tới cổng ngẫu nhiên `RANDOM_PORT` của Spring Boot Test để tránh xung đột cổng mạng khi chạy song song.
+* **Mô phỏng Gói Lô Ngoại tuyến**: Các ca kiểm thử `POST /api/v1/kiosk/sync-batch` giả lập mảng 50 phần tử có các mốc thời gian trong quá khứ nhằm kiểm chứng cơ chế lưu trữ bảo toàn mốc thời gian thực của sự kiện và tính năng bỏ qua bản ghi trùng.
+
 

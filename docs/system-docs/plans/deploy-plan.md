@@ -72,3 +72,11 @@ owner: Release Engineer
 | **Bản build Backend mới bị lỗi sập container khi khởi động** | Blocker | Khôi phục ngay tag image container ổn định trước đó qua lệnh: `docker compose up -d fas-backend:previous-stable`. |
 | **Migration CSDL PostgreSQL bị lỗi cấu trúc** | Critical | Chạy lệnh Flyway undo hoặc khôi phục dữ liệu từ bản sao lưu gần nhất (`pg_dump` backup file). |
 | **Ứng dụng Kiosk bị lỗi hiển thị sau khi cập nhật bản build mới** | Major | Giữ nguyên tệp cấu hình `.env` và CSDL cục bộ `kiosk_local.db`, khôi phục bản thực thi `.exe` của phiên bản trước. |
+
+---
+
+## 6. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Cấu hình Hạ tầng Docker Host**: Máy chủ triển khai container yêu cầu tối thiểu 4GB RAM khả dụng, đã cài sẵn Docker Engine 26+ và Docker Compose V2. Cổng mạng TCP 8080 (Backend), 3000 (Web Portal) và 5432 (PostgreSQL) không bị tranh chấp bởi các tiến trình khác trên host.
+* **Quyền Khởi tạo Thiết bị USB trên Trạm Kiosk**: File thực thi `FAS_Kiosk.exe` trên hệ điều hành Windows yêu cầu người dùng cấp quyền truy cập camera trong Privacy Settings để DirectShow mở được luồng video.
+

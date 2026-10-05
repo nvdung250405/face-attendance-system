@@ -1,6 +1,6 @@
 ---
 title: Metadata & Quy ước Quản trị Bộ tài liệu SDLC
-version: 2.0
+version: 3.0
 status: Approved
 owner: Lead System Architect
 ---
@@ -74,23 +74,23 @@ docs/
     │   ├── fr-nfr/                              # [Bắt buộc] Pipeline Thị giác Máy tính & AI Biên
     │   │   ├── fr-nfr-specs.md                  # Yêu cầu phát hiện mặt, liveness, so khớp (FR-KSK-, NFR-KSK-)
     │   │   ├── fr-nfr-design.md                 # Thiết kế pipeline YuNet, MiniFASNet, ArcFace (SOL-KSK-)
-    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công pipeline thị giác biên (BLD-KSK-013..017)
-    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử thị giác máy tính và AI (TST-KSK-017..021)
+    │   │   ├── fr-nfr-build-plan.md             # Kế hoạch thi công pipeline thị giác biên (BLD-KSK-012..017)
+    │   │   └── fr-nfr-test-plan.md              # Kế hoạch kiểm thử thị giác máy tính và AI (TST-KSK-013..021)
     │   ├── data/                                # [Kích hoạt] CSDL ngoại tuyến SQLite WAL & Ma trận RAM
     │   │   ├── data-specs.md                    # Thực thể SQLite offline_punches, GalleryMatrix (DATA-KSK-)
     │   │   ├── data-design.md                   # Lược đồ SQLite WAL, Cosine Matcher, Atomic Swap (DTD-KSK-)
-    │   │   ├── data-build-plan.md               # Kế hoạch thi công CSDL cục bộ và RAM matrix (BLD-KSK-001..004)
-    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL cục bộ và ma trận (TST-KSK-001..005)
+    │   │   ├── data-build-plan.md               # Kế hoạch thi công CSDL cục bộ và RAM matrix (BLD-KSK-001..003)
+    │   │   └── data-test-plan.md                # Kế hoạch kiểm thử CSDL cục bộ và ma trận (TST-KSK-001..004)
     │   ├── api/                                 # [Kích hoạt] Tiêu thụ REST API & Lắng nghe STOMP
     │   │   ├── api-specs.md                     # Đặc tả giao diện tiêu thụ và topic lắng nghe (API-KSK-)
     │   │   ├── api-design.md                    # Thiết kế HTTP Client httpx, Offline Sync, STOMP (APD-KSK-)
-    │   │   ├── api-build-plan.md                # Kế hoạch thi công tầng mạng và sync worker (BLD-KSK-009..012)
-    │   │   └── api-test-plan.md                 # Kế hoạch kiểm thử truyền thông mạng Kiosk (TST-KSK-011..016)
+    │   │   ├── api-build-plan.md                # Kế hoạch thi công tầng mạng và sync worker (BLD-KSK-009..011)
+    │   │   └── api-test-plan.md                 # Kế hoạch kiểm thử truyền thông mạng Kiosk (TST-KSK-009..012)
     │   └── ui-ux/                               # [Kích hoạt] Màn hình Cảm ứng Dọc 9:16 (Figma 1080x1920)
     │       ├── ui-ux-specs.md                   # Hành trình điểm danh, máy trạng thái Oval 4 màu (UI-KSK-)
     │       ├── ui-ux-design.md                  # Design Tokens, tỷ lệ co giãn S, hình học vector (UXD-KSK-)
-    │       ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện QML (BLD-KSK-005..008)
-    │       └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và tương tác chạm (TST-KSK-006..010)
+    │       ├── ui-ux-build-plan.md              # Kế hoạch thi công giao diện QML (BLD-KSK-004..008)
+    │       └── ui-ux-test-plan.md               # Kế hoạch kiểm thử giao diện và tương tác chạm (TST-KSK-005..008)
     │
     └── web-portal/                              # Phân hệ Cổng Web Quản trị & Người dùng (React, TypeScript)
         ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Web Portal
@@ -189,6 +189,8 @@ owner: <vai trò chịu trách nhiệm>
 ```
 * **Lịch sử thay đổi**: Quản lý hoàn toàn qua Git VCS; không chèn bảng Revision History thủ công trong file.
 * **Quy tắc tăng phiên bản**: `MINOR` tăng khi cập nhật, làm rõ; `MAJOR` tăng khi thay đổi lớn về ngữ nghĩa của tài liệu đã Approved.
+* **Trạng thái của item**: kế thừa nguyên trạng §3.4 của [sdlc-docs.md](sdlc-docs.md) theo từng loại item; dự án không định nghĩa thêm giá trị trạng thái nào.
+* **Miễn Front Matter**: `README.md` (leaf điều hướng, không sở hữu item) và `sdlc-docs.md` (chuẩn khung, không phải artifact SDLC) không phải leaf theo §3.3 nên miễn khối front matter; ghi nhận tại §5.
 
 ---
 
@@ -273,11 +275,11 @@ owner: <vai trò chịu trách nhiệm>
   ```
 * **Project Role Schema (`project-plan.md`)**:
   ```text
-  ID | Role | Responsibilities | Required Skills | Assigned To / Staffing | Allocation | Status
+  ID | Role | Responsibility | Assignee
   ```
 * **Project Risk Schema (`project-plan.md`)**:
   ```text
-  ID | Risk Statement | Probability | Impact | Severity | Mitigation Strategy | Contingency Plan | Owner | Status
+  ID | Risk | Probability | Impact | Response | Owner | Basis | Status
   ```
 * **Work Items Schema (`system-docs/plans/build-plan.md`, `*-build-plan.md`, `foundation-setup-plan.md`, `deploy-plan.md`)**:
   ```text
@@ -289,12 +291,40 @@ owner: <vai trò chịu trách nhiệm>
   ```
 * **Test Items Schema (`*-test-plan.md`)**:
   ```text
-  ID | Name | Description | Covers | Level / Category | Done when | Status
+  ID | Name | Description | Covers | Depends on | Category | Done when | Status
   ```
+
+  > Khác biệt duy nhất so với §9.1 L660 của `sdlc-docs.md` là cột `Category` (test level hoặc `Gate`) theo yêu cầu của §9.5 L814; ghi nhận tại §5 Tailoring.
 * **Stack Schema (`tech-tool-stack.md`)**:
   ```text
   ID | Category | Name | Version | Applies to | Role | Basis | Requires | Status
   ```
+
+### 3.4. Quality Gate Tự động cho Bộ tài liệu
+
+Nguồn quy định: §14.4 của [sdlc-docs.md](sdlc-docs.md). Gate phải kiểm sáu hạng mục cấu trúc:
+
+| # | Hạng mục kiểm tra | Trạng thái cài đặt |
+| :--- | :--- | :--- |
+| 1 | Front matter hợp lệ (`title`, `version` MAJOR.MINOR, `status`, `owner`) | **Đã cài** (`tools/docs-check/check_docs.py`) |
+| 2 | ID đúng scheme (§3.2) và không trùng | Chưa cài |
+| 3 | Mọi `Basis`, `Realizes`, `Covers`, `Uses`, `Requires`, `Derived from`, `Depends on` trỏ tới ID tồn tại | Chưa cài |
+| 4 | Ràng buộc `Wave`: Là số tự nhiên ($\ge 1$); wave của một task lớn hơn wave của mọi task mà nó `Depends on` | Chưa cài |
+| 5 | Coverage/orphan theo §4.3 | Chưa cài |
+| 6 | Sinh ma trận traceability từ ID | Chưa cài |
+
+Công cụ gate nằm ngoài `docs/` (`tools/docs-check/`) nên không thuộc phạm vi chỉnh sửa của giai đoạn chuẩn hoá tài liệu; các hạng mục 2–6 là điều kiện bắt buộc trước khi bật gate ở chế độ strict.
+
+> **Lưu ý về phạm vi của Gate (§14.4)**: Sáu phép thử chất lượng tại §13.1 của [sdlc-docs.md](sdlc-docs.md) là **tiêu chí human review** trong quy trình Pull Request. Công cụ gate chỉ tự động hoá kiểm tra tính hợp lệ về mặt cấu trúc (structural / syntax / schema / model); CI xanh không thay thế việc thẩm định chiều sâu nội dung kỹ thuật.
+
+**Khoảng trống đã biết (theo dõi tại issue #21):**
+
+| Khoảng trống | Ảnh hưởng | Xử lý dự kiến |
+| :--- | :--- | :--- |
+| `service-docs/kiosk-app/task-plan.md` và `service-docs/web-portal/task-plan.md` chưa tồn tại | 48 `BLD-`/`FND-` chưa có `TASK-`; vi phạm §4.3 | Tạo tại W2 |
+| `service-docs/kiosk-app/build-plan.md` và `service-docs/web-portal/build-plan.md` nằm ngoài cây mặc định | Trùng vai trò với `task-plan.md`; vi phạm §2 L139-141 | Xoá tại W2 |
+| 8 ID định nghĩa hai lần, 31 dòng Decision thiếu `Alternatives`/`Consequences`, 18 dòng Test Item sai schema | Vi phạm §3.3 | Sửa tại W3 |
+| 81/193 Requirement chưa có Test Item cover | Vi phạm §4.3 | Bổ sung tại W7 |
 
 ---
 
@@ -304,23 +334,21 @@ owner: <vai trò chịu trách nhiệm>
 > **Mỗi nội dung kỹ thuật chỉ có đúng một Leaf làm Owner duy nhất. Mọi tài liệu khác bắt buộc tham chiếu qua mã ID, tuyệt đối không sao chép nội dung.**
 
 ### 4.2. Từ điển Trường Quan hệ Truy vết (Trace Fields)
-* `Basis`: Căn cứ upstream của Spec, Decision, STACK, Risk. Trỏ tới `INF-`, `ANL-`, `PD-`, Spec/`ARC-` upstream.
-* `Uses`: Mối quan hệ sử dụng trong Design. Trỏ tới Design element khác, `STK-`, `EXT-`.
-* `Realizes`: Mối quan hệ hiện thực hóa trong Design. Trỏ tới Spec item (Requirement).
-* `Decisions`: Trỏ tới các quyết định thiết kế `DD-` chi phối phần tử.
-* `Covers`: Mối quan hệ bao phủ trong Plan. Foundation Setup Plan trỏ tới `STK-` và `ARC-`; Build Plan trỏ tới Design Element (`SOL-`, `UXD-`, `APD-`, `DTD-`, `ARC-`); Test Plan trỏ trực tiếp tới Spec Item (`FR-`, `NFR-`, `UI-`, `API-`, `DATA-`, `SRS-`); Deploy Plan trỏ tới `ARC-` topology, `STK-`, `NFR-`.
-* `Derived from`: Căn cứ trích xuất trực tiếp. Findings trỏ tới `SRC-`; Analysis trỏ tới `INF-`; Task (`TASK-`) trỏ tới đúng một `BLD-` hoặc `FND-`.
-* `Wave`: Nhãn nhóm thứ tự thực thi cục bộ của `TASK-` (projection của dependency graph), không phải work item.
-* `Depends on`: Mối quan hệ phụ thuộc thứ tự thực thi giữa các work items cùng phạm vi.
-* `Requires`: Ràng buộc điều kiện tiên quyết trong `tech-tool-stack.md` (chỉ trỏ tới `STK-` khác hoặc `—`).
-* `Applies to`: Phạm vi áp dụng của phần tử công nghệ (System hoặc mã Service).
+
+Định nghĩa gốc của mọi trường trace và tập target hợp lệ theo từng loại item nằm tại §11.2 của [sdlc-docs.md](sdlc-docs.md) và được áp dụng nguyên trạng, không có ngoại lệ, trường bổ sung hay target mở rộng.
+
+Phần cụ thể hoá của dự án:
+* Tập SCOPE hợp lệ chỉ gồm `SYS`, `BE`, `KSK`, `WEB` (§3.2).
+* Mọi trường xuất hiện trong bảng item của dự án phải là trường đã định nghĩa tại §11.2, hoặc là phần định nghĩa của schema item tương ứng tại §3.3.
+* `Wave` là thuộc tính thực thi của `TASK-` (task attribute), không phải là trace field (§11.2, §14.4).
 
 ### 4.3. Quy tắc Không mồ côi & Quản trị Phụ thuộc (Zero Orphan & Dependency Governance)
-* Mọi Design element bắt buộc có `Realizes` trỏ về Spec item hợp lệ.
-* Mọi Work item trong Build Plan bắt buộc có `Covers` trỏ về Design element hợp lệ (trừ `Gate`).
-* Mọi Requirement trong Spec bắt buộc có Design element hiện thực (hoặc được phân bổ xuống Service qua `Basis`) và **bắt buộc có ít nhất một Test item cover**.
-* **Phụ thuộc nội bộ Facet**: Work item trong một facet build plan (`*-build-plan.md`) chỉ được phép `Depends on` các item cùng facet hoặc `FND-`; tuyệt đối không trỏ chéo sang facet khác.
-* **Điều phối tổng thể**: Mọi work item `FND-` và `BLD-` của service bắt buộc phải được phân rã thành các `TASK-` và sắp xếp trong các Wave thực thi tại `service-docs/<service-code>/task-plan.md`. Quan hệ phụ thuộc xuyên facet chỉ được giải quyết duy nhất tại đây bằng `TASK-`.
+
+Quy tắc gốc nằm tại §13.2 của [sdlc-docs.md](sdlc-docs.md) và được áp dụng nguyên trạng. Phần cụ thể hoá của dự án:
+* Mọi `FND-` và `BLD-` của ba service phải được phân rã thành `TASK-` tại `service-docs/<service-code>/task-plan.md`; ngoại lệ `No TASK decomposition` phải có Tailoring record theo từng ID tại §5.
+* `BLD-SYS-*` execution-bearing (công việc tích hợp xuyên service hoặc cấu hình hệ thống thực sự không thuộc service nào) có thể tự chịu trách nhiệm thực thi tại System Build Plan nếu có `Done when`, owner và evidence rõ ràng; trường hợp này không tạo `TASK-` riêng và không cần tailoring record từng ID.
+* Phụ thuộc xuyên facet chỉ được giải quyết tại `task-plan.md` bằng `TASK-`; facet build plan chỉ được `Depends on` item cùng facet hoặc `FND-`.
+* Khoảng trống hiện tại so với hai quy tắc trên được theo dõi tại §3.4.
 
 ---
 
@@ -339,4 +367,44 @@ Tuân thủ Mục 2.2 của `sdlc-docs.md`, dự án Face Attendance System th�
 | `web-portal/data` | Optional facet | Kích hoạt (Active) | Quản lý lưu trữ trạng thái phiên xác thực (LocalStorage), tiến trình ký cam kết và bộ đệm TanStack Query. | Quản lý state trình duyệt client-side. |
 | `web-portal/api` | Optional facet | Kích hoạt (Active) | Có ranh giới truyền thông mạng tiêu thụ REST API và lắng nghe STOMP. | Giao tiếp dịch vụ nghiệp vụ quản trị và nhận thông báo real-time. |
 | `web-portal/ui-ux` | Optional facet | Kích hoạt (Active) | Giao diện Single Page Application tương tác trực tiếp với Quản lý HR và Nhân viên. | Thiết kế dashboard portal quản trị responsive web. |
+| `Test Items Schema` | `ID \| Name \| Description \| Covers \| Depends on \| Done when \| Status` (§9.1 L660) | Thêm cột `Category` | §9.5 L814 yêu cầu `Category` = test level hoặc `Gate` nhưng schema §9.1 L660 không có cột này | 11 test plan phải có cột `Category`; chỉnh tại W3 |
+| `docs/README.md` và 3 `service-docs/*/README.md` | Không thuộc cây mặc định | Tồn tại như leaf điều hướng | Điểm vào tra cứu cho người và AI (§14.5); không sở hữu ID item nào | Không tạo và không dùng ID; mọi nội dung kỹ thuật vẫn thuộc leaf tương ứng |
+| Front matter cho `sdlc-docs.md` và các `README.md` | Mọi leaf bắt buộc có front matter (§3.4 L250) | Miễn | Đây là chuẩn khung và leaf điều hướng, không phải artifact SDLC | Gate bỏ qua hai loại tệp này khi kiểm front matter |
+| `meta.md` §7 Decision Register | META gồm Tree, Registry, Conventions, Traceability, Terms (§3.1 L202-207) | Bổ sung mục theo dõi quyết định đang chờ | Nhiều mâu thuẫn nội dung chỉ giải quyết được sau khi chốt quyết định; cần một nơi theo dõi trạng thái | Chỉ theo dõi trạng thái; giá trị đã chốt vẫn phải ghi thành item `PD-`/`DD-`/`APC-` tại leaf sở hữu |
+
+---
+
+## 6. Terms (Thuật ngữ của Bộ tài liệu)
+
+Thuật ngữ của chuẩn khung đã được định nghĩa tại §3.3 của [sdlc-docs.md](sdlc-docs.md); dưới đây chỉ ghi các thuật ngữ dự án dùng trong vận hành bộ tài liệu này.
+
+| Thuật ngữ | Nghĩa trong dự án |
+| :--- | :--- |
+| Leaf | Một tệp tài liệu trong cây; mỗi leaf có một owner nội dung. |
+| Item | Một dòng có ID trong bảng của leaf (requirement, definition, design element, work item, task, test item). |
+| SCOPE | Mã phạm vi trong ID: `SYS` (cấp hệ thống), `BE`, `KSK`, `WEB` (cấp service). |
+| Facet | Góc trách nhiệm của service: `fr-nfr`, `data`, `api`, `ui-ux`. |
+| Trace field | Trường liên kết quan hệ giữa các item: `Basis`, `Uses`, `Realizes`, `Decisions`, `Covers`, `Derived from`, `Depends on`, `Requires`, `Applies to`. |
+| Task Attribute | Các thuộc tính thực thi của `TASK-`: `Wave` (số tự nhiên $\ge 1$ biểu diễn thứ tự thực thi, projection từ đồ thị phụ thuộc), `Done when`, `Status`. |
+| Evidence | Sản phẩm của BUILD/TEST/DEPLOY nằm ngoài cây tài liệu (mã nguồn, kết quả test, release record). |
+| W0–W8 | Các đợt chuẩn hoá tài liệu của dự án, theo dõi tại issue #21. |
+
+---
+
+## 7. Decision Register (Quyết định đang chờ chốt)
+
+Các quyết định dưới đây phải được chốt **tại leaf sở hữu** trước khi bộ tài liệu đạt trạng thái nhất quán (theo dõi tại issue #21). Cột "Số" chỉ là nhãn theo dõi, **không phải ID item**; giá trị đã chốt phải được ghi thành item `PD-`/`DD-`/`APC-` tại leaf sở hữu, không ghi tại đây.
+
+| Số | Nội dung cần chốt | Leaf sở hữu | Trạng thái |
+| :---: | :--- | :--- | :---: |
+| 1 | Mô hình token: một token 8 giờ, hay Access 1 giờ + Refresh 7 ngày kèm bảng refresh token | `system-docs/srs/srs.md` (`SRS-006`) và `service-docs/backend-service/fr-nfr/fr-nfr-specs.md` | Chưa chốt |
+| 2 | Thuật toán băm OTP: HMAC-SHA-256 kèm pepper (tra cứu được theo index) hay BCrypt | `service-docs/backend-service/data/data-design.md` và `fr-nfr/fr-nfr-design.md` | Chưa chốt |
+| 3 | Ngưỡng cosine của bộ so khớp (0.40 / 0.50 / 0.65) và chỉ số liveness (APCER mục tiêu, mức chặn tuyên bố) | `system-docs/srs/fr-nfr-specs.md` (`NFR-KSK-001`, `NFR-SYS-005`) | Chưa chốt |
+| 4 | Chu kỳ nhận diện chuẩn: 350 ms cho pipeline và 1,2 s cho face-to-dashboard (bỏ các mức 100 ms và 1,5 s) | `system-docs/srs/fr-nfr-specs.md` (`NFR-SYS-003`) và `system-docs/info.md` (`INF-006`) | Chưa chốt |
+| 5 | Chỉ số 1:N dùng FPIR/FNIR thay TAR@FAR, FAR mục tiêu và quy mô gallery (1.000 hay 10.000) | `system-docs/pi.md` (`KPI-01`) | Chưa chốt |
+| 6 | Endpoint và topic WebSocket chuẩn (raw `/ws` cho Kiosk, SockJS cho Web), tên topic, cơ chế xác thực kênh | `system-docs/dds/api-design.md` | Chưa chốt |
+| 7 | Mô hình dữ liệu chuẩn: Flyway là nguồn tên bảng/cột; có thêm cột `auth_tag`, `key_id`, `user_agent`, `attempt_count` và bảng consent riêng hay không | `system-docs/dds/data-design.md` và `service-docs/backend-service/data/data-design.md` | Chưa chốt |
+| 8 | Mục tiêu availability và RTO thực tế; phạm vi runbook backup/restore | `system-docs/plans/deploy-plan.md` | Chưa chốt |
+| 9 | Tải mục tiêu (giữ 500 RPS hay hạ về ngưỡng thực) và công cụ đo | `service-docs/backend-service/fr-nfr/fr-nfr-specs.md` (`NFR-BE-002`) | Chưa chốt |
+| 10 | Phạm vi TLS/WSS và rate-limit: nằm trong phạm vi build hay chuyển thành `Deferred` | `system-docs/srs/srs.md` (`SRS-002`) và `system-docs/srs/api-specs.md` (`API-SYS-020`) | Chưa chốt |
 

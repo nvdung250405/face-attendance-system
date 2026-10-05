@@ -10,7 +10,7 @@ owner: Web Lead & DevOps Engineer
 
 ## 1. Mục tiêu & Phạm vi (Objectives & Scope)
 
-* **Mục tiêu**: Chuẩn bị hoàn chỉnh môi trường phát triển Node.js $\ge 20$, cấu hình Vite 5, React 18/19 với TypeScript, thiết lập Tailwind CSS và cấu trúc dự án chuẩn SPA.
+* **Mục tiêu**: Chuẩn bị hoàn chỉnh môi trường phát triển Node.js $\ge 24$, cấu hình Vite 8, React 19 với TypeScript, thiết lập Tailwind CSS 4 và cấu trúc dự án chuẩn SPA.
 * **Phạm vi**: Giới hạn trong phân hệ `app/web-portal`, kế thừa từ kế hoạch nền tảng hệ thống `PLN-FND-01` (`FND-SYS-001`, `FND-SYS-003`).
 
 ---

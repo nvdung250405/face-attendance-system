@@ -26,7 +26,7 @@ Bảng điều phối gom nhóm toàn bộ các work item từ các facet build 
 
 | Wave | Includes | Depends on | Done when |
 | :--- | :--- | :--- | :--- |
-| **Wave 1: Foundation Setup** | `FND-WEB-001`, `FND-WEB-002`, `FND-WEB-003`, `FND-WEB-004` | — | Dự án Vite 5, React 18/19, TypeScript, Tailwind CSS, TanStack Query và StompJS cài đặt hoàn tất; lệnh build chạy thành công. |
+| **Wave 1: Foundation Setup** | `FND-WEB-001`, `FND-WEB-002`, `FND-WEB-003`, `FND-WEB-004` | — | Dự án Vite 8, React 19, TypeScript, Tailwind CSS 4, TanStack Query và StompJS cài đặt hoàn tất; lệnh build chạy thành công. |
 | **Wave 2: Client Data & Network Client** | `BLD-WEB-001`, `BLD-WEB-002`, `BLD-WEB-003`, `BLD-WEB-009`, `BLD-WEB-010` | Wave 1 | TypeScript data contracts đồng bộ; Safe Storage adapters hoạt động an toàn; Axios base client và bộ chặn tự động làm mới token 401 sẵn sàng. |
 | **Wave 3: Core State & Admin Shell** | `BLD-WEB-012`, `BLD-WEB-013`, `BLD-WEB-004`, `BLD-WEB-005` | Wave 2 | Zustand Auth Store phân quyền chính xác; modal cam kết Informed Consent sẵn sàng; Tailwind design tokens và khung Admin Shell responsive hoàn chỉnh. |
 | **Wave 4: Realtime STOMP & UI Dashboard** | `BLD-WEB-014`, `BLD-WEB-015`, `BLD-WEB-016`, `BLD-WEB-011`, `BLD-WEB-006`, `BLD-WEB-007`, `BLD-WEB-008` | Wave 3 | Hook STOMP nhận tin nhắn ổn định; bảng Live Table chớp sáng thời gian thực; thẻ KPI nhảy số; modal OTP/QR và lịch cá nhân xuất file Excel/PDF hoàn tất. |

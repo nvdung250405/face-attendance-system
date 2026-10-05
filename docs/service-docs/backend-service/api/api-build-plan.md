@@ -9,9 +9,9 @@ owner: Backend Lead
 
 ## 1. Approach Decisions (Quyết định Phương pháp Thi công API)
 
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :--- | :---: |
-| `APC-BE-008` | Chiến lược Thi công Hợp đồng API & STOMP Broker | Triển khai theo quy trình Contract-First: Lập trình Java Record DTOs & Jakarta Validation Rules $\rightarrow$ Lập trình Kiosk REST Controller $\rightarrow$ Lập trình Portal REST Controllers $\rightarrow$ Cấu hình STOMP Message Broker & Channel Interceptors. Định nghĩa hoàn thành (DoD): 100% endpoints được kiểm thử với MockMvc/RestAssured; phản hồi lỗi khớp chuẩn ProblemDetails RFC 7807; xử lý token header an toàn. | `ARC-002`, `STK-011` | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-008` | Chiến lược Thi công Hợp đồng API & STOMP Broker | Triển khai theo quy trình Contract-First: Lập trình Java Record DTOs & Jakarta Validation Rules $\rightarrow$ Lập trình Kiosk REST Controller $\rightarrow$ Lập trình Portal REST Controllers $\rightarrow$ Cấu hình STOMP Message Broker & Channel Interceptors. Định nghĩa hoàn thành (DoD): 100% endpoints được kiểm thử với MockMvc/RestAssured; phản hồi lỗi khớp chuẩn ProblemDetails RFC 7807; xử lý token header an toàn. | Lập trình Controller trực tiếp dùng JPA Entities làm input/output (bị loại vì rủi ro lộ schema CSDL và khó kiểm soát validation). | Phải duy trì lớp Java Record DTOs độc lập kèm mapper; phân tách triệt để Presentation Layer khỏi Data Entity; kiểm soát 100% dữ liệu vào/ra. | `ARC-002`, `STK-011` | Accepted |
 
 ---
 
@@ -23,3 +23,11 @@ owner: Backend Lead
 | `BLD-BE-006` | Lập trình Kiosk REST Controller | Xây dựng `KioskAttendanceController` tiếp nhận punch, sync-batch, gallery, verify-otp và enroll-face với header `X-Kiosk-Id`. | `APD-BE-001`, `APD-BE-006` | `BLD-BE-005` | Kết nối thành công với Kiosk; xử lý phản hồi trong $\le 100\text{ ms}$; thẩm định header `X-Kiosk-Id` và Secret Token chính xác. | Done |
 | `BLD-BE-007` | Lập trình Portal REST Controllers | Xây dựng `AuthController`, `AttendanceAdminController`, `AttendanceEmployeeController` và `ConsentController` cho Cổng Web Portal. | `APD-BE-002` | `BLD-BE-005` | Người dùng Web thực hiện được toàn bộ luồng đăng nhập, làm mới token, ký cam kết, tra cứu điểm danh và xem danh sách nhân sự. | Done |
 | `BLD-BE-008` | Lập trình STOMP Message Broker & Interceptors | Cấu hình WebSocket channel interceptor, topic destination prefix `/topic`, endpoint `/ws-attendance` và cơ chế xác thực kết nối. | `APD-BE-003`, `APD-BE-005` | `FND-BE-005` | Client Web và Kiosk nhận được bản tin cập nhật tức thời qua các topic `/topic/live-attendance`, `/topic/kiosk-gallery`, `/topic/enrollment/{otp}`. | Done |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Tài liệu hóa Tự động qua SpringDoc OpenAPI**: Định nghĩa API và cấu trúc DTO được tự động xuất bản tại `/swagger-ui.html` và `/v3/api-docs` trong môi trường phát triển; cấu hình production sẽ khóa endpoint này để bảo vệ bí mật hệ thống.
+* **Tự động Hóa Kiểm chuẩn Jakarta Validation**: Mọi tham số đầu vào của Request Body được xác thực tự động bởi `MethodArgumentNotValidException` của Hibernate Validator trước khi Controller chuyển quyền điều khiển cho Service Layer.
+

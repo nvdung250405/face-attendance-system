@@ -25,9 +25,14 @@ owner: Solution Architect
 
 ## 2. API Contract Schemas (Cấu trúc Hợp đồng Dữ liệu Chi tiết)
 
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `APD-SYS-010` | Chuẩn Khung Phản hồi Đồng nhất (API Envelope) | Mọi endpoint trả về định dạng JSON: `{success: bool, code: string, message: string, data: object, timestamp: ISO8601}`. | `STK-011` | `API-SYS-017` | `DD-SYS-012` | Accepted |
+| `APD-SYS-011` | Hợp đồng Dữ liệu Kênh WebSocket STOMP | Định nghĩa payload JSON phát tới `/topic/live-attendance` (thông tin lượt chấm) và `/topic/kiosk-gallery` (lệnh nạp/gỡ vector 512D). | `STK-014` | `API-SYS-006`, `API-SYS-007` | `DD-SYS-004`, `DD-SYS-014` | Accepted |
+
 ### 2.1. Điểm danh Trực tiếp (`POST /api/v1/kiosk/punch`)
 * **Headers**: `Content-Type: application/json`, `X-Kiosk-Id: KIOSK-LOBBY-01`, `Authorization: Bearer <SecretToken>`
-* **Request Body Schema**:
+* **Request Body**:
 ```json
 {
   "employeeId": 1024,
@@ -37,7 +42,7 @@ owner: Solution Architect
   "kioskId": "KIOSK-LOBBY-01"
 }
 ```
-* **Response 200 OK Schema**:
+* **Response 200 OK**:
 ```json
 {
   "success": true,
@@ -57,7 +62,7 @@ owner: Solution Architect
 ```
 
 ### 2.2. Đồng bộ Bù Ngoại tuyến (`POST /api/v1/kiosk/sync-batch`)
-* **Request Body Schema**:
+* **Request Body**:
 ```json
 {
   "kioskId": "KIOSK-LOBBY-01",
@@ -73,7 +78,7 @@ owner: Solution Architect
   ]
 }
 ```
-* **Response 200 OK Schema**:
+* **Response 200 OK**:
 ```json
 {
   "success": true,
@@ -85,12 +90,12 @@ owner: Solution Architect
 
 ---
 
-## 3. Real-time WebSocket STOMP Architecture (Kênh Đẩy Thời gian thực)
+## 3. Interface Behavior & Protocols (Hành vi & Giao thức Truyền thông)
 
-| Tên Topic STOMP | Bên Phát (Producer) | Bên Nhận (Subscriber) | Cấu trúc Dữ liệu Thông điệp (Payload) | Tần suất / Điều kiện Kích hoạt |
-| :--- | :---: | :---: | :--- | :--- |
-| `/topic/live-attendance` | `backend-service` | `web-portal` | Object JSON chứa thông tin: `recordId`, `employeeId`, `fullName`, `punchTime`, `status`, `lateMinutes`, `avatarUrl`. | Phát ngay sau khi ghi nhận 1 lượt chấm công thành công. |
-| `/topic/kiosk-gallery` | `backend-service` | `kiosk-app` | Object JSON chứa: `action` (`ADD_VECTOR` / `DELETE_VECTOR`), `employeeId`, `vector` (mảng 512 số float32). | Phát ngay khi nhân viên mới nạp mặt hoặc nhân viên thôi việc. |
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `APD-SYS-012` | Giao thức Vận chuyển Kép WebSocket STOMP | Hỗ trợ song song endpoint `/ws` (raw WebSocket dành cho Python Kiosk client) và `/ws-sockjs` (SockJS fallback dành cho Web browser React client). | `STK-014`, `STK-033` | `API-SYS-006`, `API-SYS-007` | `DD-SYS-004`, `DD-SYS-014` | Accepted |
+| `APD-SYS-013` | Cơ chế Xác thực Kênh & Giới hạn Tần suất (Rate Limiting) | Kiosk xác thực qua `X-Kiosk-Id` + Secret Token; Web Portal xác thực qua Bearer JWT Token; áp dụng rate limit 60 req/phút tại các endpoint nhạy cảm. | `STK-011` | `API-SYS-019`, `API-SYS-020` | `DD-SYS-012` | Accepted |
 
 ---
 
@@ -101,3 +106,10 @@ owner: Solution Architect
 | `DD-SYS-012` | Đóng gói toàn bộ phản hồi API theo chuẩn thống nhất `{success, code, message, data, timestamp}`. | Đồng nhất việc bóc tách dữ liệu và bắt lỗi tập trung tại các client Kiosk và Web. | Trả về payload thô không bọc (raw POJO), Phản hồi khác nhau theo module | Toàn bộ các controller và exception handler phải tuân thủ đúng envelope format. | `API-SYS-012`, `APD-SYS-008` | Accepted |
 | `DD-SYS-013` | Giới hạn kích thước gói đồng bộ tối đa 50 bản ghi cho mỗi request `sync-batch`. | Tránh quá tải payload JSON, tràn bộ nhớ Heap và nghẽn HTTP khi Kiosk ngoại tuyến lâu ngày. | Gửi từng bản ghi đơn lẻ, Gửi toàn bộ 1 gói duy nhất không giới hạn | Kiosk phải chia nhỏ hàng đợi thành nhiều đợt gửi tuần tự khi mạng phục hồi. | `API-SYS-013`, `APD-SYS-002` | Accepted |
 | `DD-SYS-014` | Áp dụng WebSocket STOMP Broker chạy trực tiếp trong tiến trình Spring Boot (In-memory Simple Broker). | Tiết kiệm chi phí vận hành và tài nguyên phần cứng, không phải cài đặt message broker ngoài như RabbitMQ/Kafka. | Cài đặt cụm RabbitMQ/ActiveMQ rời, Dùng Redis Pub/Sub | Giới hạn khả năng scale đa máy chủ Backend nhưng tối ưu tuyệt đối cho hệ thống đơn cụm. | `PD-006`, `STK-014` | Accepted |
+
+---
+
+## 5. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Xử lý Xung đột Mốc Thời gian (Idempotency)**: Backend sử dụng ràng buộc duy nhất logic `(employee_id, punch_date, punch_time)` để tránh việc ghi nhận trùng lặp bản ghi nếu gói đồng bộ `sync-batch` bị gửi lại hai lần do timeout mạng.
+* **Thời gian Timeout Yêu cầu HTTP**: Các request từ trạm Kiosk thiết lập timeout kết nối 3.0 giây và timeout đọc 5.0 giây. Nếu vượt quá ngưỡng này, Kiosk tự động xếp bản ghi vào hàng đợi SQLite WAL ngoại tuyến.

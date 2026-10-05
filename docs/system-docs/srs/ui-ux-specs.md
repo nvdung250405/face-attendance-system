@@ -45,3 +45,10 @@ owner: Product Designer
 | `UI-SYS-014` | Giao diện Kiosk phải được thiết kế theo tỷ lệ chuẩn 9:16 dọc ($1080\times 1920\text{ px}$) và hỗ trợ co giãn tỷ lệ động. | Experience Qualities | Must | `PD-001` | Co giãn theo công thức tỷ lệ $S = \min(W/1080, H/1920)$, hiển thị cân đối từ 720p đến 4K mà không vỡ bố cục. | Approved |
 | `UI-SYS-015` | Mọi tương tác chạm hoặc phát hiện khuôn mặt trên Kiosk phải có phản hồi thị giác ngay lập tức. | Experience Qualities | Must | `PD-002` | Độ trễ phản hồi thị giác $\le 50\text{ ms}$, không tạo cảm giác khựng hay phân vân cho người dùng. | Approved |
 | `UI-SYS-016` | Giao diện Cổng Web Portal phải đáp ứng chuẩn Responsive đa kích thước màn hình và hỗ trợ chuyển đổi giao diện Sáng/Tối. | Experience Qualities | Should | `PD-001` | Hiển thị tối ưu trên Desktop, Laptop và Mobile; chuyển đổi mượt mà giữa Dark mode và Light mode. | Approved |
+
+---
+
+## 4. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Thiết bị Cảm ứng & Phản hồi Âm thanh**: Màn hình trạm Kiosk hỗ trợ cảm ứng điện dung dọc tỷ lệ 9:16; có trang bị loa mini hoặc còi buzzer phát phản hồi âm thanh (tiếng "tít" 0.2s khi thành công và tiếng bíp cảnh báo khi từ chối).
+* **Phím tắt Phần cứng Dự phòng**: Để phòng ngừa sự cố cảm ứng bám bẩn hoặc liệt điểm chạm, hệ thống Kiosk hỗ trợ ánh xạ phím cứng bàn phím `F2` để mở nhanh hộp thoại nhập mã PIN dự phòng (`UI-SYS-002`) và phím `Esc` để đóng các popup.

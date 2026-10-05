@@ -18,7 +18,7 @@ Xác lập tầm nhìn chiến lược, mục tiêu định lượng, phạm vi 
 * **Tầm nhìn**: Xây dựng một Hệ thống Chấm công Tự động bằng Nhận diện Khuôn mặt (Face Attendance System - FAS) không chạm (touchless), tối ưu hóa suy luận AI hoàn toàn tại biên (Edge AI) trên phần cứng máy trạm tiêu chuẩn với chi phí 0 VNĐ, bảo vệ dữ liệu theo Luật 2025 và đồng bộ thời gian thực đa nền tảng.
 
 ### 1.2. Tiêu chí Thành công Định lượng (KPIs)
-* `KPI-01 (Độ chính xác chuẩn)`: Tỷ lệ nhận diện đúng $\text{TAR} \ge 95\%$ tại tỷ lệ chấp nhận nhầm $\text{FAR} \le 0.01\%$ trong điều kiện ánh sáng tiêu chuẩn ($\ge 150\text{ lux}$).
+* `KPI-01 (Độ chính xác nhận diện 1:N)`: Đạt tỷ lệ bỏ sót nhận diện sai $\text{FNIR} \le 5.0\%$ (tương đương $\text{TPIR} \ge 95.0\%$) tại mức tỷ lệ chấp nhận sai $\text{FPIR} \le 0.1\%$ (tương đương $\text{FAR} \le 0.01\%$ trên mỗi lượt so khớp) với quy mô danh mục $N = 1,000$ khuôn mặt theo chuẩn ISO/IEC 19795-1 trong điều kiện ánh sáng tiêu chuẩn ($\ge 150\text{ lux}$).
 * `KPI-02 (Chống giả mạo Liveness)`: Độ chính xác phân loại thực thể sống $\ge 98\%$, tỷ lệ $\text{APCER} \le 5\%$ theo chuẩn ISO/IEC 30107-3 đối với ảnh in 2D và video phát lại.
 * `KPI-03 (Thời gian đáp ứng tại biên)`: Tổng thời gian chu kỳ nhận diện trên CPU thuần $\le 350\text{ ms}$ (Phát hiện + Liveness + Trích xuất 512D + So khớp RAM 1,000 nhân sự).
 * `KPI-04 (Bảo toàn dữ liệu ngoại tuyến)`: Không thất thoát bản ghi điểm danh ($\text{RPO} = 0$) khi mất kết nối mạng nhờ hàng đợi SQLite WAL.
@@ -82,21 +82,32 @@ Xác lập tầm nhìn chiến lược, mục tiêu định lượng, phạm vi 
 
 ---
 
-## 5. Constraints & Assumptions (Ràng buộc & Giả định)
+## 5. Constraints (Ràng buộc Bắt buộc)
 
-### 5.1. Ràng buộc (Constraints)
-* **Phần cứng**: Phải vận hành mượt mà trên cấu hình phần cứng baseline máy trạm CPU 4 nhân, 8GB-16GB RAM, webcam chuẩn UVC.
-* **Thời gian đáp ứng**: Tổng chu kỳ nhận diện tại biên $\le 350\text{ ms}$, độ trễ phát sóng STOMP $\le 200\text{ ms}$.
-* **Pháp lý**: Bắt buộc có thỏa thuận điện tử Informed Consent và tự động xóa vector sau 20 ngày nghỉ việc.
+Các ràng buộc kỹ thuật bắt buộc dưới đây được sở hữu bởi các quyết định khởi tạo dự án (`PD-`), làm căn cứ bắt buộc cho các phân hệ downstream:
 
-### 5.2. Giả định (Assumptions)
-* Trạm Kiosk được đặt cố định tại sảnh/cửa ra vào với ánh sáng môi trường tiêu chuẩn $\ge 150\text{ lux}$.
-* Khoảng cách đứng chấm công của nhân viên nằm trong khoảng tối ưu từ $0.5\text{ m}$ đến $1.2\text{ m}$ trước camera.
-* Nhân viên nhìn thẳng vào camera trong khung Oval định vị trong khoảng $0.5 - 1.0\text{ s}$ khi điểm danh.
+* **Ràng buộc Phần cứng & Nền tảng thực thi**: Ứng dụng Kiosk phải vận hành hoàn toàn trên CPU máy trạm 4 nhân x86_64 hỗ trợ AVX2, RAM 8GB-16GB, webcam UVC chuẩn, không đòi hỏi GPU rời (Owner: `PD-002`).
+* **Ràng buộc Lưu trữ Bền vững Ngoại tuyến**: Trạm Kiosk bắt buộc sử dụng SQLite WAL cục bộ để đảm bảo $\text{RPO} = 0$ khi mất mạng đột ngột (Owner: `PD-004`).
+* **Ràng buộc Pháp lý & Bảo mật Sinh trắc học**: Toàn bộ vector đặc trưng phải được mã hóa đối xứng AES-256-GCM ở trạng thái tĩnh; bắt buộc có Informed Consent điện tử trước khi thu nhận mẫu và tự động quét xóa vĩnh viễn dữ liệu sau 20 ngày thôi việc theo Luật số 91/2025/QH15 (Owner: `PD-005`).
+* **Ràng buộc Truyền thông Thời gian thực**: Đồng bộ sự kiện điểm danh và cập nhật danh mục khuôn mặt bắt buộc sử dụng giao thức WebSocket STOMP với độ trễ phát sóng $\le 200\text{ ms}$ (Owner: `PD-006`).
+* **Ràng buộc Ngân sách Thời gian Chu kỳ**: Tổng chu kỳ nhận diện tại biên từ khi có khung hình đến khi hiển thị kết quả không vượt quá $350\text{ ms}$ (Owner: `PD-002`, `PD-003`).
 
 ---
 
-## 6. Glossary (Thuật ngữ Nội tại Hệ thống)
+## 6. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+### 6.1. Giả định Môi trường (Assumptions)
+* **Vị trí và Chiếu sáng**: Trạm Kiosk được lắp đặt cố định tại sảnh hoặc cửa ra vào với cường độ ánh sáng môi trường tiêu chuẩn $\ge 150\text{ lux}$, tránh hướng chiếu trực diện của ánh nắng mặt trời gắt gây loá cảm biến.
+* **Tương tác Người dùng**: Nhân viên đứng trong khoảng cách từ $0.5\text{ m}$ đến $1.2\text{ m}$ trước camera và hướng mặt vào khung Oval nhận diện trong khoảng $0.5 - 1.0\text{ s}$.
+* **Hạ tầng Mạng**: Mạng LAN nội bộ hoặc Wi-Fi văn phòng có thể gián đoạn cục bộ nhưng phục hồi định kỳ để đồng bộ dữ liệu điểm danh về máy chủ trung tâm.
+
+### 6.2. Vấn đề Chưa giải quyết (Open Issues)
+* **Quy mô Danh mục Vượt ngưỡng 10,000 nhân sự**: Ma trận RAM $1,000$ nhân sự chỉ chiếm $\sim 2\text{ MB}$ và tính toán Cosine $< 2\text{ ms}$ (`INF-007`). Khi quy mô nhân sự tại một địa điểm vượt $10,000$ nhân sự, cần kích hoạt phương án phân vùng theo phòng ban/ca làm việc hoặc áp dụng chỉ mục HNSW/Faiss (Kế thừa từ `GAP-002`, điều kiện resolve: khi triển khai site có quy mô $> 10,000$ nhân sự).
+* **Môi trường Ánh sáng Yếu ($< 50\text{ lux}$)**: Độ chính xác phát hiện và liveness giảm khi ánh sáng quá yếu. Điều kiện resolve: kích hoạt thuật toán cảnh báo chất lượng ảnh và hiển thị viền Oval vàng hướng dẫn nhân viên điều chỉnh góc đứng hoặc bật đèn hỗ trợ (Kế thừa từ `GAP-001`).
+
+---
+
+## 7. Glossary (Thuật ngữ Nội tại Hệ thống)
 
 | Thuật ngữ (Term) | Định nghĩa (Definition) |
 | :--- | :--- |

@@ -75,3 +75,11 @@ owner: QA Lead
   * **Minor (P3)**: Lỗi căn chỉnh văn bản, sai sót nhỏ về định dạng ngày tháng hiển thị.
 * **Vòng đời Lỗi (Defect Lifecycle)**:
   $$\text{New} \longrightarrow \text{Assigned} \longrightarrow \text{In Progress} \longrightarrow \text{Resolved} \longrightarrow \text{Re-tested} \longrightarrow \text{Closed}$$
+
+---
+
+## 6. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Thiết bị Kiểm thử Phần cứng Thật**: Kiểm thử thu nhận video và góc quay Euler yêu cầu camera UVC vật lý tối thiểu 720p@30fps; trên môi trường CI/CD GitHub Actions không có camera vật lý, kịch bản kiểm thử sử dụng mock video frames và dummy image provider.
+* **Thời gian Chạy Ngâm tải (Soak Testing)**: Bài kiểm thử ngâm tải 8 giờ (`TST-SYS-020`) được thực thi định kỳ trước mỗi cột mốc Release chính trên máy trạm thực nghiệm riêng biệt, không chạy trong các lượt build PR thường ngày để tối ưu thời gian phản hồi kiểm thử.
+

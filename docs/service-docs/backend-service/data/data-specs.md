@@ -156,3 +156,11 @@ owner: Data Architect & Backend Lead
 | `after_state` | `JSONB` | NULLABLE | Trạng thái dữ liệu sau khi thay đổi (đã che thông tin nhạy cảm). |
 | `ip_address` | `VARCHAR(45)` | NULLABLE | Địa chỉ IP của máy yêu cầu. |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Mốc thời gian ghi nhận (không thể cập nhật/xóa). |
+
+---
+
+## 5. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Chiến lược Phân vùng Bảng Lớn (Table Partitioning)**: Bảng `attendance_logs` được thiết kế tương thích với cơ chế phân vùng theo tháng (`PARTITION BY RANGE (punch_timestamp)`) khi khối lượng bản ghi vượt quá 1 triệu dòng mà không làm thay đổi các truy vấn ứng dụng tầng trên.
+* **Định dạng Múi giờ CSDL**: Toàn bộ các cột mốc thời gian lưu trữ bằng kiểu `TIMESTAMP WITH TIME ZONE` (TIMESTAMPTZ) trong PostgreSQL, được chuẩn hóa chuyển đổi theo múi giờ máy chủ UTC+7 để đảm bảo tính nhất quán giữa Backend và báo cáo HR.
+

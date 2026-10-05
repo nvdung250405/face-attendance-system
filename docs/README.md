@@ -122,7 +122,7 @@ Tài liệu Cấp Dịch vụ đi sâu vào từng phân hệ độc lập trong
 | Nhánh Facet | Tài liệu | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
 | :--- | :--- | :---: | :---: | :--- |
 | **Hub** | [**`web-portal/README.md`**](service-docs/web-portal/README.md) | `WEB-HUB` | — | Tổng quan phân hệ Web Portal và cẩm nang điều hướng 4 facet. |
-| **Toàn Service** | [**`foundation-setup-plan.md`**](service-docs/web-portal/foundation-setup-plan.md) | `SVC-FSP` | `FND-WEB-` | Môi trường Node.js 20+, cấu hình Vite 5, React 18/19 TypeScript và Tailwind. |
+| **Toàn Service** | [**`foundation-setup-plan.md`**](service-docs/web-portal/foundation-setup-plan.md) | `SVC-FSP` | `FND-WEB-` | Môi trường Node.js 24+, cấu hình Vite 8, React 19 TypeScript và Tailwind 4. |
 | **Toàn Service** | [**`build-plan.md`**](service-docs/web-portal/build-plan.md) | `SVC-BLD` | `BLD-WEB-` | Kế hoạch build tổng của Web Portal, điều phối thứ tự wave và chuẩn hóa task. |
 | **FR/NFR** | [**`fr-nfr/fr-nfr-specs.md`**](service-docs/web-portal/fr-nfr/fr-nfr-specs.md) | `SVC-SPEC` | `FR-WEB-`, `NFR-WEB-` | Đăng nhập phân quyền, ký cam kết Consent, nhận sự kiện STOMP, xuất file Excel/PDF. |
 | **FR/NFR** | [**`fr-nfr/fr-nfr-design.md`**](service-docs/web-portal/fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-WEB-` | Quản lý phiên Zustand, React Router guards, STOMP hook và động cơ xuất file. |

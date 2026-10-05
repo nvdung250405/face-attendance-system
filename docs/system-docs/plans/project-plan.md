@@ -11,8 +11,8 @@ owner: Project Manager
 
 * **Phạm vi dự án**: Thiết kế, phát triển và đóng gói toàn bộ giải pháp Face Attendance System bao gồm 3 phân hệ liên hoàn:
   * Trạm điểm danh Kiosk App (Python/PySide6, Edge AI ONNX, SQLite WAL).
-  * Máy chủ Backend Service (Java 21/Spring Boot 4.x / 3.3+, PostgreSQL 16, WebSocket/STOMP, AES-256-GCM).
-  * Cổng quản trị Web Portal (React 18+/Vite/TailwindCSS/TypeScript, STOMP Client).
+  * Máy chủ Backend Service (Java 21/Spring Boot 4.1+, PostgreSQL 16/17, WebSocket/STOMP, AES-256-GCM).
+  * Cổng quản trị Web Portal (React 19+/Vite/TailwindCSS/TypeScript, STOMP Client).
 * **Mục tiêu kỹ thuật cốt lõi**:
   * Tốc độ nhận diện điểm danh tại biên $\le 1.5\text{s}$, độ chính xác cosine threshold $\ge 0.65$, liveness threshold $\ge 0.85$.
   * Vận hành ngoại tuyến $100\%$ khi mất mạng Internet, tự động đồng bộ khi khôi phục kết nối.
@@ -57,3 +57,11 @@ owner: Project Manager
 | `RSK-003` | Suy luận AI bị chậm hoặc giật khung hình trên máy trạm cấu hình yếu. | Thấp | Cao | Lọc khuôn mặt kích thước nhỏ ngay từ đầu; tối ưu hóa số luồng vector ONNX Runtime trên CPU. | Kỹ sư Kiosk | `INF-006` | Mitigating |
 | `RSK-004` | Rò rỉ bộ nhớ RAM khi ứng dụng Kiosk hoạt động camera liên tục 24/7. | Trung bình | Cao | Giải phóng triệt để các mảng khung hình NumPy ngay sau chu kỳ nhận diện; chạy bài test ngâm tải 8h. | Kỹ sư Kiosk | `INF-006` | Mitigating |
 | `RSK-005` | Nguy cơ tấn công Formula Injection (CWE-1236) khi xuất file Excel báo cáo. | Thấp | Cao | Tự động làm sạch chuỗi, chèn ký tự `'` trước các ô dữ liệu bắt đầu bằng `=`, `+`, `-`, `@`. | Kỹ sư Backend | `SRS-007` | Mitigating |
+
+---
+
+## 6. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Ước lượng Thời gian Thực tế**: Ước tính tiến độ (Estimate) dựa trên năng lực solo-developer với thời lượng cam kết 20–25 giờ/tuần; các mốc Milestone M1–M5 được lập kế hoạch kế tiếp nhau với dự phòng buffer rủi ro kỹ thuật.
+* **Quyền Quản trị Thiết bị Cục bộ**: Môi trường máy trạm Kiosk và Docker host được giả định có đầy đủ quyền Administrator/root để thiết lập cổng mạng, truy cập thiết bị camera UVC và cấp phát dung lượng lưu trữ persistent.
+

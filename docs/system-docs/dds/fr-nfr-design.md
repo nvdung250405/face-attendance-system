@@ -33,16 +33,24 @@ Thiết kế chi tiết các thành phần giải pháp kỹ thuật (`SOL-SYS-`
 
 ## 2. Quality & Resilience Mechanisms (Cơ chế Đảm bảo Chất lượng)
 
-1. **Cơ chế Miễn nhiễm Rò rỉ Bộ nhớ (Zero Memory Leak Mechanism)**:
-   * Mọi mảng khung hình `np.ndarray` thu được từ OpenCV và các ma trận điểm ảnh trung gian được giải phóng hoàn toàn ngay sau mỗi chu kỳ suy luận. Bộ nhớ RAM ứng dụng Kiosk được giám sát duy trì ổn định $\le 600\text{ MB}$ sau 10,000 khung hình liên tục.
-2. **Cơ chế Tách biệt Luồng Giao diện (GUI Thread Isolation)**:
-   * Toàn bộ tác vụ nặng (đọc camera, suy luận ONNX, đọc/ghi SQLite, gọi mạng HTTP/STOMP) được thực thi trong các luồng nền độc lập (`QThread` trên Kiosk, `Virtual Threads` trên Backend Java 21), bảo đảm luồng giao diện chính đạt tốc độ render $\ge 30\text{ FPS}$ không giật lag.
-3. **Cơ chế Tự Phục hồi Camera Ngoại vi (Camera Reconnect Loop)**:
-   * Khi cảm biến camera bị rút đột ngột hoặc mất tín hiệu liên tiếp 10 khung hình, bộ thu nạp video tự động chuyển sang chế độ phục hồi, kích hoạt vòng lặp kết nối lại mỗi 3 giây mà không làm sập ứng dụng.
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `SOL-SYS-014` | Cơ chế Miễn nhiễm Rò rỉ Bộ nhớ (Zero Memory Leak) | Giải phóng mảng khung hình `np.ndarray` và ma trận điểm ảnh trung gian ngay sau mỗi chu kỳ suy luận; duy trì RAM ứng dụng Kiosk $\le 600\text{ MB}$ sau 10,000 khung hình. | `STK-001`, `STK-008` | `NFR-SYS-009` | `DD-SYS-001` | Accepted |
+| `SOL-SYS-015` | Cơ chế Tách biệt Luồng Giao diện (GUI Thread Isolation) | Đẩy toàn bộ tác vụ đọc camera, suy luận ONNX, đọc/ghi SQLite và gọi HTTP/STOMP sang worker `QThread` độc lập; đảm bảo luồng giao diện QML render $\ge 30\text{ FPS}$ không giật lag. | `STK-001`, `STK-002` | `NFR-SYS-002` | `DD-SYS-001` | Accepted |
+| `SOL-SYS-016` | Cơ chế Tự Phục hồi Camera Ngoại vi (Camera Auto-Reconnect) | Phát hiện mất tín hiệu video liên tiếp 10 frames hoặc camera bị ngắt kết nối; kích hoạt vòng lặp kết nối lại mỗi 3 giây mà không làm sập tiến trình Kiosk. | `STK-001`, `STK-003` | `NFR-SYS-008` | `DD-SYS-001` | Accepted |
 
 ---
 
-## 3. Solution Design Decisions (Quyết định Thiết kế Giải pháp)
+## 3. Behavior & Processing Flows (Luồng Xử lý Nghiệp vụ & Trạng thái)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `SOL-SYS-017` | Luồng Điều phối Pipeline AI Biên Tuần tự | Thu nhận frame $\rightarrow$ YuNet phát hiện & kiểm tra góc $\le 15^\circ$ $\rightarrow$ Căn chỉnh Oval $0.5 - 1.0\text{ s}$ $\rightarrow$ MiniFASNet $S_{\text{liveness}} \ge 0.85$ $\rightarrow$ ArcFace 512D $\rightarrow$ Cosine Matcher $\ge 0.50$ trong $\le 350\text{ ms}$. | `SOL-SYS-001`, `SOL-SYS-002`, `SOL-SYS-003`, `SOL-SYS-004`, `SOL-SYS-005`, `SOL-SYS-006` | `FR-SYS-001`, `FR-SYS-002`, `FR-SYS-003`, `NFR-SYS-001` | `DD-SYS-001`, `DD-SYS-005` | Accepted |
+| `SOL-SYS-018` | Luồng Kiểm soát Quét Trùng Hai Lớp (Dual Cooldown) | Khi nhận diện thành công: Lớp 1 kiểm tra mảng bộ nhớ Kiosk $\ge 120\text{ s}$; Lớp 2 gửi Backend kiểm tra Caffeine Cache (TTL 120s khóa `empId_punchDate`), từ chối nếu vi phạm. | `SOL-SYS-007` | `FR-SYS-005` | `DD-SYS-006` | Accepted |
+
+---
+
+## 4. Solution Design Decisions (Quyết định Thiết kế Giải pháp)
 
 | ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
@@ -50,3 +58,10 @@ Thiết kế chi tiết các thành phần giải pháp kỹ thuật (`SOL-SYS-`
 | `DD-SYS-006` | Áp dụng kiểm soát Cooldown 120s ở cả hai tầng: Kiosk RAM đếm lùi và Backend Caffeine Cache. | Chống quẹt trùng lặp hiệu quả ngay cả khi mất mạng nội bộ hoặc nhiều trạm gửi song song. | Chỉ kiểm tra tại Backend, Chỉ kiểm tra tại Kiosk | Giữ trạng thái Cooldown trong bộ nhớ 120s; từ chối quẹt lặp tức thì không tốn I/O CSDL. | `FR-SYS-005`, `NFR-SYS-007` | Accepted |
 | `DD-SYS-007` | Cấu hình thời gian ân hạn ca kíp mặc định là 15 phút. | Phù hợp văn hóa làm việc doanh nghiệp và tránh ùn tắc đầu ca tại sảnh ra vào. | Không có ân hạn (chấm trễ 1 phút tính Late), Ân hạn 30 phút | Cần tính toán `lateMinutes` sau khi trừ đi 15 phút ân hạn cho các bản ghi đi muộn. | `FR-SYS-012`, `INF-001` | Accepted |
 | `DD-SYS-008` | Tự động kiểm tra và chèn ký tự escape `'` trước các chuỗi bắt đầu bằng `=`, `+`, `-`, `@` khi xuất file `.xlsx`. | Vô hiệu hóa triệt để nguy cơ tấn công chèn mã độc thực thi công thức Excel (CWE-1236). | Xuất text thô không lọc, Chặn không cho nhập ký tự đặc biệt | Bảo vệ máy tính nhân sự an toàn trước mã độc khi mở báo cáo bằng MS Excel. | `FR-SYS-016`, `SRS-007` | Accepted |
+
+---
+
+## 5. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Chuẩn hoá Đầu vào Mô hình MiniFASNet**: Ảnh khuôn mặt crop mở rộng tỷ lệ 1.5x phải được giữ đúng chuẩn mảng số thực BGR hoặc chia tỷ lệ theo chuẩn train model. Bộ lọc liveness loại bỏ ảnh in 2D và video màn hình với ngưỡng chặn $S_{\text{liveness}} \ge 0.85$.
+* **Cơ chế Atomic Swap Ma trận RAM**: Khi có cập nhật danh mục khuôn mặt từ STOMP, ma trận mới được tạo và hoán đổi con trỏ nguyên tử (Atomic Pointer Swap) để đảm bảo luồng suy luận camera đọc liên tục không gặp hiện tượng Race Condition.

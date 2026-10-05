@@ -9,9 +9,9 @@ owner: Backend QA Lead
 
 ## 1. Approach Decisions (Quyết định Phương pháp Kiểm thử)
 
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :--- | :---: |
-| `APC-BE-006` | Chiến lược Kiểm thử Tự động Đa tầng Phân hệ Backend | Kết hợp 3 cấp độ kiểm thử: Unit Test (JUnit 5 + Mockito cô lập logic tính toán ca kíp và mã hóa); Integration Test (Spring Boot Test + Testcontainers PostgreSQL 16 tái tạo môi trường CSDL thực); Load Test (mô phỏng 500 RPS từ 50 Kiosk ảo). Tiêu chuẩn nghiệm thu: 100% test pass; độ bao phủ dòng lệnh service $\ge 85\%$; zero lỗ hổng bảo mật. | `NFR-BE-001`, `NFR-BE-002`, `STK-011` | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-006` | Chiến lược Kiểm thử Tự động Đa tầng Phân hệ Backend (Multi-layer Testing). | Kết hợp 3 cấp độ kiểm thử: Unit Test (JUnit 5 + Mockito cô lập logic ca kíp và mã hóa); Integration Test (Spring Boot Test + Testcontainers PostgreSQL 16); Load Test (500 RPS từ 50 Kiosk ảo). Tiêu chuẩn: 100% test pass; coverage $\ge 85\%$; zero security flaw. | Chỉ kiểm thử thủ công qua Swagger/Postman, Dùng CSDL H2 in-memory thay cho Testcontainers | Đòi hỏi Docker daemon hoạt động khi chạy Integration Test với Testcontainers, nhưng bảo đảm độ chính xác 100% môi trường CSDL thật. | `NFR-BE-001`, `NFR-BE-002`, `STK-011` | Accepted |
 
 ---
 
@@ -30,3 +30,11 @@ owner: Backend QA Lead
 | `TST-BE-017` | Kiểm tra Tác vụ Tiêu hủy Dữ liệu Định kỳ | Kiểm tra Spring `@Scheduled` xóa cứng toàn bộ bản ghi `biometric_templates` của nhân viên thôi việc quá 20 ngày. | `FR-BE-009`, `NFR-BE-003` | `BLD-BE-017` | Bản ghi thôi việc $\le 20$ ngày được bảo toàn; bản ghi $> 20$ ngày bị xóa vĩnh viễn khỏi CSDL, không thể phục hồi. | Done |
 | `TST-BE-018` | Kiểm tra Kháng lỗi & Giám sát Sức khỏe Actuator | Kiểm tra phản hồi của endpoint `/actuator/health` và khả năng tự phục hồi kết nối CSDL khi có gián đoạn tạm thời. | `NFR-BE-004` | `BLD-BE-011` | Endpoint trả về `{"status":"UP"}` với thông tin PostgreSQL và Disk Space; tự động tái kết nối CSDL thành công trong $\le 5\text{ s}$. | Done |
 | `TST-BE-019` | Cổng Kiểm định Chất lượng Phân hệ Backend (Gate) | Tiêu chí chốt chặn nghiệm thu toàn bộ phân hệ Backend trước khi triển khai tích hợp hoặc phát hành sản phẩm. | `FR-BE-001`, `FR-BE-002`, `NFR-BE-001`, `NFR-BE-002` | `TST-BE-009`, `TST-BE-010`, `TST-BE-016`, `TST-BE-018` | 100% test cases pass; kiểm thử ngập tải không rò rỉ bộ nhớ; báo cáo SonarQube không có lỗ hổng Block/Critical. | Done |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Môi trường Testcontainers Docker**: Các ca kiểm thử tích hợp truy vấn JPA (`TST-BE-010`, `TST-BE-011`, `TST-BE-012`, `TST-BE-017`) yêu cầu môi trường có Docker Engine khả dụng để tự động kéo và khởi chạy container PostgreSQL 16 tạm thời.
+* **Tách biệt Môi trường Load Test**: Ca kiểm thử ngập tải 500 RPS (`TST-BE-016`) được thực thi độc lập bằng kịch bản Gatling hoặc k6 trên môi trường lab riêng biệt để không làm sai lệch kết quả đo kiểm unit test thông thường.
+

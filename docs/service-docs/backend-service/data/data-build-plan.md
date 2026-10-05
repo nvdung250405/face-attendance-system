@@ -9,9 +9,9 @@ owner: Backend Lead
 
 ## 1. Approach Decisions (Quyết định Phương pháp Thi công)
 
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :--- | :---: |
-| `APC-BE-007` | Chiến lược Thi công Dữ liệu Backend & Quản lý Migration Flyway | Triển khai theo trình tự: Kịch bản Migration Flyway V1 $\rightarrow$ Mapping JPA Entities & Enums $\rightarrow$ Spring Data Repositories $\rightarrow$ Cấu hình Caffeine Cache Manager. Định nghĩa hoàn thành (DoD): 100% kịch bản migration chạy thành công trên PostgreSQL 16 Testcontainers; không có cảnh báo vi phạm mapping JPA; mọi truy vấn chính có chỉ mục B-tree hỗ trợ. | `ARC-002`, `STK-013` | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-007` | Chiến lược Thi công Dữ liệu Backend & Quản lý Migration Flyway | Triển khai theo trình tự: Kịch bản Migration Flyway V1 $\rightarrow$ Mapping JPA Entities & Enums $\rightarrow$ Spring Data Repositories $\rightarrow$ Cấu hình Caffeine Cache Manager. Định nghĩa hoàn thành (DoD): 100% kịch bản migration chạy thành công trên PostgreSQL 16 Testcontainers; không có cảnh báo vi phạm mapping JPA; mọi truy vấn chính có chỉ mục B-tree hỗ trợ. | Sử dụng `hibernate.ddl-auto=update` (bị loại vì rủi ro lệch schema production), Dùng Liquibase thay vì Flyway (bị loại vì Flyway SQL-native đơn giản hơn). | Schema CSDL hoàn toàn tường minh, kiểm soát phiên bản qua Git; file migration V1 là bất biến; thay đổi tương lai phải tạo file version mới. | `ARC-002`, `STK-013` | Accepted |
 
 ---
 
@@ -23,3 +23,11 @@ owner: Backend Lead
 | `BLD-BE-002` | Lập trình Lớp JPA Entities & Enums | Tạo các Java class `@Entity` tương ứng kèm định dạng Enum cho `Role`, `EmployeeStatus`, `PunchType`, `VerificationMethod`, `AttendanceStatus`. | `DTD-BE-001` | `BLD-BE-001` | Mapping ORM Hibernate chuẩn xác; sinh đúng quan hệ khóa ngoại và ràng buộc duy nhất; build Maven pass 100%. | Done |
 | `BLD-BE-003` | Lập trình Spring Data JPA Repositories | Xây dựng các interface Repository với phương thức truy vấn tối ưu, hỗ trợ phân trang `Pageable`, tìm kiếm đa tiêu chí và native batch insert. | `DTD-BE-001`, `DTD-BE-002` | `BLD-BE-002` | Các truy vấn điểm danh theo ngày và người dùng phản hồi $< 15\text{ ms}$; batch insert 50 bản ghi $< 50\text{ ms}$. | Done |
 | `BLD-BE-004` | Cấu hình Caffeine Cache & Cooldown Manager | Cấu hình Spring Cache với Caffeine, thiết lập TTL 120s cho key `cooldown:punch:{userId}:{date}`. | `DTD-BE-003` | `FND-BE-002` | Quẹt liên tiếp trong 120s được chặn tức thời từ bộ nhớ RAM không cần chạm CSDL; giảm $95\%$ áp lực truy vấn. | Done |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Tính Bất biến của Kịch bản Migration Flyway**: Kịch bản `V1__init_schema.sql` là baseline cố định; bất kỳ thay đổi nào về cấu trúc bảng hoặc chỉ mục sau khi release đều phải thực hiện qua migration version tiếp theo (`V2__...sql`) và không được sửa đổi file migration đã áp dụng.
+* **Cấu hình Kết nối CSDL Khi Chạy Build/Test**: Quy trình biên dịch và kiểm thử tự động yêu cầu Docker Engine cục bộ hoặc profile `application-test.yml` có sẵn container PostgreSQL 16; nếu chạy unit test không có Docker thì sử dụng profile H2 với cú pháp tương thích PostgreSQL mode.
+

@@ -28,3 +28,11 @@ owner: Backend Lead
 | `BLD-BE-015` | Lập trình Aspect Kiểm toán Bất biến | Xây dựng Spring AOP ghi log các thao tác cập nhật dữ liệu của người dùng vào bảng `audit_logs`. | `SOL-BE-007` | `BLD-BE-009` | Mọi thay đổi giờ công hoặc thông tin nhân viên đều tự động có bản ghi audit chi tiết lưu ngữ cảnh người sửa. | Done |
 | `BLD-BE-016` | Tích hợp Toàn trình Luồng Điểm danh & STOMP | Ghép nối luồng tiếp nhận punch từ Kiosk qua REST API, kiểm tra cooldown qua Caffeine Cache, ghi nhận PostgreSQL và phát sóng sự kiện qua STOMP. | `ARC-002`, `SOL-BE-002`, `SOL-BE-006` | `BLD-BE-011`, `BLD-BE-014` | Giao dịch điểm danh hoàn tất trong $\le 100\text{ ms}$, đồng thời đẩy tin nhắn JSON hợp lệ lên topic `/topic/live-attendance`. | Done |
 | `BLD-BE-017` | Lập trình Tác vụ Tiêu hủy Dữ liệu Định kỳ 20 Ngày | Xây dựng Spring `@Scheduled` cron job 01:00 hàng ngày quét CSDL và tiêu hủy vĩnh viễn vector sinh trắc học nhân viên thôi việc quá 20 ngày. | `SOL-BE-008` | `BLD-BE-010` | Tự động xóa cứng bản ghi `biometric_templates` của nhân viên có `terminated_date <= CurrentDate - 20 days`; không ảnh hưởng hiệu năng hệ thống. | Done |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Phụ thuộc Nền tảng Biên dịch Maven**: Quá trình thi công và đóng gói mã nguồn phụ thuộc vào Java 21 LTS và Maven Wrapper (`./mvnw`) có sẵn trong repo; mã nguồn tuân thủ Clean Architecture phân tách rõ `controller`, `service`, `repository`, `model`.
+* **Cấu hình Biến Môi trường Local**: Khi thi công và chạy thử nghiệm cục bộ, các tham số bảo mật (`JWT_SECRET`, `ENCRYPTION_MASTER_KEY`) được nạp tự động qua profile `application-local.yml` hoặc file `.env`.
+

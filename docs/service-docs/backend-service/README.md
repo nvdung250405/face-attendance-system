@@ -63,7 +63,7 @@ docs/service-docs/backend-service/
 | :--- | :--- | :---: | :---: | :--- |
 | **Trang chủ** | [README.md](README.md) | `BE-HUB` | — | `docs/meta.md`, `system-docs/dds/dds.md` (`ARC-002`) |
 | **Toàn Service** | [foundation-setup-plan.md](foundation-setup-plan.md) | `SVC-FSP` | `FND-BE-`, `APC-BE-` | `system-docs/plans/foundation-setup-plan.md`, `tech-tool-stack.md` |
-| **Toàn Service** | [task-plan.md](task-plan.md) | `SVC-TSK` | `TASK-BE-` | `foundation-setup-plan.md`, `*-build-plan.md` |
+| **Toàn Service** | [task-plan.md](task-plan.md) | `SVC-TSK` | `TASK-BE-`, `APC-BE-` | `foundation-setup-plan.md`, `*-build-plan.md` |
 | **Data (Bước 1)**| [data/data-specs.md](data/data-specs.md) | `SVC-SPEC`| `DATA-BE-` | `system-docs/srs/data-specs.md` (`DATA-SYS-001..015`) |
 | **Data (Bước 1)**| [data/data-design.md](data/data-design.md) | `SVC-DES` | `DTD-BE-`, `DD-BE-` | `data/data-specs.md`, `system-docs/dds/data-design.md` |
 | **Data (Bước 1)**| [data/data-build-plan.md](data/data-build-plan.md) | `SVC-BLD` | `BLD-BE-`, `APC-BE-` | `data/data-design.md` (`DTD-BE-001..006`) |

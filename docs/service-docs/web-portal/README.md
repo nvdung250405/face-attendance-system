@@ -10,7 +10,7 @@ owner: Web Technical Lead & Frontend Architect
 
 ## 1. Giới thiệu Phân hệ & Trách nhiệm Kỹ thuật
 
-Phân hệ **Cổng Web Quản trị & Người dùng** (`web-portal`) là ứng dụng web hiện đại (Single Page Application - SPA) được phát triển bằng React 18/19, TypeScript và Tailwind CSS. Phân hệ cung cấp không gian làm việc số cho hai nhóm đối tượng: Quản lý Nhân sự (HR Manager) và Cán bộ Nhân viên Doanh nghiệp (Employee).
+Phân hệ **Cổng Web Quản trị & Người dùng** (`web-portal`) là ứng dụng web hiện đại (Single Page Application - SPA) được phát triển bằng React 19, TypeScript và Tailwind CSS 4. Phân hệ cung cấp không gian làm việc số cho hai nhóm đối tượng: Quản lý Nhân sự (HR Manager) và Cán bộ Nhân viên Doanh nghiệp (Employee).
 
 ### Ranh giới Trách nhiệm Kỹ thuật (Technical Scope):
 * **Cổng Thông tin Kép (Dual-Role Portal)**: Phân quyền điều hướng tự động dựa trên JWT Claims giữa giao diện Quản trị Chấm công (HR) và Không gian Cá nhân (Nhân viên).

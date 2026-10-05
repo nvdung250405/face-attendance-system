@@ -45,3 +45,11 @@ owner: Backend Lead & API Architect
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
 | `API-BE-015` | Ràng buộc Xác thực & Phân quyền Bảo vệ Giao diện: Mọi API nội bộ yêu cầu xác thực Bearer JWT hoặc Header `X-Kiosk-Id` kèm Secret Token. | Security | Must | `SRS-005`, `FR-BE-001` | Trả về HTTP 401 Unauthorized khi thiếu/sai token; trả về HTTP 403 Forbidden khi truy cập vượt quyền hạn. | Approved |
 | `API-BE-016` | Chuẩn hóa Định dạng Trao đổi Dữ liệu & Báo lỗi RFC 7807 ProblemDetails: Toàn bộ phản hồi sử dụng JSON UTF-8, mốc thời gian ISO-8601 kèm múi giờ. | Contract | Must | `NFR-SYS-008`, `API-SYS-017` | Lỗi nghiệp vụ hoặc hệ thống trả về đúng cấu trúc ProblemDetails kèm mã lỗi (`code`) và chi tiết trường vi phạm (`invalidParams`). | Approved |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Bảo mật Kênh Truyền thông (Transport Security)**: Toàn bộ các giao diện REST và WebSocket STOMP đều chạy trên nền giao thức TLS 1.3 (HTTPS và WSS) trong môi trường triển khai thực tế; môi trường phát triển nội bộ cho phép thử nghiệm qua HTTP/WS cổng 8080.
+* **Quy mô STOMP Broker Cục bộ**: Message Broker in-memory của Spring Boot hiện tại đáp ứng tốt lưu lượng truyền tin cho tối đa 50 trạm Kiosk và hàng trăm phiên Web đồng thời; trường hợp mở rộng quy mô đa cụm máy chủ Backend sẽ chuyển đổi sang External Message Broker (RabbitMQ) thông qua cấu hình `StompBrokerRelay`.
+

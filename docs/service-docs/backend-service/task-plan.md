@@ -1,6 +1,6 @@
 ---
 title: Backend Task Plan
-version: 1.0
+version: 2.0
 status: Approved
 owner: Backend Lead
 ---
@@ -13,6 +13,12 @@ Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa c�
 * **Nguyên tắc phân rã**: Mỗi `TASK-` là một đơn vị thi công thực tế có thể hoàn thành trọn vẹn trong một Pull Request. Mỗi task bắt buộc `Derived from` đúng một `BLD-` hoặc `FND-` cùng service.
 * **Giải quyết phụ thuộc**: Phụ thuộc xuyên facet (cross-facet dependency) được giải quyết duy nhất tại đây thông qua quan hệ `Depends on` giữa các `TASK-`.
 * **Cơ chế Wave**: Wave là hình chiếu gom nhóm các task độc lập có thể triển khai song song theo đồ thị phụ thuộc (DAG). Người thực thi nhận nhiệm vụ theo `TASK-`, không nhận theo Wave.
+
+### Approach Decisions (Quyết định Tiếp cận Thi công Chi tiết)
+
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-009` | Chiến lược Thực thi theo Wave & Quản lý Phụ thuộc Đồ thị DAG | Phân rã toàn bộ 22 hạng mục thi công `FND-` và `BLD-` của Backend thành 22 `TASK-` độc lập, giải quyết phụ thuộc xuyên facet qua đồ thị DAG 6 Wave từ Foundation đến Service Integration. | Triển khai theo mô hình Big-bang integration hoặc phân công tự do không theo thứ tự DAG (bị loại vì nguy cơ nghẽn luồng và khó cô lập lỗi). | Mọi dependency xuyên facet bắt buộc phải giải quyết tại Task Plan; các task trong cùng một Wave có thể triển khai song song độc lập; mỗi task có tiêu chí `Done when` rõ ràng. | `ARC-002`, `STK-011` | Accepted |
 
 ---
 
@@ -29,19 +35,19 @@ Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa c�
 | `TASK-BE-007` | Lập trình 8 JPA Entities & Enums Nghiệp vụ | Khai báo 8 Java Entity classes ánh xạ chính xác lược đồ CSDL kèm các Enum (`Role`, `AttendanceStatus`...). | `BLD-BE-002` | `TASK-BE-006` | Wave 2 | Entity mapping vượt qua kiểm thử Hibernate Schema Validation không có cảnh báo. | Done |
 | `TASK-BE-008` | Lập trình Spring Data JPA Repositories | Khởi tạo 8 Spring Data Repositories kèm các truy vấn tối ưu và derived query methods. | `BLD-BE-003` | `TASK-BE-007` | Wave 2 | Toàn bộ các thao tác CRUD và truy vấn điểm danh, tìm kiếm nhân sự thực thi chính xác. | Done |
 | `TASK-BE-009` | Cấu hình Caffeine Cache Cooldown Manager | Cài đặt Spring Cache với Caffeine, cấu hình TTL 120s cho key `cooldown:punch:{userId}:{date}`. | `BLD-BE-004` | `TASK-BE-002` | Wave 2 | Lượt quẹt liên tiếp trong 120s được chặn tức thời từ RAM không cần truy vấn CSDL. | Done |
-| `TASK-BE-010` | Lập trình DTOs, Validation & ProblemDetails | Khai báo Java Record DTOs kèm Jakarta Validation annotations và bộ bọc lỗi RFC 7807 ProblemDetails. | `BLD-BE-005` | `TASK-BE-002` | Wave 3 | Request không hợp lệ tự động trả về lỗi 400 Bad Request kèm chi tiết `invalidParams`. | Done |
+| `TASK-BE-010` | Lập trình DTOs, Validation & ProblemDetails | Khai báo Java Record DTOs kèm Jakarta Validation annotations và bộ bọc lỗi RFC 7807 ProblemDetails. | `BLD-BE-005` | `TASK-BE-002` | Wave 3 | Request không hợp lệ tự động trả về lỗi 400 Bad Request kèm chi tiết `invalidParams`. | Ready |
 | `TASK-BE-011` | Lập trình JwtTokenProvider & Security Filter | Xây dựng bộ sinh/thẩm định JWT token, `JwtAuthenticationFilter` chặn request và trích xuất Roles RBAC. | `BLD-BE-009` | `TASK-BE-004`, `TASK-BE-008` | Wave 3 | Cấp phát token hợp lệ khi login; từ chối token hết hạn; phân quyền URL chính xác. | Done |
-| `TASK-BE-012` | Lập trình Dịch vụ Mã hóa AES-256-GCM | Xây dựng `BiometricCryptoService` mã hóa/giải mã vector ArcFace 512D với IV ngẫu nhiên 12-byte. | `BLD-BE-010` | `TASK-BE-001` | Wave 3 | Mã hóa và giải mã bảo toàn 100% dữ liệu gốc vector; không lưu plaintext trên đĩa. | Done |
-| `TASK-BE-013` | Lập trình Động cơ Điểm danh & Cooldown 120s | Xây dựng `AttendanceService` đối chiếu ca kíp, tính số phút trễ/về sớm và tích hợp Cooldown Cache 120s. | `BLD-BE-011` | `TASK-BE-008`, `TASK-BE-009`, `TASK-BE-011` | Wave 4 | Xử lý điểm danh hoàn tất trong $\le 100\text{ ms}$; phân loại trạng thái điểm danh chuẩn xác. | Done |
-| `TASK-BE-014` | Lập trình Xử lý Gói lô Điểm danh Ngoại tuyến | Xây dựng dịch vụ tiếp nhận mảng 50 bản ghi điểm danh ngoại tuyến, batch insert có bắt trùng lặp khóa. | `BLD-BE-012` | `TASK-BE-013` | Wave 4 | Gói 50 bản ghi lưu thành công 100%; bỏ qua bản ghi trùng và trả về danh sách ID thành công. | Done |
-| `TASK-BE-015` | Lập trình Luồng Quản lý Đăng ký & OTP 48h | Xây dựng logic kiểm tra Informed Consent, sinh mã OTP 6 số ngẫu nhiên có hạn 48h và kích hoạt khuôn mặt. | `BLD-BE-013` | `TASK-BE-008`, `TASK-BE-012` | Wave 4 | Chỉ sinh OTP khi có cam kết; từ chối khi OTP sai/hết hạn; nạp vector hợp lệ kích hoạt `ACTIVE`. | Done |
-| `TASK-BE-016` | Tích hợp Dịch vụ Phát sóng STOMP | Tích hợp `SimpMessagingTemplate` bắn tin lên `/topic/live-attendance` và `/topic/kiosk-gallery`. | `BLD-BE-014` | `TASK-BE-005` | Wave 4 | Kiosk và Web Portal nhận được JSON payload ngay khi Backend xử lý xong trong $\le 50\text{ ms}$. | Done |
-| `TASK-BE-017` | Lập trình Aspect Ghi vết Kiểm toán Bất biến | Xây dựng Spring AOP Aspect ghi log các thao tác chỉnh sửa dữ liệu người dùng vào bảng `audit_logs`. | `BLD-BE-015` | `TASK-BE-008`, `TASK-BE-011` | Wave 4 | Mọi thao tác sửa giờ công hoặc nhân viên đều tự động có bản ghi audit chi tiết ngữ cảnh người sửa. | Done |
-| `TASK-BE-018` | Lập trình Tác vụ Tiêu hủy Dữ liệu 20 Ngày | Xây dựng Spring `@Scheduled` cron job 01:00 hàng ngày xóa cứng vector nhân viên thôi việc quá 20 ngày. | `BLD-BE-017` | `TASK-BE-008` | Wave 4 | Tự động xóa sạch vector sinh trắc học nhân viên thôi việc quá 20 ngày; bảo toàn audit log. | Done |
-| `TASK-BE-019` | Lập trình Kiosk REST Controller | Xây dựng `KioskAttendanceController` tiếp nhận punch, sync-batch, gallery, verify-otp, enroll-face. | `BLD-BE-006` | `TASK-BE-010`, `TASK-BE-013`, `TASK-BE-014`, `TASK-BE-015` | Wave 5 | Tiếp nhận và phản hồi Kiosk trong $\le 100\text{ ms}$; thẩm định header `X-Kiosk-Id` chính xác. | Done |
-| `TASK-BE-020` | Lập trình Web Portal REST Controllers | Xây dựng `AuthController`, `AttendanceAdminController`, `AttendanceEmployeeController`, `ConsentController`. | `BLD-BE-007` | `TASK-BE-010`, `TASK-BE-011`, `TASK-BE-013` | Wave 5 | Người dùng Web thực hiện được toàn bộ luồng đăng nhập, xem lịch sử, ký cam kết và quản lý. | Done |
-| `TASK-BE-021` | Lập trình WebSocket Channel Interceptor & Auth | Cấu hình Interceptor chặn frame `CONNECT` và `SUBSCRIBE` để thẩm định token JWT/Kiosk Secret. | `BLD-BE-008` | `TASK-BE-005`, `TASK-BE-011`, `TASK-BE-016` | Wave 5 | Từ chối kết nối WebSocket khi thiếu token; cho phép client hợp lệ subscribe đúng kênh. | Done |
-| `TASK-BE-022` | Tích hợp Toàn trình Luồng Điểm danh & STOMP | Ghép nối luồng tiếp nhận punch từ Kiosk qua REST API, kiểm tra cooldown, lưu DB và phát sóng STOMP. | `BLD-BE-016` | `TASK-BE-019`, `TASK-BE-020`, `TASK-BE-021` | Wave 6 | Toàn trình từ Kiosk gửi punch đến Web Portal nhận sự kiện điểm danh hoàn tất trong $\le 100\text{ ms}$. | Done |
+| `TASK-BE-012` | Lập trình Dịch vụ Mã hóa AES-256-GCM | Xây dựng `BiometricCryptoService` mã hóa/giải mã vector ArcFace 512D với IV ngẫu nhiên 12-byte. | `BLD-BE-010` | `TASK-BE-001` | Wave 3 | Mã hóa và giải mã bảo toàn 100% dữ liệu gốc vector; không lưu plaintext trên đĩa. | Ready |
+| `TASK-BE-013` | Lập trình Động cơ Điểm danh & Cooldown 120s | Xây dựng `AttendanceService` đối chiếu ca kíp, tính số phút trễ/về sớm và tích hợp Cooldown Cache 120s. | `BLD-BE-011` | `TASK-BE-008`, `TASK-BE-009`, `TASK-BE-011` | Wave 4 | Xử lý điểm danh hoàn tất trong $\le 100\text{ ms}$; phân loại trạng thái điểm danh chuẩn xác. | Ready |
+| `TASK-BE-014` | Lập trình Xử lý Gói lô Điểm danh Ngoại tuyến | Xây dựng dịch vụ tiếp nhận mảng 50 bản ghi điểm danh ngoại tuyến, batch insert có bắt trùng lặp khóa. | `BLD-BE-012` | `TASK-BE-013` | Wave 4 | Gói 50 bản ghi lưu thành công 100%; bỏ qua bản ghi trùng và trả về danh sách ID thành công. | Ready |
+| `TASK-BE-015` | Lập trình Luồng Quản lý Đăng ký & OTP 48h | Xây dựng logic kiểm tra Informed Consent, sinh mã OTP 6 số ngẫu nhiên có hạn 48h và kích hoạt khuôn mặt. | `BLD-BE-013` | `TASK-BE-008`, `TASK-BE-012` | Wave 4 | Chỉ sinh OTP khi có cam kết; từ chối khi OTP sai/hết hạn; nạp vector hợp lệ kích hoạt `ACTIVE`. | Ready |
+| `TASK-BE-016` | Tích hợp Dịch vụ Phát sóng STOMP | Tích hợp `SimpMessagingTemplate` bắn tin lên `/topic/live-attendance` và `/topic/kiosk-gallery`. | `BLD-BE-014` | `TASK-BE-005` | Wave 4 | Kiosk và Web Portal nhận được JSON payload ngay khi Backend xử lý xong trong $\le 50\text{ ms}$. | Ready |
+| `TASK-BE-017` | Lập trình Aspect Ghi vết Kiểm toán Bất biến | Xây dựng Spring AOP Aspect ghi log các thao tác chỉnh sửa dữ liệu người dùng vào bảng `audit_logs`. | `BLD-BE-015` | `TASK-BE-008`, `TASK-BE-011` | Wave 4 | Mọi thao tác sửa giờ công hoặc nhân viên đều tự động có bản ghi audit chi tiết ngữ cảnh người sửa. | Ready |
+| `TASK-BE-018` | Lập trình Tác vụ Tiêu hủy Dữ liệu 20 Ngày | Xây dựng Spring `@Scheduled` cron job 01:00 hàng ngày xóa cứng vector nhân viên thôi việc quá 20 ngày. | `BLD-BE-017` | `TASK-BE-008` | Wave 4 | Tự động xóa sạch vector sinh trắc học nhân viên thôi việc quá 20 ngày; bảo toàn audit log. | Ready |
+| `TASK-BE-019` | Lập trình Kiosk REST Controller | Xây dựng `KioskAttendanceController` tiếp nhận punch, sync-batch, gallery, verify-otp, enroll-face. | `BLD-BE-006` | `TASK-BE-010`, `TASK-BE-013`, `TASK-BE-014`, `TASK-BE-015` | Wave 5 | Tiếp nhận và phản hồi Kiosk trong $\le 100\text{ ms}$; thẩm định header `X-Kiosk-Id` chính xác. | Ready |
+| `TASK-BE-020` | Lập trình Web Portal REST Controllers | Xây dựng `AuthController`, `AttendanceAdminController`, `AttendanceEmployeeController`, `ConsentController`. | `BLD-BE-007` | `TASK-BE-010`, `TASK-BE-011`, `TASK-BE-013` | Wave 5 | Người dùng Web thực hiện được toàn bộ luồng đăng nhập, xem lịch sử, ký cam kết và quản lý. | Ready |
+| `TASK-BE-021` | Lập trình WebSocket Channel Interceptor & Auth | Cấu hình Interceptor chặn frame `CONNECT` và `SUBSCRIBE` để thẩm định token JWT/Kiosk Secret. | `BLD-BE-008` | `TASK-BE-005`, `TASK-BE-011`, `TASK-BE-016` | Wave 5 | Từ chối kết nối WebSocket khi thiếu token; cho phép client hợp lệ subscribe đúng kênh. | Ready |
+| `TASK-BE-022` | Tích hợp Toàn trình Luồng Điểm danh & STOMP | Ghép nối luồng tiếp nhận punch từ Kiosk qua REST API, kiểm tra cooldown, lưu DB và phát sóng STOMP. | `BLD-BE-016` | `TASK-BE-019`, `TASK-BE-020`, `TASK-BE-021` | Wave 6 | Toàn trình từ Kiosk gửi punch đến Web Portal nhận sự kiện điểm danh hoàn tất trong $\le 100\text{ ms}$. | Ready |
 
 ---
 
@@ -79,3 +85,11 @@ TASK-BE-019 + TASK-BE-020 + TASK-BE-021 ──→ TASK-BE-022 (Full Integration)
 * **Wave 4: Business Engine & Processing**: `TASK-BE-013`, `TASK-BE-014`, `TASK-BE-015`, `TASK-BE-016`, `TASK-BE-017`, `TASK-BE-018`.
 * **Wave 5: Network Controllers & Handlers**: `TASK-BE-019`, `TASK-BE-020`, `TASK-BE-021`.
 * **Wave 6: Service Integration**: `TASK-BE-022`.
+
+---
+
+## 5. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Tính Độc lập của Pull Request theo Task**: Mỗi `TASK-BE-` được thi công trên một Git branch riêng biệt và tích hợp qua Pull Request sau khi vượt qua toàn bộ unit test và linting cục bộ; các task trong cùng một Wave không có phụ thuộc lẫn nhau và có thể phân bổ cho nhiều kỹ sư phát triển song song.
+* **Môi trường Cơ sở Dữ liệu Phục vụ Thi công**: Từ Wave 2 trở đi (`TASK-BE-006`), quá trình chạy thử nghiệm và kiểm thử tích hợp yêu cầu container PostgreSQL 16 khả dụng (thông qua Testcontainers hoặc Docker Compose cục bộ).
+

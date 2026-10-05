@@ -7,11 +7,16 @@ owner: Product Designer
 
 # UI/UX DESIGN — Thiết kế Chi tiết Giao diện & Trải nghiệm Người dùng
 
-Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD-SYS-`), bố cục màn hình và máy trạng thái hành vi tương tác cho Trạm Kiosk Desktop và Cổng Web Quản trị.
+Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD-SYS-`), bố cục màn hình và máy trạng thái hành vi tương tác cho toàn bộ hệ thống Điểm danh Khuôn mặt (Kiosk App & Web Portal).
 
 ---
 
 ## 1. Design Tokens & Visual Language (Hệ thống Thiết kế Chuẩn hóa)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `UXD-SYS-007` | Bộ Bảng mã Màu Sắc Hệ thống (Dark Modern Palette) | Xác lập các token màu sắc: Navy `#0B0F17`, Surface `#1E293B`, Primary Blue `#3B82F6` và 4 màu trạng thái Oval. | `STK-002`, `STK-018` | `UI-SYS-016` | `DD-SYS-009` | Accepted |
+| `UXD-SYS-008` | Hệ thống Tỷ lệ Co giãn Động Kiosk 9:16 (Scale Factor S) | Công thức chuẩn hóa $S = \min(W/1080, H/1920)$ nhân với mọi khoảng cách padding, font-size và bán kính bo góc. | `STK-002` | `UI-SYS-014` | `DD-SYS-009` | Accepted |
 
 ### 1.1. Bảng Mã Màu Sắc Chủ đạo (Color Palette)
 
@@ -46,7 +51,14 @@ Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD
 
 ---
 
-## 3. Interaction State Machine (Máy Trạng thái Tương tác Khung Oval)
+## 3. Interaction State Machine & Flows (Máy Trạng thái Tương tác & Luồng Hành vi Giao diện)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `UXD-SYS-009` | Máy Trạng thái Tương tác Khung Oval 4 Màu | Điều phối chuyển đổi liên tục giữa 4 trạng thái trực quan: Chờ (Xám), Căn chỉnh (Vàng), Thành công (Xanh lá) và Từ chối (Đỏ). | `STK-002` | `UI-SYS-007`, `UI-SYS-008`, `UI-SYS-009`, `UI-SYS-010` | `DD-SYS-010` | Accepted |
+| `UXD-SYS-010` | Luồng Modal Đăng ký Khuôn mặt In-viewport | Quy trình 3 bước trực quan: (1) Nhập định danh & xác thực OTP qua modal, (2) Ẩn modal tạm thời để lộ toàn màn hình camera Kiosk với khung Oval chụp 3 góc mặt (thẳng, trái, phải), (3) Mở lại modal xác nhận ảnh và lưu hoàn tất. | `STK-002` | `UI-SYS-003`, `FR-SYS-008` | `DD-SYS-011` | Accepted |
+
+### 3.1. Máy Trạng thái Khung Oval 4 Màu (`UXD-SYS-009`)
 
 ```text
     ┌────────────────────────────────────────────────────────┐
@@ -71,12 +83,28 @@ Thiết kế chi tiết cấu trúc thông tin, hệ thống Design Tokens (`UXD
     └──────────────────────────────┘  └──────────────────────┘
 ```
 
+### 3.2. Luồng Modal Đăng ký In-viewport 3 Bước (`UXD-SYS-010`)
+
+```text
+   [ Bước 1: Nhập OTP ] ────────> [ Bước 2: Tự ẩn Modal ] ────────> [ Bước 3: Xác nhận & Lưu ]
+  - Modal nổi chính giữa          - Modal ẩn hoàn toàn             - Modal nổi trở lại
+  - Nhập mã NV & OTP 6 số         - Sử dụng toàn màn hình camera   - Preview 3 ảnh đã chụp
+  - Backend xác thực hợp lệ       - Căn mặt vào Oval chụp 3 góc    - Bấm "Hoàn tất" nạp vector
+```
+
 ---
 
 ## 4. UI/UX Design Decisions (Quyết định Thiết kế Giao diện)
 
 | ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
-| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | `DD-SYS-009` | Áp dụng phong cách giao diện Dark Modern UI kết hợp hiệu ứng kính mờ Glassmorphism cho Kiosk và Web. | Mang lại trải nghiệm thị giác hiện đại, giảm mỏi mắt cho người dùng và tiết kiệm năng lượng màn hình. | Giao diện Light Theme cổ điển, Thiết kế phẳng Flat Design | Cần tối ưu render đồ họa phần cứng OpenGL để tránh tụt FPS trên phần cứng yếu. | `UI-SYS-014` | Accepted |
 | `DD-SYS-010` | Quy định màu Vàng hổ phách (`#F59E0B`) cho thông điệp điều hướng và viền Oval ở trạng thái căn chỉnh trung gian. | Giúp người dùng phân biệt rõ ràng giữa trạng thái đang căn chỉnh với trạng thái thành công (Xanh) và thất bại (Đỏ). | Sử dụng màu Xanh dương, Sử dụng màu Trắng nét liền | Tăng độ trực quan sinh động theo chuẩn máy trạng thái 4 màu Oval. | `UI-SYS-008` | Accepted |
 | `DD-SYS-011` | Thiết kế quy trình đăng ký khuôn mặt tự động ẩn modal OTP ở Bước 2 để sử dụng toàn màn hình camera chính. | Tránh che khuất tầm nhìn camera và hướng dẫn người dùng căn chỉnh khuôn mặt vào đúng vị trí Oval chuẩn. | Mở cửa sổ popup riêng biệt, Thu nhỏ khung hình camera vào trong modal | Người dùng tập trung hoàn toàn vào khung Oval chính khi chụp 3 ảnh chuẩn. | `UI-SYS-003` | Accepted |
+
+---
+
+## 5. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Hiệu chuẩn Tỷ lệ Màn hình Kiosk**: Với các màn hình cảm ứng không đúng tỷ lệ gốc 9:16 (ví dụ màn hình ngang 16:9 xoay dọc hoặc tỷ lệ 10:16), hệ số $S = \min(W/1080, H/1920)$ tự động căn giữa (letterboxing/pillarboxing) để đảm bảo hình học khung Oval không bao giờ bị méo hình elip.
+* **Thời gian Hiển thị Thẻ Kết quả**: Khoảng thời gian hiển thị 2.5s của `UXD-SYS-003` được hiệu chuẩn để người dùng kịp đọc thông tin xác nhận mà không làm tắc luồng người tiếp theo bước vào vùng quét camera.
