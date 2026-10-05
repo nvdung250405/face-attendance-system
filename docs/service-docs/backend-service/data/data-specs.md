@@ -23,6 +23,7 @@ owner: Data Architect & Backend Lead
 | `DATA-BE-006` | Quản lý thực thể Phiên Đăng ký OTP (`enrollment_sessions`) quản lý mã OTP 6 số kích hoạt tạm thời và xác nhận văn bản thỏa thuận pháp lý Informed Consent. | Entity | Must | `DATA-SYS-006`, `DATA-SYS-007`, `PD-003` | Lưu otp_hash, consent_version, consent_signed_at, client_ip, expires_at (48h), is_used; vô hiệu hóa sau 1 lần dùng. | Approved |
 | `DATA-BE-007` | Quản lý thực thể Trạm Kiosk (`kiosks`) quản lý danh sách phần cứng Kiosk được cấp phép kết nối qua Secret Token băm BCrypt. | Entity | Must | `DATA-SYS-001`, `PD-001` | Định danh trạm Kiosk duy nhất qua `id`, lưu tên vị trí đặt trạm, token hash, trạng thái hoạt động và mốc ping gần nhất. | Approved |
 | `DATA-BE-008` | Quản lý thực thể Nhật ký Kiểm toán Bất biến (`audit_logs`) lưu vết kiểm toán append-only cho mọi hành vi nhạy cảm phục vụ thanh tra pháp lý. | Entity | Must | `DATA-SYS-008`, `DATA-SYS-014`, `PD-001` | Ghi nhận actor_id, actor_email, action, entity_type, entity_id, before_state JSONB, after_state JSONB, IP và thời điểm tạo. | Approved |
+| `DATA-BE-016` | Quản lý trạng thái vòng đời thông tin xác thực trên bảng `users`: cờ buộc đổi mật khẩu ở lần đăng nhập đầu tiên (`must_change_password`), mật khẩu băm một chiều và mã PIN dự phòng băm một chiều kèm mốc khóa PIN. | Entity | Must | `DATA-SYS-016`, `FR-BE-011`, `FR-BE-012` | Cột `must_change_password BOOLEAN NOT NULL DEFAULT FALSE` được thêm bằng migration `V2__add_credential_lifecycle.sql`; cờ bật khi HR khởi tạo tài khoản và tắt sau khi đổi mật khẩu thành công; `password_hash` và `pin_hash` không bao giờ lưu văn bản rõ. | Approved |
 
 ---
 
@@ -63,6 +64,7 @@ owner: Data Architect & Backend Lead
 | `department` | `VARCHAR(64)` | NULLABLE | Tên phòng ban / bộ phận làm việc trực thuộc. |
 | `pin_hash` | `VARCHAR(255)` | NULLABLE | Mã PIN 6 số điểm danh dự phòng tại Kiosk (băm BCrypt). |
 | `pin_locked_until`| `TIMESTAMP WITH TIME ZONE` | NULLABLE | Mốc thời gian khóa bàn phím PIN (sau 5 lần nhập sai). |
+| `must_change_password` | `BOOLEAN` | NOT NULL, DEFAULT FALSE | Cờ buộc đổi mật khẩu ở lần đăng nhập đầu tiên; bật khi HR khởi tạo tài khoản, tắt sau khi đổi mật khẩu thành công. |
 | `terminated_date` | `DATE` | NULLABLE | Ngày chính thức chấm dứt hợp đồng lao động (căn cứ đếm 20 ngày tiêu hủy dữ liệu). |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm tạo hồ sơ người dùng. |
 | `updated_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm cập nhật hồ sơ gần nhất. |
