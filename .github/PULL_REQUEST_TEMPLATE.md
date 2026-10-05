@@ -36,6 +36,6 @@ Closes #
 - [ ] **Đồng bộ Code-Doc**: Tài liệu liên quan đã được cập nhật trong cùng PR; `Status` và `version` đã cập nhật.
 - [ ] **Change Request**: Nếu sửa item `Baselined`, đã tham chiếu Issue Change Request (#...).
 - [ ] **Plan Update**: Nếu hoàn thành work item, `Status` của work item đã chuyển thành `Done` trong Plan tương ứng.
-- [ ] **Bốn Phép thử**: Đạt 4 phép thử: *Correct* (đúng tên), *Complete* (đủ nội dung), *Abstract* (trừu tượng), *Reusable* (tái sử dụng).
+- [ ] **6 Phép thử tài liệu** (áp dụng khi PR chứa thay đổi `docs/`): Đạt *Correct · Complete · Unambiguous · Verifiable · Consistent · Traceable* (`sdlc-docs.md` mục 13.1).
 - [ ] **Bảo mật**: Tuyệt đối không có mật mã tĩnh (hardcoded secrets / keys) trong mã nguồn.
 - [ ] **Kiểm thử tự động**: Toàn bộ pipeline CI (`ci-passed`) và `docs-check` đã xanh.

@@ -2,6 +2,10 @@
 # ==============================================================================
 # Workflow Kiểm tra Toàn vẹn Tài liệu SDLC (github-docs.md mục 10.3)
 # ==============================================================================
+# Lưu ý (github-docs.md 10.2): workflow này là required check nên KHÔNG dùng
+# path filter hoặc branch filter ở cấp workflow. Logic "bỏ qua khi PR không
+# đụng docs/**" được đặt ở điều kiện cấp job (job `detect-changes`).
+# ==============================================================================
 
 name: Docs Check
 
@@ -10,18 +14,7 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - 'docs/**'
-      - '.github/**'
-      - 'tools/**'
   pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - 'docs/**'
-      - '.github/**'
-      - 'tools/**'
   workflow_dispatch:
 
 concurrency:
@@ -30,10 +23,32 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  detect-changes:
+    name: Detect relevant file changes
+    runs-on: ubuntu-latest
+    outputs:
+      docs_changed: ${{ steps.filter.outputs.docs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for docs/github/tools changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - '.github/**'
+              - 'tools/**'
+
   docs-check:
     name: SDLC Documentation Validation (docs-check)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.docs_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
