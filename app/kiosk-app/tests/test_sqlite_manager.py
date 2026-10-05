@@ -303,14 +303,14 @@ class TestOfflineSyncWorker:
         assert queue_mgr.get_last_punch_type(emp_id) is None
 
         # Lần 1: Chưa có punch hôm nay -> Tạo CHECK_IN
-        id1 = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
+        _ = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
         assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_IN"
 
         # Lần 2: Lần trước là CHECK_IN -> Tạo CHECK_OUT
-        id2 = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
+        _ = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
         assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_OUT"
 
         # Lần 3: Lần trước là CHECK_OUT -> Tạo CHECK_IN
-        id3 = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
+        _ = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
         assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_IN"
 
