@@ -20,9 +20,9 @@ owner: Backend Lead
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
 | `BLD-BE-005` | Lập trình DTOs & Validation Rules | Định nghĩa các Java Record DTOs kèm Jakarta Validation annotations (`@NotNull`, `@Size`, `@Pattern`) và bộ bọc lỗi ProblemDetails RFC 7807. | `APD-BE-001`, `APD-BE-002`, `APD-BE-004` | `FND-BE-002` | Dữ liệu không hợp lệ tự động trả về lỗi 400 Bad Request kèm chi tiết `invalidParams`; mapping đúng các Java Records. | Done |
-| `BLD-BE-006` | Lập trình Kiosk REST Controller | Xây dựng `KioskAttendanceController` tiếp nhận punch, sync-batch, gallery, verify-otp và enroll-face với header `X-Kiosk-Id`. | `APD-BE-001`, `APD-BE-006` | `BLD-BE-005` | Kết nối thành công với Kiosk; xử lý phản hồi trong $\le 100\text{ ms}$; thẩm định header `X-Kiosk-Id` và Secret Token chính xác. | Done |
-| `BLD-BE-007` | Lập trình Portal REST Controllers | Xây dựng `AuthController`, `AttendanceAdminController`, `AttendanceEmployeeController` và `ConsentController` cho Cổng Web Portal. | `APD-BE-002` | `BLD-BE-005` | Người dùng Web thực hiện được toàn bộ luồng đăng nhập, làm mới token, ký cam kết, tra cứu điểm danh và xem danh sách nhân sự. | Done |
-| `BLD-BE-008` | Lập trình STOMP Message Broker & Interceptors | Cấu hình WebSocket channel interceptor, topic destination prefix `/topic`, endpoint `/ws-attendance` và cơ chế xác thực kết nối. | `APD-BE-003`, `APD-BE-005` | `FND-BE-005` | Client Web và Kiosk nhận được bản tin cập nhật tức thời qua các topic `/topic/live-attendance`, `/topic/kiosk-gallery`, `/topic/enrollment/{otp}`. | Done |
+| `BLD-BE-006` | Lập trình Kiosk REST Controller | Xây dựng `KioskAttendanceController` tiếp nhận punch, sync-batch, gallery, verify-otp và enroll-face với header `X-Kiosk-Id`. | `APD-BE-001`, `APD-BE-006` | `BLD-BE-005` | Kết nối thành công với Kiosk; xử lý phản hồi trong $\le 100\text{ ms}$; thẩm định header `X-Kiosk-Id` và Secret Token chính xác. | Planned |
+| `BLD-BE-007` | Lập trình Portal REST Controllers | Xây dựng `AuthController`, `AttendanceAdminController`, `AttendanceEmployeeController` và `ConsentController` cho Cổng Web Portal. | `APD-BE-002` | `BLD-BE-005` | Người dùng Web thực hiện được toàn bộ luồng đăng nhập, làm mới token, ký cam kết, tra cứu điểm danh và xem danh sách nhân sự. | Planned |
+| `BLD-BE-008` | Lập trình STOMP Message Broker & Interceptors | Cấu hình WebSocket channel interceptor, topic destination prefix `/topic`, endpoint `/ws-attendance` và cơ chế xác thực kết nối. | `APD-BE-003`, `APD-BE-005` | `FND-BE-005` | Client Web và Kiosk nhận được bản tin cập nhật tức thời qua các topic `/topic/live-attendance`, `/topic/kiosk-gallery`, `/topic/enrollment/{otp}`. | Planned |
 
 ---
 
@@ -30,4 +30,6 @@ owner: Backend Lead
 
 * **Tài liệu hóa Tự động qua SpringDoc OpenAPI**: Định nghĩa API và cấu trúc DTO được tự động xuất bản tại `/swagger-ui.html` và `/v3/api-docs` trong môi trường phát triển; cấu hình production sẽ khóa endpoint này để bảo vệ bí mật hệ thống.
 * **Tự động Hóa Kiểm chuẩn Jakarta Validation**: Mọi tham số đầu vào của Request Body được xác thực tự động bởi `MethodArgumentNotValidException` của Hibernate Validator trước khi Controller chuyển quyền điều khiển cho Service Layer.
+* **Trạng thái Thực thi Thực tế**: `Status` của các hạng mục `BLD-BE-` được đối chiếu lại với mã nguồn tại `app/backend-service`; hiện chỉ `BLD-BE-005` (DTOs, Validation & ProblemDetails) hoàn tất, các hạng mục Controller và STOMP Interceptor còn lại đang ở trạng thái `Planned`.
+* **Ràng buộc Xác thực Trạm Kiosk**: `SecurityConfig` hiện `permitAll` cho toàn bộ tiền tố `/api/v1/kiosk/**` để phục vụ giai đoạn dựng khung. `TASK-BE-019` và `TASK-BE-021` bắt buộc siết xác thực `X-Kiosk-Id` + Secret Token tại tầng Security Filter (`API-BE-015`, `DD-BE-010`) trước khi các endpoint Kiosk được đưa vào hoạt động.
 

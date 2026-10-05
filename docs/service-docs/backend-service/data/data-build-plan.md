@@ -29,5 +29,5 @@ owner: Backend Lead
 ## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
 
 * **Tính Bất biến của Kịch bản Migration Flyway**: Kịch bản `V1__init_schema.sql` là baseline cố định; bất kỳ thay đổi nào về cấu trúc bảng hoặc chỉ mục sau khi release đều phải thực hiện qua migration version tiếp theo (`V2__...sql`) và không được sửa đổi file migration đã áp dụng.
-* **Cấu hình Kết nối CSDL Khi Chạy Build/Test**: Quy trình biên dịch và kiểm thử tự động yêu cầu Docker Engine cục bộ hoặc profile `application-test.yml` có sẵn container PostgreSQL 16; nếu chạy unit test không có Docker thì sử dụng profile H2 với cú pháp tương thích PostgreSQL mode.
+* **Cấu hình Kết nối CSDL Khi Chạy Build/Test**: Bộ kiểm thử tự động chạy trên `src/test/resources/application.yml` với profile `test`, dùng H2 in-memory ở chế độ `MODE=PostgreSQL` (`ddl-auto: create-drop` kèm Flyway), do đó không yêu cầu Docker Engine cục bộ. Kiểm thử tích hợp trên PostgreSQL 16 thật được thực hiện trong CI qua service container `postgres:16-alpine` khai báo trong `.github/workflows/ci.yml`.
 

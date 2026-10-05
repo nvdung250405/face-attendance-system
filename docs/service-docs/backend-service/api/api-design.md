@@ -58,12 +58,14 @@ owner: Backend Lead & API Architect
   "detail": "Email hoặc mật khẩu không chính xác.",
   "instance": "/api/v1/auth/login",
   "code": "AUTH_INVALID_CREDENTIALS",
+  "message": "Email hoặc mật khẩu không chính xác.",
   "timestamp": "2026-10-03T08:30:00.125+07:00",
   "invalidParams": [
     { "field": "password", "reason": "Mật khẩu không được để trống" }
   ]
 }
 ```
+* **Quy ước trường mở rộng của `ProblemDetails`**: `code` là mã lỗi tra theo Mục 6; `message` là bản sao của `detail` nhằm tương thích với máy khách Kiosk hiện hành (đọc `message`/`code` khi gặp lỗi); `timestamp` theo ISO-8601 kèm múi giờ `+07:00`; `invalidParams` **chỉ xuất hiện** khi lỗi phát sinh từ ràng buộc validation (HTTP 400) và liệt kê từng trường vi phạm kèm lý do.
 
 ---
 
@@ -583,7 +585,7 @@ owner: Backend Lead & API Architect
 | `OTP_INVALID` | 400 | Mã OTP không đúng | Chuỗi 6 chữ số không khớp với phiên đăng ký. |
 | `OTP_EXPIRED` | 400 | Mã OTP đã hết hạn | Mã OTP đã vượt quá thời hạn 48 giờ kể từ lúc sinh. |
 | `OTP_ALREADY_USED` | 409 | Mã OTP đã sử dụng | Mã này đã được dùng để nạp khuôn mặt thành công trước đó. |
-| `INVALID_VECTOR_DIMENSION` | 400 | Sai kích thước vector | Vector gửi lên không đúng 512 phần tử float32. |
+| `INVALID_VECTOR_DIMENSION` | 400 | Sai kích thước vector | Tầng nghiệp vụ phát hiện vector không đúng 512 phần tử float32 (ví dụ: dữ liệu giải mã từ CSDL). Vi phạm ngay ở tầng request được trả về `VALIDATION_FAILED` kèm `invalidParams` trường `vector512`. |
 | `EMPLOYEE_NOT_FOUND` | 404 | Không tìm thấy nhân sự | ID nhân viên không tồn tại trong CSDL. |
 | `RESOURCE_NOT_FOUND` | 404 | Không tìm thấy tài nguyên | Endpoint hoặc tài nguyên được yêu cầu không tồn tại trên máy chủ. |
 | `METHOD_NOT_ALLOWED` | 405 | Phương thức không được hỗ trợ | Phương thức HTTP không được hỗ trợ cho endpoint được gọi. |
