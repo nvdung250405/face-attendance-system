@@ -90,9 +90,9 @@ flowchart TB
 
 ## 3. System Design Decisions (Quyết định Thiết kế Cấp Hệ thống)
 
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `DD-SYS-001` | Suy luận AI tại biên trên CPU (AVX2) | Thực thi suy luận AI hoàn toàn tại biên trên CPU với tập lệnh AVX2, không phụ thuộc GPU, đạt độ trễ $\le 350\text{ ms}$, tiết kiệm 95% băng thông mạng. | `STK-004`, `STK-008` | `PD-002`, `INF-006` | - | Accepted |
-| `DD-SYS-002` | Lưu trữ cục bộ SQLite WAL tại Kiosk | Áp dụng cơ chế lưu trữ cục bộ SQLite chế độ Write-Ahead Logging (WAL) tại trạm Kiosk đảm bảo $\text{RPO} = 0$ khi mất điện đột ngột và non-blocking read/write. | `STK-009` | `PD-004`, `INF-011` | - | Accepted |
-| `DD-SYS-003` | Mã hóa đối xứng AES-256-GCM dữ liệu tĩnh | Mã hóa đối xứng AES-256-GCM ở trạng thái tĩnh cho toàn bộ vector mẫu 512D với Master Key độc lập trong biến môi trường theo Luật 2025. | `STK-015` | `PD-005`, `INF-009` | - | Accepted |
-| `DD-SYS-004` | Kênh truyền thông thời gian thực WebSocket STOMP | Sử dụng giao thức WebSocket STOMP làm kênh truyền thông đẩy thời gian thực hai chiều giữa Backend, Web Portal và Kiosk. | `STK-014` | `PD-006`, `INF-003` | - | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DD-SYS-001` | Thực thi suy luận AI hoàn toàn tại biên trên CPU với tập lệnh AVX2, không phụ thuộc GPU. | Đạt độ trễ $\le 350\text{ ms}$, tiết kiệm 95% băng thông mạng và tận dụng PC sẵn có. | Suy luận đám mây Cloud API, Trang bị GPU rời chuyên dụng | Cần tinh chỉnh mô hình gọn nhẹ và kiểm soát tài nguyên CPU/RAM. | `PD-002`, `INF-006` | Accepted |
+| `DD-SYS-002` | Áp dụng cơ chế lưu trữ cục bộ SQLite chế độ Write-Ahead Logging (WAL) tại trạm Kiosk. | Đảm bảo $\text{RPO} = 0$ khi mất điện đột ngột và hỗ trợ đọc/ghi đồng thời non-blocking. | Bộ nhớ RAM thuần túy, File JSON cục bộ | Cần quản lý dọn dẹp và cơ chế checkpoint WAL định kỳ. | `PD-004`, `INF-011` | Accepted |
+| `DD-SYS-003` | Mã hóa đối xứng AES-256-GCM ở trạng thái tĩnh cho toàn bộ vector mẫu 512D với Master Key độc lập trong biến môi trường. | Bảo đảm tính bí mật và toàn vẹn dữ liệu sinh trắc học theo Luật 91/2025/QH15. | Lưu vector plaintext, Mã hóa mức CSDL pgcrypto | Tăng tải CPU khi giải mã nạp gallery; cần bảo mật Master Key. | `PD-005`, `INF-009` | Accepted |
+| `DD-SYS-004` | Sử dụng giao thức WebSocket STOMP làm kênh truyền thông đẩy thời gian thực hai chiều giữa Backend, Web Portal và Kiosk. | Đẩy dữ liệu tức thì $\le 200\text{ ms}$, tối ưu băng thông và tài nguyên so với polling. | HTTP Polling định kỳ, SSE (Server-Sent Events) | Cần quản lý vòng đời socket và xử lý mất kết nối tự động. | `PD-006`, `INF-003` | Accepted |

@@ -29,7 +29,7 @@ Tài liệu Cấp Hệ thống xác lập khuôn khổ định hướng chiến 
 ### 1.1. Khởi tạo, Bối cảnh & Công nghệ Nền tảng
 | Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
 | :--- | :---: | :---: | :--- |
-| [**`system-docs/info.md`**](system-docs/info.md) | `INFO` | `SRC-`, `INF-` | Kho khảo sát thực tế, bằng chứng kỹ thuật, phân tích tính khả thi và bối cảnh pháp lý Luật 2025. |
+| [**`system-docs/info.md`**](system-docs/info.md) | `INFO` | `RQ-`, `SRC-`, `INF-`, `ANL-`, `GAP-` | Kho khảo sát thực tế, bằng chứng kỹ thuật, phân tích tính khả thi và bối cảnh pháp lý Luật 2025. |
 | [**`system-docs/tech-tool-stack.md`**](system-docs/tech-tool-stack.md) | `STACK` | `STK-` | Danh mục công nghệ chuẩn hóa: Python/PySide6, Java 21/Spring Boot, React/Tailwind, PostgreSQL, SQLite WAL, ONNX. |
 | [**`system-docs/pi.md`**](system-docs/pi.md) | `PI` | `PD-` | Mục tiêu chiến lược, phạm vi sản phẩm (SOW), tiêu chí thành công (KPIs) và quyết định khởi tạo dự án. |
 
@@ -46,19 +46,19 @@ Tài liệu Cấp Hệ thống xác lập khuôn khổ định hướng chiến 
 | Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
 | :--- | :---: | :---: | :--- |
 | [**`system-docs/dds/dds.md`**](system-docs/dds/dds.md) | `DDS` | `ARC-SYS-`, `DD-SYS-` | Kiến trúc phân tầng C4, phân rã 3 ranh giới service, 6 quyết định kiến trúc then chốt (ADR). |
-| [**`system-docs/dds/fr-nfr-design.md`**](system-docs/dds/fr-nfr-design.md) | `DES-FR` | `SOL-SYS-`, `DD-SOL-` | Thiết kế giải pháp kỹ thuật cho chu trình AI biên, xác thực OTP và bảo mật đa tầng. |
-| [**`system-docs/dds/ui-ux-design.md`**](system-docs/dds/ui-ux-design.md) | `DES-UI` | `UXD-SYS-`, `DD-UXD-` | Thiết kế hệ thống Design System chung, bộ quy chuẩn màu sắc, typography và tỷ lệ hình học. |
-| [**`system-docs/dds/api-design.md`**](system-docs/dds/api-design.md) | `DES-API` | `APD-SYS-`, `DD-APD-` | Thiết kế hợp đồng API cụ thể, schema JSON Request/Response, mã lỗi RFC 7807 và kênh STOMP. |
-| [**`system-docs/dds/data-design.md`**](system-docs/dds/data-design.md) | `DES-DAT` | `DTD-SYS-`, `DD-DTD-` | Thiết kế mô hình CSDL quan hệ PostgreSQL 16, CSDL cục bộ SQLite WAL và chiến lược lập chỉ mục. |
+| [**`system-docs/dds/fr-nfr-design.md`**](system-docs/dds/fr-nfr-design.md) | `DES-FR` | `SOL-SYS-`, `DD-SYS-` | Thiết kế giải pháp kỹ thuật cho chu trình AI biên, xác thực OTP và bảo mật đa tầng. |
+| [**`system-docs/dds/ui-ux-design.md`**](system-docs/dds/ui-ux-design.md) | `DES-UI` | `UXD-SYS-`, `DD-SYS-` | Thiết kế hệ thống Design System chung, bộ quy chuẩn màu sắc, typography và tỷ lệ hình học. |
+| [**`system-docs/dds/api-design.md`**](system-docs/dds/api-design.md) | `DES-API` | `APD-SYS-`, `DD-SYS-` | Thiết kế hợp đồng API cụ thể, schema JSON Request/Response, mã lỗi RFC 7807 và kênh STOMP. |
+| [**`system-docs/dds/data-design.md`**](system-docs/dds/data-design.md) | `DES-DAT` | `DTD-SYS-`, `DD-SYS-` | Thiết kế mô hình CSDL quan hệ PostgreSQL 16, CSDL cục bộ SQLite WAL và chiến lược lập chỉ mục. |
 
 ### 1.4. Phân hệ Kế hoạch Hệ thống (System Plans)
 | Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
 | :--- | :---: | :---: | :--- |
-| [**`system-docs/plans/project-plan.md`**](system-docs/plans/project-plan.md) | `PLN-PRJ` | `APC-SYS-`, `PRJ-SYS-`, `RSK-SYS-` | Kế hoạch tổ chức, WBS 5 Phase, 6 mốc nghiệm thu (Milestones) và ma trận rủi ro hệ thống. |
-| [**`system-docs/plans/foundation-setup-plan.md`**](system-docs/plans/foundation-setup-plan.md) | `PLN-FND` | `FND-SYS-` | Kế hoạch chuẩn bị hạ tầng Monorepo, môi trường thực thi và chuỗi công cụ phát triển chung. |
-| [**`system-docs/plans/build-plan.md`**](system-docs/plans/build-plan.md) | `PLN-BLD` | `BLD-SYS-` | Kế hoạch xây dựng & tích hợp toàn diện xuyên suốt 3 phân hệ từ Biên đến Trung tâm. |
-| [**`system-docs/plans/test-plan.md`**](system-docs/plans/test-plan.md) | `PLN-TST` | `TST-SYS-` | Kế hoạch kiểm thử tích hợp, ma trận kiểm định chất lượng toàn trình và tiêu chí nghiệm thu. |
-| [**`system-docs/plans/deploy-plan.md`**](system-docs/plans/deploy-plan.md) | `PLN-DPL` | `DPL-SYS-` | Kế hoạch đóng gói, phát hành, triển khai môi trường và kịch bản dự phòng khôi phục. |
+| [**`system-docs/plans/project-plan.md`**](system-docs/plans/project-plan.md) | `PLN-PRJ` | `APC-SYS-`, `PRJ-`, `ROL-`, `RSK-` | Kế hoạch tổ chức, WBS 5 Phase, 6 mốc nghiệm thu (Milestones) và ma trận rủi ro hệ thống. |
+| [**`system-docs/plans/foundation-setup-plan.md`**](system-docs/plans/foundation-setup-plan.md) | `PLN-FND` | `APC-SYS-`, `FND-SYS-` | Kế hoạch chuẩn bị hạ tầng Monorepo, môi trường thực thi và chuỗi công cụ phát triển chung. |
+| [**`system-docs/plans/build-plan.md`**](system-docs/plans/build-plan.md) | `PLN-BLD` | `APC-SYS-`, `BLD-SYS-` | Kế hoạch xây dựng & tích hợp toàn diện xuyên suốt 3 phân hệ từ Biên đến Trung tâm. |
+| [**`system-docs/plans/test-plan.md`**](system-docs/plans/test-plan.md) | `PLN-TST` | `APC-SYS-`, `TST-SYS-` | Kế hoạch kiểm thử tích hợp, ma trận kiểm định chất lượng toàn trình và tiêu chí nghiệm thu. |
+| [**`system-docs/plans/deploy-plan.md`**](system-docs/plans/deploy-plan.md) | `PLN-DPL` | `APC-SYS-`, `DPL-SYS-` | Kế hoạch đóng gói, phát hành, triển khai môi trường và kịch bản dự phòng khôi phục. |
 
 ---
 
@@ -100,18 +100,18 @@ Tài liệu Cấp Dịch vụ đi sâu vào từng phân hệ độc lập trong
 | :--- | :--- | :---: | :---: | :--- |
 | **Hub** | [**`backend-service/README.md`**](service-docs/backend-service/README.md) | `BE-HUB` | — | Tổng quan phân hệ Backend và cẩm nang điều hướng 3 facet. |
 | **Toàn Service** | [**`foundation-setup-plan.md`**](service-docs/backend-service/foundation-setup-plan.md) | `SVC-FSP` | `FND-BE-` | Môi trường Java 21 LTS, cấu hình Maven, Spring Boot Starter và Flyway. |
-| **Toàn Service** | [**`build-plan.md`**](service-docs/backend-service/build-plan.md) | `SVC-BLD` | `BLD-BE-` | Kế hoạch build tổng của Backend, điều phối thứ tự wave và chuẩn hóa task. |
+| **Toàn Service** | [**`task-plan.md`**](service-docs/backend-service/task-plan.md) | `SVC-TSK` | `TASK-BE-` | Kế hoạch phân rã thi công, thứ tự dependency và nhóm wave thực thi của Backend. |
 | **FR/NFR** | [**`fr-nfr/fr-nfr-specs.md`**](service-docs/backend-service/fr-nfr/fr-nfr-specs.md) | `SVC-SPEC` | `FR-BE-`, `NFR-BE-` | Xác thực RBAC, xử lý điểm danh, mã hóa vector sinh trắc học, độ trễ $\le 100\text{ ms}$. |
 | **FR/NFR** | [**`fr-nfr/fr-nfr-design.md`**](service-docs/backend-service/fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-BE-` | Security filter chain, Biometric crypto service, STOMP event broadcaster. |
-| **FR/NFR** | [**`fr-nfr/fr-nfr-build-plan.md`**](service-docs/backend-service/fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `CBL-BE-` | Kế hoạch thi công JWT provider, attendance engine và aspect audit trail. |
+| **FR/NFR** | [**`fr-nfr/fr-nfr-build-plan.md`**](service-docs/backend-service/fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `BLD-BE-` | Kế hoạch thi công JWT provider, attendance engine, aspect audit trail và Integration. |
 | **FR/NFR** | [**`fr-nfr/fr-nfr-test-plan.md`**](service-docs/backend-service/fr-nfr/fr-nfr-test-plan.md) | `SVC-TST` | `TST-BE-` | Ca kiểm thử JUnit 5, MockMvc, Testcontainers PostgreSQL và kiểm thử tải. |
 | **Data** | [**`data/data-specs.md`**](service-docs/backend-service/data/data-specs.md) | `SVC-SPEC` | `DATA-BE-` | Thực thể `users`, `biometric_templates`, `attendance_logs`, `audit_logs`. |
 | **Data** | [**`data/data-design.md`**](service-docs/backend-service/data/data-design.md) | `SVC-DES` | `DTD-BE-` | Lược đồ bảng PostgreSQL 16, chỉ mục khóa ngoại và cấu hình kết nối HikariCP. |
-| **Data** | [**`data/data-build-plan.md`**](service-docs/backend-service/data/data-build-plan.md) | `SVC-BLD` | `DBL-BE-` | Kế hoạch thi công script Flyway migration và Spring Data JPA Repositories. |
+| **Data** | [**`data/data-build-plan.md`**](service-docs/backend-service/data/data-build-plan.md) | `SVC-BLD` | `BLD-BE-` | Kế hoạch thi công script Flyway migration và Spring Data JPA Repositories. |
 | **Data** | [**`data/data-test-plan.md`**](service-docs/backend-service/data/data-test-plan.md) | `SVC-TST` | `TST-BE-` | Kế hoạch kiểm thử tính toàn vẹn CSDL và migration. |
 | **API** | [**`api/api-specs.md`**](service-docs/backend-service/api/api-specs.md) | `SVC-SPEC` | `API-BE-` | Danh mục REST endpoints (`punch`, `sync-batch`, `gallery`, `consent`) và STOMP topics. |
 | **API** | [**`api/api-design.md`**](service-docs/backend-service/api/api-design.md) | `SVC-DES` | `APD-BE-` | Thiết kế REST Controllers, Record DTOs, Validation và STOMP Broker. |
-| **API** | [**`api/api-build-plan.md`**](service-docs/backend-service/api/api-build-plan.md) | `SVC-BLD` | `ABL-BE-` | Kế hoạch thi công API Controllers, WebSocket handlers và global exception. |
+| **API** | [**`api/api-build-plan.md`**](service-docs/backend-service/api/api-build-plan.md) | `SVC-BLD` | `BLD-BE-` | Kế hoạch thi công API Controllers, WebSocket handlers và global exception. |
 | **API** | [**`api/api-test-plan.md`**](service-docs/backend-service/api/api-test-plan.md) | `SVC-TST` | `TST-BE-` | Kế hoạch kiểm thử hợp đồng REST API và STOMP. |
 
 ---

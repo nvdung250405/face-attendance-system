@@ -44,9 +44,9 @@ Thiết kế chi tiết các thành phần giải pháp kỹ thuật (`SOL-SYS-`
 
 ## 3. Solution Design Decisions (Quyết định Thiết kế Giải pháp)
 
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `DD-SYS-005` | Ngưỡng giữ ổn định khuôn mặt trong Oval | Thiết lập thời gian giữ ổn định khuôn mặt trong khung Oval từ 0.5s đến 1.0s trước khi kích hoạt nhận diện nhằm tránh nhận nhầm khi đang di chuyển. | `STK-001`, `STK-003` | `FR-SYS-001`, `UI-SYS-001` | - | Accepted |
-| `DD-SYS-006` | Kiểm soát Cooldown 120s hai tầng | Áp dụng kiểm soát Cooldown 120s ở cả 2 tầng: Kiosk Client (RAM) và Backend Server (Caffeine Cache) chống quẹt trùng lặp. | `STK-008`, `STK-013` | `FR-SYS-005` | - | Accepted |
-| `DD-SYS-007` | Thời gian ân hạn ca kíp mặc định 15 phút | Cấu hình thời gian ân hạn ca kíp mặc định là 15 phút phù hợp văn hóa làm việc và tránh ùn tắc giờ cao điểm. | `STK-011` | `FR-SYS-012`, `INF-001` | - | Accepted |
-| `DD-SYS-008` | Khử mã độc Formula Injection trong file Excel | Tự động kiểm tra và chèn ký tự escape `'` trước các chuỗi bắt đầu bằng `=`, `+`, `-`, `@` khi xuất file `.xlsx`. | `STK-011` | `FR-SYS-016`, `SRS-007` | - | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `DD-SYS-005` | Thiết lập thời gian giữ ổn định khuôn mặt trong khung Oval từ 0.5s đến 1.0s trước khi kích hoạt nhận diện. | Tránh chụp nhòe hoặc nhận diện nhầm khi người dùng đang di chuyển ngang qua camera. | Nhận diện tức thì không chờ ổn định, Yêu cầu bấm nút vật lý | Người dùng phải dừng lại nhìn thẳng 0.5s-1.0s nhưng loại bỏ triệt để ảnh nhòe motion blur. | `FR-SYS-001`, `UI-SYS-001` | Accepted |
+| `DD-SYS-006` | Áp dụng kiểm soát Cooldown 120s ở cả hai tầng: Kiosk RAM đếm lùi và Backend Caffeine Cache. | Chống quẹt trùng lặp hiệu quả ngay cả khi mất mạng nội bộ hoặc nhiều trạm gửi song song. | Chỉ kiểm tra tại Backend, Chỉ kiểm tra tại Kiosk | Giữ trạng thái Cooldown trong bộ nhớ 120s; từ chối quẹt lặp tức thì không tốn I/O CSDL. | `FR-SYS-005`, `NFR-SYS-007` | Accepted |
+| `DD-SYS-007` | Cấu hình thời gian ân hạn ca kíp mặc định là 15 phút. | Phù hợp văn hóa làm việc doanh nghiệp và tránh ùn tắc đầu ca tại sảnh ra vào. | Không có ân hạn (chấm trễ 1 phút tính Late), Ân hạn 30 phút | Cần tính toán `lateMinutes` sau khi trừ đi 15 phút ân hạn cho các bản ghi đi muộn. | `FR-SYS-012`, `INF-001` | Accepted |
+| `DD-SYS-008` | Tự động kiểm tra và chèn ký tự escape `'` trước các chuỗi bắt đầu bằng `=`, `+`, `-`, `@` khi xuất file `.xlsx`. | Vô hiệu hóa triệt để nguy cơ tấn công chèn mã độc thực thi công thức Excel (CWE-1236). | Xuất text thô không lọc, Chặn không cho nhập ký tự đặc biệt | Bảo vệ máy tính nhân sự an toàn trước mã độc khi mở báo cáo bằng MS Excel. | `FR-SYS-016`, `SRS-007` | Accepted |

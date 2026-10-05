@@ -1,42 +1,26 @@
 ---
 title: Backend Data Test Plan
-version: 1.0
+version: 2.0
 status: Approved
 owner: Backend QA & Data Engineer
 ---
 
 # DATA TEST PLAN — Kế hoạch Kiểm thử Tầng Dữ liệu Backend
 
-## 1. Scope & Objectives (Phạm vi & Mục tiêu)
-
-* **Phạm vi**: Kiểm thử toàn diện tầng lưu trữ dữ liệu PostgreSQL 16, các kịch bản Flyway Migration, các thực thể JPA Entities và bộ nhớ đệm Caffeine Cache của Backend.
-* **Mục tiêu**:
-  * Đảm bảo tính toàn vẹn dữ liệu, các ràng buộc duy nhất (Unique) và quan hệ khóa ngoại (FK) hoạt động chính xác.
-  * Xác nhận hiệu năng ghi hàng loạt (Batch Insert) và cơ chế chống quẹt lặp Cooldown 120s hoạt động ổn định.
-  * Đảm bảo kịch bản Flyway migration chạy trơn tru không lỗi trên môi trường kiểm chuẩn.
-
----
-
-## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử Dữ liệu)
+## 1. Approach Decisions (Quyết định Phương pháp Kiểm thử Dữ liệu)
 
 | ID | Decision | Rationale | Basis | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| `APC-BE-001` | Sử dụng Testcontainers PostgreSQL 16 cho kiểm thử tích hợp CSDL. | Đảm bảo môi trường kiểm thử tương đương 100% với môi trường chạy thực tế (Production Parity), không dùng H2 giả lập. | `STK-012`, `DATA-BE-001` | Accepted |
-| `APC-BE-002` | Kiểm thử xung đột khóa ngoại và dữ liệu biên (Negative Testing). | Phòng ngừa lỗi tràn số, trùng lặp mã nhân viên và lỗi vi phạm toàn vẹn quan hệ cha-con. | `DATA-BE-001`, `DATA-BE-008` | Accepted |
+| `APC-BE-001` | Sử dụng Testcontainers PostgreSQL 16 cho kiểm thử tích hợp CSDL | Đảm bảo môi trường kiểm thử tương đương 100% với môi trường chạy thực tế (Production Parity), kiểm chứng toàn vẹn cú pháp Flyway DDL và PostgreSQL native features. | `STK-012`, `DATA-BE-001` | Accepted |
+| `APC-BE-002` | Kiểm thử xung đột khóa ngoại và dữ liệu biên (Negative Testing) | Phòng ngừa lỗi tràn số, trùng lặp mã nhân viên và lỗi vi phạm toàn vẹn quan hệ cha-con trước khi mã nguồn được tích hợp vào pipeline chung. | `DATA-BE-001`, `DATA-BE-008` | Accepted |
 
 ---
 
-## 3. Data Test Items (Danh mục Ca Kiểm thử Dữ liệu)
+## 2. Data Test Items (Danh mục Ca Kiểm thử Dữ liệu)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
-| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
-| `TST-BE-001` | Kiểm thử Kịch bản Flyway Migration V1 | Chạy `flyway:migrate` tự động; khởi tạo 8 bảng CSDL và toàn bộ chỉ mục hiệu năng. | `DTD-BE-001` | `BLD-BE-001` | 8 bảng CSDL và toàn bộ chỉ mục được tạo lập đúng schema không có lỗi DDL. | Done |
-| `TST-BE-002` | Kiểm thử Ràng buộc Toàn vẹn Khóa & Duy nhất | Thử chèn trùng `employee_code` hoặc `email` trong bảng `users` để kiểm tra toàn vẹn dữ liệu. | `DATA-BE-001`, `DATA-BE-009` | `BLD-BE-002` | Ném `DataIntegrityViolationException` và rollback transaction khi chèn trùng lặp. | Done |
-| `TST-BE-003` | Kiểm thử Ghi Lô Điểm danh & Hiệu năng Batch | Chèn đồng thời 50 bản ghi điểm danh trong một giao dịch duy nhất có xử lý `ON CONFLICT`. | `DATA-BE-004`, `DTD-BE-001` | `BLD-BE-003` | Chèn 50 bản ghi hoàn tất trong $\le 50\text{ ms}$; không phát sinh lỗi khóa bảng. | Done |
-| `TST-BE-004` | Kiểm thử Cooldown Cache 120 Giây | Kiểm tra bộ nhớ đệm Caffeine chặn các lượt quẹt liên tiếp của cùng một nhân viên trong 120 giây. | `DTD-BE-003`, `DATA-BE-012` | `BLD-BE-004` | Lượt quẹt thứ hai trong 120s trả về cache hit, không phát sinh lệnh INSERT xuống CSDL. | Done |
-
----
-
-## 4. Defect Management (Quản lý Lỗi Tầng Dữ liệu)
-
-* Mọi sự cố liên quan đến hỏng cấu trúc migration hoặc mất dữ liệu được xếp loại **Blocker (P0)** và yêu cầu điều tra nguyên nhân gốc (RCA) trước khi cập nhật mã nguồn.
+| :--- | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
+| `TST-BE-001` | Kiểm thử Kịch bản Flyway Migration & Schema Baseline | Chạy `flyway:migrate` tự động; khởi tạo đủ 8 bảng CSDL, quan hệ khóa ngoại, kiểu dữ liệu và toàn bộ chỉ mục hiệu năng. | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-004`, `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-008` | `BLD-BE-001` | 8 bảng CSDL và toàn bộ chỉ mục được tạo lập đúng schema 3NF không có lỗi DDL trên container PostgreSQL 16. | Done |
+| `TST-BE-002` | Kiểm thử Ràng buộc Toàn vẹn Khóa & Xác thực Dữ liệu | Thử chèn trùng `employee_code`, `email`, kiểm tra không phân trùng ca cùng thời điểm và kiểm tra khóa PIN sau 5 lần nhập sai. | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-009`, `DATA-BE-012` | `BLD-BE-002` | CSDL ném `DataIntegrityViolationException` và tự động rollback transaction khi phát hiện chèn trùng lặp. | Done |
+| `TST-BE-003` | Kiểm thử Ghi Lô Điểm danh & Hiệu năng Batch | Chèn đồng thời 50 bản ghi điểm danh trong một giao dịch duy nhất có xử lý `ON CONFLICT DO NOTHING`, kiểm chứng lưu trữ 3 năm. | `DATA-BE-004`, `DATA-BE-009`, `DATA-BE-014` | `BLD-BE-003` | Chèn 50 bản ghi hoàn tất trong $\le 50\text{ ms}$; không phát sinh lỗi khóa bảng; dữ liệu điểm danh và audit bảo lưu toàn vẹn. | Done |
+| `TST-BE-004` | Kiểm thử Cooldown Cache & Bảo vệ Dữ liệu Sinh trắc | Kiểm tra bộ nhớ đệm Caffeine chặn quẹt lặp trong 120s; kiểm tra lưu vector `BYTEA` AES-256-GCM, chuẩn 512D L2-norm, OTP 48h và tác vụ tiêu hủy 20 ngày. | `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-010`, `DATA-BE-011`, `DATA-BE-013`, `DATA-BE-015` | `BLD-BE-004` | Lượt quẹt thứ hai trong 120s trả về cache hit; vector lưu dưới dạng ciphertext kèm IV; OTP hết hạn sau 48h; dữ liệu thôi việc quá 20 ngày bị xóa sạch. | Done |

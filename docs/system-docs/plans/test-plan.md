@@ -19,11 +19,11 @@ owner: QA Lead
 
 ## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử)
 
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :--- | :---: |
-| `APC-SYS-010` | Kim tự tháp kiểm thử đa tầng liên tục (Unit $\rightarrow$ Component $\rightarrow$ Integration $\rightarrow$ System $\rightarrow$ Soak). | Đảm bảo phát hiện lỗi sớm ở tầng dưới, tối ưu chi phí sửa đổi và bảo đảm độ ổn định hệ thống. | `APC-SYS-002`, `NFR-SYS-001` | Accepted |
-| `APC-SYS-011` | Kiểm thử tiêm lỗi cưỡng bức (Fault Injection Testing: ngắt mạng, mất camera, cúp điện). | Hệ thống chạy tại biên trong môi trường nhà máy/văn phòng có độ ổn định ngoại cảnh không đồng đều, bắt buộc phải tự phục hồi. | `NFR-SYS-006`, `RSK-001` | Accepted |
-| `APC-SYS-012` | Kiểm thử ngâm tải bộ nhớ 8 giờ liên tục (Soak Testing) với luồng camera thật. | Phát hiện triệt để rò rỉ bộ nhớ (Memory Leak) từ các khung hình OpenCV/NumPy trước khi đưa vào vận hành thực tế. | `NFR-SYS-009`, `PD-002` | Accepted |
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-SYS-010` | Kim tự tháp kiểm thử đa tầng liên tục (Unit $\rightarrow$ Component $\rightarrow$ Integration $\rightarrow$ System $\rightarrow$ Soak). | Đảm bảo phát hiện lỗi sớm ở tầng dưới, tối ưu chi phí sửa đổi và bảo đảm độ ổn định hệ thống. | Chỉ kiểm thử E2E thủ công, Không theo kim tự tháp | Cần duy trì bộ test script tự động đồ sộ (Pytest, JUnit 5, Vitest) và mock hợp đồng. | `APC-SYS-002`, `NFR-SYS-001` | Accepted |
+| `APC-SYS-011` | Kiểm thử tiêm lỗi cưỡng bức (Fault Injection Testing: ngắt mạng, mất camera, cúp điện). | Hệ thống chạy tại biên trong môi trường văn phòng/nhà xưởng có ngoại cảnh bất định, bắt buộc phải tự phục hồi. | Chỉ kiểm thử luồng thuận lợi (Happy Path) | Phải thiết lập kịch bản test rút dây mạng, ngắt tiến trình và giả lập timeout. | `NFR-SYS-006`, `RSK-001` | Accepted |
+| `APC-SYS-012` | Kiểm thử ngâm tải bộ nhớ 8 giờ liên tục (Soak Testing) với luồng camera thật. | Phát hiện triệt để rò rỉ bộ nhớ (Memory Leak) từ các khung hình OpenCV/NumPy trước khi bàn giao vận hành. | Chỉ chạy unit test ngắn hạn dưới 5 phút | Cần máy trạm lab chạy ngâm tải 8 tiếng liên tục trước mỗi cột mốc release. | `NFR-SYS-009`, `PD-002` | Accepted |
 
 ---
 

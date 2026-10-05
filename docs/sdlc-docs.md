@@ -13,7 +13,7 @@ Bộ tài liệu theo hướng docs-as-code (Markdown, quản lý bằng VCS, re
 ## 1.2. Phạm vi
 
 - **Trong phạm vi:** tài liệu nghiên cứu, hoạch định, đặc tả, thiết kế và kế hoạch — là input cho build, kiểm thử và triển khai.
-- **Ngoài phạm vi (evidence):** code, kết quả build/test, release record, dữ liệu vận hành, runbook... Chúng sinh ra từ BUILD, TEST, DEPLOY, nằm ở công cụ tương ứng (VCS, CI/CD, quản lý test, hệ thống release/vận hành) và được trace về cây này bằng ID (`BLD-`, `TST-`, `DPL-`); không có file riêng trong `docs/`.
+- **Ngoài phạm vi (evidence):** code, kết quả build/test, release record, dữ liệu vận hành, runbook... Chúng sinh ra từ BUILD, TEST, DEPLOY, nằm ở công cụ tương ứng (VCS, CI/CD, quản lý test, hệ thống release/vận hành) và được trace về cây này bằng ID (`FND-`, `BLD-`, `TASK-`, `TST-`, `DPL-`); không có file riêng trong `docs/`.
 - **Sau DEPLOY:** không có leaf riêng. Yêu cầu vận hành nằm ở `NFR-` và `ARC-`; việc chuẩn bị vận hành nằm ở Deploy Plan (`Operational Readiness`); thay đổi sau phát hành đi lại chuỗi từ tầng bị ảnh hưởng (mục 14.3).
 
 ## 1.3. Chuỗi SDLC chính
@@ -42,17 +42,17 @@ SPEC trung lập công nghệ nên STACK không phải upstream của SPEC. Ràn
 
 Đây là nơi duy nhất định nghĩa câu hỏi mà mỗi tầng chịu trách nhiệm trả lời; các mục sau không lặp lại.
 
-| Tầng  | Trả lời câu hỏi                                                                                               |
-| ------ | ----------------------------------------------------------------------------------------------------------------- |
-| INFO   | Ta biết gì: sự thật, bằng chứng, nghiên cứu và phân tích?                                              |
-| PI     | Làm gì, trong phạm vi nào, theo định hướng và quyết định cấp dự án nào?                           |
-| STACK  | Dùng công nghệ, framework, công cụ và nền tảng nào?                                                      |
-| SPEC   | Hệ thống/service phải làm gì và phải đáp ứng điều gì?                                                |
-| DESIGN | Các requirement được hiện thực bằng cấu trúc, behavior và quyết định kỹ thuật nào?                |
-| PLAN   | Cần làm work item nào, theo cách nào, theo dependency nào để tạo ra kết quả đã đặc tả/thiết kế? |
-| BUILD  | Implementation (evidence)                                                                                         |
-| TEST   | Verification (evidence)                                                                                           |
-| DEPLOY | Release và đưa vào vận hành (evidence)                                                                      |
+| Tầng  | Trả lời câu hỏi                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------------------- |
+| INFO   | Ta biết gì: sự thật, bằng chứng, nghiên cứu và phân tích?                                      |
+| PI     | Làm gì, trong phạm vi nào, theo định hướng và quyết định cấp dự án nào?                   |
+| STACK  | Dùng công nghệ, framework, công cụ và nền tảng nào?                                              |
+| SPEC   | Hệ thống/service phải làm gì và phải đáp ứng điều gì?                                        |
+| DESIGN | Các requirement được hiện thực bằng cấu trúc, behavior và quyết định kỹ thuật nào?        |
+| PLAN   | Cần chuẩn bị, build, kiểm thử và triển khai những work item nào, theo dependency và cách nào? |
+| BUILD  | Implementation (evidence)                                                                                 |
+| TEST   | Verification (evidence)                                                                                   |
+| DEPLOY | Release và đưa vào vận hành (evidence)                                                              |
 
 ## 1.5. Nguyên tắc xuyên suốt
 
@@ -67,85 +67,106 @@ Bốn phép thử chi tiết ở mục 13.1.
 # 2. Cấu trúc thư mục
 
 ```text
+# Đọc cây: comment mô tả GIAI ĐOẠN — câu hỏi file trả lời — ID chính và hướng trace.
+# NGANG (system-docs): toàn hệ thống đi INFO → PI → (SPEC ‖ STACK) → DESIGN → PLAN.
+# DỌC (service-docs): mỗi facet đi SPEC → DESIGN → BUILD PLAN → TEST PLAN;
+#                    foundation và task plan là lớp toàn service, hội tụ vào BUILD.
+# Prefix trong comment là prefix chính của leaf; `DD-` tồn tại ở mọi design leaf nhưng không lặp lại ở từng dòng.
+# BUILD / TEST / DEPLOY là evidence nằm ngoài cây, trace ngược về tài liệu bằng ID.
+
 docs/
 │
-├── meta.md                                      # Metadata và quy ước quản lý của toàn bộ bộ tài liệu;
-│                                                # không phải artifact trong SDLC.
+├── meta.md                                      # Ngoài SDLC — Metadata và quy ước quản lý toàn bộ document system;
+│                                                # không phải artifact trong lifecycle.
 │
-├── system-docs/
-│   ├── info.md                                  # Kho nghiên cứu và bằng chứng về đề tài.
-│   ├── tech-tool-stack.md                       # Công nghệ, framework, runtime, nền tảng và công cụ.
-│   ├── pi.md                                    # Khởi tạo dự án: mục tiêu, phạm vi, định hướng và quyết định.
+├── system-docs/                                 # NGANG — toàn hệ thống: INFO → PI → (SPEC ‖ STACK) → DESIGN → PLAN.
+│   ├── info.md                                  # INFO — Ta biết gì?  [RQ-/SRC-/INF-/ANL-/GAP-]
+│   ├── pi.md                                    # PI — Làm gì, phạm vi nào, quyết định gì?  [PD-] Basis INF-/ANL-
+│   ├── tech-tool-stack.md                       # STACK — Dùng công nghệ, công cụ nào?  [STK-] Basis PI/INFO
 │   │
-│   ├── srs/
-│   │   ├── srs.md                               # Yêu cầu tổng thể/cross-cutting của hệ thống.
-│   │   ├── fr-nfr-specs.md                      # Đặc tả FR/NFR.
-│   │   ├── ui-ux-specs.md                       # Đặc tả UI/UX.
-│   │   ├── api-specs.md                         # Đặc tả API/interface.
-│   │   └── data-specs.md                        # Đặc tả dữ liệu.
+│   ├── srs/                                     # SPEC — Hệ thống phải làm gì và phải đáp ứng điều gì?
+│   │   ├── srs.md                               # System context và cross-cutting requirements.  [ACT-/EXT-/SRS-]
+│   │   ├── fr-nfr-specs.md                      # Capability, business rule và quality requirements.  [FR-/NFR-]
+│   │   ├── ui-ux-specs.md                       # User task, interaction và experience requirements.  [UI-]
+│   │   ├── api-specs.md                         # Interface, operation, contract và constraints.  [API-]
+│   │   └── data-specs.md                        # Data entity, rule, lifecycle và protection.  [DATA-]
 │   │
-│   ├── dds/
-│   │   ├── dds.md                               # Thiết kế tổng thể/cross-cutting của hệ thống.
-│   │   ├── fr-nfr-design.md                     # Thiết kế hiện thực FR/NFR.
-│   │   ├── ui-ux-design.md                      # Thiết kế UI/UX.
-│   │   ├── api-design.md                        # Thiết kế API/integration.
-│   │   └── data-design.md                       # Thiết kế dữ liệu.
+│   ├── dds/                                     # DESIGN — Requirement được hiện thực thế nào?
+│   │   ├── dds.md                               # Architecture, service boundary và cross-cutting design.  [ARC-]
+│   │   ├── fr-nfr-design.md                     # Logic và quality mechanism hiện thực FR/NFR.  [SOL-] Realizes FR-/NFR-
+│   │   ├── ui-ux-design.md                      # UI/UX design; cấu trúc hóa quyết định từ UI artifact.  [UXD-] Realizes UI-
+│   │   ├── api-design.md                        # Interface, contract và behavior cụ thể để implement.  [APD-] Realizes API-
+│   │   └── data-design.md                       # Data model, storage, access và data behavior.  [DTD-] Realizes DATA-
 │   │
-│   └── plans/
-│       ├── project-plan.md                      # Kế hoạch tổ chức, lịch và phân công toàn dự án.
-│       ├── foundation-setup-plan.md             # Kế hoạch chuẩn bị nền tảng chung cho build.
-│       ├── build-plan.md                        # Kế hoạch build hệ thống.
-│       ├── test-plan.md                         # Kế hoạch kiểm thử hệ thống.
-│       └── deploy-plan.md                       # Kế hoạch triển khai hệ thống.
+│   └── plans/                                   # PLAN — Chuẩn bị và tổ chức execution từ system-level.
+│       ├── project-plan.md                      # Phase, milestone, role, schedule và risk.  [PRJ-/RSK-]
+│       ├── foundation-setup-plan.md             # Foundation chung để build bắt đầu.  [FND-] Covers STK-/ARC-
+│       ├── build-plan.md                        # SYSTEM BUILD PLAN — Build work cấp system và integration xuyên service.  [BLD-] Covers Design
+│       ├── test-plan.md                         # Kiểm chứng requirement cấp system/xuyên service.  [TST-] Covers Spec
+│       └── deploy-plan.md                       # Release, rollout, rollback và operational readiness.  [DPL-]
 │
-└── service-docs/
+└── service-docs/                                # DỌC — MỘT service; nhân bản cho mỗi service.
+    │                                             # Facet: SPEC → DESIGN → BUILD PLAN → TEST PLAN.
+    │                                             # Foundation → TASK PLAN → BUILD là luồng execution toàn service.
     │
-    ├── fr-nfr/
-    │   ├── fr-nfr-specs.md                      # FR/NFR của service.
-    │   ├── fr-nfr-design.md                     # Design FR/NFR của service.
-    │   ├── fr-nfr-build-plan.md                 # Build plan FR/NFR của service.
-    │   └── fr-nfr-test-plan.md                  # Test plan FR/NFR của service.
+    ├── fr-nfr/                                  # FACET FR/NFR (luôn có) — capability, business rule, quality.
+    │   ├── fr-nfr-specs.md                      # SPEC — Service phải làm gì, đáp ứng quality nào?  [FR-/NFR-]
+    │   ├── fr-nfr-design.md                     # DESIGN — Hiện thực bằng logic, component, mechanism nào?  [SOL-]
+    │   ├── fr-nfr-build-plan.md                 # BUILD PLAN — Cần build BLD- nào cho FR/NFR; sở hữu Integration xuyên facet.  [BLD-]
+    │   └── fr-nfr-test-plan.md                  # TEST PLAN — Kiểm chứng FR/NFR bằng cách nào?  [TST-]
     │
-    ├── data/                                    # Chỉ dùng nếu service có responsibility về persistent data/DB.
-    │   ├── data-specs.md                        # Spec dữ liệu của service.
-    │   ├── data-design.md                       # Design data model/storage của service.
-    │   ├── data-build-plan.md                   # Build plan database/data layer của service.
-    │   └── data-test-plan.md                    # Test plan data của service.
+    ├── data/                                    # FACET DATA (có điều kiện) — service sở hữu persistent data/DB.
+    │   ├── data-specs.md                        # SPEC — Data nào tồn tại, rule/lifecycle/protection nào?  [DATA-]
+    │   ├── data-design.md                       # DESIGN — Data model, storage và access thiết kế thế nào?  [DTD-]
+    │   ├── data-build-plan.md                   # BUILD PLAN — Cần build BLD- nào cho data design?  [BLD-]
+    │   └── data-test-plan.md                    # TEST PLAN — Kiểm chứng data model, rule và persistence thế nào?  [TST-]
     │
-    ├── api/                                     # Chỉ dùng nếu service có giao tiếp với bên ngoài.
-    │   ├── api-specs.md                         # Spec API/interface của service.
-    │   ├── api-design.md                        # Design API/integration của service.
-    │   ├── api-build-plan.md                    # Build plan API/integration của service.
-    │   └── api-test-plan.md                     # Test plan API/integration của service.
+    ├── api/                                     # FACET API (có điều kiện) — service có external interaction boundary.
+    │   ├── api-specs.md                         # SPEC — Contract/requirement API mà service sở hữu (tùy ownership upstream).  [API-]
+    │   ├── api-design.md                        # DESIGN — Interface, contract và behavior thiết kế thế nào?  [APD-]
+    │   ├── api-build-plan.md                    # BUILD PLAN — Cần build BLD- nào cho API/integration?  [BLD-]
+    │   └── api-test-plan.md                     # TEST PLAN — Kiểm chứng interface, contract và integration thế nào?  [TST-]
     │
-    ├── ui-ux/                                   # Chỉ dùng nếu service có người dùng trực tiếp.
-    │   ├── ui-ux-specs.md                       # Spec UI/UX của service.
-    │   ├── ui-ux-design.md                      # Design UI/UX của service.
-    │   ├── ui-ux-build-plan.md                  # Build plan UI/UX của service.
-    │   └── ui-ux-test-plan.md                   # Test plan UI/UX của service.
+    ├── ui-ux/                                   # FACET UI/UX (có điều kiện) — service có người dùng trực tiếp.
+    │   ├── ui-ux-specs.md                       # SPEC — User task, journey, interaction và experience cần gì?  [UI-]
+    │   ├── ui-ux-design.md                      # DESIGN — UI/UX được thiết kế thế nào từ UI artifact?  [UXD-]
+    │   ├── ui-ux-build-plan.md                  # BUILD PLAN — Cần build BLD- nào cho UI/UX design?  [BLD-]
+    │   └── ui-ux-test-plan.md                   # TEST PLAN — Kiểm chứng UI/UX, interaction và accessibility thế nào?  [TST-]
     │
-    ├── foundation-setup-plan.md                 # Kế hoạch chuẩn bị nền tảng riêng cho service.
-    └── build-plan.md                            # Kế hoạch build tổng của service; aggregate các facet
-                                                 # build plan, xác định dependency/thứ tự thực hiện
-                                                 # và chuẩn hóa thành task.
+    ├── foundation-setup-plan.md                 # FOUNDATION SETUP (luôn có) — Foundation riêng của service;  [FND-]
+    │                                                # phần dùng chung phụ thuộc system foundation.
+    │
+    └── task-plan.md                             # TASK PLAN (luôn có) — Gom BLD-/FND-, phân rã thành TASK-,
+                                                 # xác định dependency và gom TASK thành execution waves.
+                                                 # BLD- = đơn vị planning · TASK- = đơn vị thi công · Wave = grouping thứ tự.
 ```
 
-> Cây là tập tối đa. `fr-nfr/`, `foundation-setup-plan.md` và `build-plan.md` ở gốc `service-docs/` luôn có; `data/`, `api/`, `ui-ux/` xuất hiện theo responsibility thực tế (điều kiện ở mục 10 và 2.2).
+> Cây là tập tối đa. `fr-nfr/`, `foundation-setup-plan.md` và `task-plan.md` ở gốc `service-docs/` luôn có; `data/`, `api/`, `ui-ux/` xuất hiện theo responsibility thực tế. `api-specs.md` chỉ có khi service là owner của API requirements/contracts; nếu owner ở upstream thì bỏ leaf này và trace trực tiếp về upstream (mục 10).
 
 ## 2.1. Hai hướng phát triển của bộ tài liệu
 
 Cả hai cấp dùng chung một ma trận **giai đoạn × facet**:
 
-| Giai đoạn \ Facet | FR/NFR (`fr-nfr/`)    | Data                | API                | UI/UX                |
-| ------------------- | --------------------- | ------------------- | ------------------ | -------------------- |
-| Specs               | `fr-nfr-specs`      | `data-specs`      | `api-specs`      | `ui-ux-specs`      |
-| Design              | `fr-nfr-design`     | `data-design`     | `api-design`     | `ui-ux-design`     |
-| Build plan          | `fr-nfr-build-plan` | `data-build-plan` | `api-build-plan` | `ui-ux-build-plan` |
-| Test plan           | `fr-nfr-test-plan`  | `data-test-plan`  | `api-test-plan`  | `ui-ux-test-plan`  |
+| Giai đoạn \ Facet | FR/NFR (`fr-nfr/`)  | Data                | API (`api/`) — Spec optional | UI/UX                |
+| ------------------- | --------------------- | ------------------- | ------------------------------- | -------------------- |
+| Specs               | `fr-nfr-specs`      | `data-specs`      | `api-specs`                   | `ui-ux-specs`      |
+| Design              | `fr-nfr-design`     | `data-design`     | `api-design`                  | `ui-ux-design`     |
+| Build plan          | `fr-nfr-build-plan` | `data-build-plan` | `api-build-plan`              | `ui-ux-build-plan` |
+| Test plan           | `fr-nfr-test-plan`  | `data-test-plan`  | `api-test-plan`               | `ui-ux-test-plan`  |
 
-- **Cấp hệ thống — phát triển theo chiều ngang.** Mỗi giai đoạn trải qua toàn bộ facet của hệ thống rồi mới sang giai đoạn kế: toàn bộ `srs/` → toàn bộ `dds/` → `plans/`. Đọc ma trận theo _hàng_. Kết quả là bức tranh toàn cục, cross-cutting thống nhất (`srs.md`, `dds.md`) và phân rã service bằng `ARC-`. Build Plan và Test Plan cấp system là một leaf duy nhất cho toàn hệ thống (không tách facet); chúng chỉ cover phần xuyên service.
-- **Cấp dịch vụ — phát triển theo chiều dọc.** Mỗi facet của service đi trọn vòng đời `specs → design → build-plan → test-plan` ngay trong thư mục facet của nó. Đọc ma trận theo _cột_. Kết quả là mỗi facet là một lát cắt (vertical slice) có thể đặc tả, thiết kế và kiểm thử độc lập; các facet và các service tiến hành song song. Hai leaf ở gốc `service-docs/` là leaf toàn service, không thuộc facet nào: `foundation-setup-plan.md` (nền tảng riêng của service) và `build-plan.md` (aggregate: gom các facet build plan, xác định dependency và thứ tự thực hiện giữa các facet, chuẩn hóa thành task). `build-plan.md` là chỗ duy nhất ở service-level nối các lát cắt dọc theo chiều ngang, nên nội dung của các facet vẫn độc lập với nhau.
-- **Điểm nối.** `dds.md` phân rã hệ thống thành service bằng `ARC-`. Service-level bắt đầu khi `ARC-` của service đó đã Approved; mỗi dòng Service Spec trỏ về System Spec hoặc `ARC-` bằng `Basis` (mục 11.4). Phát hiện ở service-level cần đổi upstream thì sửa tại owner ở system-level (mục 14.3), không sửa bản sao.
+- **Cấp hệ thống — phát triển theo chiều ngang.** Mỗi giai đoạn đi qua toàn bộ facet của hệ thống rồi mới chuyển sang giai đoạn kế: `srs/` → `dds/` → system Plans. Build/Test/Deploy cấp system có thể chứa phần xuyên service. Framework mặc định **không có system `task-plan.md`**; `TASK-` là execution layer ở service-level. Nếu một dự án thực sự cần execution decomposition ở cấp system, đó là tailoring và phải được ghi rõ trong `meta.md`.
+- **Cấp dịch vụ — phát triển theo chiều dọc.** Mỗi facet đi trọn `specs → design → build-plan → test-plan`; các facet có thể tiến hành song song. `foundation-setup-plan.md` và `task-plan.md` là hai leaf toàn service: foundation chuẩn bị điều kiện build; task plan là lớp hội tụ, gom `BLD-`/`FND-`, phân rã thành `TASK-`, xác định dependency và nhóm task thành waves.
+- **Workflow execution của service.**
+
+```text
+Facet SPEC ──→ Facet DESIGN ──→ Facet BUILD PLAN ──┐
+                                                    ├──→ TASK PLAN ──→ BUILD
+Foundation SETUP ───────────────────────────────────┘
+Facet SPEC ─────────────────────→ Facet TEST PLAN ───────────────→ TEST
+```
+
+- `TASK PLAN` không tạo lại build work và không thay thế facet build plans. Nó chỉ chuẩn hóa work đã có thành execution tasks.
+- **Điểm nối.** `dds.md` phân rã hệ thống thành service bằng `ARC-`. Service-level bắt đầu khi `ARC-` của service đó đã Approved; Service Spec trỏ về System Spec hoặc `ARC-` bằng `Basis` (mục 11.4). Phát hiện ở service-level cần đổi upstream thì sửa tại owner ở system-level, không sửa bản sao.
 
 ## 2.2. Nhiều service và điều chỉnh theo quy mô
 
@@ -153,7 +174,17 @@ Cả hai cấp dùng chung một ma trận **giai đoạn × facet**:
 - `service-docs/` trong cây là mẫu cho **một** unit. Mỗi unit có một bản riêng, vị trí do `meta.md` quy định (ví dụ `docs/service-docs/<service-code>/` hoặc trong repo của unit). `<service-code>` là SCOPE trong ID (mục 12).
 - Điều kiện tồn tại của facet áp dụng như nhau cho system-level và service-level: `ui-ux` khi có người dùng trực tiếp, `api` khi có external interaction boundary, `data` khi sở hữu persistent data; `fr-nfr` luôn có.
 - Hệ thống chỉ có một unit vẫn giữ `system-docs/` (ngang) và một `service-docs/` (dọc). Service Spec và Service Design chỉ ghi phần refine thêm; phần còn lại tham chiếu bằng ID, không copy.
-- Mọi điều chỉnh (bỏ leaf, bỏ facet) được ghi trong `meta.md` kèm lý do, theo tinh thần tailoring của ISO/IEC/IEEE 12207.
+- Mọi điều chỉnh (bỏ/thêm leaf, bỏ/thêm facet, đổi schema mặc định) được ghi trong `meta.md` kèm lý do và tác động.
+
+### Tailoring record trong `meta.md`
+
+```text
+Element | Default | Applied | Reason | Impact
+```
+
+- `Default` tham chiếu cây/schema mặc định trong framework; `Applied` ghi lựa chọn thực tế của dự án.
+- Nếu thêm một leaf ngoài cây mặc định, `meta.md` phải nêu rõ owner, upstream/downstream, prefix/ID và trace rules của leaf đó.
+- Tailoring không được phá vỡ các bất biến: một owner cho mỗi nội dung, ID bất biến, trace bằng ID, và không biến execution grouping thành một loại work item mới.
 
 ---
 
@@ -179,39 +210,40 @@ META
 
 Theo mẫu tên file, áp dụng cho cả hai cấp.
 
-| Leaf                                     | Trả lời                                                                    | Upstream                                         | Downstream                                                |
-| ---------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
-| `info.md`                              | Ta biết gì?                                                                | Nguồn bên ngoài (`SRC-`)                    | PI, SPEC                                                  |
-| `pi.md`                                | Làm gì, phạm vi nào, quyết định gì ở cấp dự án?                  | INFO                                             | STACK, SPEC,`project-plan.md`                           |
-| `tech-tool-stack.md`                   | Dùng công nghệ/công cụ nào?                                            | INFO, PI                                         | DESIGN, các Plan                                         |
-| `srs.md`                               | Bối cảnh hệ thống (actor, hệ thống ngoài) và yêu cầu xuyên suốt? | INFO, PI                                         | Các leaf SPEC khác, DESIGN                              |
-| `*-specs.md`                           | Facet của hệ thống/service phải làm và đáp ứng gì?                 | INFO, PI; System Spec và`ARC-` (với service) | `*-design.md`, Test Plan                                |
-| `dds.md`                               | Kiến trúc tổng thể và thiết kế cross-cutting?                         | SPEC, STACK, PI                                  | `*-design.md`, Service Spec (qua `ARC-`), Deploy Plan |
-| `*-design.md`                          | Facet được hiện thực thế nào?                                         | Spec cùng facet, STACK,`ARC-`                 | Build Plan, Deploy Plan                                   |
-| `project-plan.md`                      | Khi nào, ai làm, rủi ro nào, theo lifecycle nào?                        | PI, các Plan                                    | —                                                        |
-| `foundation-setup-plan.md` | Chuẩn bị nền tảng nào để build bắt đầu? | STACK, `ARC-` | Build Plan |
-| `*-build-plan.md` | Facet cần build những gì? | Design cùng facet, Foundation | `build-plan.md` cùng service |
-| `build-plan.md` (system-docs) | Build phần cấp system và integration xuyên service theo thứ tự và dependency nào? | Design cấp system, Foundation | BUILD |
-| `build-plan.md` (service-docs) | Gom các facet build plan thành thứ tự build và task nào? | `*-build-plan.md` cùng service, Foundation (service) | BUILD |
-| `test-plan.md`, `*-test-plan.md`     | Kiểm chứng Spec bằng cách nào?                                          | Spec cùng phạm vi                              | TEST                                                      |
-| `deploy-plan.md`                       | Phát hành và đưa vào vận hành thế nào?                             | `ARC-` topology, `STK-`, `NFR-`            | DEPLOY                                                    |
+| Leaf                                 | Upstream                                         | Downstream                                                              |
+| ------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------- |
+| `info.md`                          | Nguồn bên ngoài (`SRC-`)                    | PI, SPEC, STACK                                                         |
+| `pi.md`                            | INFO                                             | STACK, SPEC,`project-plan.md`                                         |
+| `tech-tool-stack.md`               | INFO, PI                                         | DESIGN, các Plan                                                       |
+| `srs.md`                           | INFO, PI                                         | Các leaf SPEC khác, DESIGN; Plan/Test thông qua các item dẫn xuất |
+| `*-specs.md`                       | INFO, PI; System Spec và`ARC-` (với service) | `*-design.md`, Test Plan                                              |
+| `dds.md`                           | SPEC, STACK, PI                                  | `*-design.md`, Service Spec qua `ARC-`, Deploy Plan                 |
+| `*-design.md`                      | Spec cùng facet, STACK,`ARC-`                 | `*-build-plan.md`, Deploy Plan                                        |
+| `project-plan.md`                  | PI, các Plan                                    | —                                                                      |
+| `foundation-setup-plan.md`         | STACK,`ARC-`                                   | Task Plan / Build                                                       |
+| `*-build-plan.md`                  | Design cùng facet, Foundation                   | Task Plan                                                               |
+| `build-plan.md` (system-docs)      | Design cấp system, Foundation                   | BUILD                                                                   |
+| `task-plan.md` (service-docs)      | `*-build-plan.md` và service Foundation       | BUILD                                                                   |
+| `test-plan.md`, `*-test-plan.md` | Spec cùng phạm vi                              | TEST                                                                    |
+| `deploy-plan.md`                   | `ARC-` topology, `STK-`, `NFR-`            | DEPLOY                                                                  |
 
 ## 3.3. Thuật ngữ
 
-| Thuật ngữ              | Nghĩa                                                                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| Layer (tầng)            | INFO, PI, STACK, SPEC, DESIGN, PLAN (mục 1.4)                                                                                  |
-| Leaf                     | Một file tài liệu trong cây; mỗi leaf có một owner nội dung                                                             |
-| Facet                    | Một góc trách nhiệm: FR/NFR (`fr-nfr`), Data, API, UI/UX                                                                    |
-| Unit / Service           | Đơn vị phân rã có ranh giới và trách nhiệm riêng (mục 2.2)                                                          |
-| Scope                    | `SYS` ở system-level, mã service ở service-level; dùng trong ID                                                           |
-| SRS                      | Requirements Specification. Thư mục`srs/` là tầng SPEC; `srs.md` là System Context và Cross-cutting Requirements      |
-| DDS                      | Detailed Design Specification. Thư mục`dds/` là tầng DESIGN; `dds.md` là System Architecture và Cross-cutting Design  |
-| PI                       | Project Initiation                                                                                                              |
-| Task | Work item `BLD-` đã được chuẩn hóa: đủ nhỏ để hoàn thành trong một lần thay đổi (một pull request), `Covers` và `Depends on` xác định, `Done when` kiểm chứng được; là đơn vị thực thi mà công cụ theo dõi công việc dùng (mục 9.4) |
-| Requirement / Definition | Requirement: điều phải thực hiện/đáp ứng. Definition: khái niệm cần thống nhất (`ACT-`, `EXT-`, Data Entities) |
-| Baseline                 | Trạng thái leaf đã Approved và được gắn tag trong VCS                                                                  |
-| Evidence                 | Sản phẩm thực thi của BUILD, TEST, DEPLOY, nằm ngoài cây (mục 1.2)                                                      |
+| Thuật ngữ              | Nghĩa                                                                                                                                                                                                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layer (tầng)            | INFO, PI, STACK, SPEC, DESIGN, PLAN (mục 1.4)                                                                                                                                                                                                              |
+| Leaf                     | Một file tài liệu trong cây; mỗi leaf có một owner nội dung                                                                                                                                                                                         |
+| Facet                    | Một góc trách nhiệm: FR/NFR (`fr-nfr`), Data, API, UI/UX                                                                                                                                                                                              |
+| Unit / Service           | Đơn vị phân rã có ranh giới và trách nhiệm riêng (mục 2.2)                                                                                                                                                                                      |
+| Scope                    | `SYS` ở system-level, mã service ở service-level; dùng trong ID                                                                                                                                                                                       |
+| SRS                      | Requirements Specification. Thư mục`srs/` là tầng SPEC; `srs.md` là System Context và Cross-cutting Requirements                                                                                                                                  |
+| DDS                      | Detailed Design Specification. Thư mục`dds/` là tầng DESIGN; `dds.md` là System Architecture và Cross-cutting Design                                                                                                                              |
+| PI                       | Project Initiation                                                                                                                                                                                                                                          |
+| Task                     | Đơn vị thực thi`TASK-` ở service-level, được phân rã từ đúng một `BLD-` hoặc `FND-`; đủ nhỏ để tập trung, thực hiện và kiểm tra trong một thay đổi; có `Depends on`, `Wave`, `Done when` và `Status` rõ ràng. |
+| Wave                     | Nhãn grouping cục bộ của các`TASK-` theo thứ tự thực hiện; là **projection/denormalized view của dependency graph**, không phải work item và không phải execution unit.                                                             |
+| Requirement / Definition | Requirement: điều phải thực hiện/đáp ứng. Definition: khái niệm cần thống nhất (`ACT-`, `EXT-`, Data Entities)                                                                                                                             |
+| Baseline                 | Trạng thái leaf đã Approved và được gắn tag trong VCS                                                                                                                                                                                              |
+| Evidence                 | Sản phẩm thực thi của BUILD, TEST, DEPLOY, nằm ngoài cây (mục 1.2)                                                                                                                                                                                  |
 
 ## 3.4. Conventions mặc định
 
@@ -234,15 +266,18 @@ owner: <vai trò chịu trách nhiệm>
 
 | Loại item                                                        | Giá trị                                                            |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `RQ-`, `GAP-`                                                 | Draft · Open · In progress · Resolved · Closed · Obsolete       |
+| `ANL-`                                                          | Draft · Reviewed · Accepted · Superseded by`<ID>` · Deprecated |
 | `SRC-`, `INF-`                                                | Unverified · Verified · Obsolete                                   |
 | Decision (`PD-`, `DD-`, `APC-`)                             | Proposed · Accepted · Superseded by`<ID>` · Deprecated          |
-| `STK-`                                                          | Proposed · Adopted · Deprecated · Replaced by`<ID>`             |
+| `STK-`                                                          | Proposed · Adopted · Superseded by`<ID>` · Deprecated           |
 | Spec item                                                         | Draft · Approved · Implemented · Verified · Deferred · Rejected |
 | Design element (`ARC-`, `SOL-`, `UXD-`, `APD-`, `DTD-`) | Proposed · Accepted · Implemented · Deprecated                    |
 | Work item (`FND-`, `BLD-`, `TST-`, `DPL-`, `PRJ-`)      | Planned · In progress · Blocked · Done · Cancelled               |
+| Task (`TASK-`)                                                  | Ready · In progress · Blocked · Done · Cancelled                 |
 | `RSK-`                                                          | Open · Mitigating · Accepted · Closed                             |
 
-`Implemented` và `Verified` của Spec item được cập nhật từ evidence của BUILD và TEST.
+`Implemented` và `Verified` của Spec item phản ánh evidence từ BUILD và TEST. CI chỉ có thể tự động suy ra/cập nhật các trạng thái này khi project đã cấu hình mapping evidence → ID; mặc định framework không giả định CI tự động cập nhật trạng thái tài liệu.
 
 **Priority:** MoSCoW — Must · Should · Could · Won't (cho đợt phát hành hiện tại).
 
@@ -254,10 +289,13 @@ owner: <vai trò chịu trách nhiệm>
 **Decision schema** (định nghĩa một lần, dùng cho `PD-`, `DD-`, `APC-`):
 
 ```text
-ID | Decision | Rationale | Basis | Status
+ID | Decision | Rationale | Alternatives | Consequences | Basis | Status
 ```
 
-`Rationale` ghi lý do, phương án đã loại và trade-off khi có. Schema tương đương Architecture Decision Record: `Basis` + `Rationale` là context, `Decision` là quyết định, trade-off là consequences, `Status` là trạng thái.
+- `Alternatives` ghi các phương án đã cân nhắc khi có.
+- `Consequences` ghi trade-off, tác động và điều kiện chấp nhận.
+- `Basis` ghi nguồn/đầu vào làm căn cứ; với `APC-` dùng chung, có thể trỏ tới `APC-` ở plan upstream thay vì định nghĩa lại.
+- Schema tương đương Architecture Decision Record nhưng vẫn giữ semantics riêng của framework.
 
 **ID.** Bất biến: không đổi, không tái sử dụng. Item bỏ đi chuyển Status (Deprecated, Rejected, Superseded...) chứ không xóa số. Tham chiếu bằng ID, không bằng số dòng hay tiêu đề (mục 12).
 
@@ -288,20 +326,26 @@ INFO
 ## 4.3. Schema
 
 ```text
-SRC: ID | Source | Type | Date | Reliability | Link
-INF: ID | Finding | Source | Confidence | Status
+RQ:  ID | Question | Serves | Status
+SRC: ID | Citation | Type | Published | Accessed | Reliability | Location | Status
+INF: ID | Statement | Type | Topic | Derived from | Confidence | Answers | Implication | Conflicts with | Status
+ANL: ID | Analysis | Derived from | Impacts | Status
+GAP: ID | Kind | Missing knowledge | Refers to | Blocks | Resolution | Status
 ```
 
-`Source` của `INF-` trỏ về `SRC-`.
+- `RQ-` là research question; `Serves` trỏ tới `PD-`, Spec hoặc mục đích nghiên cứu tương ứng.
+- `SRC-` là nguồn bằng chứng; `Published`/`Accessed` dùng khi có ý nghĩa với loại nguồn.
+- `INF-` là finding đã thu thập; `Derived from` trỏ tới `SRC-` hoặc `RQ-`; `Answers`, `Implication`, `Conflicts with` chỉ điền khi có.
+- `ANL-` là kết luận phân tích chưa trở thành quyết định; nếu đã trở thành quyết định, quyết định được sở hữu ở PI/Design/Plan và trỏ `Basis` về `ANL-`.
+- Status của `ANL-` phản ánh vòng đời của sản phẩm phân tích (`Draft → Reviewed → Accepted → Superseded/Deprecated`); `Accepted` không biến `ANL-` thành Decision.
+- `GAP-` ghi phần chưa biết hoặc mâu thuẫn cần giải quyết.
 
 ## 4.4. Quy tắc
 
 - Các nhóm con trong `Findings` chỉ là gợi ý, có thể thay đổi theo đề tài.
-- PI và Spec tham chiếu `INF-` thay vì sao chép bằng chứng.
-- `Analysis & Implications` phân tích ý nghĩa của findings nhưng chưa trở thành quyết định.
+- PI và Spec tham chiếu `INF-` hoặc `ANL-` thay vì sao chép bằng chứng.
+- `Analysis & Implications` là nội dung có ID `ANL-`; không dùng prose vô danh cho kết luận mà downstream cần trace.
 - Thuật ngữ của domain nằm ở INFO; thuật ngữ của chính hệ thống nằm ở PI (`Glossary`); thuật ngữ của bộ tài liệu nằm ở META.
-
----
 
 # 5. PI — Project Initiation
 
@@ -326,9 +370,9 @@ PI
 - INFO sở hữu facts, evidence và analysis.
 - PI sở hữu goals, scope, direction và project decisions.
 - STACK sở hữu việc lựa chọn công nghệ/tool cụ thể.
+- Goals, Scope và Direction là nội dung cấp document; framework không bắt buộc cấp ID riêng cho từng dòng. Khi một nội dung PI cần downstream trace riêng, đưa nó vào `PD-` và dùng `Basis` trỏ tới `INF-`/`ANL-` thích hợp.
+- `PD-` là điểm trace item-level chính của PI; vì vậy quy tắc `Basis` áp dụng cho **Decision trong PI**, không ngầm áp dụng cho mọi prose của `pi.md`.
 - Nếu PI quyết định một hướng công nghệ, STACK trích `PD-` trong `Basis` thay vì lặp decision.
-
----
 
 # 6. TECH & TOOL STACK
 
@@ -362,7 +406,8 @@ ID dùng `STK-`.
 - "Nền tảng" thuộc Tech nếu là nền tảng chạy hệ thống; thuộc Tool nếu là nền tảng phát triển.
 - Không tạo section riêng cho Selection Criteria, Alternatives hoặc Compatibility.
 - Tiêu chí chọn nằm ở PI/INFO; bằng chứng so sánh nằm ở INFO.
-- Compatibility được biểu diễn bằng `Requires`.
+- Compatibility giữa các stack item được biểu diễn bằng `Requires`; `Requires` **chỉ trỏ tới `STK-`**, không trỏ tới Spec, Design hay Plan.
+- Các căn cứ khác cho lựa chọn stack dùng `Basis`.
 - `Applies to` cho biết item áp dụng cho system hay service cụ thể.
 
 ## 6.5. Upstream / downstream
@@ -415,7 +460,8 @@ SRS
 └── Cross-cutting Requirements  # SRS-: yêu cầu xuyên suốt, policy, compliance, operational constraints
 ```
 
-- `ACT-` và `EXT-` (Definition) được định nghĩa tại SRS để các leaf khác reference thay vì định nghĩa lại.
+- `ACT-` và `EXT-` là **Definition**, không phải Requirement; chúng được định nghĩa tại SRS để các leaf khác reference thay vì định nghĩa lại.
+- `EXT-` mô tả external system/dependency ở mức khái niệm; Design có thể `Uses` `EXT-` để chỉ ra dependency, nhưng không biến `EXT-` thành requirement.
 - `SRS-` chỉ nhận yêu cầu xuyên suốt không đặt gọn được vào leaf chuyên biệt. Khi một `SRS-` kéo theo yêu cầu đo được hoặc yêu cầu dữ liệu cụ thể, tách thành `NFR-` hoặc `DATA-` và trỏ `Basis` về `SRS-`.
 
 ## 7.4. FR/NFR Specs
@@ -503,6 +549,7 @@ ID | Name | Definition | Uses | Realizes | Decisions | Status
 
 - `Definition`: trách nhiệm của Structure hoặc diễn biến của Behavior. Sơ đồ (ví dụ C4, sequence, state, ERD) là một cách biểu diễn trong `Definition`, không phải section riêng.
 - `Uses` trỏ tới phần tử khác, `STK-` hoặc `EXT-`.
+- `EXT-` có thể được tham chiếu như Definition đã sở hữu ở `srs.md`; Design không định nghĩa lại và không tạo `EXT-` mới.
 - `Realizes` trỏ về ID của Spec.
 - `Decisions` trỏ về các `DD-` chi phối phần tử.
 - `Decisions` dùng Decision schema (mục 3.4); `Basis` có thể trỏ tới Spec, `STK-`, `INF-` hoặc `PD-`.
@@ -548,13 +595,30 @@ UI/UX DESIGN
 ```text
 API DESIGN
 ├── Structure
-│   ├── Interface Structure    # APD-: protocol, resource, operations, naming, versioning
-│   └── Contracts              # APD-: request/response schema, error model
-├── Behavior                   # APD-: sequence, auth, async/event, idempotency
-└── Decisions                  # DD-
+│   ├── Interface
+│   │   ├── Protocol               # APD-: protocol/transport
+│   │   ├── Endpoint / Resource    # APD-: resource, endpoint/boundary
+│   │   ├── Operation              # APD-: operation semantics
+│   │   ├── Naming                 # APD-: naming convention
+│   │   └── Versioning             # APD-: versioning strategy
+│   └── Contract
+│       ├── Request                # APD-: path, query, headers, body
+│       ├── Response               # APD-: status, headers, body
+│       ├── Error                  # APD-: error types, codes, response shape
+│       └── Schema                 # APD-: data types, fields, constraints
+├── Behavior
+│   ├── Validation                 # APD-: request/response validation
+│   ├── Authentication & Authorization
+│   ├── Idempotency
+│   ├── Retry & Timeout            # APD-: interface contract; quality mechanism stays in FR/NFR Design
+│   ├── Async / Webhook
+│   └── Sequence
+└── Decisions                     # DD-
 ```
 
-Retry ở mức quality mechanism thuộc FR/NFR Design; API Design chỉ ghi retry/idempotency ở mức contract của interface.
+- API Design gắn các chi tiết triển khai cụ thể vào `STK-` nhưng không tạo requirement mới.
+- Retry ở mức quality mechanism thuộc FR/NFR Design; API Design chỉ ghi retry/timeout/idempotency ở mức contract hoặc behavior của interface.
+- Khi `api-specs.md` bị bỏ do API requirement/contract có owner upstream, mọi `APD-` vẫn phải `Realizes` upstream `API-`/requirement tương ứng.
 
 ## 8.6. Data Design
 
@@ -590,30 +654,35 @@ PLAN LEAF
 └── Assumptions & Open Issues    # Chỉ khi cần
 ```
 
-Schema work item:
+Schema work item chung:
 
 ```text
 ID | Name | Description | Covers | Depends on | Done when | Status
 ```
 
-Mỗi loại Plan dùng cùng schema nhưng khác ID, đích của `Covers` và Category:
+Áp dụng cho các Plan leaf sau:
 
-| Plan leaf                          | ID       | `Covers` trỏ tới                  | Category mặc định                                                                  |
-| ---------------------------------- | -------- | ------------------------------------- | ------------------------------------------------------------------------------------- |
-| `foundation-setup-plan` | `FND-` | `STK-`, `ARC-`                    | Environment, Toolchain, Repository & Scaffolding, Access & Configuration              |
-| `build-plan`, `*-build-plan`   | `BLD-` | Design element                        | Implementation, Integration                                                           |
-| `test-plan`, `*-test-plan`     | `TST-` | Spec item (Requirement)               | Test level hoặc loại kiểm thử;`Gate`                                            |
-| `deploy-plan`                    | `DPL-` | `ARC-` topology, `STK-`, `NFR-` | Environment Provisioning, Release & Rollout, Rollback, Operational Readiness;`Gate` |
+| Plan leaf                        | ID       | `Covers` trỏ tới                  | Category mặc định                                                                  |
+| -------------------------------- | -------- | ------------------------------------- | ------------------------------------------------------------------------------------- |
+| `foundation-setup-plan`        | `FND-` | `STK-`, `ARC-`                    | Environment, Toolchain, Repository & Scaffolding, Access & Configuration              |
+| `build-plan`, `*-build-plan` | `BLD-` | Design element                        | Implementation, Integration                                                           |
+| `test-plan`, `*-test-plan`   | `TST-` | Spec item (Requirement)               | Test level hoặc loại kiểm thử;`Gate`                                            |
+| `deploy-plan`                  | `DPL-` | `ARC-` topology, `STK-`, `NFR-` | Environment Provisioning, Release & Rollout, Rollback, Operational Readiness;`Gate` |
+
+Ngoại lệ:
+
+- **Project Plan** có schema riêng ở mục 9.2.
+- **Task Plan** có schema riêng ở mục 9.4.1 và **không dùng `Covers`**; task dùng `Derived from` để chỉ upstream `BLD-`/`FND-`.
 
 Quy tắc:
 
-- `Covers` bắt buộc với work item, trừ `Gate`.
-- `Depends on` tạo ra thứ tự thực hiện; không viết lịch riêng trong leaf plan.
+- `Covers` bắt buộc với work item của các Plan áp dụng schema chung, trừ `Gate`.
+- `Depends on` tạo ra thứ tự thực hiện; không viết lịch riêng trong leaf plan. Mặc định dependency ở cùng execution scope; ngoại lệ phải được định nghĩa tại leaf tương ứng (điển hình `DPL-SYS-*` có thể phụ thuộc item service-level đã nêu ở mục 9.6).
 - `Done when` là điều kiện hoàn thành riêng của item; Definition of Done chung của leaf nằm ở `Approach`.
 - Ngày, người phụ trách, ước lượng thuộc Project Plan, tham chiếu work item bằng ID.
 - Plan không tạo requirement, design hay technology choice mới; khi nhắc công cụ, `Approach` trích `STK-`.
+- `APC-` mặc định là **local decision của plan leaf đang sở hữu nó**. Nếu một approach dùng chung cho nhiều plan, định nghĩa `APC-` tại plan gần nhất có scope chung (thường Project Plan cho governance toàn dự án; System/Service Plan cho execution tương ứng) và các plan thấp hơn reference nó thay vì định nghĩa lại.
 - Category mặc định có thể mở rộng qua `meta.md`; `Gate` là loại cố định.
-- Project Plan là ngoại lệ, có schema riêng (mục 9.2).
 
 ## 9.2. Project Plan
 
@@ -621,7 +690,7 @@ Quy tắc:
 PROJECT PLAN
 ├── Approach                    # APC-: lifecycle, phương pháp, change và configuration management
 ├── Phases & Milestones         # PRJ-: phase, milestone, gate; có Target
-├── Roles & Responsibilities    # PRJ-: role, responsibility
+├── Roles & Responsibilities    # ROL-: role, responsibility
 └── Risks                       # RSK-: risk register
 ```
 
@@ -633,7 +702,7 @@ Role:                 ID | Role | Responsibility | Assignee
 Risk:                 ID | Risk | Probability | Impact | Response | Owner | Basis | Status
 ```
 
-- `Includes` trỏ tới work item (`FND-`, `BLD-`, `TST-`, `DPL-`) hoặc leaf thuộc phase/milestone đó.
+- `Includes` trỏ tới work item (`FND-`, `BLD-`, `TASK-`, `TST-`, `DPL-`) hoặc leaf thuộc phase/milestone đó.
 - Project Plan là nơi duy nhất quản lý ngày, lịch tổng thể và phân công.
 - `Basis` của `RSK-` trỏ tới `INF-`, `PD-` hoặc ID là nguồn của rủi ro.
 
@@ -650,42 +719,92 @@ Foundation Setup chuẩn bị nền tảng để build bắt đầu; Category l�
 
 Ở cấp service, `service-docs/foundation-setup-plan.md` nằm ở gốc `service-docs/` (phủ toàn service, không thuộc facet nào), chỉ chứa phần riêng của service; phần dùng chung phụ thuộc vào system Foundation Setup Plan.
 
-## 9.4. Build Plan
+## 9.4. Build Plan và Task Plan
 
 ```text
 BUILD PLAN
 ├── Approach                    # APC-: increment, integration, branching, versioning, Definition of Done
-└── Work Items                  # BLD-: Category Implementation, Integration
+└── Work Items                  # BLD-: Implementation, Integration
 ```
 
-- System-level Build Plan cover các phần tử Design cấp system và integration xuyên service.
-- Service-level có hai tầng build plan:
-  - **Facet build plan** (`*-build-plan.md`): cover Design element của đúng facet. `Depends on` chỉ trỏ tới item cùng facet hoặc `FND-`; phụ thuộc giữa các facet không khai báo ở đây.
-  - **Service build plan** (`service-docs/build-plan.md`): leaf aggregate của service, mô tả bên dưới.
+- **System Build Plan (`system-docs/plans/build-plan.md`):** sở hữu build work cấp system và integration xuyên service; `BLD-SYS-*` cover Design element cấp system. `BLD-SYS-*` **không sinh `TASK-` trực tiếp**. Nếu một phần execution phải được thực hiện bên trong một service, phần execution đó phải có `BLD-<SERVICE>-*` do service facet sở hữu; service `BLD-` sau đó mới được phân rã thành `TASK-`. Quan hệ giữa system coordination và service execution được theo dõi qua cùng Design/`ARC-` và Project Plan `Includes`, không biến `BLD-SYS-*` thành service task.
+- **Facet Build Plan (`service-docs/<service>/.../*-build-plan.md`):** mỗi leaf cover Design element của đúng facet; `BLD-<SERVICE>-*` là planning unit của service. `Depends on` trong facet build plan chỉ trỏ tới item cùng facet hoặc `FND-`; không khai báo dependency xuyên facet ở đây.
+- `BLD-` là **đơn vị lập kế hoạch build**, chưa phải execution task. Một `BLD-` có thể được phân rã thành nhiều `TASK-`.
+- `BLD-` loại `Integration` chạm nhiều facet nhưng vẫn phải có một owner. Integration thực hiện một capability của service thuộc `fr-nfr-build-plan.md`; integration xuyên service thuộc system `build-plan.md`.
 
-**Service build plan** dùng template Plan (mục 9.1) kèm một section thứ tự:
+## 9.4.1. Task Plan
+
+`task-plan.md` của **service** là lớp execution planning giữa Build Plans/Foundation của service và BUILD. Nó không thay thế bất kỳ facet Build Plan nào và không tạo lại requirement/design/build work. Framework mặc định không có system `task-plan.md`; system build work được theo dõi ở System Build Plan và Project Plan.
 
 ```text
-SERVICE BUILD PLAN
-├── Approach                    # APC-: chiến lược thứ tự giữa các facet, Definition of Done cấp service
-├── Build Order                 # Thứ tự thực hiện theo wave: BLD-/FND- của service, dependency xuyên facet
-└── Work Items                  # BLD-: Category Integration (ghép các facet)
+TASK PLAN
+├── Approach
+├── Tasks
+├── Dependency Structure
+├── Execution Waves
+└── Assumptions & Open Issues    # Chỉ khi cần
 ```
 
-Schema của `Build Order`:
+### Tasks
+
+Schema:
 
 ```text
-Wave | Includes | Depends on | Done when
+ID | Name | Description | Derived from | Depends on | Wave | Done when | Status
 ```
 
-`Wave` là nhãn cục bộ trong leaf (không phải ID để trace); `Includes` là các `BLD-`/`FND-` theo ID; `Depends on` trỏ tới wave khác; `Done when` là điều kiện hoàn thành wave.
+Quy tắc:
 
-- **Aggregate, không định nghĩa lại:** `Build Order` tham chiếu `BLD-` của các facet bằng ID, không chép item (mục 11.1).
-- **Gom:** mọi `BLD-` của mọi facet và `FND-` của service xuất hiện trong `Build Order`.
-- **Xác định dependency và thứ tự:** `Build Order` chia item thành các wave; item trong cùng một wave không phụ thuộc nhau và có thể thực hiện song song. Dependency xuyên facet chỉ khai báo ở đây.
-- **Chuẩn hóa thành task:** mỗi item vào `Build Order` phải đạt chuẩn task (mục 3.3). Item chưa đạt được sửa tại facet build plan (owner), không sửa ở service build plan.
-- **Integration:** `BLD-` loại Integration (ghép các facet, cover Design element có `Uses` xuyên facet) thuộc service build plan.
-- `Approach` của service build plan quyết định chiến lược thứ tự (ví dụ làm lát cắt mỏng xuyên facet trước, hoặc theo Priority); đây là quyết định của dự án.
+- `TASK-` là đơn vị thi công thực tế: đủ nhỏ để tập trung, thực hiện và kiểm tra trong một thay đổi; mặc định có thể hoàn thành trong một pull request nhưng dự án có thể tailor kích thước.
+- `Derived from` bắt buộc trỏ tới đúng **một** `BLD-` hoặc `FND-` của cùng service/scope. Một build work item có thể sinh nhiều task; không gộp nhiều build work item vào một task. Nếu cần gộp, hợp nhất ở upstream Build Plan.
+- `BLD-SYS-*` không phải upstream trực tiếp của `TASK-`; execution trong service phải đi qua `BLD-<SERVICE>-*` của service đó.
+- Task không copy `Description` của `BLD-`/`FND-`; chỉ giữ phần cụ thể hóa cho execution.
+- `Depends on` chỉ trỏ tới `TASK-` khác trong cùng execution scope.
+- `Done when` là điều kiện hoàn thành của task; không tạo requirement mới và không thay thế `Acceptance` của Spec.
+- `Wave` là nhãn grouping cục bộ. Wave không có ID riêng, không có `Done when`, owner hay status riêng.
+- `Status` của task phục vụ execution tracking; lịch, estimate và phân công tổ chức tổng thể vẫn thuộc công cụ/project management theo Project Plan.
+
+### Dependency Structure
+
+Dependency là quan hệ giữa **TASK-**, là nguồn sự thật duy nhất cho thứ tự thực thi. Dependency xuyên facet được giải quyết tại Task Plan sau khi các facet Build Plans đã hoàn tất.
+
+```text
+BLD-DATA-* ──┐
+BLD-FR-*   ──┼──→ TASK- ──Depends on──→ TASK- ──→ BUILD
+BLD-API-*  ──┤
+BLD-UI-*   ──┘
+FND-*      ────→ TASK-
+```
+
+Task Plan phải giữ dependency đủ rõ để xác định task nào có thể thực hiện song song mà không biến dependency thành lịch cứng.
+
+### Execution Waves
+
+Wave là **denormalized view / projection của dependency graph** để nhóm các task có thứ tự thực hiện tương đương. Dependency graph là nguồn sự thật; `Wave` chỉ là dữ liệu suy ra và có thể tái tạo.
+
+```text
+Wave 1 → TASK-001, TASK-002
+Wave 2 → TASK-003, TASK-004
+Wave 3 → TASK-005
+```
+
+- Task trong cùng wave không được có dependency trực tiếp lẫn nhau.
+- Wave không phải execution unit và không phải work item; người thực thi nhận **TASK-**, không nhận “một wave”.
+- Wave có thể thay đổi khi dependency hoặc decomposition thay đổi mà không tạo một loại item mới.
+- Task Plan không dùng wave để quản lý lịch, deadline hoặc assignment.
+
+### Ownership và trace
+
+```text
+System/Service Design ──Covers──→ BLD-
+TASK- ──Derived from──→ BLD-/FND- ──→ BUILD
+STACK / ARC- ───────────Covers──→ FND-
+
+`BLD-SYS-*` thuộc System Build Plan; `BLD-<SERVICE>-*` thuộc Facet Build Plan. `TASK-` mặc định chỉ được tạo trong Service Task Plan.
+Spec ─────────────────────────────Covers────────→ Test Plan ──→ TEST
+```
+
+Task Plan chỉ aggregate và normalize; nếu Build Work chưa đủ rõ để phân rã thành task thì sửa tại owner của Build Plan, không tạo nội dung mới trong Task Plan.
 
 ## 9.5. Test Plan
 
@@ -695,7 +814,7 @@ TEST PLAN
 └── Test Items                  # TST-: Category = test level hoặc loại kiểm thử, cộng Gate cho entry/exit
 ```
 
-- `Covers` trỏ trực tiếp tới Spec. Test Plan trace trực tiếp về Spec, không cần đi qua Design.
+- `Covers` trỏ trực tiếp tới Spec. Test Plan trace trực tiếp về Spec, không cần đi qua Design; Design element chỉ là thông tin định vị khi cần.
 - Mỗi Requirement phải có ít nhất một Test Item cover, kể cả khi cách kiểm chứng là inspection, analysis hoặc demonstration.
 - `Done when` là pass criteria cụ thể hóa `Acceptance` của Spec.
 - `Gate` biểu diễn điều kiện entry/exit của test level.
@@ -713,12 +832,13 @@ DEPLOY PLAN
                                 #       Rollback, Operational Readiness, Gate
 ```
 
-`Covers` có thể trỏ tới `ARC-` topology, `STK-` và `NFR-` về availability/RPO/RTO.
+`DPL-` mặc định có **system scope** (`DPL-SYS-*`) và được sở hữu tại `system-docs/plans/deploy-plan.md`. Một deploy/release item có thể target một service hoặc một nhóm service, nhưng vẫn nằm trong system Deploy Plan và vẫn giữ scope `SYS`; service code được thể hiện trong Description/Applies to, không tạo `DPL-<SERVICE>-*`. `Covers` có thể trỏ tới `ARC-` topology, `STK-` và `NFR-` về availability/RPO/RTO. `Depends on` của `DPL-SYS-*` là ngoại lệ được phép cross-scope: có thể tham chiếu `FND-`, `BLD-` hoặc `TST-` của service/system khi release phụ thuộc trực tiếp vào foundation, build hoặc verification đó.
 
 Ranh giới môi trường:
 
 - Environment dùng để build/test thuộc Foundation Setup.
-- Environment hệ thống được phát hành lên (staging, production...) thuộc Deploy Plan.
+- Environment hệ thống được phát hành lên thuộc Deploy Plan.
+- Service-specific release/rollout vẫn trace về `DPL-SYS-*`; không tạo service deploy plan mặc định.
 
 `Operational Readiness` có thể sinh evidence nằm ngoài cây (cấu hình giám sát, cảnh báo, runbook, kiểm tra backup/restore); chúng được trace bằng `DPL-`.
 
@@ -726,27 +846,27 @@ Ranh giới môi trường:
 
 # 10. Service-level Documentation
 
-Service-level sử dụng cùng semantic structure với system-level nhưng phát triển theo **chiều dọc**: mỗi facet là một thư mục có đủ bốn leaf `specs → design → build-plan → test-plan` (mục 2.1). Ở gốc `service-docs/` có thêm hai leaf toàn service, không thuộc facet nào.
+Service-level sử dụng cùng semantic structure với system-level nhưng phát triển theo **chiều dọc**. Mỗi facet có vòng đời riêng `specs → design → build-plan → test-plan`; hai leaf ở gốc service xử lý phần execution toàn service.
 
-| Facet | Có khi | Nội dung bốn leaf |
-| --- | --- | --- |
-| `fr-nfr/` | Luôn có | FR/NFR thuộc trách nhiệm service, cách service hiện thực chúng, kế hoạch build và kiểm thử |
-| `data/` | Service sở hữu/quản lý persistent data | Data entities, rules, lifecycle/protection; data model, storage/access, data flow; kế hoạch triển khai và kiểm thử database/data layer |
-| `api/` | Service có external interaction boundary | API/interface service cung cấp hoặc sử dụng; thiết kế interface, contract, behavior; kế hoạch triển khai và kiểm thử API/integration |
-| `ui-ux/` | Service có người dùng trực tiếp | User tasks, journeys, interface, interaction, experience qualities; thiết kế chi tiết UI/UX; kế hoạch triển khai và kiểm thử UI/UX |
+| Facet       | Có khi                                    | Nội dung                                                                                                                                                                                            |
+| ----------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fr-nfr/` | Luôn có                                  | FR/NFR Specs, Design, Build Plan và Test Plan cho capability/business rule/quality của service                                                                                                     |
+| `data/`   | Service sở hữu/quản lý persistent data | Data Specs, Design, Build Plan và Test Plan cho data layer                                                                                                                                          |
+| `api/`    | Service có external interaction boundary  | API Design/Build/Test luôn có;`api-specs.md` chỉ có khi service là owner của API requirements/contracts; nếu owner ở upstream, service trace trực tiếp về upstream requirement/contract |
+| `ui-ux/`  | Service có người dùng trực tiếp      | UI/UX Specs, Design, Build Plan và Test Plan                                                                                                                                                        |
 
-| Leaf toàn service (gốc `service-docs/`) | Vai trò |
-| --- | --- |
-| `foundation-setup-plan.md` | Nền tảng riêng của service; chỉ chứa phần riêng, phần dùng chung phụ thuộc system Foundation Setup Plan (mục 9.3) |
-| `build-plan.md` | Aggregate: gom các facet build plan, xác định dependency và thứ tự giữa các facet, chuẩn hóa thành task (mục 9.4) |
+| Leaf toàn service           | Vai trò                                                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `foundation-setup-plan.md` | Chuẩn bị foundation riêng của service; phụ thuộc system foundation và`STACK`/`ARC-` liên quan                   |
+| `task-plan.md`             | Gom`BLD-`/`FND-`, phân rã thành `TASK-`, giải quyết dependency giữa facet và nhóm task thành execution waves |
 
-- `foundation-setup-plan.md` của service phủ toàn service nên nằm ở gốc `service-docs/`, không nằm trong facet nào; system Foundation Setup Plan là foundation dùng chung ở cấp system.
-- Service chỉ có facet `fr-nfr/` vẫn có hai leaf toàn service; `build-plan.md` khi đó chỉ gom `fr-nfr-build-plan.md` và các `BLD-` Integration nếu có.
-- Chỉ đọc/consume data qua API của service khác không tự động tạo `data/`; responsibility sở hữu/quản lý persistent data mới là điều kiện.
-- Điều kiện `api/` không chỉ là BE mà là **external interaction boundary**: nếu service có UI và UI giao tiếp với service thì API vẫn cần được mô tả.
-- Mỗi facet đã tồn tại phải có đủ bốn leaf.
-
----
+- `foundation-setup-plan.md` nằm ở gốc `service-docs/`, không thuộc facet nào.
+- `task-plan.md` nằm ở gốc `service-docs/` vì nó có scope toàn service và là owner duy nhất của `TASK-`.
+- `fr-nfr-build-plan.md` là owner của `BLD-` Integration xuyên các facet trong cùng service khi integration đó hiện thực capability của service; integration xuyên service thuộc system Build Plan.
+- `task-plan.md` không định nghĩa lại `BLD-`/`FND-`; nó chỉ tạo `TASK-` từ các item đó.
+- `TASK-` không thay thế `TST-` hoặc `DPL-`; Test và Deploy đã có execution model riêng.
+- `data/`, `api/`, `ui-ux/` không tồn tại chỉ vì service có thể gọi/được gọi; điều kiện là responsibility thực tế của service.
+- Với mọi facet đã chọn, `design`, `build-plan` và `test-plan` là bắt buộc. `spec` cũng là bắt buộc **trừ API facet** khi API requirement/contract đã có owner upstream; trong exception đó, `api-specs.md` được bỏ và service trace trực tiếp về upstream API requirement/contract.
 
 # 11. Traceability và ownership
 
@@ -760,16 +880,29 @@ Trace hai chiều: forward (từ Spec đến Design, Plan, Test) và backward (t
 
 Định nghĩa một lần; các mục trước chỉ dùng lại.
 
-| Trường       | Dùng ở                       | Trỏ tới                                 |
-| -------------- | ------------------------------ | ----------------------------------------- |
-| `Basis`      | Spec, STACK, Decision,`RSK-` | `INF-`, `PD-`, Spec/`ARC-` upstream |
-| `Uses`       | Design                         | Phần tử Design khác,`STK-`, `EXT-` |
-| `Realizes`   | Design                         | Spec item (Requirement)                   |
-| `Decisions`  | Design                         | `DD-`                                   |
-| `Covers`     | Plan                           | Tùy loại Plan (mục 9.1)                |
-| `Depends on` | Plan, Project Plan             | Item khác cùng phạm vi                 |
-| `Requires`   | STACK                          | `STK-` khác                            |
-| `Applies to` | STACK                          | System hoặc service (SCOPE)              |
+| Trường         | Dùng ở                       | Trỏ tới                                                                      |
+| ---------------- | ------------------------------ | ------------------------------------------------------------------------------ |
+| `Basis`        | Spec, STACK, Decision,`RSK-` | Target hợp lệ phụ thuộc loại item; xem bảng dưới                       |
+| `Uses`         | Design                         | Phần tử Design khác,`STK-`, `EXT-`                                      |
+| `Realizes`     | Design                         | Spec item (Requirement)                                                        |
+| `Decisions`    | Design                         | `DD-`                                                                        |
+| `Covers`       | Plan                           | Tùy loại Plan (mục 9.1)                                                     |
+| `Derived from` | Task Plan                      | Đúng một`BLD-` hoặc `FND-` upstream                                    |
+| `Depends on`   | Plan, Project Plan, TASK-Plan  | Mặc định cùng execution scope; có ngoại lệ được nêu theo từng Plan |
+| `Wave`         | Task Plan / TASK-              | Nhãn grouping cục bộ của execution                                         |
+| `Requires`     | STACK                          | Chỉ`STK-` khác                                                             |
+| `Applies to`   | STACK                          | System hoặc service (SCOPE)                                                   |
+
+**Target của `Basis` theo loại item:**
+
+| Item                                                             | Target hợp lệ cho`Basis`                                                                                                  |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `STK-`                                                         | `INF-`, `PD-`                                                                                                             |
+| Spec (`SRS-`, `FR-`, `NFR-`, `UI-`, `API-`, `DATA-`) | `INF-`, `ANL-`, `PD-`, upstream Spec, `ARC-` khi phù hợp                                                            |
+| Decision (`PD-`, `DD-`, `APC-`)                            | Nguồn upstream phù hợp; thường`INF-`, `ANL-`, `PD-`, Spec, `STK-`; `APC-` có thể reference `APC-` upstream |
+| `RSK-`                                                         | `INF-`, `PD-`                                                                                                             |
+
+`Basis` là field dùng chung nhưng **không có một target set duy nhất cho mọi prefix**; rule cụ thể của leaf/item type có ưu tiên hơn bảng tổng quát. `EXT-` trong Design chỉ là reference tới Definition đã có owner ở SRS.
 
 ## 11.3. Các hướng trace chính
 
@@ -804,52 +937,61 @@ System Spec
     ↓
 DDS phân rã service bằng ARC-
     ↓
-Service Spec ─────────────────────┐
-    ↓                             ↓
-Service Design             Service Test Plan → TEST
+Service Spec ─────────────────────────────┐
+    ↓                                     ↓
+Service Design                    Service Test Plan → TEST
     ↓
-Facet Build Plan (theo facet)
+Facet Build Plans
     ↓
-Service Build Plan (gom, thứ tự, task) ←── Foundation Setup Plan (service)
+Task Plan ←──────── Foundation Setup Plan (service)
     ↓
-Implementation
+TASK-
+    ↓
+BUILD
 ```
 
-- Service-level không copy nguyên văn system-level; mỗi dòng là refinement/phân bổ từ upstream qua `Basis`, `Realizes`, `Covers` tùy loại artifact.
-- Facet build plan chỉ cover Design của facet mình; service build plan không định nghĩa lại item mà gom, sắp thứ tự và chuẩn hóa chúng (mục 9.4).
+- Service-level không copy nguyên văn system-level; mỗi item là refinement/phân bổ từ upstream qua `Basis`, `Realizes`, `Covers` hoặc `Derived from` tùy loại artifact.
+- Facet Build Plan chỉ cover Design của facet mình.
+- Task Plan aggregate các `BLD-`/`FND-`, tạo `TASK-`, giải quyết dependency xuyên facet và nhóm task thành waves.
+- Một `TASK-` phải `Derived from` đúng một `BLD-` hoặc `FND-`; một `BLD-`/`FND-` có thể sinh nhiều `TASK-`.
 - Một System Spec item được phân bổ xuống service (allocated) coi là đã được thực hiện và kiểm chứng khi mọi Service Spec item dẫn xuất từ nó đã có `Realizes` và `Covers`.
-- System Spec item không phân bổ xuống service (xuyên service) được thực hiện bởi System Design và kiểm chứng bởi System Test Plan.
+- System Spec item không phân bổ xuống service (xuyên service) được thực hiện bởi System Design/System Build Plan và kiểm chứng bởi System Test Plan.
 
 ---
 
 # 12. Prefix và ID
 
-| Prefix            | Ý nghĩa                               | Leaf sở hữu                            | Scope                        |
-| ----------------- | --------------------------------------- | ---------------------------------------- | ---------------------------- |
-| `SRC-`          | Source                                  | `info.md`                              | không                       |
-| `INF-`          | Finding                                 | `info.md`                              | không                       |
-| `PD-`           | Project Decision                        | `pi.md`                                | không                       |
-| `STK-`          | Stack item                              | `tech-tool-stack.md`                   | không (dùng`Applies to`) |
-| `ACT-`          | Actor                                   | `srs.md`                               | không                       |
-| `EXT-`          | External system / dependency            | `srs.md`                               | không                       |
-| `SRS-`          | System cross-cutting requirement        | `srs.md`                               | không                       |
-| `FR-`, `NFR-` | Functional / Non-functional Requirement | `fr-nfr-specs.md`                      | có                          |
-| `UI-`           | UI/UX specification item                | `ui-ux-specs.md`                       | có                          |
-| `API-`          | API specification item                  | `api-specs.md`                         | có                          |
-| `DATA-`         | Data specification item                 | `data-specs.md`                        | có                          |
-| `ARC-`          | Architecture design item                | `dds.md`                               | không                       |
-| `SOL-`          | Solution / FR-NFR design item           | `fr-nfr-design.md`                     | có                          |
-| `UXD-`          | UI/UX design item                       | `ui-ux-design.md`                      | có                          |
-| `APD-`          | API design item                         | `api-design.md`                        | có                          |
-| `DTD-`          | Data design item                        | `data-design.md`                       | có                          |
-| `DD-`           | Design Decision                         | Mọi leaf design                         | có                          |
-| `APC-`          | Approach Decision                       | Mọi leaf plan                           | có                          |
-| `PRJ-`          | Project plan item                       | `project-plan.md`                      | không                       |
-| `RSK-`          | Risk                                    | `project-plan.md`                      | không                       |
-| `FND-`          | Foundation setup item                   | `foundation-setup-plan.md` | có                          |
-| `BLD-`          | Build item                              | `build-plan.md`, `*-build-plan.md`   | có                          |
-| `TST-`          | Test item                               | `test-plan.md`, `*-test-plan.md`     | có                          |
-| `DPL-`          | Deploy item                             | `deploy-plan.md`                       | không                       |
+| Prefix            | Ý nghĩa                               | Leaf sở hữu                          | Scope                        |
+| ----------------- | --------------------------------------- | -------------------------------------- | ---------------------------- |
+| `RQ-`           | Research Question                       | `info.md`                            | không                       |
+| `SRC-`          | Source                                  | `info.md`                            | không                       |
+| `INF-`          | Finding                                 | `info.md`                            | không                       |
+| `ANL-`          | Analysis                                | `info.md`                            | không                       |
+| `GAP-`          | Research Gap                            | `info.md`                            | không                       |
+| `PD-`           | Project Decision                        | `pi.md`                              | không                       |
+| `STK-`          | Stack item                              | `tech-tool-stack.md`                 | không (dùng`Applies to`) |
+| `ACT-`          | Actor                                   | `srs.md`                             | không                       |
+| `EXT-`          | External system / dependency            | `srs.md`                             | không                       |
+| `SRS-`          | System cross-cutting requirement        | `srs.md`                             | không                       |
+| `FR-`, `NFR-` | Functional / Non-functional Requirement | `fr-nfr-specs.md`                    | có                          |
+| `UI-`           | UI/UX specification item                | `ui-ux-specs.md`                     | có                          |
+| `API-`          | API specification item                  | `api-specs.md`                       | có                          |
+| `DATA-`         | Data specification item                 | `data-specs.md`                      | có                          |
+| `ARC-`          | Architecture design item                | `dds.md`                             | không                       |
+| `SOL-`          | Solution / FR-NFR design item           | `fr-nfr-design.md`                   | có                          |
+| `UXD-`          | UI/UX design item                       | `ui-ux-design.md`                    | có                          |
+| `APD-`          | API design item                         | `api-design.md`                      | có                          |
+| `DTD-`          | Data design item                        | `data-design.md`                     | có                          |
+| `DD-`           | Design Decision                         | Mọi leaf design                       | có                          |
+| `APC-`          | Approach Decision                       | Mọi leaf plan                         | có                          |
+| `PRJ-`          | Project plan item                       | `project-plan.md`                    | không                       |
+| `ROL-`          | Project role                            | `project-plan.md`                    | không                       |
+| `RSK-`          | Risk                                    | `project-plan.md`                    | không                       |
+| `FND-`          | Foundation setup item                   | `foundation-setup-plan.md`           | có                          |
+| `BLD-`          | Build planning work item                | `build-plan.md`, `*-build-plan.md` | có                          |
+| `TASK-`         | Service execution task                  | `task-plan.md`                       | có (service)                |
+| `TST-`          | Test item                               | `test-plan.md`, `*-test-plan.md`   | có                          |
+| `DPL-`          | System deploy item                      | `deploy-plan.md`                     | `SYS` only                 |
 
 Định dạng:
 
@@ -868,8 +1010,9 @@ TST-ORD-012
 STK-007
 ```
 
-- `SCOPE` là `SYS` ở system-level, mã service ở service-level.
-- Mỗi cặp (`TYPE`, `SCOPE`) có một dãy số duy nhất, dùng chung giữa các leaf cùng prefix. Ví dụ mọi `TST-ORD-` trong các test plan facet của service ORD chung một dãy; mọi `BLD-ORD-` trong các build plan facet và `build-plan.md` của service ORD cũng chung một dãy; facet được xác định bằng file chứa item và trường `Covers`.
+- `SCOPE` là `SYS` ở system-level, mã service ở service-level; riêng `DPL-` mặc định luôn dùng `SYS`.
+- `PD-` của PI là item-level decision; Goals/Scope/Direction không bắt buộc ID riêng.
+- Mỗi cặp (`TYPE`, `SCOPE`) có một dãy số duy nhất, dùng chung giữa các leaf cùng prefix. Ví dụ mọi `TST-ORD-` trong các test plan facet của service ORD chung một dãy; mọi `BLD-ORD-` trong các build plans của service ORD chung một dãy; mọi `TASK-ORD-` trong `task-plan.md` của service ORD chung một dãy. Facet/nguồn upstream được xác định bằng file chứa item và trường `Covers`/`Derived from`.
 - ID bất biến (mục 3.4).
 
 ---
@@ -894,9 +1037,9 @@ Mỗi leaf và mỗi section chỉ được giữ nếu vượt qua đủ bốn 
 - Không chọn technology trong Plan; trích `STK-`.
 - Không kiểm chứng Design thay cho Spec trong Test Plan.
 - Không copy requirement giữa System và Service.
-- Không để orphan: mỗi Design element có `Realizes`; mỗi work item có `Covers` (trừ `Gate`); mỗi Requirement có Design thực hiện (hoặc được phân bổ) và có Test Item cover; mỗi `BLD-` và `FND-` của service xuất hiện trong `Build Order` của service đó.
-- Không tạo document branch nếu service không có responsibility tương ứng; không để một facet đã tồn tại thiếu một trong bốn leaf.
-- Không để `BLD-` của một facet `Depends on` item của facet khác; phụ thuộc xuyên facet chỉ khai báo ở `build-plan.md` của service.
+- Không để orphan: mỗi Design element có `Realizes`; mỗi work item dùng schema Plan chung có `Covers` (trừ `Gate`); `TASK-` dùng `Derived from`; mỗi Requirement có Design thực hiện (hoặc được phân bổ) và có Test Item cover; mặc định mỗi service `BLD-`/`FND-` phải được phân rã thành ít nhất một `TASK-` trong `task-plan.md`. Ngoại lệ `No TASK decomposition` chỉ hợp lệ khi **từng `BLD-`/`FND-` cụ thể** có một Tailoring record trong `meta.md` với `Element=<ID>`, `Default=Requires TASK decomposition`, `Applied=No TASK decomposition`, `Reason` và `Impact` được ghi rõ.
+- Không tạo document branch nếu service không có responsibility tương ứng. Với facet đã chọn: `design`, `build-plan`, `test-plan` luôn phải có; `spec` bắt buộc trừ API exception đã nêu tại mục 10.
+- Không để `BLD-` của một facet `Depends on` item của facet khác; dependency xuyên facet chỉ được giải quyết tại `task-plan.md` bằng `TASK-`.
 - Không dùng ID ngoài scheme (mục 12); không đổi hoặc tái sử dụng ID.
 
 ---
@@ -906,23 +1049,23 @@ Mỗi leaf và mỗi section chỉ được giữ nếu vượt qua đủ bốn 
 ## 14.1. Khởi tạo dự án mới
 
 1. Tạo `meta.md` từ mặc định (mục 3): đặt SCOPE, ghi tailoring (mục 2.2).
-2. **Chiều ngang (`system-docs/`):** INFO → PI → STACK song song với SPEC (`srs.md` trước, rồi các facet) → DESIGN (`dds.md`: phân rã service bằng `ARC-`, rồi các facet) → Plans (Project, Foundation, Build, Test, Deploy).
-3. Baseline system-level đến mức service-level bắt đầu được: ít nhất `ARC-` của service đã Approved.
-4. **Chiều dọc (`service-docs/`):** với mỗi service, tạo `foundation-setup-plan.md`, `fr-nfr/` và các facet khác theo responsibility; đi `specs → design → build-plan → test-plan` trong từng facet, rồi gom ở `build-plan.md` của service (thứ tự, dependency, task).
+2. **Chiều ngang (`system-docs/`):** INFO → PI → (STACK ‖ SPEC) → DESIGN (`dds.md`: phân rã service bằng `ARC-`) → Plans (Project, Foundation, Build, Test, Deploy). Không tạo system `task-plan.md` theo mặc định.
+3. Baseline system-level đến mức service-level bắt đầu được: ít nhất `ARC-` của service đã Approved. Foundation Setup Plan có thể được soạn sau STACK/ARC và trước BUILD; execution của Foundation phải hoàn tất trước các TASK phụ thuộc.
+4. **Chiều dọc (`service-docs/`):** với mỗi service, tạo `fr-nfr/` và các facet theo responsibility; đi `specs → design → build-plan → test-plan` trong từng facet, tạo `foundation-setup-plan.md`, sau đó tạo `task-plan.md` để aggregate `BLD-/FND-` thành `TASK-`, resolve dependency và group thành waves.
 
 ## 14.2. Thêm service mới
 
 1. Bổ sung `ARC-` của service trong `dds.md` (qua quy trình thay đổi, mục 14.3).
-2. Chọn SCOPE; tạo `fr-nfr/`, các facet theo điều kiện, cùng `foundation-setup-plan.md` và `build-plan.md` ở gốc `service-docs/` (mục 10).
+2. Chọn SCOPE; tạo `fr-nfr/`, các facet theo điều kiện, cùng `foundation-setup-plan.md` và `task-plan.md` ở gốc `service-docs/` (mục 10).
 3. Service Spec `Basis` về System Spec hoặc `ARC-`; `foundation-setup-plan.md` của service chỉ ghi phần riêng, phụ thuộc system Foundation Setup Plan.
 4. Cập nhật Tree và Registry trong `meta.md`.
 
 ## 14.3. Xử lý thay đổi
 
 1. Xác định owner của nội dung cần đổi (mục 7.8, 11.1) và sửa tại owner.
-2. Impact analysis bằng trace: tìm mọi item có `Basis`, `Realizes`, `Covers`, `Uses` trỏ tới ID thay đổi.
+2. Impact analysis bằng trace: tìm mọi item có `Basis`, `Realizes`, `Covers`, `Uses`, `Derived from`, `Depends on`, `Requires` trỏ tới hoặc phụ thuộc vào ID thay đổi.
 3. Cập nhật downstream theo thứ tự tầng và đặt Status phù hợp.
-4. Với item đã Baselined: change request (pull request kèm impact analysis), tăng version; item thay thế dùng ID mới và `Superseded by`.
+4. Với item đã Baselined: change request (pull request kèm impact analysis), tăng version; item thay thế dùng ID mới và status `Superseded by <ID>`.
 5. Thay đổi sau phát hành: bắt đầu từ tầng bị ảnh hưởng, đi lại phần chuỗi downstream.
 
 ## 14.4. Kiểm tra tự động
@@ -931,16 +1074,18 @@ Trong CI cho repo tài liệu:
 
 - Front matter hợp lệ.
 - ID đúng scheme, không trùng.
-- Mọi `Basis`, `Realizes`, `Covers`, `Uses`, `Requires` trỏ tới ID tồn tại.
+- Mọi `Basis`, `Realizes`, `Covers`, `Uses`, `Requires`, `Derived from`, `Depends on` trỏ tới ID tồn tại; `Wave` chỉ trỏ tới `TASK-` tồn tại.
 - Coverage theo mục 13.2 (orphan).
 - Ma trận traceability sinh từ ID.
 
 ## 14.5. Cho AI sử dụng
 
 - Bắt đầu từ Registry (mục 3.2) để biết leaf nào trả lời câu hỏi nào.
-- Nạp theo ID, không nạp cả cây: leaf cần làm việc cộng các item được trỏ bởi `Basis`, `Realizes`, `Covers`, `Uses` (một bước upstream); mở rộng khi cần.
+- Nạp theo ID, không nạp cả cây: leaf cần làm việc cộng các item được trỏ bởi `Basis`, `Realizes`, `Covers`, `Uses`, `Derived from`, `Requires` (một bước upstream); mở rộng khi cần.
 - ID là handle ổn định; không suy nội dung từ số thứ tự.
 - Không tự tạo nội dung thuộc owner khác; nếu thiếu upstream, ghi vào `Assumptions & Open Issues` hoặc đề xuất thay đổi tại owner.
+- Khi lập `task-plan.md`, không tạo requirement/design/BLD mới; chỉ phân rã `BLD-`/`FND-` thành `TASK-`, giữ dependency rõ và không biến Wave thành execution unit.
+- Task decomposition phải giữ một nguồn sự thật: `TASK-` là execution item, `Wave` chỉ là projection/grouping của các task.
 
 Mục tiêu của framework là tạo một chuỗi tài liệu có **ownership rõ, traceability rõ, không trùng nội dung, có thể refine từ system xuống service và đủ cấu trúc để AI sử dụng làm input cho việc lập kế hoạch và triển khai**.
 
@@ -950,23 +1095,23 @@ Mục tiêu của framework là tạo một chuỗi tài liệu có **ownership 
 
 Bảng dưới là ánh xạ cấu trúc, không phải tuyên bố tuân thủ. Khi hợp đồng hoặc cơ quan quản lý yêu cầu tuân thủ chính thức, bổ sung ánh xạ chi tiết trong `meta.md`.
 
-| Thành phần                           | Artifact tương ứng trong thực tế                        | Chuẩn / thực hành tham chiếu                                          |
-| -------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Toàn bộ vòng đời, tailoring       | Quy trình vòng đời phần mềm                            | ISO/IEC/IEEE 12207; ISO/IEC/IEEE 15289 (nội dung information item)       |
-| INFO                                   | Discovery, feasibility và market research, evidence log     | Elicitation và analysis theo BABOK                                       |
-| PI                                     | Project charter, Vision & Scope                              | PMBOK (project charter), ISO 21502                                        |
-| STACK                                  | Technology baseline, tooling inventory                       | Tech radar; ADR cho lựa chọn công nghệ                                |
-| SPEC                                   | Requirements specification                                   | ISO/IEC/IEEE 29148 (thay IEEE 830); EARS; MoSCoW                          |
-| NFR                                    | Quality requirements                                         | ISO/IEC 25010                                                             |
-| UI/UX                                  | UX spec, flows, design system                                | ISO 9241-210 (human-centred design); WCAG                                 |
-| API                                    | API contract                                                 | OpenAPI, AsyncAPI                                                         |
-| `dds.md`                             | Architecture description                                     | ISO/IEC/IEEE 42010; C4 model; arc42                                       |
-| `*-design.md`                        | Software design description                                  | IEEE 1016                                                                 |
-| Decisions (`PD-`, `DD-`, `APC-`) | Architecture Decision Record                                 | ADR (Nygard)                                                              |
-| Project Plan                           | Project management plan, milestone plan, RACI, risk register | PMBOK, ISO 21502                                                          |
-| Foundation, Build Plan                 | Dev environment setup, CI và branching/versioning strategy  | ISO/IEC/IEEE 12207 (configuration management); Definition of Done (Scrum) |
-| Service Build Plan (aggregate) | Work breakdown, build sequencing, task breakdown | PMBOK (WBS, sequence activities); Definition of Ready |
-| Test Plan                              | Master test plan, level test plan                            | ISO/IEC/IEEE 29119 (phần test documentation); ISTQB test levels          |
-| Deploy Plan                            | Release và deployment plan, rollback, operational readiness | ITIL 4 (release management, change enablement)                            |
-| Traceability                           | Requirements Traceability Matrix hai chiều                  | ISO/IEC/IEEE 29148, 12207                                                 |
-| Document control                       | Docs-as-code, baseline, change control                       | VCS và pull request; ISO/IEC/IEEE 12207 (configuration management)       |
+| Thành phần                           | Artifact tương ứng trong thực tế                                | Chuẩn / thực hành tham chiếu                                         |
+| -------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Toàn bộ vòng đời, tailoring       | Quy trình vòng đời phần mềm                                    | ISO/IEC/IEEE 12207:2026; ISO/IEC/IEEE 15289 (information items)          |
+| INFO                                   | Discovery, feasibility và market research, evidence log             | Elicitation và analysis theo BABOK                                      |
+| PI                                     | Project charter, Vision & Scope                                      | PMBOK (project charter), ISO 21502                                       |
+| STACK                                  | Technology baseline, tooling inventory                               | Tech radar; ADR cho lựa chọn công nghệ                               |
+| SPEC                                   | Requirements engineering / specification                             | ISO/IEC/IEEE 29148:2018 (current; DIS 3 under development); EARS; MoSCoW |
+| NFR                                    | Quality requirements                                                 | ISO/IEC 25010                                                            |
+| UI/UX                                  | UX spec, flows, design system                                        | ISO 9241-210 (human-centred design); WCAG                                |
+| API                                    | API contract                                                         | OpenAPI, AsyncAPI                                                        |
+| `dds.md`                             | Architecture description                                             | ISO/IEC/IEEE 42010:2022; C4 model; arc42                                 |
+| `*-design.md`                        | Software design description                                          | IEEE 1016                                                                |
+| Decisions (`PD-`, `DD-`, `APC-`) | Architecture Decision Record                                         | ADR (Nygard)                                                             |
+| Project Plan                           | Project management plan, milestone plan, RACI, risk register         | PMBOK, ISO 21502                                                         |
+| Foundation, Build Plan                 | Dev environment setup và build work planning                        | ISO/IEC/IEEE 12207:2026; configuration management practices              |
+| Task Plan                              | Work breakdown, activity dependency và execution task decomposition | PMBOK work breakdown/activity sequencing; agile delivery practices       |
+| Test Plan                              | Master test plan, level test plan                                    | ISO/IEC/IEEE 29119 (phần test documentation); ISTQB test levels         |
+| Deploy Plan                            | Release và deployment plan, rollback, operational readiness         | ITIL 4 (release management, change enablement)                           |
+| Traceability                           | Requirements Traceability Matrix hai chiều                          | ISO/IEC/IEEE 29148, 12207                                                |
+| Document control                       | Docs-as-code, baseline, change control                               | VCS và pull request; ISO/IEC/IEEE 12207 (configuration management)      |

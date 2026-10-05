@@ -7,11 +7,11 @@ owner: Data Architect & Backend Lead
 
 # DATA SPECS — Đặc tả Dữ liệu Trung tâm Phân hệ Backend
 
-Đặc tả các thực thể dữ liệu nghiệp vụ (`DATA-BE-`), cấu trúc thuộc tính chi tiết, ràng buộc toàn vẹn và chính sách bảo vệ vòng đời dữ liệu sinh trắc học trên phân hệ Backend.
+Đặc tả các thực thể dữ liệu nghiệp vụ (`DATA-BE-`), cấu trúc thuộc tính chi tiết, quy tắc ràng buộc toàn vẹn và chính sách bảo vệ vòng đời dữ liệu trên phân hệ Backend.
 
 ---
 
-## 1. Central Data Entities (Danh mục Thực thể Dữ liệu Trung tâm)
+## 1. Data Entities (Danh mục Thực thể Dữ liệu Trung tâm)
 
 | ID | Statement | Category | Priority | Basis | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
@@ -26,7 +26,7 @@ owner: Data Architect & Backend Lead
 
 ---
 
-## 2. Business Data Rules (Quy tắc Toàn vẹn & Ràng buộc Nghiệp vụ)
+## 2. Data Rules (Quy tắc Toàn vẹn & Ràng buộc Nghiệp vụ)
 
 | ID | Statement | Category | Priority | Basis | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
@@ -34,15 +34,22 @@ owner: Data Architect & Backend Lead
 | `DATA-BE-010` | Chuẩn hóa Vector sinh trắc học: mảng đặc trưng khuôn mặt phải có đúng 512 phần tử float32 và đạt chuẩn độ dài hình học $L_2\text{ Norm} = 1.0 \pm 10^{-4}$. | Constraint | Must | `DATA-SYS-010`, `FR-BE-006` | Backend từ chối nạp mẫu khuôn mặt vào hệ thống nếu sai kích thước 512D hoặc chưa chuẩn hóa độ dài hình học. | Approved |
 | `DATA-BE-011` | Hiệu lực mã kích hoạt OTP: mỗi mã OTP chỉ có hiệu lực tối đa 48 giờ (`expires_at = created_at + 48h`) và chỉ được dùng đúng 1 lần (`is_used = true`). | Constraint | Must | `DATA-SYS-011`, `FR-BE-005` | Từ chối kích hoạt và trả về mã lỗi thích hợp khi OTP đã qua sử dụng hoặc quá hạn 48 giờ. | Approved |
 | `DATA-BE-012` | Bảo vệ mã PIN chống Brute-force: khóa tài khoản điểm danh bằng PIN 15 phút nếu nhập sai mã PIN quá 5 lần liên tiếp (`pin_locked_until = NOW() + 15m`). | Constraint | Must | `DATA-SYS-012`, `FR-BE-001` | Bàn phím Kiosk từ chối thao tác nhập PIN và hiển thị thời gian đếm lùi mở khóa cho nhân viên. | Approved |
+
+---
+
+## 3. Data Lifecycle & Protection (Vòng đời & Bảo vệ Dữ liệu)
+
+| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| :--- | :--- | :--- | :---: | :--- | :--- | :---: |
 | `DATA-BE-013` | Tiêu hủy dữ liệu sinh trắc học sau 20 ngày: tự động xóa vĩnh viễn (Hard Delete) toàn bộ bản ghi mẫu khuôn mặt khi nhân viên nghỉ việc quá 20 ngày. | Retention | Must | `DATA-SYS-013`, `NFR-BE-003` | Tác vụ nền hàng ngày xóa sạch bản ghi `biometric_templates` có `terminated_date <= CURRENT_DATE - 20 days`. | Approved |
 | `DATA-BE-014` | Lưu trữ lịch sử điểm danh tối thiểu 3 năm: dữ liệu chấm công và nhật ký kiểm toán không bị xóa tự động, phục vụ thanh tra lao động. | Retention | Must | `DATA-SYS-014`, `NFR-BE-005` | CSDL trung tâm bảo lưu toàn vẹn dữ liệu `attendance_logs` và `audit_logs` tối thiểu 3 năm theo Luật Lao động. | Approved |
 | `DATA-BE-015` | Mã hóa đối xứng AES-256-GCM dữ liệu tĩnh: vector đặc trưng sinh trắc học bắt buộc mã hóa AES-256-GCM trước khi lưu trữ vào CSDL PostgreSQL. | Privacy | Must | `DATA-SYS-015`, `NFR-BE-003` | Vector lưu dưới dạng BYTEA kèm IV 96-bit ngẫu nhiên và khóa Master tách biệt trong biến môi trường. | Approved |
 
 ---
 
-## 3. Detailed Entity Attribute Dictionaries (Từ điển Thuộc tính Thực thể Chi tiết)
+## 4. Detailed Entity Attribute Dictionaries (Từ điển Thuộc tính Thực thể Chi tiết)
 
-### 3.1. Thuộc tính Thực thể `users` (`DATA-BE-001`)
+### 4.1. Thuộc tính Thực thể `users` (`DATA-BE-001`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -60,7 +67,7 @@ owner: Data Architect & Backend Lead
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm tạo hồ sơ người dùng. |
 | `updated_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm cập nhật hồ sơ gần nhất. |
 
-### 3.2. Thuộc tính Thực thể `shifts` (`DATA-BE-002`)
+### 4.2. Thuộc tính Thực thể `shifts` (`DATA-BE-002`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -72,7 +79,7 @@ owner: Data Architect & Backend Lead
 | `grace_period_minutes` | `INT` | NOT NULL, Default 15 | Số phút ân hạn cho phép sau giờ bắt đầu ca mà chưa tính đi muộn. |
 | `is_active` | `BOOLEAN` | NOT NULL, Default TRUE | Trạng thái kích hoạt áp dụng của ca kíp. |
 
-### 3.3. Thuộc tính Thực thể `employee_shifts` (`DATA-BE-003`)
+### 4.3. Thuộc tính Thực thể `employee_shifts` (`DATA-BE-003`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -82,7 +89,7 @@ owner: Data Architect & Backend Lead
 | `effective_from` | `DATE` | NOT NULL | Ngày bắt đầu có hiệu lực của lịch phân ca. |
 | `effective_to` | `DATE` | NULLABLE | Ngày kết thúc hiệu lực (NULL = vô thời hạn). |
 
-### 3.4. Thuộc tính Thực thể `attendance_logs` (`DATA-BE-004`)
+### 4.4. Thuộc tính Thực thể `attendance_logs` (`DATA-BE-004`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -98,7 +105,7 @@ owner: Data Architect & Backend Lead
 | `is_offline_sync` | `BOOLEAN` | NOT NULL, Default FALSE| Đánh dấu bản ghi được đồng bộ bù từ hàng đợi ngoại tuyến SQLite. |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm ghi nhận bản ghi vào CSDL máy chủ. |
 
-### 3.5. Thuộc tính Thực thể `biometric_templates` (`DATA-BE-005`)
+### 4.5. Thuộc tính Thực thể `biometric_templates` (`DATA-BE-005`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -111,7 +118,7 @@ owner: Data Architect & Backend Lead
 | `is_active` | `BOOLEAN` | NOT NULL, Default TRUE | Trạng thái kích hoạt hiệu lực của mẫu mặt. |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm nạp mẫu vào hệ thống. |
 
-### 3.6. Thuộc tính Thực thể `enrollment_sessions` (`DATA-BE-006`)
+### 4.6. Thuộc tính Thực thể `enrollment_sessions` (`DATA-BE-006`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -125,7 +132,7 @@ owner: Data Architect & Backend Lead
 | `is_used` | `BOOLEAN` | NOT NULL, Default FALSE| Đánh dấu mã OTP đã được dùng để nạp mặt thành công hay chưa. |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm tạo phiên đăng ký. |
 
-### 3.7. Thuộc tính Thực thể `kiosks` (`DATA-BE-007`)
+### 4.7. Thuộc tính Thực thể `kiosks` (`DATA-BE-007`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -135,7 +142,7 @@ owner: Data Architect & Backend Lead
 | `is_active` | `BOOLEAN` | NOT NULL, Default TRUE | Trạng thái cho phép trạm Kiosk hoạt động. |
 | `last_ping_at` | `TIMESTAMP WITH TIME ZONE` | NULLABLE | Mốc thời gian gần nhất Kiosk gửi tín hiệu kiểm tra sức khỏe. |
 
-### 3.8. Thuộc tính Thực thể `audit_logs` (`DATA-BE-008`)
+### 4.8. Thuộc tính Thực thể `audit_logs` (`DATA-BE-008`)
 
 | Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa & Mô tả |
 | :--- | :--- | :--- | :--- |

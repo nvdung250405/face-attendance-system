@@ -30,7 +30,7 @@ docs/service-docs/backend-service/
 │
 ├── README.md                      # [Tài liệu hiện tại] Cẩm nang & Bản đồ định hướng phân hệ Backend
 ├── foundation-setup-plan.md       # Thiết lập môi trường Java 21, Maven toolchain & cấu hình (FND-BE-)
-├── build-plan.md                  # Kế hoạch xây dựng & tích hợp tổng thể phân hệ Backend (Aggregate, BLD-BE-)
+├── task-plan.md                   # Kế hoạch phân rã thi công, thứ tự dependency & wave (TASK-BE-)
 │
 ├── data/                          # [BƯỚC 1: DATA] Mô hình thực thể, DDL PostgreSQL & Caching
 │   ├── data-specs.md              # Đặc tả thực thể CSDL chi tiết từng trường & Enums (DATA-BE-)
@@ -47,7 +47,7 @@ docs/service-docs/backend-service/
 ├── fr-nfr/                        # [NGHIỆP VỤ CỐT LÕI] Logic điểm danh, bảo mật & mã hóa
 │   ├── fr-nfr-specs.md            # Yêu cầu chức năng (FR-BE-) & phi chức năng (NFR-BE-)
 │   ├── fr-nfr-design.md           # Thiết kế giải pháp nghiệp vụ & mã hóa sinh trắc (SOL-BE-)
-│   ├── fr-nfr-build-plan.md       # Kế hoạch thi công module cốt lõi (BLD-BE-)
+│   ├── fr-nfr-build-plan.md       # Kế hoạch thi công module cốt lõi & Integration (BLD-BE-)
 │   └── fr-nfr-test-plan.md        # Kế hoạch kiểm thử nghiệp vụ cốt lõi (TST-BE-)
 │
 └── [ui-ux/]                       # [KHÔNG ÁP DỤNG] Phân hệ Backend là headless service phi giao diện
@@ -62,17 +62,17 @@ docs/service-docs/backend-service/
 | Nhánh Facet | Tập tin Tài liệu | Mã Leaf | ID Prefix Sở hữu | Nguồn Tham chiếu Upstream |
 | :--- | :--- | :---: | :---: | :--- |
 | **Trang chủ** | [README.md](README.md) | `BE-HUB` | — | `docs/meta.md`, `system-docs/dds/dds.md` (`ARC-002`) |
-| **Toàn Service** | [foundation-setup-plan.md](foundation-setup-plan.md) | `SVC-FSP` | `FND-BE-` | `system-docs/plans/foundation-setup-plan.md`, `tech-tool-stack.md` |
-| **Toàn Service** | [build-plan.md](build-plan.md) | `SVC-BLD` | `BLD-BE-` | `data-build-plan.md`, `fr-nfr-build-plan.md`, `api-build-plan.md`, `foundation-setup-plan.md` |
+| **Toàn Service** | [foundation-setup-plan.md](foundation-setup-plan.md) | `SVC-FSP` | `FND-BE-`, `APC-BE-` | `system-docs/plans/foundation-setup-plan.md`, `tech-tool-stack.md` |
+| **Toàn Service** | [task-plan.md](task-plan.md) | `SVC-TSK` | `TASK-BE-` | `foundation-setup-plan.md`, `*-build-plan.md` |
 | **Data (Bước 1)**| [data/data-specs.md](data/data-specs.md) | `SVC-SPEC`| `DATA-BE-` | `system-docs/srs/data-specs.md` (`DATA-SYS-001..015`) |
-| **Data (Bước 1)**| [data/data-design.md](data/data-design.md) | `SVC-DES` | `DTD-BE-` | `data/data-specs.md`, `system-docs/dds/data-design.md` |
-| **Data (Bước 1)**| [data/data-build-plan.md](data/data-build-plan.md) | `SVC-BLD` | `BLD-BE-` | `data/data-design.md` (`DTD-BE-001..004`) |
-| **Data (Bước 1)**| [data/data-test-plan.md](data/data-test-plan.md) | `SVC-TST` | `TST-BE-` | `data/data-specs.md` (trực tiếp) |
+| **Data (Bước 1)**| [data/data-design.md](data/data-design.md) | `SVC-DES` | `DTD-BE-`, `DD-BE-` | `data/data-specs.md`, `system-docs/dds/data-design.md` |
+| **Data (Bước 1)**| [data/data-build-plan.md](data/data-build-plan.md) | `SVC-BLD` | `BLD-BE-`, `APC-BE-` | `data/data-design.md` (`DTD-BE-001..006`) |
+| **Data (Bước 1)**| [data/data-test-plan.md](data/data-test-plan.md) | `SVC-TST` | `TST-BE-`, `APC-BE-` | `data/data-specs.md` (trực tiếp) |
 | **API (Bước 2)** | [api/api-specs.md](api/api-specs.md) | `SVC-SPEC`| `API-BE-` | `system-docs/srs/api-specs.md` (`API-SYS-001..016`) |
-| **API (Bước 2)** | [api/api-design.md](api/api-design.md) | `SVC-DES` | `APD-BE-` | `api/api-specs.md`, `data/data-design.md`, `system-docs/dds/api-design.md` |
-| **API (Bước 2)** | [api/api-build-plan.md](api/api-build-plan.md) | `SVC-BLD` | `BLD-BE-` | `api/api-design.md` (`APD-BE-001..004`) |
-| **API (Bước 2)** | [api/api-test-plan.md](api/api-test-plan.md) | `SVC-TST` | `TST-BE-` | `api/api-specs.md` (trực tiếp) |
+| **API (Bước 2)** | [api/api-design.md](api/api-design.md) | `SVC-DES` | `APD-BE-`, `DD-BE-` | `api/api-specs.md`, `data/data-design.md`, `system-docs/dds/api-design.md` |
+| **API (Bước 2)** | [api/api-build-plan.md](api/api-build-plan.md) | `SVC-BLD` | `BLD-BE-`, `APC-BE-` | `api/api-design.md` (`APD-BE-001..006`) |
+| **API (Bước 2)** | [api/api-test-plan.md](api/api-test-plan.md) | `SVC-TST` | `TST-BE-`, `APC-BE-` | `api/api-specs.md` (trực tiếp) |
 | **FR/NFR** | [fr-nfr/fr-nfr-specs.md](fr-nfr/fr-nfr-specs.md) | `SVC-SPEC`| `FR-BE-`, `NFR-BE-` | `system-docs/srs/fr-nfr-specs.md` (`FR-SYS-`, `NFR-SYS-`) |
-| **FR/NFR** | [fr-nfr/fr-nfr-design.md](fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-BE-` | `fr-nfr/fr-nfr-specs.md`, `system-docs/dds/fr-nfr-design.md` |
-| **FR/NFR** | [fr-nfr/fr-nfr-build-plan.md](fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `BLD-BE-` | `fr-nfr/fr-nfr-design.md` (`SOL-BE-001..007`) |
-| **FR/NFR** | [fr-nfr/fr-nfr-test-plan.md](fr-nfr/fr-nfr-test-plan.md) | `SVC-TST` | `TST-BE-` | `fr-nfr/fr-nfr-specs.md` (trực tiếp) |
+| **FR/NFR** | [fr-nfr/fr-nfr-design.md](fr-nfr/fr-nfr-design.md) | `SVC-DES` | `SOL-BE-`, `DD-BE-` | `fr-nfr/fr-nfr-specs.md`, `system-docs/dds/fr-nfr-design.md` |
+| **FR/NFR** | [fr-nfr/fr-nfr-build-plan.md](fr-nfr/fr-nfr-build-plan.md) | `SVC-BLD` | `BLD-BE-`, `APC-BE-` | `fr-nfr/fr-nfr-design.md` (`SOL-BE-001..013`, `ARC-002`) |
+| **FR/NFR** | [fr-nfr/fr-nfr-test-plan.md](fr-nfr/fr-nfr-test-plan.md) | `SVC-TST` | `TST-BE-`, `APC-BE-` | `fr-nfr/fr-nfr-specs.md` (trực tiếp) |
