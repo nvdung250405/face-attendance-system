@@ -93,11 +93,14 @@ graph TD
     MultiTabSync -.->|Cập nhật trạng thái| AuthStore
 ```
 
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| ID | Name | Definition | Realizes | Uses | Decisions | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | `DTD-WEB-001` | SafeLocalStorage | Đóng gói `window.localStorage` với JSON parse/serialize tự động; tiêm prefix định danh `fas_` và tự động fallback sang `MemoryStore` khi gặp lỗi Quota hoặc Private Browsing. | `DATA-WEB-001`, `DATA-WEB-002` | `ARC-003` | `DD-SYS-003` | Accepted |
 | `DTD-WEB-002` | MultiTabSync | Cơ chế lắng nghe `window.addEventListener('storage', ...)` để tự động đồng bộ đăng xuất hoặc cập nhật phiên trên mọi tab đang mở khi có 1 tab logout. | `DTD-WEB-001` | `ARC-003` | `DD-SYS-003` | Accepted |
 | `DTD-WEB-003` | SafeSessionStorage | Đóng gói `window.sessionStorage` quản lý phiên tạm thời cho quy trình Ký cam kết & hiển thị OTP; tự động hủy khi đóng tab. | `DATA-WEB-003` | `ARC-003` | `DD-SYS-003` | Accepted |
+| `DTD-WEB-004` | NotificationStateStore | Lưu trạng thái thông báo trong bộ nhớ đệm truy vấn (TanStack Query) phân tách theo `userId`; xoá toàn bộ khi đăng xuất; cập nhật lạc quan số chưa đọc. | `DATA-WEB-005` | `ARC-003` | `DD-SYS-004` | Accepted |
+| `DTD-WEB-005` | PayrollPeriodStore | Lưu kỳ công đang chọn và cờ khoá điều chỉnh trong bộ nhớ đệm truy vấn (không ghi LocalStorage); cung cấp selector dùng chung để vô hiệu hoá nút điều chỉnh. | `DATA-WEB-006` | `ARC-003` | `DD-SYS-004` | Accepted |
+| `DTD-WEB-006` | KioskRegistryMemoryStore | Lưu danh mục trạm Kiosk và Secret Token **chỉ trong RAM** (React state), tự xoá khi unmount hoặc tải lại trang; không đi qua `SafeLocalStorage`/`SafeSessionStorage`. | `DATA-WEB-007` | `ARC-003` | `DD-SYS-003` | Accepted |
 
 ---
 

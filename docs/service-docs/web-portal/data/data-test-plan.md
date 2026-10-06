@@ -34,6 +34,7 @@ owner: Web QA Lead
 | `TST-WEB-002` | Kiểm thử Safe Storage Adapter & Fallback RAM | `DTD-WEB-001` | Unit / Resiliency | Khi LocalStorage ném lỗi; adapter tự động chuyển sang lưu tạm trong RAM; không làm dừng luồng ứng dụng. | Done |
 | `TST-WEB-003` | Kiểm thử Đồng bộ Trạng thái Phiên Đa Tab | `DTD-WEB-001`, `DTD-WEB-002` | Integration | Kích hoạt sự kiện logout trên Tab 1; Tab 2 tự động xóa token và chuyển hướng về màn hình đăng nhập. | Done |
 | `TST-WEB-004` | Kiểm thử TanStack Query Realtime Injection | `DATA-WEB-004` | Integration / Cache | Nhận sự kiện WebSocket mới; hook tự động chèn bản ghi vào đầu danh sách cache mà không refetch toàn bộ API. | Done |
+| `TST-WEB-028` | Kiểm thử Store Trạng thái Vòng đời phía Client | `DATA-WEB-005`, `DATA-WEB-006`, `DATA-WEB-007` | Unit / Integration | Trạng thái thông báo phân tách theo người dùng và bị xoá khi đăng xuất; cờ khoá kỳ công **không** xuất hiện trong LocalStorage; Secret Token chỉ tồn tại trong RAM và bị xoá khi unmount/tải lại trang. | Planned |
 
 ---
 

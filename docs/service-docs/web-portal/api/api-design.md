@@ -49,11 +49,20 @@ graph TD
     StompClient -->|Dispatch Event| Hooks
 ```
 
-| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| ID | Name | Definition | Realizes | Uses | Decisions | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | `APD-WEB-001` | ApiClient | Đóng gói thư viện `axios` với baseURL `VITE_API_BASE_URL`, timeout $10.0\text{ s}$; cấu hình bộ chặn Request Interceptor tự động gán Bearer Token. | `API-WEB-001` đến `API-WEB-006` | `ARC-003` | `DD-SYS-001` | Accepted |
 | `APD-WEB-002` | TokenRefreshInterceptor | Bộ chặn Response Interceptor bắt mã HTTP 401, tạm hoãn các request song song vào Promise Queue, gọi `POST /auth/refresh` bằng Refresh Token; sau khi có token mới giải phóng hàng đợi và retry requests. | `API-WEB-002` | `ARC-003` | `DD-SYS-001` | Accepted |
 | `APD-WEB-003` | StompWebSocketService | Quản lý kết nối STOMP over WebSocket (SockJS fallback) tới `/ws-attendance`, tự động kết nối lại khi mất mạng (Exponential Backoff); cung cấp các hàm subscribe/unsubscribe an toàn. | `API-WEB-007`, `API-WEB-008` | `ARC-003` | `DD-SYS-004` | Accepted |
+| `APD-WEB-004` | AdminEmployeeService | Bọc các giao diện quản lý hồ sơ nhân sự (`/admin/employees`): tạo/sửa/vô hiệu hóa và cấp lại mật khẩu tạm; chuẩn hoá lỗi 409 về từng trường và không cache mật khẩu tạm. | `API-WEB-009`, `API-WEB-010` | `ARC-003` | `DD-SYS-001` | Accepted |
+| `APD-WEB-005` | ShiftAdminService | Bọc giao diện quản lý ca và phân ca (`/admin/shifts`, `/admin/employee-shifts`); diễn giải lỗi 409 chồng lấn thành dữ liệu gợi ý khoảng trống cho UI. | `API-WEB-011` | `ARC-003` | `DD-SYS-001` | Accepted |
+| `APD-WEB-006` | CredentialService | Bọc giao diện đổi mật khẩu, thiết lập PIN và đặt lại PIN; phát tín hiệu toàn cục khi gặp HTTP 403 `PASSWORD_CHANGE_REQUIRED` để chặn điều hướng. | `API-WEB-012` | `ARC-003` | `DD-SYS-001` | Accepted |
+| `APD-WEB-007` | PayrollPeriodService | Bọc giao diện kỳ công (`/admin/payroll-periods`): liệt kê, chốt và mở lại; invalidate cache kỳ công sau mỗi thay đổi trạng thái. | `API-WEB-013` | `ARC-003` | `DD-SYS-004` | Accepted |
+| `APD-WEB-008` | DataSubjectService | Bọc giao diện rút Consent và yêu cầu dữ liệu cá nhân (`/employee/consent/withdraw`, `/employee/data-requests`, `/dpo/data-requests`); phân quyền hiển thị theo role. | `API-WEB-014` | `ARC-003` | `DD-SYS-003` | Accepted |
+| `APD-WEB-009` | LogoutService | Bọc `POST /auth/logout`, xoá storage sau khi API trả 204 và phát sự kiện đăng xuất để đồng bộ đa tab. | `API-WEB-015` | `ARC-003` | `DD-SYS-003` | Accepted |
+| `APD-WEB-010` | NotificationService | Bọc giao diện thông báo (`/notifications`): lấy danh sách, đếm chưa đọc và đánh dấu đã đọc; cập nhật lạc quan (optimistic) khi đánh dấu. | `API-WEB-016` | `ARC-003` | `DD-SYS-004` | Accepted |
+| `APD-WEB-011` | ComplianceAdminService | Bọc giao diện tra cứu audit, quản lý trạm Kiosk và dữ liệu tuân thủ (`/admin/audit-logs`, `/admin/kiosks/**`, `/dpo/**`); chỉ đọc với role `DPO`. | `API-WEB-017` | `ARC-003` | `DD-SYS-001` | Accepted |
+| `APD-WEB-012` | ReportExportService | Bọc giao diện kết xuất báo cáo (`/admin/reports/export`) và trả về blob tải xuống kèm tên tệp theo kỳ được chọn. | `API-WEB-018` | `ARC-003` | `DD-SYS-001` | Accepted |
 
 ---
 

@@ -34,6 +34,7 @@ owner: Product Designer & QA Lead
 | `TST-WEB-006` | Kiểm thử Live Dashboard Row Highlight & KPI | `UI-WEB-003`, `UXD-WEB-003`, `UXD-WEB-004` | Component / Animation | Bắn sự kiện điểm danh mới; hàng mới chớp sáng màu xanh ngọc trong 1.5s; số KPI tăng tức thì. | Done |
 | `TST-WEB-007` | Kiểm thử Modal Ký Cam kết Informed Consent | `UI-WEB-002`, `UXD-WEB-002` | Journey / Flow | Nhân viên đọc điều khoản $\rightarrow$ Ký điện tử $\rightarrow$ Modal hiển thị OTP 6 số và mã QR; nút Copy hoạt động tốt. | Done |
 | `TST-WEB-008` | Kiểm thử Lịch Biểu Chấm công Cá nhân | `UI-WEB-005`, `UXD-WEB-005` | Component | Hiển thị dạng lưới tháng; các ô phân biệt rõ màu xanh (đúng giờ), vàng (đi muộn), xám (nghỉ lễ/phép). | Done |
+| `TST-WEB-029` | Kiểm thử Màn hình Vòng đời (Danh mục, Kỳ công, Consent, Thông báo, Tuân thủ) | `UI-WEB-006`, `UI-WEB-007`, `UI-WEB-008`, `UI-WEB-009`, `UI-WEB-010`, `UI-WEB-011`, `UI-WEB-012`, `UXD-WEB-006`, `UXD-WEB-007`, `UXD-WEB-008` | Visual / Journey | Form nhập liệu trong Drawer và cảnh báo nghiệp vụ hiển thị đúng trên đầu bảng; màn hình đổi mật khẩu bắt buộc không có sidebar và không rời được bằng điều hướng; badge thông báo và dấu hiệu "chỉ đọc" của màn hình tuân thủ hiển thị chính xác. | Planned |
 
 ---
 
