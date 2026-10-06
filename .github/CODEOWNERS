@@ -11,13 +11,13 @@
 /docs/system-docs/                     @nvdung250405
 
 # Tài liệu và mã nguồn từng phân hệ dịch vụ
-/docs/service-docs/backend-service/    @nvdung250405
+/docs/subsystem-docs/backend-service/    @nvdung250405
 /app/backend-service/                  @nvdung250405
 
-/docs/service-docs/kiosk-app/          @nvdung250405
+/docs/subsystem-docs/kiosk-app/          @nvdung250405
 /app/kiosk-app/                        @nvdung250405
 
-/docs/service-docs/web-portal/         @nvdung250405
+/docs/subsystem-docs/web-portal/         @nvdung250405
 /app/web-portal/                       @nvdung250405
 
 # Cấu hình GitHub & CI/CD Pipelines

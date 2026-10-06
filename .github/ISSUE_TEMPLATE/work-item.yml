@@ -25,7 +25,7 @@ body:
       description: "Chọn phân hệ bị tác động."
       options:
         - "SYS (Toàn hệ thống)"
-        - "BKE (Backend Service)"
+        - "BE (Backend Service)"
         - "KSK (Kiosk Desktop App)"
         - "WEB (Web Management Portal)"
     validations:
@@ -35,8 +35,8 @@ body:
     id: plan_reference
     attributes:
       label: "Đường dẫn tới tệp Plan sở hữu"
-      description: "Đường dẫn tới leaf Plan chứa work item này (ví dụ: docs/service-docs/backend-service/build-plan.md)."
-      placeholder: "docs/service-docs/backend-service/build-plan.md"
+      description: "Đường dẫn tới leaf Plan chứa work item này (ví dụ: docs/subsystem-docs/backend-service/plans/build-plan.md)."
+      placeholder: "docs/subsystem-docs/backend-service/plans/build-plan.md"
     validations:
       required: true
 

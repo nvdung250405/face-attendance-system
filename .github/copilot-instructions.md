@@ -14,7 +14,7 @@ Tài liệu này định hình cách trợ lý AI (GitHub Copilot / Antigravity 
 3. **Quy chuẩn Định danh ID**:
    - Sử dụng đúng scheme định danh (`PREFIX-SCOPE-NNN`). Tuyệt đối không tự ý phát minh prefix hay format mới.
 4. **Quy trình Nhánh, Commit & Pull Request**:
-   - **Nhánh**: Tạo nhánh ngắn từ `develop` theo định dạng: `<type>/<ID>-<slug>` (ví dụ: `feat/BLD-BKE-001-user-entity`).
+   - **Nhánh**: Tạo nhánh ngắn từ `develop` theo định dạng: `<type>/<ID>-<slug>` (ví dụ: `feat/BLD-BE-001-user-entity`).
    - **Commit**: Tuân thủ Conventional Commits: `<type>(<SCOPE>): <subject>`.
    - **Tiêu đề PR**: Bắt buộc mang ID: `<type>(<SCOPE>): <subject> [<ID>]`.
 5. **Kỷ luật CI/CD & Testing**:

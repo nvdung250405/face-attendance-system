@@ -40,7 +40,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Registry theo sdlc-docs.md mục 3.4, 11.2, 12
+# Registry theo sdlc-docs.md mục 3.1, 10.1, 11
 # ---------------------------------------------------------------------------
 
 LEAF_STATUSES = {"Draft", "In Review", "Approved", "Baselined", "Deprecated"}
@@ -99,8 +99,15 @@ BASIS_SPEC_ALLOWED = {"SRC", "INF", "ANL", "PD", "SRS", "FR", "NFR", "UI", "API"
 
 MOSCOW = {"Must", "Should", "Could", "Won't"}
 
-FACET_REQUIRED_LEAVES = ("design", "build-plan", "test-plan")
-FACET_OPTIONAL_LEAVES = ("specs",)
+FACET_BY_PREFIX = {
+    "SOL": "fr-nfr",
+    "DTD": "data",
+    "DATA": "data",
+    "APD": "api",
+    "API": "api",
+    "UXD": "ui-ux",
+    "UI": "ui-ux",
+}
 
 ID_RE = re.compile(r"`([A-Z]{2,4}(?:-[A-Z]{2,4})?-\d{3})`")
 ID_STRICT_RE = re.compile(r"^(?P<type>[A-Z]{2,4})(?:-(?P<scope>[A-Z]{2,5}))?-(?P<num>\d{3})$")
@@ -282,12 +289,12 @@ def check_ids(defines, problems):
             continue
         item_type, scope = m.group("type"), m.group("scope")
         if item_type not in SCOPED_TYPES and item_type not in UNSCOPED_TYPES:
-            problems.append(Problem("ID001", f"{item_id}: prefix '{item_type}' không có trong registry (mục 12)", item_id))
+            problems.append(Problem("ID001", f"{item_id}: prefix '{item_type}' không có trong registry (§11)", item_id))
             continue
         if item_type in SCOPED_TYPES and not scope:
-            problems.append(Problem("ID001", f"{item_id}: prefix '{item_type}' bắt buộc có SCOPE (mục 12)", item_id))
+            problems.append(Problem("ID001", f"{item_id}: prefix '{item_type}' bắt buộc có SCOPE (§11)", item_id))
         if item_type in UNSCOPED_TYPES and scope:
-            problems.append(Problem("ID001", f"{item_id}: prefix '{item_type}' không dùng SCOPE (mục 12)", item_id))
+            problems.append(Problem("ID001", f"{item_id}: prefix '{item_type}' không dùng SCOPE (§11)", item_id))
         if scope and scope not in KNOWN_SCOPES:
             problems.append(Problem("ID001", f"{item_id}: SCOPE '{scope}' không thuộc {sorted(KNOWN_SCOPES)}", item_id))
         leaves = {i.leaf for i in items}
@@ -309,7 +316,7 @@ def check_references(defines, incoming, problems):
                 forbidden = BASIS_FORBIDDEN.get(item_type)
                 if forbidden and target_type in forbidden:
                     problems.append(Problem(
-                        "REF002", f"{item_id}: Basis trỏ tới '{ref.group(1)}' ({target_type}) — không hợp lệ theo mục 11.2", item_id))
+                        "REF002", f"{item_id}: Basis trỏ tới '{ref.group(1)}' ({target_type}) — không hợp lệ theo §10.2", item_id))
                 if item_type in SPEC_TYPES and target_type not in BASIS_SPEC_ALLOWED:
                     problems.append(Problem(
                         "REF002", f"{item_id}: Basis trỏ tới '{ref.group(1)}' ({target_type}) — spec chỉ Basis tới {sorted(BASIS_SPEC_ALLOWED)}", item_id))
@@ -400,28 +407,28 @@ def check_orphans(defines, incoming, leaves, problems):
         if item_type in DESIGN_TYPES:
             for item in items:
                 if not ID_RE.search(item.columns.get("Realizes", "")):
-                    problems.append(Problem("ORP001", f"{item_id}: design element thiếu 'Realizes' (mục 13.2)", item_id))
+                    problems.append(Problem("ORP001", f"{item_id}: design element thiếu 'Realizes' (§12.2)", item_id))
         if item_type in WORK_TYPES - {"TST"}:
             for item in items:
                 if "gate" in (item.name or "").lower():
                     continue
                 if not ID_RE.search(item.columns.get("Covers", "")):
-                    problems.append(Problem("ORP002", f"{item_id}: work item thiếu 'Covers' (mục 13.2)", item_id))
+                    problems.append(Problem("ORP002", f"{item_id}: work item thiếu 'Covers' (§12.2)", item_id))
         if item_type == "TST":
             for item in items:
                 if not ID_RE.search(item.columns.get("Covers", "")):
-                    problems.append(Problem("ORP002", f"{item_id}: test item thiếu 'Covers' (mục 13.2)", item_id))
+                    problems.append(Problem("ORP002", f"{item_id}: test item thiếu 'Covers' (§12.2)", item_id))
         if item_type == "TASK":
             for item in items:
                 derived = item.columns.get("Derived from", "")
                 refs = [r.group(1) for r in ID_RE.finditer(derived)]
                 if len(refs) != 1 or type_of(refs[0]) not in ("BLD", "FND"):
-                    problems.append(Problem("ORP003", f"{item_id}: 'Derived from' phải trỏ đúng một BLD-/FND- (mục 11.2)", item_id))
+                    problems.append(Problem("ORP003", f"{item_id}: 'Derived from' phải trỏ đúng một BLD-/FND- (§10.1)", item_id))
         if item_type in REQUIREMENT_TYPES:
             if not covered_by(item_id, DESIGN_TYPES):
-                problems.append(Problem("ORP004", f"{item_id}: requirement chưa có design element 'Realizes' (mục 13.2)", item_id))
+                problems.append(Problem("ORP004", f"{item_id}: requirement chưa có design element 'Realizes' (§12.2)", item_id))
             if not covered_by(item_id, TEST_TYPES):
-                problems.append(Problem("ORP005", f"{item_id}: requirement chưa có test item 'Covers' (mục 13.2)", item_id))
+                problems.append(Problem("ORP005", f"{item_id}: requirement chưa có test item 'Covers' (§12.2)", item_id))
 
 
 def check_task_decomposition(defines, incoming, problems):
@@ -435,36 +442,42 @@ def check_task_decomposition(defines, incoming, problems):
     for item_id, items in defines.items():
         if type_of(item_id) not in ("BLD", "FND"):
             continue
-        if not any(item.leaf.startswith("docs/service-docs/") for item in items):
+        if not any(item.leaf.startswith("docs/subsystem-docs/") for item in items):
             continue
         if derived.get(item_id):
             continue
         problems.append(Problem(
-            "ORP006", f"{item_id}: BLD-/FND- của service chưa được phân rã thành 'TASK-' trong task-plan.md (mục 13.2)", item_id))
+            "ORP006", f"{item_id}: BLD-/FND- của subsystem chưa được phân rã thành 'TASK-' trong task-plan.md (§12.2)", item_id))
 
 
 def check_facet_dependencies(defines, problems):
     facet_of: dict[str, str] = {}
-    service_of: dict[str, str] = {}
+    subsystem_of: dict[str, str] = {}
     for item_id, items in defines.items():
         if type_of(item_id) != "BLD":
             continue
         for item in items:
             parts = item.leaf.split("/")
-            # docs / service-docs / <service> / <facet> / <leaf file>
-            if len(parts) >= 5 and parts[1] == "service-docs":
-                service_of[item_id] = parts[2]
-                facet_of[item_id] = parts[3]
+            # docs / subsystem-docs / <subsystem> / plans / build-plan.md
+            if len(parts) >= 4 and parts[1] == "subsystem-docs":
+                subsystem_of[item_id] = parts[2]
+                covers_types = {type_of(m.group(1)) for m in ID_RE.finditer(item.columns.get("Covers", ""))}
+                facets = {FACET_BY_PREFIX[t] for t in covers_types if t in FACET_BY_PREFIX}
+                if len(facets) == 1:
+                    facet_of[item_id] = next(iter(facets))
+                elif len(facets) > 1 or "ARC" in covers_types:
+                    facet_of[item_id] = "integration"
+
     for item_id, items in defines.items():
-        if type_of(item_id) != "BLD" or item_id not in facet_of:
+        if type_of(item_id) != "BLD" or item_id not in facet_of or facet_of[item_id] == "integration":
             continue
         for item in items:
             for ref in ID_RE.finditer(item.columns.get("Depends on", "")):
                 other = ref.group(1)
-                if other in facet_of and service_of.get(other) == service_of.get(item_id) \
+                if other in facet_of and subsystem_of.get(other) == subsystem_of.get(item_id) \
                         and facet_of[other] != facet_of[item_id]:
                     problems.append(Problem(
-                        "DEP001", f"{item_id} ({facet_of[item_id]}) Depends on {other} ({facet_of[other]}) — dependency xuyên facet phải giải quyết ở task-plan.md (mục 13.2)", item_id))
+                        "DEP001", f"{item_id} ({facet_of[item_id]}) Depends on {other} ({facet_of[other]}) — dependency xuyên facet phải giải quyết ở task-plan.md (§12.2)", item_id))
 
 
 def check_waves(defines, problems):
@@ -490,30 +503,29 @@ def check_waves(defines, problems):
                 dep = ref.group(1)
                 if dep in waves and waves[dep] >= waves[item_id]:
                     problems.append(Problem(
-                        "WAV002", f"{item_id} (Wave {waves[item_id]}) phải có Wave lớn hơn {dep} (Wave {waves[dep]}) (mục 14.4)", item_id))
-
-
-FACET_LEAF_SUFFIXES = {
-    "specs": ("-specs.md",),
-    "design": ("-design.md",),
-    "build-plan": ("-build-plan.md",),
-    "test-plan": ("-test-plan.md",),
-}
+                        "WAV002", f"{item_id} (Wave {waves[item_id]}) phải có Wave lớn hơn {dep} (Wave {waves[dep]}) (§13.4)", item_id))
 
 
 def check_tree_structure(leaves, problems):
-    facets: dict[tuple[str, str], list[str]] = defaultdict(list)
+    subsystems: dict[str, set[str]] = defaultdict(set)
     for leaf in leaves.values():
         parts = leaf.rel.split("/")
-        # docs / service-docs / <service> / <facet> / <leaf file>
-        if len(parts) == 5 and parts[1] == "service-docs":
-            facets[(parts[2], parts[3])].append(leaf.path.name)
-    for (service, facet), names in sorted(facets.items()):
-        for kind in FACET_REQUIRED_LEAVES:
-            if not any(n.endswith(FACET_LEAF_SUFFIXES[kind]) for n in names):
-                problems.append(Problem("STR001", f"{service}/{facet}: thiếu leaf {kind} ({FACET_LEAF_SUFFIXES[kind][0]}) (mục 13.2)"))
-        if facet != "api" and not any(n.endswith(FACET_LEAF_SUFFIXES["specs"]) for n in names):
-            problems.append(Problem("STR001", f"{service}/{facet}: thiếu leaf specs (mục 13.2; api-specs là ngoại lệ ở mục 10)"))
+        # docs / subsystem-docs / <subsystem> / <dir> / <leaf file>
+        if len(parts) == 5 and parts[1] == "subsystem-docs":
+            subsystems[parts[2]].add(f"{parts[3]}/{parts[4]}")
+    for sub, rel_files in sorted(subsystems.items()):
+        for p in ("plans/foundation-setup-plan.md", "plans/build-plan.md", "plans/test-plan.md", "plans/task-plan.md"):
+            if p not in rel_files:
+                problems.append(Problem("STR001", f"{sub}: thiếu {p} (§2)"))
+        if "srs/fr-nfr-specs.md" not in rel_files:
+            problems.append(Problem("STR001", f"{sub}: thiếu srs/fr-nfr-specs.md (§2)"))
+        if "dds/fr-nfr-design.md" not in rel_files:
+            problems.append(Problem("STR001", f"{sub}: thiếu dds/fr-nfr-design.md (§2)"))
+        for facet in ("data", "api", "ui-ux"):
+            spec = f"srs/{facet}-specs.md"
+            design = f"dds/{facet}-design.md"
+            if (spec in rel_files) != (design in rel_files):
+                problems.append(Problem("STR001", f"{sub}: thiếu cặp tương ứng cho facet '{facet}' ({spec} và {design}) (§2)"))
 
 
 def check_change_control(leaves, problems, base_ref: str | None):
@@ -539,10 +551,10 @@ def check_change_control(leaves, problems, base_ref: str | None):
         prev_front = parse_front_matter(previous) or {}
         if prev_front.get("version") == leaf.front.get("version"):
             problems.append(Problem(
-                "CHG001", f"{leaf.rel}: leaf 'Baselined' bị sửa nhưng 'version' chưa tăng (mục 14.3)"))
+                "CHG001", f"{leaf.rel}: leaf 'Baselined' bị sửa nhưng 'version' chưa tăng (§13.3)"))
         if "change request" not in previous and "change request" not in leaf.path.read_text(encoding="utf-8"):
             problems.append(Problem(
-                "CHG002", f"{leaf.rel}: leaf 'Baselined' bị sửa — cần issue change request kèm impact analysis (mục 14.3)"))
+                "CHG002", f"{leaf.rel}: leaf 'Baselined' bị sửa — cần issue change request kèm impact analysis (§13.3)"))
 
 
 # ---------------------------------------------------------------------------

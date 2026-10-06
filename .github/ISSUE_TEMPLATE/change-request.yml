@@ -1,5 +1,5 @@
 name: "Change Request (Yêu cầu Thay đổi Item Baselined)"
-description: "Đề xuất sửa đổi một item thuộc leaf đã Baselined theo sdlc-docs.md mục 14.3."
+description: "Đề xuất sửa đổi một item thuộc leaf đã Baselined theo sdlc-docs.md mục 13.3."
 title: "[CR-<ID>] <Tóm tắt yêu cầu thay đổi>"
 labels: ["change-request"]
 body:
