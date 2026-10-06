@@ -68,7 +68,7 @@
     },
     {
       "check": "ORP005",
-      "reason": "Requirement chưa có test item `Covers`; đóng theo đợt bổ sung kiểm thử của issue #35.",
+      "reason": "Requirement chưa có test item Covers; riêng API-SYS-008 (quản trị hồ sơ nhân sự) được cover bởi TST-BE-020/TST-BE-021 khi CR #32 hợp nhất (issue #32).",
       "issue": 35,
       "ids": [
         "API-SYS-003",
@@ -105,7 +105,8 @@
         "UI-SYS-014",
         "UI-SYS-015",
         "UI-SYS-016",
-        "UI-WEB-004"
+        "UI-WEB-004",
+        "API-SYS-008"
       ]
     },
     {
