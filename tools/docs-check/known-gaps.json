@@ -13,23 +13,6 @@
     },
     {
       "check": "ORP004",
-      "reason": "Item mới của Change Request #32 — chờ PR design/plan tầng dịch vụ bổ sung liên kết (issue #32).",
-      "issue": 32,
-      "ids": [
-        "API-BE-017",
-        "API-BE-018",
-        "API-BE-019",
-        "API-BE-020",
-        "API-BE-021",
-        "API-BE-022",
-        "DATA-BE-016",
-        "FR-BE-010",
-        "FR-BE-011",
-        "FR-BE-012"
-      ]
-    },
-    {
-      "check": "ORP004",
       "reason": "Requirement chưa có design element `Realizes`; đóng theo đợt bổ sung design của issue #35.",
       "issue": 35,
       "ids": [
@@ -68,7 +51,7 @@
     },
     {
       "check": "ORP005",
-      "reason": "Requirement chưa có test item Covers; riêng API-SYS-008 (quản trị hồ sơ nhân sự) được cover bởi TST-BE-020/TST-BE-021 khi CR #32 hợp nhất (issue #32).",
+      "reason": "Requirement chưa có test item `Covers`; đóng theo đợt bổ sung kiểm thử của issue #35.",
       "issue": 35,
       "ids": [
         "API-SYS-003",
@@ -105,8 +88,7 @@
         "UI-SYS-014",
         "UI-SYS-015",
         "UI-SYS-016",
-        "UI-WEB-004",
-        "API-SYS-008"
+        "UI-WEB-004"
       ]
     },
     {
@@ -154,35 +136,6 @@
         "FND-WEB-002",
         "FND-WEB-003",
         "FND-WEB-004"
-      ]
-    },
-    {
-      "check": "REF001",
-      "reason": "Tham chiếu tới item đang nằm trong các PR mở của Change Request #32; tự hết khi hợp nhất đủ chuỗi spec → design.",
-      "issue": 32,
-      "ids": [
-        "API-SYS-021",
-        "API-SYS-022",
-        "API-SYS-023",
-        "BLD-BE-018",
-        "BLD-BE-021",
-        "BLD-BE-022",
-        "DATA-SYS-016",
-        "FR-SYS-017"
-      ]
-    },
-    {
-      "check": "WAV002",
-      "reason": "`task-plan.md` của Backend vi phạm quy tắc Wave (mục 14.4): wave của task phải lớn hơn wave của mọi task phụ thuộc (issue #36).",
-      "issue": 36,
-      "ids": [
-        "TASK-BE-002",
-        "TASK-BE-003",
-        "TASK-BE-004",
-        "TASK-BE-005",
-        "TASK-BE-007",
-        "TASK-BE-008",
-        "TASK-BE-014"
       ]
     }
   ]
