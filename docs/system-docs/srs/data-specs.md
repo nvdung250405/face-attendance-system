@@ -35,6 +35,7 @@ owner: Data Architect
 | `DATA-SYS-010` | Chuẩn hóa Vector sinh trắc học: mảng đặc trưng khuôn mặt phải có đúng 512 phần tử float32 và đạt chuẩn độ dài hình học $L_2\text{ Norm} = 1.0 \pm 10^{-4}$. | Constraint | Must | `PD-006`, `INF-004` | Từ chối nạp mẫu khuôn mặt vào hệ thống nếu sai kích thước 512D hoặc chưa chuẩn hóa độ dài hình học. | Approved |
 | `DATA-SYS-011` | Hiệu lực mã kích hoạt OTP: mã OTP chỉ sử dụng đúng 1 lần (`is_used = true`) và tự động hết hiệu lực sau đúng 48 giờ kể từ khi sinh mã. | Constraint | Must | `PD-003`, `INF-008` | Từ chối kích hoạt và trả về mã lỗi thích hợp khi OTP đã dùng hoặc quá hạn 48 giờ. | Approved |
 | `DATA-SYS-012` | Bảo vệ mã PIN chống Brute-force: khóa tài khoản điểm danh bằng PIN 15 phút nếu nhập sai mã PIN quá 5 lần liên tiếp. | Constraint | Must | `PD-008`, `INF-012` | Bàn phím Kiosk từ chối thao tác nhập PIN và hiển thị thời gian đếm lùi mở khóa cho nhân viên. | Approved |
+| `DATA-SYS-017` | Không chồng lấn lịch phân ca: với mỗi nhân viên, các khoảng hiệu lực `[effective_from, effective_to]` trong `employee_shifts` không được giao nhau (`effective_to` NULL nghĩa là vô hạn). | Constraint | Must | `DATA-SYS-003`, `FR-SYS-018` | Mọi thao tác tạo/sửa phân ca kiểm tra giao khoảng trước khi ghi; vi phạm trả HTTP 409 và không ghi bản ghi; phân ca liền kề (`effective_to` = `effective_from` kế tiếp) được chấp nhận. | Approved |
 
 ---
 
