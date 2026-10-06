@@ -16,6 +16,7 @@ Tài liệu này xác lập cấu trúc cây tài liệu thực tế, danh mục
 ```text
 docs/
 │
+├── README.md                                    # Cẩm nang giới thiệu & tra cứu tổng thể hệ thống tài liệu.
 ├── meta.md                                      # Metadata và quy ước quản trị của toàn bộ bộ tài liệu.
 ├── sdlc-docs.md                                 # Framework chuẩn khung hướng dẫn SDLC.
 │
@@ -356,7 +357,7 @@ Các quyết định dưới đây phải được chốt **tại leaf sở hữ
 | 2 | Thuật toán băm OTP: HMAC-SHA-256 kèm pepper (tra cứu được theo index) hay BCrypt | `subsystem-docs/backend-service/dds/data-design.md` và `subsystem-docs/backend-service/dds/fr-nfr-design.md` | Chưa chốt |
 | 3 | Ngưỡng cosine của bộ so khớp (0.40 / 0.50 / 0.65) và chỉ số liveness (APCER mục tiêu, mức chặn tuyên bố) | `system-docs/srs/fr-nfr-specs.md` (`NFR-KSK-001`, `NFR-SYS-005`) | Chưa chốt |
 | 4 | Chu kỳ nhận diện chuẩn: 350 ms cho pipeline và 1,2 s cho face-to-dashboard (bỏ các mức 100 ms và 1,5 s) | `system-docs/srs/fr-nfr-specs.md` (`NFR-SYS-003`) và `system-docs/info.md` (`INF-006`) | Chưa chốt |
-| 5 | Chỉ số 1:N dùng FPIR/FNIR thay TAR@FAR, FAR mục tiêu và quy mô gallery (1.000 hay 10.000) | `system-docs/pi.md` (`KPI-01`) | Chưa chốt |
+| 5 | Chỉ số 1:N dùng FPIR/FNIR thay TAR@FAR, FAR mục tiêu và quy mô gallery (1.000 hay 10.000) | `system-docs/pi.md` (§1.2 Tiêu chí 1) | Chưa chốt |
 | 6 | Endpoint và topic WebSocket chuẩn (raw `/ws` cho Kiosk, SockJS cho Web), tên topic, cơ chế xác thực kênh | `system-docs/dds/dds.md` và `subsystem-docs/backend-service/dds/api-design.md` | Chưa chốt |
 | 7 | Mô hình dữ liệu chuẩn: Flyway là nguồn tên bảng/cột; có thêm cột `auth_tag`, `key_id`, `user_agent`, `attempt_count` và bảng consent riêng hay không | `system-docs/dds/dds.md` và `subsystem-docs/backend-service/dds/data-design.md` | Chưa chốt |
 | 8 | Mục tiêu availability và RTO thực tế; phạm vi runbook backup/restore | `system-docs/plans/deploy-plan.md` | Chưa chốt |

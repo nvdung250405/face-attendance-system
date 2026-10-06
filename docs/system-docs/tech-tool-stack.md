@@ -26,7 +26,7 @@ Xác lập danh mục chuẩn hóa về công nghệ nền tảng (Tech Stack) v
 | `STK-009` | Local Storage       | SQLite 3               |      3.47+      |   `KSK`    | Hàng đợi lưu trữ ngoại tuyến bền vững khi mất mạng (WAL)         | `PD-004`  | `STK-001`            | Adopted |
 | `STK-010` | Backend Runtime     | Java LTS (Temurin)     |     21 LTS      |    `BE`    | Môi trường thực thi máy chủ doanh nghiệp đa luồng                | `PD-001`  | —                    | Adopted |
 | `STK-011` | Backend Framework   | Spring Boot            |     4.1.x       |    `BE`    | Khung phát triển phân hệ Backend và REST API                     | `PD-001`  | `STK-010`            | Adopted |
-| `STK-012` | Enterprise DB       | PostgreSQL             |    17+ / 16+    |    `BE`    | Cơ sở dữ liệu quan hệ trung tâm, lưu trữ vector mã hóa BYTEA     | `PD-001`  | —                    | Adopted |
+| `STK-012` | Enterprise DB       | PostgreSQL             |     16 LTS      |    `BE`    | Cơ sở dữ liệu quan hệ trung tâm, lưu trữ vector mã hóa BYTEA     | `PD-001`  | —                    | Adopted |
 | `STK-013` | Backend Cache       | Caffeine Cache         |      3.1+       |    `BE`    | Bộ đệm RAM quản lý cửa sổ Cooldown chống quét trùng 120s         | `PD-001`  | `STK-011`            | Adopted |
 | `STK-014` | Realtime Protocol   | Spring WebSocket STOMP |      4.1+       |   `SYS`    | Kênh truyền thông điệp đẩy 2 chiều thời gian thực                | `PD-006`  | `STK-011`            | Adopted |
 | `STK-015` | Biometric Crypto    | AES-256-GCM            | NIST SP 800-38D |    `BE`    | Mã hóa đối xứng vector sinh trắc học ở trạng thái tĩnh           | `PD-005`  | `STK-011`            | Adopted |
@@ -38,6 +38,9 @@ Xác lập danh mục chuẩn hóa về công nghệ nền tảng (Tech Stack) v
 | `STK-031` | Web HTTP Client     | Axios                  |     1.20+       |   `WEB`    | Khách hàng HTTP gọi REST API kèm mutex refresh token interceptor | `PD-001`  | `STK-016`, `STK-017` | Adopted |
 | `STK-032` | Web State Cache     | TanStack Query         |       5.x       |   `WEB`    | Quản lý bộ đệm trạng thái máy chủ và tự động retry kết nối       | `PD-001`  | `STK-016`, `STK-017` | Adopted |
 | `STK-033` | Web Realtime Client | @stomp/stompjs         |      7.3+       |   `WEB`    | Khách hàng STOMP nhận thông báo điểm danh Live Dashboard         | `PD-006`  | `STK-016`, `STK-017` | Adopted |
+| `STK-034` | Secret Management   | Environment Secret     |     Standard    |   `SYS`    | Quản lý tập trung biến môi trường và bảo vệ Master Key AES-256   | `PD-005`  | —                    | Adopted |
+| `STK-035` | Observability       | Spring Boot Actuator   |      4.1.x      |    `BE`    | Thu thập số liệu đo lường hiệu năng và giám sát sức khỏe dịch vụ  | `PD-001`  | `STK-011`            | Adopted |
+| `STK-036` | Reverse Proxy / TLS | Nginx / Caddy          |      Stable     |   `SYS`    | Đầu cuối TLS 1.3 và định tuyến reverse proxy cho API và STOMP    | `PD-001`  | —                    | Adopted |
 
 ---
 
@@ -47,7 +50,7 @@ Xác lập danh mục chuẩn hóa về công nghệ nền tảng (Tech Stack) v
 | :-------- | :----------------- | :----------------------- | :------: | :--------: | :---------------------------------------------------------- | :------: | :-------- | :-----: |
 | `STK-020` | IDE Duy nhất       | Visual Studio Code       |  1.98+   |   `SYS`    | Môi trường soạn thảo mã nguồn, biên dịch và gỡ lỗi duy nhất | `PD-001` | —         | Adopted |
 | `STK-021` | Version Control    | Git                      |  2.54+   |   `SYS`    | Quản lý phiên bản mã nguồn phân tán theo nhánh              | `PD-001` | —         | Adopted |
-| `STK-022` | Container Engine   | Docker Desktop / Compose | 29+ / v2 |   `SYS`    | Điều phối container CSDL PostgreSQL và môi trường kiểm thử  | `PD-001` | —         | Adopted |
+| `STK-022` | Container Engine   | Docker Engine & Compose  | 27+ / v2 |   `SYS`    | Điều phối container CSDL PostgreSQL và môi trường kiểm thử  | `PD-001` | —         | Adopted |
 | `STK-023` | Java Build Tool    | Apache Maven             | 3.9.16+  |    `BE`    | Quản lý phụ thuộc và đóng gói phân hệ Backend (.jar)        | `PD-001` | `STK-010` | Adopted |
 | `STK-024` | Desktop Packaging  | PyInstaller              |  6.11+   |   `KSK`    | Đóng gói phân hệ Kiosk thành tệp thực thi độc lập (.exe)    | `PD-002` | `STK-001` | Adopted |
 | `STK-025` | Testing (Python)   | pytest & pytest-cov      |   9.1+   |   `KSK`    | Kiểm thử đơn vị thuật toán AI, CSDL WAL và đo độ bao phủ    | `PD-001` | `STK-001` | Adopted |
@@ -63,3 +66,4 @@ Xác lập danh mục chuẩn hóa về công nghệ nền tảng (Tech Stack) v
 - **Tương thích Môi trường Python 3.14**: Thư viện `onnxruntime` và `PySide6` phải đảm bảo tương thích ổn định với môi trường Python 3.14 trên Windows 11. Các ca kiểm thử thực tế đã xác nhận việc nạp mô hình và suy luận diễn ra bình thường.
 - **Chi phí Phần mềm Bản quyền = 0 VNĐ**: 100% các công cụ, thư viện và công nghệ trong danh mục đều sử dụng giấy phép mã nguồn mở (MIT, Apache 2.0, LGPL, BSD) hoặc phiên bản Community miễn phí.
 - **Khả năng Mở rộng Chỉ mục Vector**: Khi quy mô nhân sự mở rộng vượt 10,000 danh tính trong tương lai, ngăn xếp công nghệ sẽ được mở rộng bổ sung thư viện chỉ mục vector xấp xỉ (`Faiss` hoặc `HNSW`) theo phân tích tại `GAP-002`.
+- **Phụ thuộc Xuyên Scope (`SYS` $\rightarrow$ `BE`)**: Mục `STK-014` (Realtime Protocol STOMP) có phạm vi toàn hệ thống (`SYS`) nhưng `Requires: STK-011` thuộc `BE` do máy chủ Backend đóng vai trò WebSocket Message Broker trung tâm phát sóng sự kiện điểm danh cho toàn hệ thống.
