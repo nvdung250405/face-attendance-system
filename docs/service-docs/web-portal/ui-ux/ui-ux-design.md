@@ -83,7 +83,7 @@ graph TD
 | `UXD-WEB-005` | Khung Lịch biểu Cá nhân (Calendar Grid) | Lưới 7 cột theo các thứ trong tuần; mỗi ô ngày hiển thị giờ vào/ra và huy hiệu màu tương ứng; nhấp chuột để mở Drawer chi tiết bên phải. | `UI-WEB-005` | `ARC-003` | `DD-SYS-003` | Accepted |
 | `UXD-WEB-006` | Bố cục Màn hình Quản trị Danh mục (Nhân sự, Ca, Kỳ công) | Bố cục dạng bảng dữ liệu có cột hành động dính bên phải, Drawer form nhập liệu thay vì modal toàn màn hình, và vùng cảnh báo nghiệp vụ (trùng mã, chồng ca, kỳ đã chốt) hiển thị ngay trên đầu bảng. | `UI-WEB-006`, `UI-WEB-007`, `UI-WEB-009` | `ARC-003` | `DD-SYS-001` | Accepted |
 | `UXD-WEB-007` | Bố cục Trung tâm Thông báo & Màn hình Tuân thủ Chỉ đọc | Panel trượt bên phải cho thông báo (nhóm theo ngày, badge chưa đọc), bố cục tra cứu chỉ đọc có bộ lọc thời gian cùng dấu hiệu "chỉ đọc" rõ ràng cho role `DPO`, và bố cục màn hình rút Consent với khối cảnh báo hệ quả cùng bước xác nhận hai lần. | `UI-WEB-011`, `UI-WEB-012`, `UI-WEB-010` | `ARC-003` | `DD-SYS-004` | Accepted |
-| `UXD-WEB-008` | Luồng Đổi Mật khẩu Bắt buộc (Blocking Flow) | Màn hình toàn trang không có sidebar/điều hướng, hiển thị lý do bắt buộc đổi mật khẩu, chỉ số độ mạnh mật khẩu và chỉ mở khoá giao diện sau khi API trả thành công. | `UI-WEB-008` | `ARC-003` | `DD-SYS-001` | Accepted |
+| `UXD-WEB-008` | Luồng Đổi Mật khẩu (Tự nguyện) | Màn hình đổi mật khẩu mở từ menu người dùng, hiển thị chỉ số độ mạnh mật khẩu và cảnh báo các phiên cũ sẽ bị thu hồi sau khi đổi thành công; không chặn điều hướng. | `UI-WEB-008` | `ARC-003` | `DD-SYS-001` | Accepted |
 
 ---
 
