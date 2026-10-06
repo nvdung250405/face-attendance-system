@@ -15,6 +15,7 @@ owner: Database Architect & Backend Lead
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | `DTD-BE-001` | Lược đồ CSDL Quan hệ & DDL 3NF | Lược đồ 8 bảng CSDL PostgreSQL 16 chuẩn 3NF kèm quan hệ khóa ngoại, ràng buộc toàn vẹn, cờ audit và kiểu dữ liệu tối ưu. | `STK-013` | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-004`, `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-008` | `DD-SYS-003`, `DD-BE-005`, `DD-BE-006` | Accepted |
 | `DTD-BE-002` | Chiến lược Chỉ mục Hiệu năng B-Tree | Bộ chỉ mục B-tree tối ưu hóa truy vấn tra cứu điểm danh theo nhân viên, mốc giờ, kiosk, mã ca kíp và bảng kiểm toán. | `STK-013` | `DATA-BE-009`, `DATA-BE-014`, `NFR-BE-001` | `DD-SYS-001` | Accepted |
+| `DTD-BE-007` | Cột Trạng thái Vòng đời Thông tin Xác thực | Bổ sung cột `must_change_password BOOLEAN NOT NULL DEFAULT FALSE` vào bảng `users` bằng kịch bản tăng dần `V2__add_credential_lifecycle.sql` (không sửa `V1` đã áp dụng); tận dụng các cột sẵn có `password_hash`, `pin_hash`, `pin_locked_until`; không cần chỉ mục mới vì cờ chỉ được đọc theo khóa chính. | `STK-013` | `DATA-BE-016`, `DATA-BE-012` | `DD-BE-013` | Accepted |
 
 ### 1.2. Storage & Access (Lưu trữ, Caching & Quản lý Kết nối)
 
