@@ -23,6 +23,7 @@ owner: Backend Lead
 | `BLD-BE-002` | Lập trình Lớp JPA Entities & Enums | Tạo các Java class `@Entity` tương ứng kèm định dạng Enum cho `Role`, `EmployeeStatus`, `PunchType`, `VerificationMethod`, `AttendanceStatus`. | `DTD-BE-001` | `BLD-BE-001` | Mapping ORM Hibernate chuẩn xác; sinh đúng quan hệ khóa ngoại và ràng buộc duy nhất; build Maven pass 100%. | Done |
 | `BLD-BE-003` | Lập trình Spring Data JPA Repositories | Xây dựng các interface Repository với phương thức truy vấn tối ưu, hỗ trợ phân trang `Pageable`, tìm kiếm đa tiêu chí và native batch insert. | `DTD-BE-001`, `DTD-BE-002` | `BLD-BE-002` | Các truy vấn điểm danh theo ngày và người dùng phản hồi $< 15\text{ ms}$; batch insert 50 bản ghi $< 50\text{ ms}$. | Done |
 | `BLD-BE-004` | Cấu hình Caffeine Cache & Cooldown Manager | Cấu hình Spring Cache với Caffeine, thiết lập TTL 120s cho key `cooldown:punch:{userId}:{date}`. | `DTD-BE-003` | `FND-BE-002` | Quẹt liên tiếp trong 120s được chặn tức thời từ bộ nhớ RAM không cần chạm CSDL; giảm $95\%$ áp lực truy vấn. | Done |
+| `BLD-BE-018` | Viết Kịch bản Migration Flyway V2 & Ánh xạ Trạng thái Xác thực | Tạo `V2__add_credential_lifecycle.sql` bổ sung cột `must_change_password` cho bảng `users`; cập nhật entity `User` và repository tương ứng. | `DTD-BE-007` | `BLD-BE-001` | Migration V2 chạy thành công trên CSDL đang có dữ liệu mà không mất bản ghi; tài khoản mới có cờ `TRUE`; cờ tắt sau khi đổi mật khẩu thành công. | Planned |
 
 ---
 
