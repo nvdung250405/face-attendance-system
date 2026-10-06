@@ -25,7 +25,7 @@ Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS) vận hành th
 | ID | Tác nhân (Actor Name) | Vai trò & Mục đích Tương tác trong Hệ thống | Quyền hạn Hệ thống |
 | :--- | :--- | :--- | :--- |
 | `ACT-001` | Nhân viên (Employee) | Điểm danh hàng ngày qua khuôn mặt/mã PIN tại trạm Kiosk; tự đăng ký mẫu mặt qua OTP; ký cam kết Informed Consent điện tử và gửi đơn giải trình công trên Cổng Web. | Role `EMPLOYEE` |
-| `ACT-002` | Chuyên viên Nhân sự (HR Specialist) | Quản lý danh sách nhân sự, cấu hình ca kíp làm việc, theo dõi sĩ số trực tiếp đầu giờ trên Live Dashboard, duyệt đơn giải trình công và kết xuất báo cáo bảng công. | Role `HR` |
+| `ACT-002` | Chuyên viên Nhân sự (HR Specialist) | Quản lý danh sách nhân sự, cấu hình ca kíp làm việc, theo dõi sĩ số trực tiếp đầu giờ trên Live Dashboard, duyệt đơn giải trình công và kết xuất báo cáo bảng công. | Role `HR_MANAGER` |
 | `ACT-003` | Quản trị viên Hệ thống (System Admin / nvdung) | Cấu hình tham số vận hành, giám sát nhật ký audit log, quản lý tài khoản người dùng, giám sát kết nối mạng giữa Kiosk và Backend, sao lưu/phục hồi CSDL. | Role `ADMIN` |
 | `ACT-004` | Cán bộ Bảo vệ Dữ liệu (DPO Reference) | Vai trò tham chiếu kiểm soát việc thực thi chính sách bảo vệ dữ liệu cá nhân theo Luật 2025, kiểm tra chữ ký thỏa thuận Consent và lịch trình tiêu hủy dữ liệu 20 ngày. | Audit Read-only |
 

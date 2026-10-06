@@ -102,7 +102,7 @@ owner: Data Architect & Backend Lead
 | `verification_method` | `VARCHAR(32)` | NOT NULL | Phương thức xác thực: `VERIFICATION_FACE`, `VERIFICATION_PIN`, `MANUAL_HR`. |
 | `confidence_score` | `NUMERIC(5, 4)` | NULLABLE | Điểm số tương đồng sinh trắc ($0.0000 - 1.0000$). |
 | `kiosk_id` | `VARCHAR(64)` | NOT NULL | Mã định danh trạm Kiosk thực hiện (Ví dụ: `KIOSK-HN-01`). |
-| `status` | `VARCHAR(32)` | NOT NULL | Trạng thái công: `ON_TIME`, `LATE`, `EARLY_LEAVE`, `OVERTIME`. |
+| `status` | `VARCHAR(32)` | NOT NULL | Trạng thái công: `ON_TIME`, `LATE`, `EARLY_LEAVE`, `OVERTIME`. `OVERTIME` được giữ cho giai đoạn sau và **không được sinh** trong phạm vi MVP (xem Assumptions của FR/NFR Specs hệ thống, issue #42). |
 | `late_minutes` | `INT` | NOT NULL, Default 0 | Số phút đi muộn tính toán được sau khi trừ thời gian ân hạn. |
 | `is_offline_sync` | `BOOLEAN` | NOT NULL, Default FALSE| Đánh dấu bản ghi được đồng bộ bù từ hàng đợi ngoại tuyến SQLite. |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default NOW() | Thời điểm ghi nhận bản ghi vào CSDL máy chủ. |
