@@ -23,6 +23,7 @@ owner: Data Architect
 | `DTD-SYS-010` | Bảng SQLite WAL `offline_punches` | Bảng hàng đợi ngoại tuyến tại trạm Kiosk; PK `id` AUTOINCREMENT, `employee_id`, `punch_timestamp`, `punch_type`, `verification_method`, `kiosk_id`, `is_synced`. | `STK-009` | `DATA-SYS-004`, `FR-SYS-006` | `DD-SYS-002` | Accepted |
 | `DTD-SYS-011` | Cấu trúc Ma trận Bộ nhớ RAM (`GalleryMatrix`) | Ma trận $\mathbf{M} \in \mathbb{R}^{N \times 512}$ `float32` nạp trong RAM Kiosk kèm mảng đối chiếu `gallery_index_map` phục vụ so khớp Cosine $< 2\text{ ms}$. | `STK-008` | `DATA-SYS-010`, `FR-SYS-003` | `DD-SYS-001` | Accepted |
 | `DTD-SYS-017` | Cột Trạng thái Thông tin Xác thực trên bảng hồ sơ nhân sự | Bổ sung cột `must_change_password BOOLEAN NOT NULL DEFAULT FALSE` vào bảng hồ sơ nhân sự của Backend (theo SSOT migration: bảng `users`) bằng kịch bản `V2__add_credential_lifecycle.sql`; tận dụng các cột đã có `password_hash`, `pin_hash`, `pin_locked_until`. | `STK-012` | `DATA-SYS-016`, `DATA-SYS-012` | `DD-SYS-017` | Accepted |
+| `DTD-SYS-018` | Ràng buộc & Chỉ mục Lịch Phân ca | Bổ sung chỉ mục `(user_id, effective_from, effective_to)` cho `employee_shifts` và thực thi quy tắc không chồng lấn ở tầng nghiệp vụ (thay vì `EXCLUDE USING gist` cần extension `btree_gist`, không chạy trên profile kiểm thử H2); `shifts.shift_code` là duy nhất và `is_active` cho phép vô hiệu hóa ca. | `STK-012` | `DATA-SYS-017`, `DATA-SYS-003`, `DATA-SYS-002` | `DD-SYS-018` | Accepted |
 
 ---
 
