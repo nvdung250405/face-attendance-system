@@ -18,7 +18,7 @@ Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa c�
 
 | ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
-| `APC-BE-009` | Chiến lược Thực thi theo Wave & Quản lý Phụ thuộc Đồ thị DAG | Phân rã toàn bộ 22 hạng mục thi công `FND-` và `BLD-` của Backend thành 27 `TASK-` độc lập, giải quyết phụ thuộc xuyên facet qua đồ thị DAG 11 Wave từ Foundation đến Service Integration. | Triển khai theo mô hình Big-bang integration hoặc phân công tự do không theo thứ tự DAG (bị loại vì nguy cơ nghẽn luồng và khó cô lập lỗi). | Mọi dependency xuyên facet bắt buộc phải giải quyết tại Task Plan; các task trong cùng một Wave có thể triển khai song song độc lập; mỗi task có tiêu chí `Done when` rõ ràng. | `ARC-002`, `STK-011` | Accepted |
+| `APC-BE-009` | Chiến lược Thực thi theo Wave & Quản lý Phụ thuộc Đồ thị DAG | Phân rã toàn bộ 34 hạng mục thi công `FND-` và `BLD-` của Backend thành 34 `TASK-` độc lập, giải quyết phụ thuộc xuyên facet qua đồ thị DAG 11 Wave từ Foundation đến Service Integration. | Triển khai theo mô hình Big-bang integration hoặc phân công tự do không theo thứ tự DAG (bị loại vì nguy cơ nghẽn luồng và khó cô lập lỗi). | Mọi dependency xuyên facet bắt buộc phải giải quyết tại Task Plan; các task trong cùng một Wave có thể triển khai song song độc lập; mỗi task có tiêu chí `Done when` rõ ràng. | `ARC-002`, `STK-011` | Accepted |
 
 ---
 
@@ -53,6 +53,13 @@ Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa c�
 | `TASK-BE-025` | Lập trình Dịch vụ Mã PIN & Thẩm định PIN | Xây dựng `PinService` (thiết lập/đổi mã PIN 6 số, băm một chiều) và luồng thẩm định PIN cho trạm Kiosk kèm khóa 15 phút. | `BLD-BE-020` | `TASK-BE-023` | Wave 7 | PIN đúng trả về định danh nhân viên; PIN sai trả 401 `PIN_INVALID`; sai 5 lần liên tiếp trả 423 `PIN_LOCKED`; không tạo bản ghi điểm danh khi thẩm định thất bại. | Ready |
 | `TASK-BE-026` | Lập trình Admin Employee REST Controller | Xây dựng `AdminEmployeeController` cho ba endpoint tạo/cập nhật/vô hiệu hóa nhân sự theo hợp đồng Mục 4.12 của API Design. | `BLD-BE-021` | `TASK-BE-024`, `TASK-BE-010` | Wave 9 | Ba endpoint trả đúng mã 201/200 và mã lỗi 409/403/400; phân quyền `HR_MANAGER`/`ADMIN` chính xác; mọi thay đổi sinh audit log. | Ready |
 | `TASK-BE-027` | Lập trình Auth Change-Password & PIN Controllers | Xây dựng `AuthController.changePassword`, `EmployeePinController` và `KioskPinController` (`/api/v1/kiosk/verify-pin`) kèm ba mã lỗi mới. | `BLD-BE-022` | `TASK-BE-024`, `TASK-BE-025`, `TASK-BE-010` | Wave 9 | Đổi mật khẩu xóa cờ buộc đổi; thiết lập/đổi PIN trả `hasPin`; `verify-pin` trả 200/401/423 đúng hợp đồng; Kiosk không ghi điểm danh khi thẩm định thất bại. | Ready |
+| `TASK-BE-028` | Lập trình Migration V3, Bảng Đơn Giải trình & Chỉ mục Tra cứu | Viết `V3__add_excuse_requests_and_kiosk_lifecycle.sql` (bảng `excuse_requests`, chỉ mục phân ca, chỉ mục audit/Consent, chỉ mục trạng thái trạm) và cập nhật entity/repository tương ứng. | `BLD-BE-023` | `TASK-BE-007` | Wave 6 | Migration V3 chạy thành công trên CSDL đã có `V1`/`V2` mà không mất bản ghi; bảng và chỉ mục đúng lược đồ; không có cột lưu Secret Token dạng văn bản rõ. | Ready |
+| `TASK-BE-029` | Lập trình Dịch vụ Quản lý Ca kíp & Phân ca | Xây dựng `ShiftManagementService` (CRUD ca, phân/gỡ phân ca, kiểm tra chồng lấn có khóa theo nhân viên) và tích hợp tra cứu ca hiệu lực vào động cơ điểm danh. | `BLD-BE-024` | `TASK-BE-028`, `TASK-BE-008` | Wave 7 | Phân ca chồng khoảng trả 409 và không ghi bản ghi; vô hiệu hóa ca đang được phân trả 409; động cơ điểm danh tính `late_minutes` theo ca hiệu lực và trả `ANOMALOUS` khi chưa phân ca. | Ready |
+| `TASK-BE-030` | Lập trình Dịch vụ Xử lý Đơn Giải trình Công | Xây dựng `ExcuseRequestService`: nộp đơn cho bản ghi của chính mình (30 ngày gần nhất), HR duyệt/từ chối và điều chỉnh `attendance_logs` trong cùng giao dịch kèm audit. | `BLD-BE-025` | `TASK-BE-028`, `TASK-BE-008` | Wave 7 | Đơn khởi tạo `PENDING`; duyệt đơn cập nhật đúng bản ghi công và sinh đúng một bản ghi audit giá trị trước/sau; từ chối bắt buộc có lý do; đơn đã xử lý trả 409. | Ready |
+| `TASK-BE-031` | Lập trình Dịch vụ Tra cứu Tuân thủ & Quản lý Trạm Kiosk | Xây dựng `AuditQueryService` (truy vấn chỉ đọc `audit_logs`, Consent, lịch trình tiêu hủy) và `KioskAdminService` (đăng ký trạm, sinh/đổi token băm một chiều, vô hiệu hóa, cập nhật `last_ping_at`). | `BLD-BE-026` | `TASK-BE-008`, `TASK-BE-011` | Wave 8 | Tra cứu audit/Consent chỉ đọc, role `DPO` nhận 403 ở mọi endpoint ghi; Secret Token chỉ trả về một lần và token cũ vô hiệu hóa ngay; trạm `INACTIVE` bị từ chối xác thực. | Ready |
+| `TASK-BE-032` | Lập trình Shift & Assignment REST Controllers | Xây dựng `ShiftController` và `EmployeeShiftController` theo hợp đồng `APD-BE-013`/`APD-BE-014`. | `BLD-BE-027` | `TASK-BE-029`, `TASK-BE-010` | Wave 8 | Ba nhóm endpoint trả đúng 201/200/204 và mã lỗi 400/409; phân quyền `HR_MANAGER`/`ADMIN` chính xác; tra cứu lịch phân ca theo nhân viên và khoảng ngày hoạt động đúng. | Ready |
+| `TASK-BE-033` | Lập trình Excuse Request REST Controllers | Xây dựng `EmployeeExcuseController` và `AdminExcuseController` theo hợp đồng `APD-BE-015`/`APD-BE-016`. | `BLD-BE-028` | `TASK-BE-030`, `TASK-BE-010` | Wave 8 | Nhân viên chỉ nộp/xem được đơn của mình (404 nếu bản ghi không thuộc người gửi); HR duyệt/từ chối trả 200; từ chối thiếu lý do trả 400; đơn đã xử lý trả 409. | Ready |
+| `TASK-BE-034` | Lập trình Compliance, Kiosk Admin & Export Controllers | Xây dựng `AuditLogController`, `DpoComplianceController`, `KioskAdminController` và `ReportExportController`. | `BLD-BE-029` | `TASK-BE-031`, `TASK-BE-010` | Wave 9 | Tra cứu audit/Consent đúng phân quyền `ADMIN`/`DPO`; đăng ký/đổi token trạm trả token đúng một lần; file `.xlsx` escape ký tự `=`, `+`, `-`, `@` và kết xuất 1,000 nhân sự trong $\le 3\text{ giây}$. | Ready |
 
 ---
 
@@ -66,7 +73,8 @@ TASK-BE-001 (Toolchain)
     ├── TASK-BE-002 (Spring Boot Skeleton)
     │       ├── TASK-BE-003 (DataSource/Flyway) ──→ TASK-BE-006 (DDL 8 Bảng) ──→ TASK-BE-007 (Entities)
     │       │                                                                        ├── TASK-BE-008 (Repositories)
-    │       │                                                                        └── TASK-BE-023 (Migration V2 Credential State)
+    │       │                                                                        ├── TASK-BE-023 (Migration V2 Credential State)
+    │       │                                                                        └── TASK-BE-028 (Migration V3 Excuse/Kiosk/Indexes)
     │       ├── TASK-BE-004 (Security Base)     ──→ TASK-BE-011 (JWT Auth Filter)
     │       ├── TASK-BE-005 (STOMP Config)      ──→ TASK-BE-016 (Broadcaster) ──→ TASK-BE-021 (WS Interceptor)
     │       ├── TASK-BE-009 (Cache Cooldown)    ──→ TASK-BE-013 (Attendance Engine)
@@ -81,6 +89,12 @@ TASK-BE-023 (Credential Schema)  ──→ TASK-BE-024 (Account & Password Lifec
                                  └──→ TASK-BE-025 (PIN Service & Verification)
 TASK-BE-024 + TASK-BE-010        ──→ TASK-BE-026 (Admin Employee Controller)
 TASK-BE-024 + TASK-BE-025 + TASK-BE-010 ──→ TASK-BE-027 (Change-Password & PIN Controllers)
+TASK-BE-028 (V3 Schema) + TASK-BE-008 ──→ TASK-BE-029 (Shift & Assignment Service)
+TASK-BE-028 + TASK-BE-008        ──→ TASK-BE-030 (Excuse Request Service)
+TASK-BE-008 + TASK-BE-011        ──→ TASK-BE-031 (Compliance Query & Kiosk Admin Services)
+TASK-BE-029 + TASK-BE-010        ──→ TASK-BE-032 (Shift & Assignment Controllers)
+TASK-BE-030 + TASK-BE-010        ──→ TASK-BE-033 (Excuse Request Controllers)
+TASK-BE-031 + TASK-BE-010        ──→ TASK-BE-034 (Compliance, Kiosk Admin & Export Controllers)
 
 [Integration Layer]
 TASK-BE-019 + TASK-BE-020 + TASK-BE-021 ──→ TASK-BE-022 (Full Integration) ──→ BUILD
@@ -97,10 +111,10 @@ Wave được tính theo quy tắc Mục 14.4: `Wave(task) = 1 + max(Wave(dep))`
 * **Wave 3: DataSource, Security Base, Cache & API Contracts**: `TASK-BE-003`, `TASK-BE-004`, `TASK-BE-005`, `TASK-BE-009`, `TASK-BE-010`.
 * **Wave 4: DDL Baseline & STOMP Broadcaster**: `TASK-BE-006`, `TASK-BE-016`.
 * **Wave 5: JPA Entities**: `TASK-BE-007`.
-* **Wave 6: Repositories & Credential Schema Migration**: `TASK-BE-008`, `TASK-BE-023`.
-* **Wave 7: JWT Filter, OTP Lifecycle, Audit Aspect & PIN Service**: `TASK-BE-011`, `TASK-BE-015`, `TASK-BE-018`, `TASK-BE-025`.
-* **Wave 8: Attendance Engine, Audit Aspect & Credential Services**: `TASK-BE-013`, `TASK-BE-017`, `TASK-BE-021`, `TASK-BE-024`.
-* **Wave 9: Batch Sync, Portal & Credential Controllers**: `TASK-BE-014`, `TASK-BE-020`, `TASK-BE-026`, `TASK-BE-027`.
+* **Wave 6: Repositories & Database Schema Migrations**: `TASK-BE-008`, `TASK-BE-023`, `TASK-BE-028`.
+* **Wave 7: JWT Filter, OTP Lifecycle, Audit Aspect, PIN & Domain Services**: `TASK-BE-011`, `TASK-BE-015`, `TASK-BE-018`, `TASK-BE-025`, `TASK-BE-029`, `TASK-BE-030`.
+* **Wave 8: Attendance Engine, Credential, Shift & Excuse Controllers**: `TASK-BE-013`, `TASK-BE-017`, `TASK-BE-021`, `TASK-BE-024`, `TASK-BE-031`, `TASK-BE-032`, `TASK-BE-033`.
+* **Wave 9: Batch Sync, Portal & Compliance Controllers**: `TASK-BE-014`, `TASK-BE-020`, `TASK-BE-026`, `TASK-BE-027`, `TASK-BE-034`.
 * **Wave 10: Kiosk REST Controller**: `TASK-BE-019`.
 * **Wave 11: Service Integration**: `TASK-BE-022`.
 
