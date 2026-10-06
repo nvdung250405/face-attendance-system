@@ -34,6 +34,8 @@ owner: Edge Vision QA Lead
 | `TST-KSK-002` | Kiểm thử Ghi Hàng đợi Ngoại tuyến & Đọc Lô 50 | Kiểm tra ghi đệm và bốc lô 50 bản ghi tuần tự khi mất mạng. | `DATA-KSK-001`, `DATA-KSK-006` | `BLD-KSK-002` | Ghi đệm bản ghi hoàn tất $< 5\text{ ms}$; lấy danh sách chưa đồng bộ trả về tối đa 50 bản ghi. | Done |
 | `TST-KSK-003` | Kiểm thử Tốc độ So khớp Ma trận RAM NumPy | Kiểm tra phép nhân ma trận Cosine Similarity 1,000 nhân sự. | `DATA-KSK-002`, `DTD-KSK-002` | `BLD-KSK-003` | Ma trận $1,000 \times 512$ thực hiện nhân vector hoàn tất $< 2\text{ ms}$; trả về đúng top 1 similarity. | Done |
 | `TST-KSK-004` | Kiểm thử Nạp Nóng Vector (Atomic Swap) | Kiểm tra cập nhật vector mới vào RAM mà không làm giật luồng camera. | `DATA-KSK-002`, `DTD-KSK-002` | `BLD-KSK-003` | Cập nhật ma trận vector mới trong RAM trong khi luồng đọc camera đang chạy không gây crash hoặc giật lag. | Done |
+| `TST-KSK-024` | Kiểm thử Cấu hình Vận hành Trạm & Bộ đệm Cooldown Biên | Nạp `KioskConfig` từ `.env` và kiểm tra bộ đệm cooldown biên 120s cùng cơ chế dọn mục sau 300s. | `DATA-KSK-003`, `DATA-KSK-004` | `BLD-KSK-019` | Nạp đúng `KIOSK_ID`, `BACKEND_URL`, `CAMERA_DEVICE_INDEX` và các ngưỡng AI; thiếu biến bắt buộc thì khởi động thất bại kèm thông báo rõ; Secret Token không xuất hiện trong log; cooldown chặn đúng 120s và tự dọn sau 300s. | Planned |
+| `TST-KSK-025` | Kiểm thử Không Lưu Ảnh Thô tại Biên | Theo dõi thư mục làm việc và bộ nhớ trong suốt chu kỳ suy luận để xác nhận không có ảnh nào được ghi đĩa. | `DATA-KSK-005` | `BLD-KSK-019` | Không tạo bất kỳ tệp ảnh nào trên đĩa; mọi `np.ndarray` khung hình/ảnh crop được giải phóng trong cùng chu kỳ (< 350 ms). | Planned |
 
 ---
 

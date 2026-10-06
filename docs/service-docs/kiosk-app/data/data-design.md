@@ -16,6 +16,7 @@ owner: Edge Vision Lead & System Architect
 | `DTD-KSK-002` | In-Memory NumPy Gallery Matrix Architecture | Thiết kế lớp `FaceGalleryManager` lưu trữ ma trận $N \times 512$ `float32`, nhân ma trận Cosine Similarity dưới 2ms cho 1,000 nhân sự. | `STK-004` | `DATA-KSK-002` | `DD-SYS-006` | Accepted |
 | `DTD-KSK-003` | Local Edge Cooldown Cache Architecture | Thiết kế bộ đệm RAM `LocalCooldownCache` lưu mốc thời gian chấm công gần nhất, áp dụng cửa sổ 120s và tự động dọn dẹp sau 300s. | `STK-001` | `DATA-KSK-003` | `DD-SYS-002` | Accepted |
 | `DTD-KSK-004` | Zero-Disk Image Memory Pipeline | Cơ chế cô lập khung hình camera và ảnh crop trong bộ nhớ RAM, giải phóng tức thì sau chu kỳ suy luận (< 350ms). | `STK-002` | `DATA-KSK-005` | `DD-SYS-003` | Accepted |
+| `DTD-KSK-005` | Cấu trúc Cấu hình Vận hành Trạm (`KioskConfig`) | Dataclass nạp từ `.env` gồm `KIOSK_ID`, `BACKEND_URL`, `KIOSK_SECRET_TOKEN`, `CAMERA_DEVICE_INDEX` và các ngưỡng AI (`similarity = 0.50`, `liveness = 0.85`, `stability = 0.60s`); kiểm tra biến bắt buộc khi khởi động và không ghi log giá trị Secret Token. | `STK-007` | `DATA-KSK-004` | `DD-SYS-001` | Accepted |
 
 ---
 
