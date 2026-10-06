@@ -55,6 +55,13 @@ public class User {
     @Column(name = "pin_locked_until")
     private Instant pinLockedUntil;
 
+    /**
+     * Cờ buộc đổi mật khẩu ở lần đăng nhập đầu tiên (DATA-BE-016, thêm bởi migration V2).
+     */
+    @Column(name = "must_change_password", nullable = false)
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
     @Column(name = "terminated_date")
     private LocalDate terminatedDate;
 
