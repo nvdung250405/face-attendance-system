@@ -1,6 +1,6 @@
 ---
 title: Thiết kế Chi tiết & Kiến trúc Hệ thống (DDS)
-version: 1.0
+version: 1.1
 status: Approved
 owner: Lead System Architect
 ---

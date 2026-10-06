@@ -1,6 +1,6 @@
 ---
 title: System Project Plan
-version: 1.0
+version: 1.1
 status: Approved
 owner: Project Manager
 ---
@@ -18,7 +18,7 @@ Kế hoạch điều phối tổng thể, phân bổ các chặng phát triển,
   * Máy chủ Backend Service (`backend-service`): Java 21 LTS, Spring Boot 4.1+, PostgreSQL 16, WebSocket STOMP, AES-256-GCM.
   * Cổng quản trị Web Portal (`web-portal`): React 19+, Vite, Tailwind CSS, TypeScript, STOMP Client.
 * **Mục tiêu kỹ thuật cốt lõi**:
-  * Chu kỳ tính toán suy luận tại biên $\le 350\text{ ms}$ (`NFR-SYS-001`), tổng thời gian face-to-dashboard $\le 1.2\text{ s}$ (`NFR-SYS-003`), ngưỡng Cosine Matcher $0.50$ (`FR-SYS-003`), ngưỡng thực thể sống liveness $S_{\text{liveness}} \ge 0.85$ (`DD-SYS-027`).
+  * Chu kỳ tính toán suy luận tại biên $\le 350\text{ ms}$ (`NFR-SYS-001`), tổng thời gian face-to-dashboard $\le 1.2\text{ s}$ (`NFR-SYS-003`), ngưỡng Cosine Matcher $0.50$ (`FR-SYS-003`), ngưỡng thực thể sống liveness chuẩn hóa $S_{\text{liveness}} \ge 0.85$ cho cả điểm danh và tự đăng ký (`DD-SYS-027`).
   * Vận hành ngoại tuyến $100\%$ khi mất mạng Internet ($\text{RPO} = 0$, `NFR-SYS-006`), tự động gửi bù đồng bộ khi khôi phục kết nối.
   * Tuân thủ quy định bảo vệ dữ liệu cá nhân theo Luật số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP (Consent, Audit log, cron tiêu hủy 20 ngày thôi việc / 7 ngày rút Consent).
 
@@ -36,13 +36,13 @@ Kế hoạch điều phối tổng thể, phân bổ các chặng phát triển,
 
 ## 3. Phases & Milestones (Phân rã Giai đoạn & Mốc Dự án)
 
-| ID | Name | Type | Includes | Depends on | Target | Estimate | Owner | Exit criteria | Status |
-| :--- | :--- | :---: | :--- | :---: | :---: | :---: | :--- | :--- | :---: |
-| `PRJ-001` | M1: Nền tảng Kiosk & Edge Vision | Milestone | `FND-SYS-001`, `FND-SYS-002`, `FND-SYS-003`, `BLD-SYS-001`, `BLD-SYS-002`, `BLD-SYS-003` | — | 2026-10-02 | 2 weeks | Lead Engineer | Chạy được app Kiosk điểm danh và lưu trữ ngoại tuyến SQLite WAL thành công | Done |
-| `PRJ-002` | M2: Máy chủ Doanh nghiệp & Bảo mật | Milestone | `FND-SYS-004`, `FND-SYS-006`, `BLD-SYS-004`, `BLD-SYS-005` | `PRJ-001` | 2026-10-16 | 2 weeks | Lead Engineer | Toàn bộ API nghiệp vụ và mã hóa sinh trắc học AES-256-GCM vượt qua test suite | In progress |
-| `PRJ-003` | M3: Cổng Web Quản trị & Thời gian thực | Milestone | `FND-SYS-005`, `BLD-SYS-006`, `BLD-SYS-007`, `BLD-SYS-008` | `PRJ-002` | 2026-10-30 | 2 weeks | Lead Engineer | Web Portal kết nối WebSocket nhận sự kiện real-time và quản trị đầy đủ dữ liệu | Planned |
-| `PRJ-004` | M4: Tích hợp Toàn trình & Đo lường KPI | Milestone | `BLD-SYS-009`, `TST-SYS-001..033` | `PRJ-003` | 2026-11-15 | 2 weeks | Lead Engineer | Điểm danh tại Kiosk đẩy dữ liệu real-time lên Web trong $\le 1.2\text{s}$; tự phục hồi khi mất mạng | Planned |
-| `PRJ-005` | M5: Tinh chỉnh, Đóng gói & Nghiệm thu | Gate | `DPL-SYS-001..005` | `PRJ-004` | 2026-11-30 | 2 weeks | Lead Engineer | Docker Compose chạy thông suốt toàn bộ hệ thống; 100% tài liệu SDLC đồng bộ | Planned |
+| ID | Name | Type | Includes | Depends on | Target | Estimate | Owner | Entry criteria | Exit criteria | Status |
+| :--- | :--- | :---: | :--- | :---: | :---: | :---: | :--- | :--- | :--- | :---: |
+| `PRJ-001` | M1: Nền tảng Kiosk & Edge Vision | Milestone | `FND-SYS-001..003`, `FND-SYS-007`, `BLD-SYS-001..003` | — | 2026-10-02 | 2 weeks | Lead Engineer | Kho monorepo sẵn sàng, tài liệu SRS/DDS v1.1 được phê duyệt | Chạy được app Kiosk điểm danh và lưu trữ ngoại tuyến SQLite WAL thành công | Done |
+| `PRJ-002` | M2: Máy chủ Doanh nghiệp, Bảo mật & Hệ thống API | Milestone | `FND-SYS-004`, `FND-SYS-006`, `BLD-SYS-004..006` | `PRJ-001` | 2026-10-16 | 2 weeks | Lead Engineer | M1 hoàn thành; Hợp đồng OpenAPI và STOMP Contract đã chốt | Toàn bộ REST API, WebSocket STOMP và mã hóa AES-256-GCM vượt qua 100% unit tests | In progress |
+| `PRJ-003` | M3: Cổng Web Quản trị, Tự phục vụ & Live Dashboard | Milestone | `FND-SYS-005`, `BLD-SYS-007`, `BLD-SYS-008` | `PRJ-002` | 2026-10-30 | 2 weeks | Lead Engineer | Backend REST API và WebSocket Broker sẵn sàng | Web Portal kết nối WebSocket nhận sự kiện real-time và quản trị đầy đủ dữ liệu | Planned |
+| `PRJ-004` | M4: Tích hợp Toàn trình, Đo lường KPI & Ma trận Kiểm thử | Milestone | `BLD-SYS-009`, `TST-SYS-001..034` | `PRJ-003` | 2026-11-15 | 2 weeks | Lead Engineer | Cả 3 phân hệ đã đóng gói sơ bộ; môi trường lab sẵn sàng | Điểm danh tại Kiosk đẩy dữ liệu real-time lên Web trong $\le 1.2\text{s}$; ngâm tải 8h $\Delta_{\text{RAM}} \le 10\%$ | Planned |
+| `PRJ-005` | M5: Đóng gói Phát hành, Nghiệm thu & Triển khai | Gate | `DPL-SYS-001..006` | `PRJ-004` | 2026-11-30 | 2 weeks | Lead Engineer | Toàn bộ 34 ca kiểm thử pass; không còn lỗi P0/P1 | Docker Compose chạy thông suốt toàn bộ hệ thống; Smoke Check $\le 1.2\text{ s}$; 100% tài liệu SDLC đồng bộ | Planned |
 
 ---
 
@@ -72,3 +72,5 @@ Kế hoạch điều phối tổng thể, phân bổ các chặng phát triển,
 
 * **Ước lượng Nguồn lực Thực tế**: Kế hoạch tiến độ (Estimate) được xây dựng dựa trên năng lực solo developer với thời lượng 20–25 giờ/tuần; các mốc Milestone M1–M5 được xếp nối tiếp nhau kèm bộ đệm dự phòng rủi ro kỹ thuật.
 * **Quyền Quản trị Hệ điều hành Máy trạm**: Môi trường máy trạm Kiosk và Docker host được giả định có đầy đủ quyền Administrator/root để cấu hình cổng mạng, truy cập thiết bị camera UVC và cấp phát volume lưu trữ persistent.
+* **Phụ thuộc Kết nối Mạng của Cơ chế PIN Dự phòng (`DD-SYS-017`)**: Cơ chế xác thực mã PIN được thực thi trực tuyến tại Backend (`POST /api/v1/kiosks/{id}/verify-pin`). Trong tình huống mất mạng hoàn toàn, Kiosk chỉ phục vụ điểm danh nhận diện khuôn mặt ngoại tuyến (`ARC-001`); chức năng PIN Pad dự phòng chỉ khả dụng khi có kết nối máy chủ.
+

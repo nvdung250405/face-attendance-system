@@ -1,6 +1,6 @@
 ---
 title: Danh mục Công nghệ & Công cụ (Tech & Tool Stack)
-version: 1.0
+version: 1.1
 status: Approved
 owner: Lead System Architect
 ---
