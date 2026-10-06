@@ -16,9 +16,9 @@ Kho lưu trữ có cấu trúc các câu hỏi nghiên cứu, bối cảnh bài 
 | ID | Question | Serves | Status |
 | :--- | :--- | :--- | :---: |
 | `RQ-001` | Thực trạng gian lận chấm công (quẹt thẻ hộ, gian lận GPS) và gánh nặng đối soát thủ công của bộ phận nhân sự tại doanh nghiệp Việt Nam ở mức độ nào? | `PD-001`, `INF-001`, `INF-002` | Resolved |
-| `RQ-002` | Liệu các mô hình học sâu thị giác máy tính hiện đại có thể chạy suy luận thời gian thực ($\ge 15\text{ FPS}$, chu kỳ pipeline biên $\le 350\text{ ms}$) trên CPU máy tính phổ thông với chi phí phần cứng 0 VNĐ mà không cần GPU rời? | `PD-002`, `SRS-002` | Resolved |
-| `RQ-003` | Các kỹ thuật chống giả mạo thụ động (Passive Liveness Detection) có thể ngăn chặn hiệu quả các cuộc tấn công bằng ảnh in 2D và video phát lại trên thiết bị camera quang học thông thường theo ISO/IEC 30107-3 không? | `PD-003`, `SRS-001` | Resolved |
-| `RQ-004` | Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15 của Việt Nam quy định những nghĩa vụ bắt buộc nào đối với việc thu thập, lưu trữ, mã hóa và tiêu hủy dữ liệu sinh trắc học khuôn mặt? | `PD-005`, `SRS-003` | Resolved |
+| `RQ-002` | Liệu các mô hình học sâu thị giác máy tính hiện đại có thể chạy suy luận thời gian thực ($\ge 15\text{ FPS}$, chu kỳ pipeline biên $\le 350\text{ ms}$) trên CPU máy tính phổ thông với chi phí phần cứng 0 VNĐ mà không cần GPU rời? | `PD-002`, `NFR-SYS-001`, `NFR-SYS-002` | Resolved |
+| `RQ-003` | Các kỹ thuật chống giả mạo thụ động (Passive Liveness Detection) có thể ngăn chặn hiệu quả các cuộc tấn công bằng ảnh in 2D và video phát lại trên thiết bị camera quang học thông thường theo ISO/IEC 30107-3 không? | `PD-003`, `FR-SYS-002`, `NFR-SYS-005` | Resolved |
+| `RQ-004` | Luật Bảo vệ Dữ liệu Cá nhân số 91/2025/QH15 của Việt Nam quy định những nghĩa vụ bắt buộc nào đối với việc thu thập, lưu trữ, mã hóa và tiêu hủy dữ liệu sinh trắc học khuôn mặt? | `PD-005`, `SRS-001`, `SRS-003` | Resolved |
 
 ---
 

@@ -30,7 +30,7 @@ Xác lập tầm nhìn chiến lược, mục tiêu định lượng, phạm vi 
 ## 2. Scope (Phạm vi & Ranh giới Sản phẩm)
 
 ### 2.1. Trong Phạm vi (In-Scope)
-* **Trạm Điểm danh Biên (`kiosk-app`)**:
+* **Phân hệ Kiosk Biên (`kiosk-app`)**:
   * Thu nhận luồng video camera quang học, phát hiện khuôn mặt và góc Euler qua YuNet.
   * Cổng căn chỉnh khuôn mặt vào khung Oval (giữ ổn định $0.5 - 1.0\text{ s}$).
   * Cổng kiểm tra thực thể sống thụ động (MiniFASNet $S_{\text{liveness}} \ge 0.85$).
@@ -38,13 +38,13 @@ Xác lập tầm nhìn chiến lược, mục tiêu định lượng, phạm vi 
   * Bàn phím số ảo PIN dự phòng và khóa 15 phút chống brute-force.
   * Hàng đợi lưu trữ ngoại tuyến SQLite WAL và tự động đồng bộ bù khi có mạng.
   * Luồng tự đăng ký 3 bước In-Viewport tiếp nhận mã OTP kích hoạt.
-* **Máy chủ Doanh nghiệp (`backend-service`)**:
+* **Phân hệ Máy chủ Doanh nghiệp (`backend-service`)**:
   * Quản lý hồ sơ nhân sự, phân ca làm việc, tính toán đi muộn/về sớm.
   * Cơ chế chống quẹt trùng lặp Cooldown 120 giây.
   * Mã hóa an toàn vector đặc trưng khuôn mặt chuẩn AES-256-GCM ở trạng thái lưu trữ.
   * Kênh thông điệp đẩy thời gian thực WebSocket STOMP.
   * Tác vụ định kỳ quét xóa vĩnh viễn dữ liệu sinh trắc học sau 20 ngày kể từ khi thôi việc.
-* **Cổng Quản trị & Tự phục vụ (`web-portal`)**:
+* **Phân hệ Web Quản trị & Tự phục vụ (`web-portal`)**:
   * Màn hình giám sát trực quan Live Monitoring Dashboard.
   * Quản lý nhân viên, phân ca làm việc, duyệt đơn giải trình công.
   * Cổng tự phục vụ: Ký thỏa thuận số Informed Consent và sinh mã OTP đăng ký khuôn mặt 48 giờ.
@@ -87,7 +87,7 @@ Xác lập tầm nhìn chiến lược, mục tiêu định lượng, phạm vi 
 Các ràng buộc kỹ thuật bắt buộc dưới đây được sở hữu bởi các quyết định khởi tạo dự án (`PD-`), làm căn cứ bắt buộc cho các phân hệ downstream:
 
 * **Ràng buộc Phần cứng & Nền tảng thực thi**: Ứng dụng Kiosk phải vận hành hoàn toàn trên CPU máy trạm 4 nhân x86_64 hỗ trợ AVX2, RAM 8GB-16GB, webcam UVC chuẩn, không đòi hỏi GPU rời (Owner: `PD-002`).
-* **Ràng buộc Lưu trữ Bền vững Ngoại tuyến**: Trạm Kiosk bắt buộc sử dụng SQLite WAL cục bộ để đảm bảo $\text{RPO} = 0$ khi mất mạng đột ngột (Owner: `PD-004`).
+* **Ràng buộc Lưu trữ Bền vững Ngoại tuyến**: Phân hệ Kiosk bắt buộc sử dụng SQLite WAL cục bộ để đảm bảo $\text{RPO} = 0$ khi mất mạng đột ngột (Owner: `PD-004`).
 * **Ràng buộc Pháp lý & Bảo mật Sinh trắc học**: Toàn bộ vector đặc trưng phải được mã hóa đối xứng AES-256-GCM ở trạng thái tĩnh; bắt buộc có Informed Consent điện tử trước khi thu nhận mẫu và tự động quét xóa vĩnh viễn dữ liệu sau 20 ngày thôi việc theo Luật số 91/2025/QH15 (Owner: `PD-005`).
 * **Ràng buộc Truyền thông Thời gian thực**: Đồng bộ sự kiện điểm danh và cập nhật danh mục khuôn mặt bắt buộc sử dụng giao thức WebSocket STOMP với độ trễ phát sóng $\le 200\text{ ms}$ (Owner: `PD-006`).
 * **Ràng buộc Ngân sách Thời gian Chu kỳ**: Tổng chu kỳ nhận diện tại biên từ khi có khung hình đến khi hiển thị kết quả không vượt quá $350\text{ ms}$ (Owner: `PD-002`, `PD-003`).
