@@ -30,6 +30,7 @@ owner: Data Architect
 | `DTD-SYS-022` | Cấu trúc Kỳ công (`payroll_periods`) | Bảng kỳ công theo tháng/năm với trạng thái `OPEN`/`LOCKED`, người chốt, mốc chốt và lý do mở lại; ràng buộc duy nhất theo `(year, month)`. | `STK-012` | `DATA-SYS-021` | `DD-SYS-024` | Accepted |
 | `DTD-SYS-023` | Cấu trúc Phiên làm việc (`refresh_tokens`) | Bảng phiên làm việc: khoá ngoại tới tài khoản, `token_hash` băm một chiều, mốc hết hạn, trạng thái thu hồi và ngữ cảnh đăng nhập (IP/User Agent); chỉ mục `(user_id, revoked_at)` phục vụ thu hồi theo tài khoản; không có cột lưu token dạng văn bản rõ. | `STK-012` | `DATA-SYS-022` | `DD-SYS-026` | Accepted |
 | `DTD-SYS-024` | Cấu trúc Thông báo Trong ứng dụng & Vết rút Consent | Bảng `notifications` (người nhận, loại sự kiện, tham chiếu đối tượng, mốc thời gian, trạng thái đã đọc) và bảng vết rút Consent (thời điểm, IP, hạn tiêu hủy dữ liệu sinh trắc) với chỉ mục `(user_id, read_at)`. | `STK-012` | `DATA-SYS-023` | `DD-SYS-025` | Accepted |
+| `DTD-SYS-025` | Cấu trúc Yêu cầu Dữ liệu Cá nhân (`data_subject_requests`) | Bảng yêu cầu của chủ thể dữ liệu: khoá ngoại tới nhân sự, loại yêu cầu, nội dung, trạng thái `RECEIVED`/`IN_PROGRESS`/`FULFILLED`/`REJECTED`, người xử lý (DPO) và phản hồi; chỉ mục `(user_id, status)` phục vụ tra cứu của DPO. | `STK-012` | `DATA-SYS-024` | `DD-SYS-025` | Accepted |
 
 ---
 
