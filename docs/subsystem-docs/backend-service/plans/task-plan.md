@@ -9,7 +9,7 @@ owner: Backend Lead
 
 ## 1. Approach (Chiến lược Thực hiện)
 
-Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa các đơn vị quy hoạch (`BLD-`, `FND-`) và giai đoạn viết mã (BUILD), tuân thủ chặt chẽ Mục 9.4.1 của [docs/sdlc-docs.md](../../sdlc-docs.md).
+Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa các đơn vị quy hoạch (`BLD-`, `FND-`) và giai đoạn viết mã (BUILD), tuân thủ chặt chẽ Mục 9.4.1 của [docs/sdlc-docs.md](../../../sdlc-docs.md).
 * **Nguyên tắc phân rã**: Mỗi `TASK-` là một đơn vị thi công thực tế có thể hoàn thành trọn vẹn trong một Pull Request. Mỗi task bắt buộc `Derived from` đúng một `BLD-` hoặc `FND-` cùng service.
 * **Giải quyết phụ thuộc**: Phụ thuộc xuyên facet (cross-facet dependency) được giải quyết duy nhất tại đây thông qua quan hệ `Depends on` giữa các `TASK-`.
 * **Cơ chế Wave**: Wave là hình chiếu gom nhóm các task độc lập có thể triển khai song song theo đồ thị phụ thuộc (DAG) và tuân thủ quy tắc tại Mục 14.4 của `sdlc-docs.md`: `Wave(task)` phải **lớn hơn** wave của mọi task mà nó `Depends on`. Người thực thi nhận nhiệm vụ theo `TASK-`, không nhận theo Wave.

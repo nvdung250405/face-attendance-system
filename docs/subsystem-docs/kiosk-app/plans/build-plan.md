@@ -10,7 +10,7 @@ owner: Edge Vision Lead & UI Lead
 
 ## 1. Approach (Chiến lược Thực hiện)
 
-Phân hệ `kiosk-app` áp dụng chiến lược gom nhóm và sắp xếp thứ tự thực thi theo mô hình **Slices to Integration** qua các đợt phát hành (Waves), tuân thủ Mục 9.4 của [docs/sdlc-docs.md](../../sdlc-docs.md).
+Phân hệ `kiosk-app` áp dụng chiến lược gom nhóm và sắp xếp thứ tự thực thi theo mô hình **Slices to Integration** qua các đợt phát hành (Waves), tuân thủ Mục 9.4 của [docs/sdlc-docs.md](../../../sdlc-docs.md).
 * **Nguyên tắc Điều phối**: Hoàn thiện nền tảng phần cứng/môi trường (Foundation) và cơ chế lưu trữ đệm ngoại tuyến (Data Facet) trước. Sau đó phát triển song song chuỗi thị giác AI (FR/NFR Facet) và hệ thống giao diện cảm ứng QML (UI/UX Facet). Tiếp theo ghép nối tầng giao tiếp mạng (API Facet) và cuối cùng tích hợp toàn trình luồng chấm công tại biên (Integration).
 * **Định nghĩa Hoàn thành Cấp Phân hệ (Definition of Done - DoD)**:
   * Mọi work item (`BLD-`, `FND-`) được chuẩn hóa thành 1 Task độc lập, hoàn thành trọn vẹn trong một Pull Request.

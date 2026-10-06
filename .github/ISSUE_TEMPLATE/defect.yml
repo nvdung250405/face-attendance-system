@@ -7,13 +7,13 @@ body:
     attributes:
       value: |
         ### 🐛 Báo cáo Lỗi Kỹ thuật (Defect)
-        *Báo cáo lỗi cần chỉ rõ mã ca kiểm thử (`TST-`) hoặc điều khoản đặc tả (`FR-`, `NFR-`, `SPEC-`) bị vi phạm.*
+        *Báo cáo lỗi cần chỉ rõ mã ca kiểm thử (`TST-`) hoặc điều khoản đặc tả (`FR-`, `NFR-`, `SRS-`) bị vi phạm.*
 
   - type: input
     id: violated_id
     attributes:
       label: "Mã Test / Spec ID bị vi phạm"
-      description: "Nhập ID ca kiểm thử hoặc yêu cầu bị vi phạm (ví dụ: TST-KSK-001, FR-BKE-004, NFR-SYS-001)."
+      description: "Nhập ID ca kiểm thử hoặc yêu cầu bị vi phạm (ví dụ: TST-KSK-001, FR-BE-004, NFR-SYS-001)."
       placeholder: "TST-KSK-001"
     validations:
       required: true

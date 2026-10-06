@@ -10,7 +10,7 @@ owner: Web Lead & Frontend Architect
 
 ## 1. Approach (Chiến lược Thực hiện)
 
-Phân hệ `web-portal` áp dụng chiến lược gom nhóm và sắp xếp thứ tự thực thi theo mô hình **Slices to Integration** qua các đợt phát hành (Waves), tuân thủ Mục 9.4 của [docs/sdlc-docs.md](../../sdlc-docs.md).
+Phân hệ `web-portal` áp dụng chiến lược gom nhóm và sắp xếp thứ tự thực thi theo mô hình **Slices to Integration** qua các đợt phát hành (Waves), tuân thủ Mục 9.4 của [docs/sdlc-docs.md](../../../sdlc-docs.md).
 * **Nguyên tắc Điều phối**: Khởi tạo nền tảng Toolchain Vite/React (Foundation) và cấu trúc dữ liệu/lưu trữ an toàn (Data Facet) trước. Sau đó phát triển đồng thời tầng giao tiếp mạng Axios/STOMP (API Facet) và các kho lưu trữ trạng thái định tuyến Auth (FR/NFR Facet). Tiếp theo ghép nối các màn hình giao diện người dùng Responsive (UI/UX Facet) và cuối cùng tích hợp luồng nghiệp vụ toàn trình (Integration).
 * **Định nghĩa Hoàn thành Cấp Phân hệ (Definition of Done - DoD)**:
   * Mọi work item (`BLD-`, `FND-`) được chuẩn hóa thành 1 Task độc lập, hoàn thành trọn vẹn trong một Pull Request.
