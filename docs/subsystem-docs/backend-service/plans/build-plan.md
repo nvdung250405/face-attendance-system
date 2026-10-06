@@ -1,0 +1,123 @@
+---
+title: Backend Core Build Plan
+version: 1.0
+status: Approved
+owner: Backend Lead
+---
+
+# FR/NFR BUILD PLAN — Kế hoạch Thi công Cốt lõi Phân hệ Backend
+
+## 1. Approach Decisions (Quyết định Phương pháp Thi công)
+
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-005` | Chiến lược Thi công Nghiệp vụ & Definition of Done Phân hệ Backend | Triển khai theo nguyên tắc Dependency Inversion: Bảo mật & Mã hóa $\rightarrow$ Động cơ Điểm danh & Cooldown $\rightarrow$ Đồng bộ Bù Ngoại tuyến $\rightarrow$ Chu trình Đăng ký OTP $\rightarrow$ Phát sóng Sự kiện STOMP $\rightarrow$ Kiểm toán & Tác vụ Tiêu hủy Dữ liệu. | Triển khai Controller-first hoặc Big-bang integration (bị loại vì khó cô lập lỗi). | 100% mã nguồn có kiểm thử tự động, tuân thủ Clean Code và không vi phạm bảo mật. | `ARC-002`, `STK-011` | Accepted |
+
+---
+
+## 2. Core Build Work Items (Danh mục Hạng mục Thi công Cốt lõi)
+
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `BLD-BE-009` | Lập trình Security Filter & JWT Provider | Xây dựng bộ phát hành token RSA-256 hoặc HMAC-SHA256, filter chặn và phân quyền theo Role (`ADMIN`, `HR_MANAGER`, `EMPLOYEE`). | `SOL-BE-001` | `FND-BE-004` | Cấp phát token hợp lệ; từ chối token hết hạn; phân quyền URL chính xác; trả về 403 Forbidden khi trái quyền. | Done |
+| `BLD-BE-010` | Lập trình Dịch vụ Mã hóa AES-256-GCM | Xây dựng `BiometricCryptoService` mã hóa mảng byte vector ArcFace với khóa bí mật từ biến môi trường. | `SOL-BE-004` | `FND-BE-001` | Mã hóa và giải mã bảo toàn 100% dữ liệu gốc vector 512D; sinh mới IV ngẫu nhiên 12-byte mỗi lần mã hóa; không lưu plaintext. | Done |
+| `BLD-BE-011` | Lập trình Động cơ Xử lý Điểm danh & Cooldown | Xây dựng `AttendanceService` đối chiếu ca kíp, tính toán số phút trễ/về sớm, tích hợp kiểm tra Cooldown 120s qua Caffeine và lưu PostgreSQL. | `SOL-BE-002`, `SOL-BE-009`, `SOL-BE-010` | `BLD-BE-009` | Phản hồi trong $\le 100\text{ ms}$; phân loại trạng thái điểm danh chuẩn xác; chặn quẹt trùng lặp trong 120s từ bộ nhớ đệm. | Planned |
+| `BLD-BE-012` | Lập trình Xử lý Gói lô Đồng bộ Bù | Xây dựng dịch vụ tiếp nhận mảng 50 bản ghi, thực thi batch insert có bắt ngoại lệ bản ghi trùng qua khóa tự nhiên. | `SOL-BE-003` | `BLD-BE-011` | Lưu trọn vẹn gói lô không lỗi giao dịch; bỏ qua bản ghi trùng lặp và trả về danh sách ID thành công. | Planned |
+| `BLD-BE-013` | Lập trình Quản lý Đăng ký & OTP | Xây dựng logic kiểm tra điều kiện Informed Consent, sinh mã OTP 6 số, kiểm tra thời hạn 48 giờ và kích hoạt nhân sự. | `SOL-BE-005` | `BLD-BE-010` | Nhân viên ký cam kết mới được sinh OTP; OTP hết hạn không cho kích hoạt; nạp vector thành công chuyển trạng thái `ACTIVE`. | Planned |
+| `BLD-BE-014` | Tích hợp Bộ Phát sóng STOMP | Tích hợp `SimpMessagingTemplate` bắn sự kiện điểm danh lên `/topic/live-attendance` và gallery lên `/topic/kiosk-gallery`. | `SOL-BE-006` | `FND-BE-005` | Kiosk và Web Portal nhận được JSON payload ngay khi Backend hoàn tất lưu CSDL với độ trễ $\le 50\text{ ms}$. | Done |
+| `BLD-BE-015` | Lập trình Aspect Kiểm toán Bất biến | Xây dựng Spring AOP ghi log các thao tác cập nhật dữ liệu của người dùng vào bảng `audit_logs`. | `SOL-BE-007` | `BLD-BE-009` | Mọi thay đổi giờ công hoặc thông tin nhân viên đều tự động có bản ghi audit chi tiết lưu ngữ cảnh người sửa. | Planned |
+| `BLD-BE-016` | Tích hợp Toàn trình Luồng Điểm danh & STOMP | Ghép nối luồng tiếp nhận punch từ Kiosk qua REST API, kiểm tra cooldown qua Caffeine Cache, ghi nhận PostgreSQL và phát sóng sự kiện qua STOMP. | `ARC-002`, `SOL-BE-002`, `SOL-BE-006` | `BLD-BE-011`, `BLD-BE-014` | Giao dịch điểm danh hoàn tất trong $\le 100\text{ ms}$, đồng thời đẩy tin nhắn JSON hợp lệ lên topic `/topic/live-attendance`. | Planned |
+| `BLD-BE-017` | Lập trình Tác vụ Tiêu hủy Dữ liệu Định kỳ 20 Ngày | Xây dựng Spring `@Scheduled` cron job 01:00 hàng ngày quét CSDL và tiêu hủy vĩnh viễn vector sinh trắc học nhân viên thôi việc quá 20 ngày. | `SOL-BE-008` | `BLD-BE-010` | Tự động xóa cứng bản ghi `biometric_templates` của nhân viên có `terminated_date <= CurrentDate - 20 days`; không ảnh hưởng hiệu năng hệ thống. | Planned |
+| `BLD-BE-019` | Lập trình Dịch vụ Quản lý Tài khoản & Vòng đời Mật khẩu | Xây dựng `AccountManagementService` (tạo hồ sơ kèm tài khoản và mật khẩu tạm dùng một lần, cập nhật hồ sơ, vô hiệu hóa nhân sự kèm audit). | `SOL-BE-014` | `BLD-BE-009` | Tạo hồ sơ trả mật khẩu tạm đúng một lần; tài khoản dùng được mọi chức năng ngay (không có bộ chặn buộc đổi mật khẩu); vô hiệu hóa nhân sự đặt `terminated_date` và ghi audit. | Planned |
+| `BLD-BE-020` | Lập trình Dịch vụ Mã PIN & Thẩm định PIN | Xây dựng `PinService` (thiết lập/đổi mã PIN 6 số, băm một chiều) và luồng thẩm định PIN cho trạm Kiosk kèm khóa 15 phút sau 5 lần nhập sai. | `SOL-BE-016` | `BLD-BE-009` | PIN đúng trả về định danh nhân viên; PIN sai trả 401 `PIN_INVALID`; sai 5 lần liên tiếp trả 423 `PIN_LOCKED`; không tạo bản ghi điểm danh khi thẩm định thất bại. | Planned |
+| `BLD-BE-024` | Lập trình Dịch vụ Quản lý Ca kíp & Phân ca | Xây dựng `ShiftManagementService` (CRUD ca, phân/gỡ phân ca theo khoảng hiệu lực, kiểm tra chồng lấn có khóa theo nhân viên) và tích hợp tra cứu ca đang hiệu lực vào động cơ điểm danh. | `SOL-BE-017` | `BLD-BE-011` | Tạo/sửa/vô hiệu hóa ca đúng ràng buộc; phân ca chồng khoảng trả 409 và không ghi bản ghi; động cơ điểm danh dùng ca đang hiệu lực và trả `ANOMALOUS` khi chưa phân ca. | Planned |
+| `BLD-BE-025` | Lập trình Dịch vụ Xử lý Đơn Giải trình Công | Xây dựng `ExcuseRequestService`: nhân viên nộp đơn cho bản ghi của chính mình (30 ngày gần nhất), HR duyệt/từ chối, và khi duyệt thì điều chỉnh `attendance_logs` trong cùng giao dịch kèm audit giá trị trước/sau. | `SOL-BE-018` | `BLD-BE-011` | Đơn khởi tạo `PENDING`; duyệt đơn cập nhật đúng bản ghi công và sinh đúng một bản ghi audit; từ chối bắt buộc có lý do; đơn đã xử lý trả 409. | Planned |
+| `BLD-BE-026` | Lập trình Dịch vụ Tra cứu Tuân thủ & Quản lý Trạm Kiosk | Xây dựng `AuditQueryService` (truy vấn chỉ đọc `audit_logs`, Consent, lịch trình tiêu hủy) và `KioskAdminService` (đăng ký trạm, sinh/đổi Secret Token băm một chiều, vô hiệu hóa, cập nhật `last_ping_at`). | `SOL-BE-019`, `SOL-BE-020` | `BLD-BE-009` | Tra cứu audit/Consent chỉ đọc, role `DPO` nhận 403 ở mọi endpoint ghi; Secret Token chỉ trả về một lần và token cũ bị vô hiệu hóa ngay; trạm `INACTIVE` bị từ chối xác thực. | Planned |
+| `BLD-BE-031` | Lập trình Bootstrap, Khôi phục Thông tin Xác thực & Quản lý Phiên | Xây dựng `BootstrapInitializer` (tạo ADMIN đầu tiên idempotent), `CredentialRecoveryService` (cấp lại mật khẩu tạm, đặt lại PIN) và `SessionService` (băm refresh token, đăng xuất, thu hồi theo tài khoản). | `SOL-BE-021`, `SOL-BE-022`, `SOL-BE-023` | `BLD-BE-009` | Bootstrap tạo đúng một ADMIN và tự vô hiệu hóa; cấp lại mật khẩu thu hồi mọi phiên cũ; refresh token đã thu hồi trả 401; tài khoản `TERMINATED` dùng được token nào. | Planned |
+| `BLD-BE-032` | Lập trình Chốt Kỳ công, Rút Consent & Thông báo | Xây dựng `PayrollPeriodService` (chốt/mở lại kỳ, kiểm tra kỳ đã chốt), `ConsentWithdrawalService` + `DataSubjectRequestService` (vô hiệu hóa khuôn mặt, hạn tiêu hủy 7 ngày, xử lý yêu cầu dữ liệu cá nhân) và `NotificationService` (sinh/phục vụ thông báo). | `SOL-BE-024`, `SOL-BE-025`, `SOL-BE-027` | `BLD-BE-011` | Điều chỉnh công/đơn thuộc kỳ `LOCKED` bị từ chối 409; nhân sự rút Consent bị loại khỏi gallery và không sinh được OTP; thông báo sinh đúng người nhận theo sự kiện. | Planned |
+| `BLD-BE-033` | Lập trình Vòng đời Quyền & Tra cứu Tự phục vụ | Xây dựng `RoleManagementService` (gán/thu hồi role, chặn hạ cấp ADMIN cuối cùng trong một giao dịch) và `EmployeeAttendanceQueryService` (tra cứu lịch sử công của chính người gọi). | `SOL-BE-026`, `SOL-BE-028` | `BLD-BE-009` | Thay đổi role ghi audit giá trị trước/sau; thu hồi ADMIN cuối cùng trả 409 kể cả khi hai yêu cầu đồng thời; nhân viên chỉ truy vấn được dữ liệu của mình. | Planned |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Phụ thuộc Nền tảng Biên dịch Maven**: Quá trình thi công và đóng gói mã nguồn phụ thuộc vào Java 21 LTS và Maven Wrapper (`./mvnw`) có sẵn trong repo. Mã nguồn phân tách theo package: `com.fas.api` (DTO, validation, xử lý lỗi), `com.fas.data` (entity, enum, repository, cache), `com.fas.security` (JWT, SecurityConfig) và `com.fas.config`; các tầng `service` và `controller` sẽ được bổ sung tại Wave 4–5 theo `task-plan.md`.
+* **Cấu hình Biến Môi trường Local**: Các tham số bảo mật (`JWT_SECRET`, `ENCRYPTION_MASTER_KEY`) được nạp qua biến môi trường hoặc file `.env` thông qua placeholder `${...}` trong `src/main/resources/application.yml`. Bộ kiểm thử tự động ghi đè bằng `src/test/resources/application.yml` ở profile `test` (H2 in-memory chế độ PostgreSQL), không cần Docker daemon.
+
+---
+title: Backend Data Build Plan
+version: 2.0
+status: Approved
+owner: Backend Lead
+---
+
+# DATA BUILD PLAN — Kế hoạch Thi công Tầng Dữ liệu Backend
+
+## 1. Approach Decisions (Quyết định Phương pháp Thi công)
+
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-007` | Chiến lược Thi công Dữ liệu Backend & Quản lý Migration Flyway | Triển khai theo trình tự: Kịch bản Migration Flyway V1 $\rightarrow$ Mapping JPA Entities & Enums $\rightarrow$ Spring Data Repositories $\rightarrow$ Cấu hình Caffeine Cache Manager. Định nghĩa hoàn thành (DoD): 100% kịch bản migration chạy thành công trên PostgreSQL 16 Testcontainers; không có cảnh báo vi phạm mapping JPA; mọi truy vấn chính có chỉ mục B-tree hỗ trợ. | Sử dụng `hibernate.ddl-auto=update` (bị loại vì rủi ro lệch schema production), Dùng Liquibase thay vì Flyway (bị loại vì Flyway SQL-native đơn giản hơn). | Schema CSDL hoàn toàn tường minh, kiểm soát phiên bản qua Git; file migration V1 là bất biến; thay đổi tương lai phải tạo file version mới. | `ARC-002`, `STK-013` | Accepted |
+
+---
+
+## 2. Data Build Work Items (Danh mục Hạng mục Thi công CSDL)
+
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `BLD-BE-001` | Viết Kịch bản Migration Flyway V1 | Tạo file `V1__init_schema.sql` khởi tạo đủ 8 bảng CSDL: `users`, `shifts`, `employee_shifts`, `kiosks`, `biometric_templates`, `attendance_logs`, `enrollment_sessions`, `audit_logs`. | `DTD-BE-001` | `FND-BE-003` | Flyway tự động migrate thành công khi ứng dụng khởi động lần đầu; 8 bảng CSDL và toàn bộ chỉ mục được tạo lập đúng schema. | Done |
+| `BLD-BE-002` | Lập trình Lớp JPA Entities & Enums | Tạo các Java class `@Entity` tương ứng kèm định dạng Enum cho `Role`, `EmployeeStatus`, `PunchType`, `VerificationMethod`, `AttendanceStatus`. | `DTD-BE-001` | `BLD-BE-001` | Mapping ORM Hibernate chuẩn xác; sinh đúng quan hệ khóa ngoại và ràng buộc duy nhất; build Maven pass 100%. | Done |
+| `BLD-BE-003` | Lập trình Spring Data JPA Repositories | Xây dựng các interface Repository với phương thức truy vấn tối ưu, hỗ trợ phân trang `Pageable`, tìm kiếm đa tiêu chí và native batch insert. | `DTD-BE-001`, `DTD-BE-002` | `BLD-BE-002` | Các truy vấn điểm danh theo ngày và người dùng phản hồi $< 15\text{ ms}$; batch insert 50 bản ghi $< 50\text{ ms}$. | Done |
+| `BLD-BE-004` | Cấu hình Caffeine Cache & Cooldown Manager | Cấu hình Spring Cache với Caffeine, thiết lập TTL 120s cho key `cooldown:punch:{userId}:{date}`. | `DTD-BE-003` | `FND-BE-002` | Quẹt liên tiếp trong 120s được chặn tức thời từ bộ nhớ RAM không cần chạm CSDL; giảm $95\%$ áp lực truy vấn. | Done |
+| `BLD-BE-018` | Viết Kịch bản Migration Flyway V2 & Ánh xạ Trạng thái Xác thực | Tạo `V2__add_credential_lifecycle.sql` bổ sung cột `must_change_password` cho bảng `users` (cột này đã được gỡ ở `BLD-BE-035`/`V5` theo CR); cập nhật entity `User` và repository tương ứng. | `DTD-BE-007` | `BLD-BE-001` | Migration V2 chạy thành công trên CSDL đang có dữ liệu mà không mất bản ghi. | Done |
+| `BLD-BE-023` | Viết Kịch bản Migration Flyway V3 & Chỉ mục Tra cứu | Tạo `V3__add_excuse_requests_and_kiosk_lifecycle.sql`: bảng `excuse_requests`, chỉ mục `(user_id, effective_from, effective_to)` cho `employee_shifts`, chỉ mục tra cứu `audit_logs`/Consent và chỉ mục trạng thái cho `kiosks`; cập nhật entity/repository tương ứng. | `DTD-BE-008`, `DTD-BE-009`, `DTD-BE-010`, `DTD-BE-011` | `BLD-BE-001` | Migration V3 chạy thành công trên CSDL đã áp dụng `V1`/`V2` mà không mất bản ghi; bảng `excuse_requests` và toàn bộ chỉ mục được tạo đúng lược đồ; không có cột lưu Secret Token dạng văn bản rõ. | Done |
+| `BLD-BE-030` | Viết Kịch bản Migration Flyway V4 cho Thực thể Vòng đời | Tạo `V4__add_lifecycle_entities.sql`: bảng `payroll_periods`, `refresh_tokens`, `notifications`, `consent_withdrawals`, `data_subject_requests` kèm chỉ mục và ràng buộc (duy nhất theo `(period_year, period_month)`, chỉ mục tra cứu phiên/thông báo); cập nhật entity/repository tương ứng. | `DTD-BE-012`, `DTD-BE-013`, `DTD-BE-014`, `DTD-BE-015` | `BLD-BE-001` | Migration V4 chạy thành công trên CSDL đã áp dụng `V1`–`V3` mà không mất bản ghi; 5 bảng và toàn bộ chỉ mục được tạo đúng lược đồ; không có cột lưu token/OTP dạng văn bản rõ. | Done |
+| `BLD-BE-035` | Viết Kịch bản Migration Flyway V5 Gỡ bỏ Cờ Buộc đổi Mật khẩu | Tạo `V5__drop_must_change_password.sql` gỡ cột `must_change_password` khỏi bảng `users` (giữ nguyên `V2` đã áp dụng) và gỡ trường tương ứng khỏi entity `User` theo CR rút yêu cầu buộc đổi mật khẩu. | `DTD-BE-007` | `BLD-BE-018` | Migration V5 chạy thành công trên CSDL đã áp dụng `V1`–`V4` mà không mất bản ghi; lược đồ sau cùng không còn cột `must_change_password`; chức năng đổi mật khẩu tự nguyện vẫn hoạt động. | Done |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Tính Bất biến của Kịch bản Migration Flyway**: Kịch bản `V1__init_schema.sql` là baseline cố định; bất kỳ thay đổi nào về cấu trúc bảng hoặc chỉ mục sau khi release đều phải thực hiện qua migration version tiếp theo (`V2__...sql`) và không được sửa đổi file migration đã áp dụng.
+* **Cấu hình Kết nối CSDL Khi Chạy Build/Test**: Bộ kiểm thử tự động chạy trên `src/test/resources/application.yml` với profile `test`, dùng H2 in-memory ở chế độ `MODE=PostgreSQL` (`ddl-auto: create-drop` kèm Flyway), do đó không yêu cầu Docker Engine cục bộ. Kiểm thử tích hợp trên PostgreSQL 16 thật được thực hiện trong CI qua service container `postgres:16-alpine` khai báo trong `.github/workflows/ci.yml`.
+
+---
+title: Backend API Build Plan
+version: 2.0
+status: Approved
+owner: Backend Lead
+---
+
+# API BUILD PLAN — Kế hoạch Thi công Giao diện & Hợp đồng API Backend
+
+## 1. Approach Decisions (Quyết định Phương pháp Thi công API)
+
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-008` | Chiến lược Thi công Hợp đồng API & STOMP Broker | Triển khai theo quy trình Contract-First: Lập trình Java Record DTOs & Jakarta Validation Rules $\rightarrow$ Lập trình Kiosk REST Controller $\rightarrow$ Lập trình Portal REST Controllers $\rightarrow$ Cấu hình STOMP Message Broker & Channel Interceptors. Định nghĩa hoàn thành (DoD): 100% endpoints được kiểm thử với MockMvc/RestAssured; phản hồi lỗi khớp chuẩn ProblemDetails RFC 7807; xử lý token header an toàn. | Lập trình Controller trực tiếp dùng JPA Entities làm input/output (bị loại vì rủi ro lộ schema CSDL và khó kiểm soát validation). | Phải duy trì lớp Java Record DTOs độc lập kèm mapper; phân tách triệt để Presentation Layer khỏi Data Entity; kiểm soát 100% dữ liệu vào/ra. | `ARC-002`, `STK-011` | Accepted |
+
+---
+
+## 2. API Build Work Items (Danh mục Hạng mục Thi công API)
+
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `BLD-BE-005` | Lập trình DTOs & Validation Rules | Định nghĩa các Java Record DTOs kèm Jakarta Validation annotations (`@NotNull`, `@Size`, `@Pattern`) và bộ bọc lỗi ProblemDetails RFC 7807. | `APD-BE-001`, `APD-BE-002`, `APD-BE-004` | `FND-BE-002` | Dữ liệu không hợp lệ tự động trả về lỗi 400 Bad Request kèm chi tiết `invalidParams`; mapping đúng các Java Records. | Done |
+| `BLD-BE-006` | Lập trình Kiosk REST Controller | Xây dựng `KioskAttendanceController` tiếp nhận punch, sync-batch, gallery, verify-otp và enroll-face với header `X-Kiosk-Id`. | `APD-BE-001`, `APD-BE-006` | `BLD-BE-005` | Kết nối thành công với Kiosk; xử lý phản hồi trong $\le 100\text{ ms}$; thẩm định header `X-Kiosk-Id` và Secret Token chính xác. | Planned |
+| `BLD-BE-007` | Lập trình Portal REST Controllers | Xây dựng `AuthController`, `AttendanceAdminController`, `AttendanceEmployeeController` và `ConsentController` cho Cổng Web Portal. | `APD-BE-002` | `BLD-BE-005` | Người dùng Web thực hiện được toàn bộ luồng đăng nhập, làm mới token, ký cam kết, tra cứu điểm danh và xem danh sách nhân sự. | Planned |
+| `BLD-BE-008` | Lập trình STOMP Message Broker & Interceptors | Cấu hình WebSocket channel interceptor, topic destination prefix `/topic`, endpoint `/ws-attendance` và cơ chế xác thực kết nối. | `APD-BE-003`, `APD-BE-005` | `FND-BE-005` | Client Web và Kiosk nhận được bản tin cập nhật tức thời qua các topic `/topic/live-attendance`, `/topic/kiosk-gallery`, `/topic/enrollment/{otp}`. | Planned |
+| `BLD-BE-021` | Lập trình Admin Employee REST Controller | Xây dựng `AdminEmployeeController` cho `POST /api/v1/admin/employees`, `PATCH /api/v1/admin/employees/{id}` và `PATCH /api/v1/admin/employees/{id}/status` theo hợp đồng Mục 4.12. | `APD-BE-007`, `APD-BE-008`, `APD-BE-009` | `BLD-BE-005` | Ba endpoint trả đúng mã trạng thái (201/200) và mã lỗi (409/403/400); phân quyền `HR_MANAGER`/`ADMIN` chính xác; mọi thay đổi sinh audit log. | Planned |
+| `BLD-BE-022` | Lập trình Auth Change-Password & PIN Controllers | Xây dựng `AuthController.changePassword`, `EmployeePinController` (`/api/v1/employee/pin`) và `KioskPinController` (`/api/v1/kiosk/verify-pin`) kèm hai mã lỗi mới. | `APD-BE-010`, `APD-BE-011`, `APD-BE-012` | `BLD-BE-005` | Đổi mật khẩu trả HTTP 200 và thu hồi mọi phiên cũ; thiết lập/đổi PIN trả `hasPin`; `verify-pin` trả 200/401/423 đúng hợp đồng và Kiosk không ghi điểm danh khi thất bại. | Planned |
+| `BLD-BE-027` | Lập trình Shift & Assignment REST Controllers | Xây dựng `ShiftController` (`/api/v1/admin/shifts`) và `EmployeeShiftController` (`/api/v1/admin/employee-shifts`) theo hợp đồng `APD-BE-013`/`APD-BE-014`. | `APD-BE-013`, `APD-BE-014` | `BLD-BE-005` | Ba nhóm endpoint trả đúng 201/200/204 và mã lỗi 400/409; phân quyền `HR_MANAGER`/`ADMIN` chính xác; tra cứu lịch phân ca theo nhân viên và khoảng ngày hoạt động đúng. | Planned |
+| `BLD-BE-028` | Lập trình Excuse Request REST Controllers | Xây dựng `EmployeeExcuseController` (`/api/v1/employee/excuse-requests`) và `AdminExcuseController` (`/api/v1/admin/excuse-requests`) theo hợp đồng `APD-BE-015`/`APD-BE-016`. | `APD-BE-015`, `APD-BE-016` | `BLD-BE-005` | Nhân viên chỉ nộp và xem được đơn của mình (404 nếu bản ghi không thuộc người gửi); HR duyệt/từ chối trả 200 và đơn đã xử lý trả 409; từ chối thiếu lý do trả 400. | Planned |
+| `BLD-BE-029` | Lập trình Compliance, Kiosk Admin & Export Controllers | Xây dựng `AuditLogController` (`/api/v1/admin/audit-logs`), `DpoComplianceController` (`/api/v1/dpo/**`), `KioskAdminController` (`/api/v1/admin/kiosks`) và `ReportExportController` (`/api/v1/admin/reports/export`). | `APD-BE-017`, `APD-BE-018`, `APD-BE-019` | `BLD-BE-005` | Tra cứu audit/Consent chỉ đọc với đúng phân quyền `ADMIN`/`DPO`; đăng ký/đổi token trạm trả token một lần; file `.xlsx` escape ký tự `=`, `+`, `-`, `@` và kết xuất 1,000 nhân sự trong $\le 3\text{ giây}$. | Planned |
+| `BLD-BE-034` | Lập trình Controllers cho Khôi phục, Phiên, Kỳ công, Consent, Quyền & Thông báo | Xây dựng `CredentialRecoveryController`, `LogoutController`, `PayrollPeriodController`, `ConsentWithdrawalController`, `DataSubjectRequestController`, `RoleManagementController` và `NotificationController`. | `APD-BE-020`, `APD-BE-021`, `APD-BE-022`, `APD-BE-023`, `APD-BE-024`, `APD-BE-025`, `APD-BE-026` | `BLD-BE-005` | Các endpoint trả đúng 200/201/204 và mã lỗi 400/401/403/409 theo hợp đồng; phân quyền `ADMIN`/`HR_MANAGER`/`DPO`/`EMPLOYEE` chính xác; thông báo và lịch sử công chỉ trả dữ liệu của người gọi. | Planned |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Tài liệu hóa Tự động qua SpringDoc OpenAPI**: Định nghĩa API và cấu trúc DTO được tự động xuất bản tại `/swagger-ui.html` và `/v3/api-docs` trong môi trường phát triển; cấu hình production sẽ khóa endpoint này để bảo vệ bí mật hệ thống.
+* **Tự động Hóa Kiểm chuẩn Jakarta Validation**: Mọi tham số đầu vào của Request Body được xác thực tự động bởi `MethodArgumentNotValidException` của Hibernate Validator trước khi Controller chuyển quyền điều khiển cho Service Layer.
+* **Trạng thái Thực thi Thực tế**: `Status` của các hạng mục `BLD-BE-` được đối chiếu lại với mã nguồn tại `app/backend-service`; hiện chỉ `BLD-BE-005` (DTOs, Validation & ProblemDetails) hoàn tất, các hạng mục Controller và STOMP Interceptor còn lại đang ở trạng thái `Planned`.
+* **Ràng buộc Xác thực Trạm Kiosk**: `SecurityConfig` hiện `permitAll` cho toàn bộ tiền tố `/api/v1/kiosk/**` để phục vụ giai đoạn dựng khung. `TASK-BE-019` và `TASK-BE-021` bắt buộc siết xác thực `X-Kiosk-Id` + Secret Token tại tầng Security Filter (`API-BE-015`, `DD-BE-010`) trước khi các endpoint Kiosk được đưa vào hoạt động.

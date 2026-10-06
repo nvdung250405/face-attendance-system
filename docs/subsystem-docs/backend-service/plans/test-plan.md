@@ -1,0 +1,133 @@
+---
+title: Backend Core Test Plan
+version: 1.0
+status: Approved
+owner: Backend QA Lead
+---
+
+# FR/NFR TEST PLAN — Kế hoạch Kiểm thử Nghiệp vụ Cốt lõi Backend
+
+## 1. Approach Decisions (Quyết định Phương pháp Kiểm thử)
+
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-006` | Chiến lược Kiểm thử Tự động Đa tầng Phân hệ Backend (Multi-layer Testing). | Kết hợp 3 cấp độ kiểm thử: Unit Test (JUnit 5 + Mockito cô lập logic ca kíp và mã hóa); Integration Test (Spring Boot Test + Testcontainers PostgreSQL 16); Load Test (500 RPS từ 50 Kiosk ảo). Tiêu chuẩn: 100% test pass; coverage $\ge 85\%$; zero security flaw. | Chỉ kiểm thử thủ công qua Swagger/Postman, Dùng CSDL H2 in-memory thay cho Testcontainers | Đòi hỏi Docker daemon hoạt động khi chạy Integration Test với Testcontainers, nhưng bảo đảm độ chính xác 100% môi trường CSDL thật. | `NFR-BE-001`, `NFR-BE-002`, `STK-011` | Accepted |
+
+---
+
+## 2. Core Test Items (Danh mục Ca Kiểm thử Cốt lõi Backend)
+
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `TST-BE-009` | Xác thực Đăng nhập & Sinh JWT Token | Kiểm tra xác thực tài khoản và cấp phát JWT token có thời hạn kèm phân quyền RBAC (`ADMIN`, `HR_MANAGER`, `EMPLOYEE`). | `FR-BE-001` | `BLD-BE-009` | Cấp phát token hợp lệ khi đúng thông tin; trả về 401 Unauthorized khi sai mật khẩu; trả về 403 Forbidden khi truy cập trái quyền. | Done |
+| `TST-BE-010` | Tiếp nhận Điểm danh & Tính Phút Đi muộn | Kiểm tra tiếp nhận punch, tính toán ca kíp, ghi nhận trạng thái điểm danh và kiểm tra cooldown 120s phía server. | `FR-BE-002`, `NFR-BE-001` | `BLD-BE-011` | Phản hồi trong $\le 100\text{ ms}$; phân loại trạng thái điểm danh chuẩn xác; lượt quẹt lặp trong 120s bị chặn từ Caffeine cache. | Done |
+| `TST-BE-011` | Xử lý Gói lô Đồng bộ Bù Ngoại tuyến | Kiểm tra tiếp nhận gói 50 bản ghi đồng bộ bù từ Kiosk và xử lý idempotency chống trùng lặp. | `FR-BE-003` | `BLD-BE-012` | Gửi gói 50 bản ghi lưu thành công 100%; không phát sinh bản ghi trùng lặp; bảo toàn mốc thời gian thực tế của bản ghi ngoại tuyến. | Done |
+| `TST-BE-012` | Mã hóa & Giải mã Vector AES-256-GCM | Kiểm tra bảo vệ vector ArcFace 512D với AES-256-GCM và IV ngẫu nhiên 12-byte. | `FR-BE-004`, `FR-BE-006`, `NFR-BE-003` | `BLD-BE-010` | Mã hóa và giải mã bảo toàn 100% dữ liệu gốc; sinh mới IV ngẫu nhiên mỗi lần mã hóa; không bao giờ để lộ plaintext trên đĩa. | Done |
+| `TST-BE-013` | Vòng đời Phiên Đăng ký Khuôn mặt OTP | Kiểm tra luồng cấp phát và thẩm định OTP 6 số kích hoạt nạp mặt có hạn 48h sau khi ký Informed Consent. | `FR-BE-005`, `FR-BE-006` | `BLD-BE-013` | Chỉ tạo OTP khi có cam kết Consent; từ chối khi nhập sai hoặc hết hạn 48h; nạp vector hợp lệ kích hoạt trạng thái `ACTIVE`. | Done |
+| `TST-BE-014` | Phát sóng Bản tin WebSocket STOMP | Kiểm tra phát sóng sự kiện điểm danh tức thời lên `/topic/live-attendance` và cập nhật gallery lên `/topic/kiosk-gallery`. | `FR-BE-007` | `BLD-BE-014` | Subscriber nhận đúng JSON payload trên `/topic/live-attendance` và `/topic/kiosk-gallery` trong $\le 50\text{ ms}$. | Done |
+| `TST-BE-015` | Ghi vết Kiểm toán Bất biến & Chống Injection | Kiểm tra Spring AOP tự động ghi nhận mọi biến động dữ liệu nhạy cảm vào `audit_logs` và khử ký tự nguy hiểm khi xuất file Excel. | `FR-BE-008`, `NFR-BE-005` | `BLD-BE-015` | Cập nhật bản ghi điểm danh sinh đúng một dòng audit log có đầy đủ ngữ cảnh; file Excel được escape các ký tự đặc biệt (`=`, `+`, `-`, `@`). | Done |
+| `TST-BE-016` | Kiểm thử Tải Điểm danh Đồng thời (Load Test) | Kiểm tra năng lực chịu tải đồng thời của máy chủ dưới áp lực 50 trạm Kiosk gửi liên tục. | `NFR-BE-002` | `BLD-BE-011` | Chịu tải $\ge 500\text{ req/s}$ với tỷ lệ lỗi HTTP 5xx $< 0.01\%$; mức sử dụng CPU $\le 75\%$ trên cấu hình chuẩn. | Done |
+| `TST-BE-017` | Kiểm tra Tác vụ Tiêu hủy Dữ liệu Định kỳ | Kiểm tra Spring `@Scheduled` xóa cứng toàn bộ bản ghi `biometric_templates` của nhân viên thôi việc quá 20 ngày. | `FR-BE-009`, `NFR-BE-003` | `BLD-BE-017` | Bản ghi thôi việc $\le 20$ ngày được bảo toàn; bản ghi $> 20$ ngày bị xóa vĩnh viễn khỏi CSDL, không thể phục hồi. | Done |
+| `TST-BE-018` | Kiểm tra Kháng lỗi & Giám sát Sức khỏe Actuator | Kiểm tra phản hồi của endpoint `/actuator/health` và khả năng tự phục hồi kết nối CSDL khi có gián đoạn tạm thời. | `NFR-BE-004` | `BLD-BE-011` | Endpoint trả về `{"status":"UP"}` với thông tin PostgreSQL và Disk Space; tự động tái kết nối CSDL thành công trong $\le 5\text{ s}$. | Done |
+| `TST-BE-019` | Cổng Kiểm định Chất lượng Phân hệ Backend (Gate) | Tiêu chí chốt chặn nghiệm thu toàn bộ phân hệ Backend trước khi triển khai tích hợp hoặc phát hành sản phẩm. | `FR-BE-001`, `FR-BE-002`, `NFR-BE-001`, `NFR-BE-002` | `TST-BE-009`, `TST-BE-010`, `TST-BE-016`, `TST-BE-018` | 100% test cases pass; kiểm thử ngập tải không rò rỉ bộ nhớ; báo cáo SonarQube không có lỗ hổng Block/Critical. | Done |
+| `TST-BE-025` | Kiểm thử Nghiệp vụ Ca kíp & Phân ca | Tạo ca thường/ca gãy, phân ca theo khoảng hiệu lực, kiểm tra chồng lấn và kiểm tra động cơ điểm danh dùng ca đang hiệu lực. | `FR-BE-013` | `BLD-BE-024` | Ca có mã duy nhất và ân hạn 0-60 phút; phân ca chồng khoảng trả 409 và không ghi bản ghi; vô hiệu hóa ca đang được phân trả 409; chấm công dùng ca hiệu lực để tính `late_minutes`, nhân viên chưa phân ca nhận `ANOMALOUS`. | Planned |
+| `TST-BE-026` | Kiểm thử Nghiệp vụ Đơn Giải trình Công | Nhân viên nộp đơn cho bản ghi của mình; kiểm tra chặn nộp cho bản ghi của người khác và bản ghi quá 30 ngày; HR duyệt/từ chối và kiểm tra nhật ký kiểm toán. | `FR-BE-014`, `FR-BE-015` | `BLD-BE-025` | Đơn khởi tạo `PENDING`; duyệt đơn cập nhật đúng `attendance_logs` và sinh đúng một bản ghi audit có giá trị trước/sau; từ chối bắt buộc có lý do; đơn đã xử lý trả 409; nộp cho bản ghi người khác trả 404. | Planned |
+| `TST-BE-027` | Kiểm thử Tra cứu Kiểm toán & Tuân thủ | Tra cứu `audit_logs` bằng role `ADMIN`, tra cứu Consent/lịch trình tiêu hủy bằng role `DPO`; kiểm tra chặn ghi với cả hai role. | `FR-BE-016` | `BLD-BE-026` | ADMIN lọc được audit log theo thời gian/tác nhân/hành vi; role `DPO` chỉ đọc được Consent/retention và nhận 403 ở mọi endpoint ghi; không tồn tại API sửa/xoá `audit_logs`. | Planned |
+| `TST-BE-028` | Kiểm thử Vòng đời Trạm Kiosk | Đăng ký trạm, dùng token gọi giao diện Kiosk, đổi token, vô hiệu hóa trạm và kiểm tra cập nhật `last_ping_at`. | `FR-BE-017` | `BLD-BE-026` | Secret Token chỉ trả về một lần và lưu dạng băm; token cũ bị từ chối ngay sau khi đổi; trạm `INACTIVE` nhận 401 ở mọi giao diện Kiosk; `last_ping_at` cập nhật theo lượt gọi hợp lệ. | Planned |
+| `TST-BE-033` | Kiểm thử Bootstrap Tài khoản Quản trị Đầu tiên | Chạy bootstrap trên CSDL trống, restart lại nhiều lần, kiểm tra tài khoản dùng được ngay bằng mật khẩu tạm và việc không tồn tại mật khẩu mặc định. | `FR-BE-018` | `BLD-BE-031` | Lần chạy đầu tạo đúng một tài khoản `ADMIN` dùng được ngay bằng mật khẩu tạm (không có bước chặn buộc đổi); các lần chạy lại không tạo thêm tài khoản; không có mật khẩu mặc định trong mã nguồn, `application.yml` hay Flyway. | Planned |
+| `TST-BE-034` | Kiểm thử Khôi phục Thông tin Xác thực & Thu hồi Phiên | HR cấp lại mật khẩu tạm; nhân viên đặt lại PIN; kiểm tra đăng xuất, thu hồi refresh token theo tài khoản và việc từ chối token của tài khoản đã vô hiệu hóa. | `FR-BE-019`, `FR-BE-020` | `BLD-BE-031` | Mật khẩu tạm cũ hết hiệu lực và mọi phiên cũ bị thu hồi ngay; đặt lại PIN cần mật khẩu hiện tại đúng; refresh token đã thu hồi trả 401; tài khoản `TERMINATED` không dùng được access token còn hạn. | Planned |
+| `TST-BE-035` | Kiểm thử Chốt Kỳ công & Khoá Điều chỉnh | HR chốt kỳ công tháng; thử nộp/duyệt đơn và điều chỉnh công thuộc kỳ đã chốt; ADMIN mở lại kèm lý do. | `FR-BE-021` | `BLD-BE-032` | Nộp/duyệt đơn và điều chỉnh công thuộc kỳ `LOCKED` trả 409; mở lại yêu cầu lý do, ghi audit và cho phép điều chỉnh trở lại; trạng thái chốt trả về trong báo cáo. | Planned |
+| `TST-BE-036` | Kiểm thử Rút Consent & Yêu cầu Dữ liệu Cá nhân | Nhân viên rút Consent; kiểm tra loại khỏi gallery Kiosk, chặn sinh OTP mới, hạn tiêu hủy 7 ngày và luồng xử lý yêu cầu dữ liệu cá nhân của DPO. | `FR-BE-022` | `BLD-BE-032` | Sau khi rút Consent, gallery không còn nhân sự đó, OTP mới bị từ chối và hạn tiêu hủy là 7 ngày; yêu cầu dữ liệu cá nhân chuyển được `RECEIVED` → `FULFILLED` và sinh thông báo. | Planned |
+| `TST-BE-037` | Kiểm thử Vòng đời Quyền, Thông báo & Tra cứu Tự phục vụ | ADMIN gán/thu hồi role (kể cả hai yêu cầu đồng thời hạ cấp hai ADMIN cuối); kiểm tra thông báo theo người nhận và nhân viên tự tra cứu lịch sử công. | `FR-BE-023`, `FR-BE-024`, `FR-BE-025` | `BLD-BE-033` | Thay đổi role ghi audit giá trị trước/sau; thu hồi ADMIN cuối cùng trả 409 và không thay đổi dữ liệu; người dùng chỉ thấy thông báo và lịch sử công của mình; đánh dấu đã đọc trả 200. | Planned |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Môi trường Testcontainers Docker**: Các ca kiểm thử tích hợp truy vấn JPA (`TST-BE-010`, `TST-BE-011`, `TST-BE-012`, `TST-BE-017`) yêu cầu môi trường có Docker Engine khả dụng để tự động kéo và khởi chạy container PostgreSQL 16 tạm thời.
+* **Tách biệt Môi trường Load Test**: Ca kiểm thử ngập tải 500 RPS (`TST-BE-016`) được thực thi độc lập bằng kịch bản Gatling hoặc k6 trên môi trường lab riêng biệt để không làm sai lệch kết quả đo kiểm unit test thông thường.
+
+---
+title: Backend Data Test Plan
+version: 2.0
+status: Approved
+owner: Backend QA & Data Engineer
+---
+
+# DATA TEST PLAN — Kế hoạch Kiểm thử Tầng Dữ liệu Backend
+
+## 1. Approach Decisions (Quyết định Phương pháp Kiểm thử Dữ liệu)
+
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-001` | Sử dụng Testcontainers PostgreSQL 16 cho kiểm thử tích hợp CSDL | Đảm bảo môi trường kiểm thử tương đương 100% với môi trường chạy thực tế (Production Parity), kiểm chứng toàn vẹn cú pháp Flyway DDL và PostgreSQL native features. | Sử dụng H2 Database in-memory hoặc mock JDBC (bị loại vì H2 không kiểm tra được kiểu `BYTEA`, `TIMESTAMPTZ` và cú pháp PostgreSQL native). | Yêu cầu Docker Daemon hoạt động trên môi trường chạy test; thời gian khởi tạo container ban đầu tốn vài giây nhưng đảm bảo tính chính xác 100%. | `STK-012`, `DATA-BE-001` | Accepted |
+| `APC-BE-002` | Kiểm thử xung đột khóa ngoại và dữ liệu biên (Negative Testing) | Phòng ngừa lỗi tràn số, trùng lặp mã nhân viên và lỗi vi phạm toàn vẹn quan hệ cha-con trước khi mã nguồn được tích hợp vào pipeline chung. | Chỉ kiểm thử luồng thuận (Happy Path) qua Web/Kiosk API (bị loại vì không kiểm soát được race condition và lỗi ràng buộc CSDL). | Phải lập trình các kịch bản cố tình chèn dữ liệu sai, chèn trùng khóa duy nhất để kiểm tra ngoại lệ `DataIntegrityViolationException` và rollback tự động. | `DATA-BE-001`, `DATA-BE-008` | Accepted |
+
+---
+
+## 2. Data Test Items (Danh mục Ca Kiểm thử Dữ liệu)
+
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `TST-BE-001` | Kiểm thử Kịch bản Flyway Migration & Schema Baseline | Chạy `flyway:migrate` tự động; khởi tạo đủ 8 bảng CSDL, quan hệ khóa ngoại, kiểu dữ liệu và toàn bộ chỉ mục hiệu năng. | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-004`, `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-008` | `BLD-BE-001` | 8 bảng CSDL và toàn bộ chỉ mục được tạo lập đúng schema 3NF không có lỗi DDL trên container PostgreSQL 16. | Done |
+| `TST-BE-002` | Kiểm thử Ràng buộc Toàn vẹn Khóa & Xác thực Dữ liệu | Thử chèn trùng `employee_code`, `email`, kiểm tra không phân trùng ca cùng thời điểm và kiểm tra khóa PIN sau 5 lần nhập sai. | `DATA-BE-001`, `DATA-BE-002`, `DATA-BE-003`, `DATA-BE-009`, `DATA-BE-012` | `BLD-BE-002` | CSDL ném `DataIntegrityViolationException` và tự động rollback transaction khi phát hiện chèn trùng lặp. | Done |
+| `TST-BE-003` | Kiểm thử Ghi Lô Điểm danh & Hiệu năng Batch | Chèn đồng thời 50 bản ghi điểm danh trong một giao dịch duy nhất có xử lý `ON CONFLICT DO NOTHING`, kiểm chứng lưu trữ 3 năm. | `DATA-BE-004`, `DATA-BE-009`, `DATA-BE-014` | `BLD-BE-003` | Chèn 50 bản ghi hoàn tất trong $\le 50\text{ ms}$; không phát sinh lỗi khóa bảng; dữ liệu điểm danh và audit bảo lưu toàn vẹn. | Done |
+| `TST-BE-004` | Kiểm thử Cooldown Cache & Bảo vệ Dữ liệu Sinh trắc | Kiểm tra bộ nhớ đệm Caffeine chặn quẹt lặp trong 120s; kiểm tra lưu vector `BYTEA` AES-256-GCM, chuẩn 512D L2-norm, OTP 48h và tác vụ tiêu hủy 20 ngày. | `DATA-BE-005`, `DATA-BE-006`, `DATA-BE-007`, `DATA-BE-010`, `DATA-BE-011`, `DATA-BE-013`, `DATA-BE-015` | `BLD-BE-004` | Lượt quẹt thứ hai trong 120s trả về cache hit; vector lưu dưới dạng ciphertext kèm IV; OTP hết hạn sau 48h; dữ liệu thôi việc quá 20 ngày bị xóa sạch. | Done |
+| `TST-BE-022` | Kiểm thử Migration V2 & Trạng thái Xác thực | Áp dụng `V2__add_credential_lifecycle.sql` trên CSDL đã có `V1`; kiểm tra trạng thái xác thực (mật khẩu băm, PIN băm, mốc khóa PIN) và việc bản ghi cũ được bảo toàn. | `DATA-BE-016`, `DATA-BE-012` | `BLD-BE-018` | Migration `V2` chạy thành công trên CSDL đang có dữ liệu, không mất mát bản ghi; `password_hash`/`pin_hash` không lưu văn bản rõ; `pin_locked_until > NOW()` khi đang bị khóa. | Done |
+| `TST-BE-023` | Kiểm thử Ràng buộc & Chỉ mục Lịch Phân ca | Áp dụng chỉ mục `(user_id, effective_from, effective_to)`; thử tạo hai phân ca chồng khoảng hiệu lực của cùng nhân viên (kể cả hai yêu cầu đồng thời) và phân ca liền kề. | `DATA-BE-017` | `BLD-BE-023` | Chỉ mục được tạo đúng; phân ca chồng khoảng bị từ chối và **không** ghi bản ghi; phân ca liền kề (`effective_to` = `effective_from` kế tiếp) được chấp nhận; `effective_to` NULL được coi là vô hạn. | Planned |
+| `TST-BE-024` | Kiểm thử Migration V3 & Chỉ mục Tra cứu | Chạy `V3__add_excuse_requests_and_kiosk_lifecycle.sql` trên CSDL đã có `V1`/`V2`; kiểm tra bảng `excuse_requests`, chỉ mục `audit_logs`/Consent, trạng thái trạm Kiosk và ràng buộc append-only. | `DATA-BE-018`, `DATA-BE-019`, `DATA-BE-020` | `BLD-BE-023` | Migration V3 chạy thành công, không mất bản ghi; bảng `excuse_requests` và các chỉ mục tồn tại đúng lược đồ; không có cột lưu Secret Token dạng văn bản rõ; không tồn tại thao tác cập nhật/xoá `audit_logs`. | Done |
+| `TST-BE-032` | Kiểm thử Migration V4 & Thực thể Vòng đời | Chạy `V4__add_lifecycle_entities.sql` trên CSDL đã áp dụng `V1`–`V3`; kiểm tra 5 bảng mới (`payroll_periods`, `refresh_tokens`, `notifications`, `consent_withdrawals`, `data_subject_requests`), ràng buộc duy nhất theo `(period_year, period_month)` và các chỉ mục tra cứu. | `DATA-BE-021`, `DATA-BE-022`, `DATA-BE-023`, `DATA-BE-024` | `BLD-BE-030` | Migration V4 chạy thành công, không mất bản ghi; 5 bảng và chỉ mục tồn tại đúng lược đồ; chèn trùng kỳ công theo tháng/năm bị từ chối; không có cột lưu token dạng văn bản rõ. | Done |
+| `TST-BE-039` | Kiểm thử Migration V5 Gỡ bỏ Cờ Buộc đổi Mật khẩu | Áp dụng `V5__drop_must_change_password.sql` trên CSDL đã có `V1`–`V4`; kiểm tra cột `must_change_password` không còn tồn tại và dữ liệu hồ sơ nhân sự được bảo toàn. | `DATA-BE-016` | `BLD-BE-035` | Migration V5 chạy thành công, không mất bản ghi; lược đồ sau cùng không có cột `must_change_password`; `password_hash`/`pin_hash` của bản ghi cũ giữ nguyên. | Done |
+
+---
+
+## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Yêu cầu Docker Engine cho Testcontainers**: Toàn bộ các ca kiểm thử tích hợp CSDL (`TST-BE-001` .. `TST-BE-004`) chạy trên instance PostgreSQL 16 thật thông qua Testcontainers, yêu cầu Docker Daemon hoạt động ổn định trên runner/máy phát triển.
+* **Mức độ Cô lập Giao dịch**: Các bài test kiểm tra race condition ghi nhận điểm danh và trừ lượt nhập PIN sai hoạt động dưới mức độ cô lập mặc định `READ COMMITTED`, kiểm chứng cơ chế khóa bi quan hoặc khóa duy nhất ở cấp độ bảng.
+
+---
+title: Backend API Test Plan
+version: 2.0
+status: Approved
+owner: Backend QA & API Lead
+---
+
+# API TEST PLAN — Kế hoạch Kiểm thử Giao diện & Hợp đồng API Backend
+
+## 1. Approach Decisions (Quyết định Tiếp cận Kiểm thử API)
+
+| ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APC-BE-003` | Sử dụng MockMvc kết hợp RestAssured để kiểm thử tự động hợp đồng API | Cho phép kiểm tra toàn diện cả tầng Web MVC (Validation, Serialization) với MockMvc và tích hợp HTTP thực thụ qua RestAssured. | Chỉ kiểm thử thủ công qua Postman hoặc dùng TestRestTemplate (bị loại vì khó tự động hóa pipeline CI/CD và tốc độ chậm). | Triển khai song song `@WebMvcTest` gọn nhẹ cho validation/error handling và `@SpringBootTest(RANDOM_PORT)` cho kịch bản toàn trình end-to-end. | `STK-011`, `API-BE-001` | Accepted |
+| `APC-BE-004` | Tích hợp kiểm thử tải mô phỏng Kiosk gửi punch đồng thời với Gatling | Phát hiện sớm hiện tượng nghẽn luồng xử lý hoặc chậm trễ trên kênh WebSocket và hàng đợi tiếp nhận punch. | Dùng Apache JMeter hoặc kiểm thử tải thủ công (bị loại vì kịch bản XML cồng kềnh, khó quản lý phiên bản qua Git). | Kịch bản kiểm thử tải được lưu trữ dưới dạng mã nguồn (Code-as-Test); thực thi định kỳ trên môi trường lab độc lập, không làm chậm pipeline CI hàng ngày. | `NFR-BE-001`, `NFR-BE-002` | Accepted |
+
+---
+
+## 2. API Test Items (Danh mục Ca Kiểm thử Hợp đồng API)
+
+| ID | Name | Description | Covers | Depends on | Done when | Status |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `TST-BE-005` | Kiểm thử Xác thực Đăng nhập, Refresh Token & Quản lý Nhân sự | Kiểm tra xác thực `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, danh mục `GET /api/v1/admin/employees` và cơ chế RBAC JWT. | `API-BE-001`, `API-BE-002`, `API-BE-011`, `API-BE-015` | `BLD-BE-005`, `BLD-BE-007` | Đăng nhập đúng trả về 200 kèm JWT; đăng nhập sai trả về 401; refresh token hợp lệ cấp access token mới; truy cập admin khi thiếu quyền trả về 403. | Done |
+| `TST-BE-006` | Kiểm thử Điểm danh Đơn lẻ & Gói Lô Kiosk | Kiểm tra tiếp nhận `POST /api/v1/kiosk/punch`, `POST /api/v1/kiosk/sync-batch`, xác thực `X-Kiosk-Id` và chuẩn hóa lỗi ProblemDetails RFC 7807. | `API-BE-003`, `API-BE-004`, `API-BE-015`, `API-BE-016` | `BLD-BE-006` | Header `X-Kiosk-Id` hợp lệ trả về HTTP 200 trong $\le 100\text{ ms}$; thiếu header trả về 401; lỗi dữ liệu trả về đúng RFC 7807 với `invalidParams`. | Done |
+| `TST-BE-007` | Kiểm thử Tải Gallery, Thẩm định OTP & Đăng ký Mặt Mới | Kiểm tra `GET /api/v1/kiosk/gallery`, `POST /api/v1/kiosk/verify-otp`, `POST /api/v1/kiosk/enroll-face` và `POST /api/v1/employee/consent`. | `API-BE-005`, `API-BE-006`, `API-BE-007`, `API-BE-010`, `API-BE-015` | `BLD-BE-006` | `/kiosk/gallery` trả về danh sách vector 512D chuẩn; `/kiosk/verify-otp` xác thực OTP 48h; `/kiosk/enroll-face` lưu vector mã hóa; `/employee/consent` ghi vết thành công. | Done |
+| `TST-BE-008` | Kiểm thử Kênh STOMP Broker & Truy vấn Lịch sử Điểm danh | Kiểm tra đẩy tin tức thời qua `/topic/live-attendance`, `/topic/kiosk-gallery`, `/topic/enrollment/{otp}` và các API tra cứu `GET /api/v1/admin/attendance`, `GET /api/v1/employee/attendance`. | `API-BE-008`, `API-BE-009`, `API-BE-012`, `API-BE-013`, `API-BE-014`, `API-BE-016` | `BLD-BE-008` | Client subscribe `/topic/live-attendance` nhận được bản tin JSON điểm danh ngay lập tức ($\le 50\text{ ms}$); API tra cứu trả về đúng cấu trúc phân trang ISO-8601. | Done |
+| `TST-BE-020` | Kiểm thử Khởi tạo, Cập nhật & Vô hiệu hóa Hồ sơ Nhân sự | Kiểm tra `POST /api/v1/admin/employees` sinh tài khoản kèm mật khẩu tạm dùng một lần, `PATCH /api/v1/admin/employees/{id}` sửa hồ sơ và `PATCH /api/v1/admin/employees/{id}/status` vô hiệu hóa nhân sự. | `FR-BE-010`, `API-BE-017`, `API-BE-018`, `API-BE-019` | `BLD-BE-021` | Tạo hồ sơ trả HTTP 201 kèm `temporaryPassword` (không xuất hiện ở bất kỳ phản hồi nào khác); trùng `employeeCode`/`email` trả HTTP 409; sửa hồ sơ và vô hiệu hóa đều sinh đúng một bản ghi `audit_logs`; nhân sự `TERMINATED` có `terminated_date`. | Planned |
+| `TST-BE-021` | Kiểm thử Đổi Mật khẩu Tự nguyện, Thiết lập PIN & Thẩm định PIN tại Kiosk | Kiểm tra `POST /api/v1/auth/change-password` (chức năng tự nguyện), `POST /api/v1/employee/pin` và `POST /api/v1/kiosk/verify-pin`. | `FR-BE-011`, `FR-BE-012`, `API-BE-020`, `API-BE-021`, `API-BE-022` | `BLD-BE-022` | Tài khoản còn dùng mật khẩu tạm **không** bị chặn ở bất kỳ endpoint nghiệp vụ nào; đổi mật khẩu thành công trả 200 và thu hồi mọi phiên cũ; PIN đúng trả định danh nhân viên, PIN sai trả 401 `PIN_INVALID` và **không** tạo bản ghi điểm danh, sai 5 lần liên tiếp trả 423 `PIN_LOCKED`. | Planned |
+| `TST-BE-029` | Kiểm thử Hợp đồng REST Ca kíp, Phân ca & Kết xuất Excel | Kiểm tra `POST/PATCH /api/v1/admin/shifts`, `/api/v1/admin/employee-shifts` và `GET /api/v1/admin/reports/export`; kiểm tra phân quyền và mã lỗi. | `API-BE-023`, `API-BE-024`, `API-BE-025`, `API-BE-035` | `BLD-BE-027`, `BLD-BE-029` | Tạo ca trả 201, sửa ca 200, phân ca 201, gỡ phân ca 204; chồng khoảng trả 409; thiếu quyền trả 403; file `.xlsx` escape ký tự `=`, `+`, `-`, `@` và kết xuất 1,000 nhân sự trong $\le 3\text{ giây}$. | Planned |
+| `TST-BE-030` | Kiểm thử Hợp đồng REST Đơn Giải trình | Kiểm tra nộp/theo dõi đơn của nhân viên và danh sách/duyệt đơn của HR qua REST; kiểm tra mã lỗi 404/409/400. | `API-BE-026`, `API-BE-027`, `API-BE-028`, `API-BE-029` | `BLD-BE-028` | Nộp đơn trả 201 với `PENDING`; bản ghi không thuộc người gửi trả 404; duyệt/từ chối trả 200; từ chối thiếu lý do trả 400; đơn đã xử lý trả 409. | Planned |
+| `TST-BE-031` | Kiểm thử Hợp đồng REST Tra cứu Tuân thủ & Quản lý Trạm | Kiểm tra `GET /api/v1/admin/audit-logs`, `GET /api/v1/dpo/**`, `POST/PATCH /api/v1/admin/kiosks` và `GET /api/v1/admin/kiosks/{id}/health`. | `API-BE-030`, `API-BE-031`, `API-BE-032`, `API-BE-033`, `API-BE-034` | `BLD-BE-029` | Tra cứu audit trả danh sách phân trang cho `ADMIN` và 403 với role khác; `DPO` chỉ đọc; đăng ký/đổi token trả token đúng một lần; `health` trả `last_ping_at` và cảnh báo khi quá 5 phút. | Planned |
+| `TST-BE-038` | Kiểm thử Hợp đồng REST Vòng đời (Khôi phục, Phiên, Kỳ công, Consent, Quyền & Thông báo) | Kiểm tra `POST /admin/employees/{id}/credentials/reset`, `POST /employee/pin/reset`, `POST /auth/logout`, `/admin/payroll-periods/**`, `/employee/consent/withdraw`, `/employee/data-requests`, `/dpo/data-requests`, `PATCH /admin/users/{id}/role` và `/api/v1/notifications`. | `API-BE-036`, `API-BE-037`, `API-BE-038`, `API-BE-039`, `API-BE-040`, `API-BE-041`, `API-BE-042`, `API-BE-043`, `API-BE-044` | `BLD-BE-034` | Các endpoint trả đúng 200/201/204 và mã lỗi 400/401/403/409; `temporaryPassword` chỉ xuất hiện một lần; thu hồi ADMIN cuối cùng và điều chỉnh kỳ `LOCKED` đều trả 409; thông báo chỉ trả của người gọi. | Planned |
+
+---
+
+## 3. Defect Management (Quản lý Lỗi Giao diện API)
+
+* Sai lệch cấu trúc trường JSON (Schema Mismatch) hoặc mã lỗi sai được xếp loại **Critical (P1)** và phải được chỉnh sửa đồng bộ giữa Backend và Client.
+
+---
+
+## 4. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
+
+* **Tách biệt Cổng Mạng Kiểm thử STOMP WebSocket**: Kiểm thử luồng STOMP thời gian thực sử dụng `StandardWebSocketClient` kết nối tới cổng ngẫu nhiên `RANDOM_PORT` của Spring Boot Test để tránh xung đột cổng mạng khi chạy song song.
+* **Mô phỏng Gói Lô Ngoại tuyến**: Các ca kiểm thử `POST /api/v1/kiosk/sync-batch` giả lập mảng 50 phần tử có các mốc thời gian trong quá khứ nhằm kiểm chứng cơ chế lưu trữ bảo toàn mốc thời gian thực của sự kiện và tính năng bỏ qua bản ghi trùng.
