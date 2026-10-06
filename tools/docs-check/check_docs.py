@@ -424,7 +424,7 @@ def check_orphans(defines, incoming, leaves, problems):
                 problems.append(Problem("ORP005", f"{item_id}: requirement chưa có test item 'Covers' (mục 13.2)", item_id))
 
 
-def check_task_decomposition(defines, incoming, problems, meta_text: str):
+def check_task_decomposition(defines, incoming, problems):
     derived = defaultdict(set)
     for item_id, items in defines.items():
         if type_of(item_id) != "TASK":
@@ -438,8 +438,6 @@ def check_task_decomposition(defines, incoming, problems, meta_text: str):
         if not any(item.leaf.startswith("docs/service-docs/") for item in items):
             continue
         if derived.get(item_id):
-            continue
-        if item_id in meta_text:
             continue
         problems.append(Problem(
             "ORP006", f"{item_id}: BLD-/FND- của service chưa được phân rã thành 'TASK-' trong task-plan.md (mục 13.2)", item_id))
@@ -607,10 +605,6 @@ def main() -> int:
 
     leaves = load_leaves(docs_dir)
     defines, incoming = build_index(leaves)
-    meta_text = ""
-    meta_path = docs_dir / "meta.md"
-    if meta_path.exists():
-        meta_text = meta_path.read_text(encoding="utf-8")
 
     problems: list[Problem] = []
     check_front_matter(leaves, problems)
@@ -619,7 +613,7 @@ def main() -> int:
     check_item_status(defines, problems)
     check_markdown(leaves, problems)
     check_orphans(defines, incoming, leaves, problems)
-    check_task_decomposition(defines, incoming, problems, meta_text)
+    check_task_decomposition(defines, incoming, problems)
     check_facet_dependencies(defines, problems)
     check_waves(defines, problems)
     check_tree_structure(leaves, problems)
