@@ -16,6 +16,12 @@ owner: Backend Lead & API Architect
 | `APD-BE-001` | Cấu trúc REST API Phân hệ Kiosk | Thiết kế hợp đồng 5 endpoint REST phục vụ trạm Kiosk (`/punch`, `/sync-batch`, `/gallery`, `/verify-otp`, `/enroll-face`), tiền tố URL `/api/v1/kiosk`, xác thực qua header `X-Kiosk-Id`. | `STK-011` | `API-BE-003`, `API-BE-004`, `API-BE-005`, `API-BE-006`, `API-BE-007` | `DD-SYS-001`, `DD-BE-010` | Accepted |
 | `APD-BE-002` | Cấu trúc REST API Cổng Web Portal | Thiết kế hợp đồng các endpoint REST phục vụ Web Portal (Auth, Admin Attendance, Employee Attendance, Consent Signing, Employee Management), xác thực Bearer JWT đa vai trò. | `STK-011` | `API-BE-001`, `API-BE-002`, `API-BE-008`, `API-BE-009`, `API-BE-010`, `API-BE-011` | `DD-SYS-001`, `DD-BE-009` | Accepted |
 | `APD-BE-003` | Cấu trúc Kênh Đẩy Dữ liệu STOMP | Thiết kế kênh WebSocket STOMP endpoint `/ws-attendance`, hỗ trợ SockJS fallback và cấu hình message broker tiền tố `/topic` phục vụ đẩy sự kiện thời gian thực tới Kiosk và Web. | `STK-012` | `API-BE-012`, `API-BE-013`, `API-BE-014` | `DD-SYS-004`, `DD-BE-011` | Accepted |
+| `APD-BE-007` | Giao diện Khởi tạo Hồ sơ Nhân sự (`POST /api/v1/admin/employees`) | Tiếp nhận hồ sơ nhân sự mới, sinh tài khoản kèm mật khẩu tạm hiển thị đúng một lần trong phản hồi; yêu cầu role `HR_MANAGER`/`ADMIN`; từ chối khi trùng `employeeCode`/`email`. | `STK-011` | `API-BE-017` | `DD-BE-013`, `DD-BE-010` | Accepted |
+| `APD-BE-008` | Giao diện Cập nhật Hồ sơ Nhân sự (`PATCH /api/v1/admin/employees/{id}`) | Cập nhật họ tên, email, phòng ban, vai trò; mọi thay đổi sinh bản ghi audit với giá trị trước/sau; yêu cầu role `HR_MANAGER`/`ADMIN`. | `STK-011` | `API-BE-018` | `DD-BE-002` | Accepted |
+| `APD-BE-009` | Giao diện Vô hiệu hóa Nhân sự (`PATCH /api/v1/admin/employees/{id}/status`) | Chuyển trạng thái công tác sang `TERMINATED`, đặt `terminated_date` để kích hoạt tác vụ tiêu hủy sinh trắc sau 20 ngày; ghi audit; yêu cầu role `HR_MANAGER`/`ADMIN`. | `STK-011` | `API-BE-019` | `DD-SYS-003`, `DD-BE-002` | Accepted |
+| `APD-BE-010` | Giao diện Đổi Mật khẩu (`POST /api/v1/auth/change-password`) | Đổi mật khẩu của chính người dùng đang đăng nhập; là endpoint duy nhất được phép gọi khi tài khoản còn cờ buộc đổi mật khẩu; xóa cờ trong cùng giao dịch. | `STK-011` | `API-BE-020` | `DD-BE-013`, `DD-BE-014` | Accepted |
+| `APD-BE-011` | Giao diện Thiết lập/Đổi Mã PIN (`POST /api/v1/employee/pin`) | Nhân viên đã đăng nhập thiết lập PIN 6 số (kèm xác nhận) hoặc đổi PIN (kèm PIN hiện tại); PIN lưu băm một chiều; trả trạng thái đã thiết lập PIN. | `STK-011` | `API-BE-021` | `DD-BE-015` | Accepted |
+| `APD-BE-012` | Giao diện Thẩm định Mã PIN cho Kiosk (`POST /api/v1/kiosk/verify-pin`) | Trạm Kiosk gửi mã PIN để Backend thẩm định trước khi ghi nhận điểm danh; yêu cầu `X-Kiosk-Id` + Secret Token; phân biệt sai PIN (401 `PIN_INVALID`) và đang bị khóa (423 `PIN_LOCKED`). | `STK-011` | `API-BE-022` | `DD-BE-015`, `DD-BE-010` | Accepted |
 
 ### 1.2. Contracts (Mô hình Dữ liệu & Báo lỗi Toàn cục)
 
@@ -505,8 +511,38 @@ owner: Backend Lead & API Architect
 
 ---
 
-## 5. Hợp đồng Kênh WebSocket STOMP (STOMP Events Contract)
+### 4.12. Nhóm Endpoint Vòng đời Thông tin Xác thực (`APD-BE-007` … `APD-BE-012`)
+*Quy ước chung: phản hồi thành công bọc theo `ApiResponse`; lỗi theo `ProblemDetails` (Mục 3); mốc thời gian ISO-8601 kèm `+07:00`.*
 
+**a) `POST /api/v1/admin/employees` (`APD-BE-007`)** — yêu cầu role `HR_MANAGER` hoặc `ADMIN`:
+
+| Tên Trường | Kiểu | Bắt buộc | Ràng buộc |
+| :--- | :--- | :---: | :--- |
+| `employeeCode` | `string` | Có | `^[A-Z]{2,4}-[0-9]{4,6}$`, duy nhất toàn hệ thống |
+| `fullName` | `string` | Có | Tối đa 128 ký tự |
+| `email` | `string` | Có | Định dạng email, duy nhất toàn hệ thống |
+| `department` | `string` | Không | Tối đa 64 ký tự |
+| `role` | `string` | Có | `EMPLOYEE` \| `HR_MANAGER` \| `ADMIN` |
+
+* **Response 201 Created**: `data = { employeeId, employeeCode, temporaryPassword, mustChangePassword: true }`. `temporaryPassword` **chỉ** xuất hiện trong phản hồi này và không thể truy xuất lại.
+* **Mã lỗi**: `409 DATA_INTEGRITY_VIOLATION` (trùng `employeeCode`/`email`), `403 ACCESS_DENIED`, `400 VALIDATION_FAILED`.
+
+**b) `PATCH /api/v1/admin/employees/{id}` (`APD-BE-008`)** — request gồm các trường không bắt buộc `fullName`, `email`, `department`, `role` (chỉ gửi trường cần đổi). Response 200 trả hồ sơ sau cập nhật; mỗi thay đổi sinh đúng một bản ghi `audit_logs` chứa giá trị trước và sau.
+
+**c) `PATCH /api/v1/admin/employees/{id}/status` (`APD-BE-009`)** — request: `status` (`ACTIVE` \| `SUSPENDED` \| `TERMINATED`) và `terminatedDate` (bắt buộc khi `TERMINATED`, dùng để kích hoạt tác vụ tiêu hủy sinh trắc sau 20 ngày). Response 200: `data = { employeeId, status, terminatedDate }`.
+
+**d) `POST /api/v1/auth/change-password` (`APD-BE-010`)** — request: `currentPassword`, `newPassword` (tối thiểu 8 ký tự, khác mật khẩu hiện tại và khác mật khẩu tạm). Response 200: `data = { mustChangePassword: false }`. Khi tài khoản còn cờ buộc đổi mật khẩu, đây là endpoint nghiệp vụ duy nhất được phép gọi (cùng `POST /api/v1/auth/refresh`).
+* **Mã lỗi**: `401 AUTH_INVALID_CREDENTIALS` (mật khẩu hiện tại sai), `400 VALIDATION_FAILED`.
+
+**e) `POST /api/v1/employee/pin` (`APD-BE-011`)** — request: `pin` (đúng 6 chữ số), `confirmPin` (bắt buộc khi thiết lập lần đầu, phải khớp `pin`), `currentPin` (bắt buộc khi đổi PIN, phải đúng PIN hiện tại). Response 200: `data = { hasPin: true }`.
+* **Mã lỗi**: `401 PIN_INVALID` (PIN hiện tại sai), `423 PIN_LOCKED` (đang bị khóa), `400 VALIDATION_FAILED`.
+
+**f) `POST /api/v1/kiosk/verify-pin` (`APD-BE-012`)** — headers `X-Kiosk-Id` + `Authorization: Bearer <SecretToken>`; request: `{ kioskId, pin }`. Response 200: `data = { employeeId, employeeCode, fullName, department }`. Trạm Kiosk chỉ được ghi nhận điểm danh `VERIFICATION_PIN` sau khi nhận HTTP 200 từ endpoint này.
+* **Mã lỗi**: `401 PIN_INVALID`, `423 PIN_LOCKED` (kèm `lockedUntil` trong `invalidParams`), `404 EMPLOYEE_NOT_FOUND`.
+
+---
+
+## 5. Hợp đồng Kênh WebSocket STOMP (STOMP Events Contract)
 * **Endpoint Bắt tay WebSocket**: `ws://localhost:8080/ws-attendance` (kèm SockJS fallback `http://localhost:8080/ws-attendance`).
 * **Header Kết nối STOMP**: `Authorization: Bearer <JWT>` (đối với Web) hoặc `X-Kiosk-Id` + Token (đối với Kiosk).
 
@@ -590,6 +626,9 @@ owner: Backend Lead & API Architect
 | `RESOURCE_NOT_FOUND` | 404 | Không tìm thấy tài nguyên | Endpoint hoặc tài nguyên được yêu cầu không tồn tại trên máy chủ. |
 | `METHOD_NOT_ALLOWED` | 405 | Phương thức không được hỗ trợ | Phương thức HTTP không được hỗ trợ cho endpoint được gọi. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Định dạng nội dung không được hỗ trợ | Request Body không phải `application/json; charset=UTF-8`. |
+| `PASSWORD_CHANGE_REQUIRED` | 403 | Cần đổi mật khẩu trước khi tiếp tục | Tài khoản còn mật khẩu tạm: mọi endpoint nghiệp vụ bị chặn cho tới khi gọi `POST /api/v1/auth/change-password` thành công. |
+| `PIN_INVALID` | 401 | Mã PIN không đúng | Mã PIN 6 số không khớp với băm lưu trong CSDL; lượt sai được đếm để khóa sau 5 lần liên tiếp. |
+| `PIN_LOCKED` | 423 | Mã PIN đang bị khóa | Nhập sai quá 5 lần liên tiếp; trả kèm thời gian mở khóa còn lại (15 phút kể từ lần sai thứ 5). |
 | `DATA_INTEGRITY_VIOLATION` | 400 | Lỗi toàn vẹn dữ liệu | Vi phạm ràng buộc duy nhất (Unique Email hoặc Employee Code). |
 | `INTERNAL_SERVER_ERROR` | 500 | Lỗi hệ thống nội bộ | Xảy ra lỗi bất thường ngoài tầm kiểm soát; kiểm tra log máy chủ. |
 
@@ -603,6 +642,7 @@ owner: Backend Lead & API Architect
 | `DD-BE-010` | Sử dụng tiêu đề tùy biến `X-Kiosk-Id` kết hợp Secret Bearer Token cho máy trạm Kiosk | Định danh rõ ràng phần cứng máy trạm phát sinh giao dịch, cho phép vô hiệu hóa tức thời từng trạm Kiosk riêng biệt khi có rủi ro lộ khóa. | Dùng chung 1 tài khoản JWT Service Account cho toàn bộ Kiosk (bị loại vì không cô lập được trạm bị thỏa hiệp và khó phân biệt vị trí chấm công). | Mỗi máy trạm Kiosk khi lắp đặt phải được cấp phát cặp `kioskId` và Secret Token riêng; Backend lọc và xác thực ngay tại tầng Security Filter. | `API-BE-003`, `API-BE-015` | Accepted |
 | `DD-BE-011` | Cấu hình kênh STOMP chia tách tiền tố `/topic` (Public broadcast) và `/user` (Private unicast) | Tối ưu lưu lượng truyền thông thời gian thực: chỉ phát sóng dữ liệu chung tới subscriber liên quan, dữ liệu phiên OTP được cô lập cho người dùng đích. | Dùng một topic chung duy nhất đẩy toàn bộ sự kiện cho client tự lọc (bị loại vì rò rỉ bảo mật thông tin OTP và gây lãng phí băng thông). | Cần cấu hình `ChannelInterceptor` thẩm định quyền subscribe từng topic; đảm bảo Kiosk chỉ nhận thông điệp gallery và Web nhận sự kiện attendance. | `API-BE-012`, `API-BE-013`, `API-BE-014` | Accepted |
 | `DD-BE-012` | Giới hạn kích thước gói lô đồng bộ bù ngoại tuyến tối đa 50 bản ghi/request | Ngăn chặn hiện tượng nghẽn luồng kết nối và khóa bảng CSDL kéo dài khi hàng loạt trạm Kiosk đồng loạt gửi bù dữ liệu sau sự cố mất mạng diện rộng. | Gửi từng bản ghi đơn lẻ nối tiếp hoặc gửi một gói không giới hạn (bị loại vì quá tải socket HTTP hoặc nguy cơ timeout transaction CSDL). | Phía trạm Kiosk phải phân trang hàng đợi SQLite ngoại tuyến thành các lô 50 bản ghi; Backend xử lý batch insert có `ON CONFLICT DO NOTHING` trong $\le 50\text{ ms}$. | `API-BE-004`, `NFR-BE-001` | Accepted |
+| `DD-BE-016` | Ánh xạ HTTP status riêng cho vòng đời thông tin xác thực: 403 `PASSWORD_CHANGE_REQUIRED`, 401 `PIN_INVALID`, 423 `PIN_LOCKED`. | Client Kiosk và Web cần phân biệt "phải đổi mật khẩu", "sai PIN" và "PIN đang bị khóa" để hiển thị đúng luồng và đếm ngược thời gian khóa, thay vì gộp chung một lỗi 401/400. | Gộp mọi thất bại xác thực vào 401 `AUTH_INVALID_CREDENTIALS` (bị loại vì client không thể phân biệt nguyên nhân và không biết thời gian mở khóa) | Bổ sung ba mã lỗi vào từ điển Mục 6; mã 423 `PIN_LOCKED` kèm thời điểm mở khóa trong `invalidParams`/`message`. | `API-BE-020`, `API-BE-022`, `API-SYS-021` | Accepted |
 
 ---
 
