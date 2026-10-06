@@ -20,6 +20,7 @@ owner: Solution Architect
 | `APD-SYS-007` | Lấy Danh sách Nhân sự (`GET /api/v1/employees`) | Lấy danh sách hồ sơ nhân sự có phân trang, tìm kiếm và lọc phòng ban. | `STK-011` | `API-SYS-008` | `DD-SYS-012` | Accepted |
 | `APD-SYS-008` | Ký Cam kết Informed Consent (`POST /api/v1/compliance/consent`) | Ghi nhận văn bản thỏa thuận Informed Consent theo Luật 2025. | `STK-011` | `API-SYS-009`, `API-SYS-016` | `DD-SYS-003` | Accepted |
 | `APD-SYS-009` | Xuất Báo cáo Điểm danh Excel (`GET /api/v1/reports/export`) | Kết xuất dữ liệu bảng công ra file Excel (.xlsx) đã làm sạch mã độc. | `STK-011` | `API-SYS-011`, `SOL-SYS-013` | `DD-SYS-008` | Accepted |
+| `APD-SYS-014` | Vòng đời Thông tin Xác thực Tài khoản (`POST /api/v1/auth/change-password`, `POST /api/v1/employee/pin`, `POST /api/v1/kiosk/verify-pin`) | Ba giao diện quản lý thông tin xác thực: đổi mật khẩu (kèm luồng bắt buộc ở lần đăng nhập đầu), thiết lập/đổi mã PIN dự phòng của nhân viên, và xác thực mã PIN cho trạm Kiosk trước khi ghi nhận điểm danh PIN. | `STK-011`, `STK-015` | `API-SYS-021`, `API-SYS-022`, `API-SYS-023` | `DD-SYS-012`, `DD-SYS-017` | Accepted |
 
 ---
 
