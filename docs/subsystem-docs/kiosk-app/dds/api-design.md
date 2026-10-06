@@ -48,10 +48,10 @@ graph TD
 
 | ID | Name | Definition | Uses | Realizes | Decisions | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
-| `APD-KSK-001` | `KioskHttpClient` REST Client Wrapper | Thực hiện các lệnh gọi REST API đồng bộ/bất đồng bộ với timeout 3.0s; tự động tiêm Header xác thực (`X-Kiosk-Id`, Bearer Token); ánh xạ mã lỗi HTTP sang domain exceptions. | `STK-007` | `API-KSK-001`, `API-KSK-002`, `API-KSK-003`, `API-KSK-004`, `API-KSK-005` | `DD-SYS-001` | Accepted |
+| `APD-KSK-001` | `KioskHttpClient` REST Client Wrapper | Thực hiện các lệnh gọi REST API đồng bộ/bất đồng bộ với timeout 3.0s; tự động tiêm Header xác thực (`X-Kiosk-Id`, Bearer Token); ánh xạ mã lỗi HTTP sang domain exceptions. | `STK-007` | `API-KSK-001`, `API-KSK-002`, `API-KSK-003`, `API-KSK-004`, `API-KSK-005`, `API-KSK-007` | `DD-SYS-001` | Accepted |
 | `APD-KSK-002` | `KioskStompWorker` Real-time Receiver | Luồng nền `QThread` duy trì kết nối WebSocket STOMP tới Backend qua `stomp.py`, lắng nghe `/topic/kiosk-gallery`; tự động kết nối lại và phát tín hiệu nạp nóng vector. | `STK-008`, `STK-003` | `API-KSK-006` | `DD-SYS-001` | Accepted |
 | `APD-KSK-003` | `OfflineSyncWorker` Batch Uploader | Luồng nền `QThread` quét hàng đợi SQLite `offline_punches` mỗi 10s, gom tối đa 50 bản ghi gửi `sync-batch` và cập nhật trạng thái đã gửi thành công. | `STK-005`, `STK-003` | `API-KSK-002` | `DD-SYS-005` | Accepted |
-| `APD-KSK-004` | REST API Field-by-Field Contracts & Error Mapping | Quy chuẩn định dạng JSON, validation tham số và ánh xạ mã lỗi HTTP ProblemDetails cho toàn bộ các endpoint của trạm Kiosk. | `STK-007` | `API-SYS-017`, `API-SYS-018` | `DD-SYS-001` | Accepted |
+| `APD-KSK-004` | REST API Field-by-Field Contracts & Error Mapping | Quy chuẩn định dạng JSON, validation tham số và ánh xạ mã lỗi HTTP ProblemDetails cho toàn bộ các endpoint của trạm Kiosk. | `STK-007` | `API-KSK-001`, `API-KSK-007` | `DD-SYS-001` | Accepted |
 
 ---
 

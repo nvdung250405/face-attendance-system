@@ -15,8 +15,8 @@ owner: Product Designer & UI/UX Specialist
 
 | ID | Statement | Category | Priority | Basis | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
-| `UI-KSK-001` | Hành trình Điểm danh Khuôn mặt Siêu tốc: Người dùng đứng trước Kiosk ($0.6 - 1.2\text{ m}$), nhìn vào Oval, nhận diện thành công $\le 1.0\text{ s}$ và thẻ kết quả hiển thị $2.5\text{ s}$. | Journey | Must | `FR-SYS-001`, `FR-SYS-005`, `NFR-SYS-003`, `ARC-001`, `ACT-001` | Nhận diện và hiển thị kết quả thành công trong vòng $\le 1.0\text{ s}$; thẻ kết quả tự ẩn sau $2.5\text{ s}$; kích hoạt cooldown 120s. | Approved |
-| `UI-KSK-002` | Hành trình Điểm danh Bằng Mã PIN Dự phòng: Chạm nút PIN (hoặc phím F2), mở hộp thoại PIN Pad làm mờ hậu cảnh 16px, nút bấm lớn $88\times 88\text{ px}$, khóa 15p sau 5 lần sai. | Journey | Must | `FR-SYS-004`, `FR-SYS-017`, `ARC-001`, `ACT-001` | Nhập đúng PIN 6 số điểm danh thành công; nhập sai 5 lần tự động khóa 15 phút kèm đếm ngược `lockedUntil`; phương thức duy nhất cho nhân sự đã rút Consent. | Approved |
+| `UI-KSK-001` | Hành trình Điểm danh Khuôn mặt Siêu tốc: Người dùng đứng trước Kiosk ($0.6 - 1.2\text{ m}$), nhìn vào Oval, nhận diện thành công $\le 1.0\text{ s}$ (gồm chu kỳ AI $\le 350\text{ ms}$ theo `NFR-KSK-001` cộng render animation) và thẻ kết quả hiển thị $2.5\text{ s}$. | Journey | Must | `FR-SYS-001`, `FR-SYS-005`, `NFR-SYS-003`, `ARC-001`, `ACT-001` | Nhận diện và hiển thị kết quả thành công trong vòng $\le 1.0\text{ s}$ end-to-end; thẻ kết quả tự ẩn sau $2.5\text{ s}$; kích hoạt cooldown 120s. | Approved |
+| `UI-KSK-002` | Hành trình Điểm danh Bằng Mã PIN Dự phòng: Chạm nút PIN trên màn hình (hoặc phím F2), mở hộp thoại PIN Pad làm mờ hậu cảnh 16px, nút bấm lớn $88\times 88\text{ px}$, khóa 15p sau 5 lần sai. Với nhân sự đã rút Consent, Oval hướng dẫn chuyển sang nhập PIN. | Journey | Must | `FR-SYS-004`, `FR-SYS-017`, `ARC-001`, `ACT-001` | Nhập đúng PIN 6 số điểm danh thành công; nhập sai 5 lần tự động khóa 15 phút kèm đếm ngược `lockedUntil`; hiển thị thông báo hướng dẫn riêng cho nhân sự đã rút Consent. | Approved |
 | `UI-KSK-003` | Hành trình Tự Kích hoạt & Đăng ký Khuôn mặt In-Viewport 3 Bước: Bước 1 nhập OTP $\rightarrow$ Bước 2 modal tự ẩn để lộ camera chính chụp 3 ảnh $\rightarrow$ Bước 3 xác nhận hoàn tất. | Journey | Must | `FR-SYS-008`, `FR-SYS-009`, `ARC-001`, `ACT-001` | Popup tự ẩn ở Bước 2 để lộ trọn vẹn camera chính; chụp 3 ảnh chuẩn $S_{\text{liveness}} \ge 0.85$ và hiện lại popup xác nhận ở Bước 3. | Approved |
 
 ---
@@ -34,6 +34,11 @@ stateDiagram-v2
     Rejected --> Standby: Sau 2.0 giây cảnh báo lỗi
 ```
 
+* **Xử lý Ngoại lệ Giao diện (Exception UX)**:
+  * Khi camera mất tín hiệu: Màn hình hiển thị lớp phủ mờ cảnh báo "Đang kết nối lại camera..." kèm biểu tượng xoay; tự phục hồi trong $\le 3\text{ s}$ (`NFR-KSK-005`).
+  * Khi lỗi mạng lúc điểm danh PIN: Hiển thị thông báo "Không có kết nối tới máy chủ, vui lòng liên hệ nhân sự" và giữ nguyên giao diện không làm sập ứng dụng.
+  * Khi người dùng đứng quá 5s mà không căn chỉnh chuẩn: Hiển thị gợi ý chuyển sang dùng phím PIN Pad.
+
 | ID | Statement | Category | Priority | Basis | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
 | `UI-KSK-004` | Trạng thái Chờ (Standby): Khung Oval hiển thị viền nét đứt 3px màu xám Slate `#64748B`, thông báo "Vui lòng nhìn thẳng vào khung oval", không phát âm thanh. | VisualState | Must | `FR-SYS-001`, `FR-KSK-001`, `ARC-001` | Hiển thị viền xám tĩnh lặng khi không có người; tiết kiệm CPU và tài nguyên GPU. | Approved |
@@ -47,6 +52,6 @@ stateDiagram-v2
 
 | ID | Statement | Category | Priority | Basis | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
-| `UI-KSK-008` | Quy chuẩn Điểm Chạm Cảm ứng & Độ Tương phản: Kích thước nút bấm tối thiểu $\ge 48\times 48\text{ px}$ (phím PIN $88\times 88\text{ px}$), khoảng cách $\ge 16\text{ px}$, tương phản WCAG 2.1 AA $\ge 4.5:1$. | Accessibility | Must | `NFR-SYS-010`, `ACT-001` | Toàn bộ thành phần cảm ứng đạt kích thước tối thiểu, phông chữ dễ đọc ở cự ly 1m; đạt chuẩn tiếp cận cho người dùng. | Approved |
-| `UI-KSK-009` | Hỗ trợ Phím tắt Phần cứng: Phím F2 mở/đóng PIN Pad, phím F3 mở/đóng Đăng ký khuôn mặt, phím Esc đóng toàn bộ modal quay về camera chính. | Interaction | Must | `FR-SYS-004`, `FR-SYS-009`, `ACT-001` | Nhấn F2/F3/Esc trên bàn phím vật lý kích hoạt hoặc đóng modal tương ứng tức thời. | Approved |
+| `UI-KSK-008` | Quy chuẩn Điểm Chạm Cảm ứng & Độ Tương phản WCAG 2.2 AA: Kích thước nút bấm tối thiểu $\ge 48\times 48\text{ px}$ (phím PIN $88\times 88\text{ px}$, vượt ngưỡng $24\times 24\text{ px}$ của tiêu chí 2.5.8 Target Size), khoảng cách $\ge 16\text{ px}$, tương phản màu sắc $\ge 4.5:1$, chỉ báo Focus rõ ràng (2.4.7/2.4.11) và xác thực không đòi hỏi ghi nhớ nhận thức phức tạp (3.3.8). | Accessibility | Must | `NFR-SYS-010`, `ACT-001` | Toàn bộ thành phần cảm ứng đạt kích thước tối thiểu, phông chữ dễ đọc ở cự ly 1m; đạt chuẩn tiếp cận WCAG 2.2 AA cho người dùng. | Approved |
+| `UI-KSK-009` | Hỗ trợ Phím tắt Phần cứng & Tương tác Bổ trợ: Phím F2 mở/đóng PIN Pad, phím F3 mở/đóng Đăng ký khuôn mặt, phím Esc đóng toàn bộ modal quay về camera chính; hỗ trợ người vận hành (`ACT-003`) và trạm có bàn phím vật lý song song với nút chạm cảm ứng cho nhân viên (`ACT-001`). | Interaction | Must | `FR-SYS-004`, `FR-SYS-009`, `ACT-001`, `ACT-003` | Nhấn F2/F3/Esc trên bàn phím vật lý kích hoạt hoặc đóng modal tương ứng tức thời. | Approved |
 

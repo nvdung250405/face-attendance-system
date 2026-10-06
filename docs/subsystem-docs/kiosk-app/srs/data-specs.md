@@ -18,7 +18,8 @@ owner: Edge Vision Lead & Data Engineer
 | `DATA-KSK-001` | Quản lý thực thể Hàng đợi Ngoại tuyến (`offline_punches`) lưu trữ toàn bộ giao dịch chấm công trong SQLite WAL cục bộ khi mất mạng. | Entity | Must | `FR-SYS-006`, `NFR-SYS-006`, `SRS-008`, `ARC-001`, `PD-004` | Lưu `employee_id`, `punch_timestamp` ISO-8601, `punch_type`, `verification_method`, `confidence_score`, `kiosk_id`, `is_synced` (0/1), `retry_count`; bảo toàn dữ liệu $\text{RPO} = 0$. | Approved |
 | `DATA-KSK-002` | Quản lý thực thể Ma trận Gallery RAM (`GalleryMatrix`) duy trì thường trực $N \times 512$ vector ArcFace đã chuẩn hóa L2 để so khớp Cosine 1:N dưới 2ms (nạp từ Backend hoặc snapshot cache SQLite cục bộ khi khởi động ngoại tuyến). | Entity | Must | `FR-SYS-003`, `FR-SYS-006`, `NFR-SYS-001`, `ARC-001`, `PD-002`, `INF-007` | Mảng `numpy.ndarray float32` kèm mảng `id_map` và hashmap `metadata_registry`; hỗ trợ nạp nóng Atomic Swap mà không lock Camera Stream; nạp fallback từ bộ đệm SQLite khi khởi động ngoại tuyến. | Approved |
 | `DATA-KSK-003` | Quản lý thực thể Bộ đệm Cooldown Biên (`LocalCooldownCache`) lưu trữ mốc giờ quẹt gần nhất của từng nhân viên trong RAM để chặn quẹt dồn dập. | Entity | Must | `FR-SYS-005`, `NFR-SYS-003`, `ARC-001`, `PD-001` | Cửa sổ cooldown 120s; từ chối và báo "Đã ghi nhận" khi quẹt lặp; luồng nền tự dọn dẹp mục sau 300s. | Approved |
-| `DATA-KSK-004` | Quản lý thực thể Cấu hình Vận hành Trạm (`KioskConfig`) lưu trữ các tham số camera, URL backend, secret token và các ngưỡng AI từ biến môi trường. | Entity | Must | `SRS-006`, `FR-SYS-020`, `STK-034`, `PD-001` | Nạp đúng `KIOSK_ID`, `BACKEND_URL`, `CAMERA_DEVICE_INDEX`, ngưỡng similarity 0.50, liveness 0.85, stability 0.60s. | Approved |
+| `DATA-KSK-004` | Quản lý thực thể Cấu hình Vận hành Trạm (`KioskConfig`) lưu trữ các tham số camera, URL backend, secret token và các ngưỡng AI từ biến môi trường. | Entity | Must | `SRS-006`, `FR-SYS-020`, `INF-001`, `PD-001` | Nạp đúng `KIOSK_ID`, `BACKEND_URL`, `CAMERA_DEVICE_INDEX`, ngưỡng similarity 0.50, liveness 0.85, stability 0.60s. | Approved |
+| `DATA-KSK-007` | Quản lý thực thể Bộ đệm Danh mục Khuôn mặt Cục bộ (`local_gallery_cache`) trong SQLite lưu trữ bản sao vector mới nhất từ Backend, phục vụ nạp ma trận RAM khi trạm Kiosk khởi động trong tình trạng ngoại tuyến (Cold-Start Offline). | Entity | Must | `FR-SYS-003`, `FR-SYS-006`, `ARC-001`, `ARC-007`, `PD-004` | Lưu `employee_id`, `employee_code`, `full_name`, `department`, `vector_data` (BLOB 2048 bytes), `updated_at`; khi mất mạng lúc khởi động, nạp thành công Gallery RAM từ snapshot này thay vì rỗng. | Approved |
 
 ---
 
@@ -76,5 +77,42 @@ owner: Edge Vision Lead & Data Engineer
 | `CAMERA_WIDTH` / `HEIGHT`| `int` | `1280` / `720` | Độ phân giải khung hình thu nhận từ webcam. |
 | `SIMILARITY_THRESHOLD`| `float` | `0.50` | Ngưỡng Cosine Similarity tối thiểu để xác nhận danh tính. |
 | `LIVENESS_THRESHOLD` | `float` | `0.85` | Ngưỡng liveness MiniFASNet tối thiểu chống giả mạo. |
-| `STABILITY_SECONDS` | `float` | `0.60` | Thời gian giữ ổn định trong Oval trước khi nhận diện. |
+| `STABILITY_SECONDS` | `float` | `0.60` | Thời gian giữ ổn định trong Oval trước khi nhận diện (thuộc dải 0.5 - 1.0s). |
+| `NTP_SERVER` | `string` | `"pool.ntp.org"` | Máy chủ đồng bộ thời gian NTP đảm bảo tính chính xác cho `punch_timestamp`. |
+| `STOMP_ENDPOINT` | `string` | `"ws://localhost:8080/ws-attendance"` | Địa chỉ kênh WebSocket STOMP nhận tín hiệu đồng bộ nóng. |
+| `LOG_LEVEL` | `string` | `"INFO"` | Mức độ chi tiết của nhật ký vận hành trạm. |
+| `LOG_PATH` | `string` | `"/var/log/fas-kiosk/kiosk.log"` | Đường dẫn lưu trữ tệp nhật ký cục bộ trên trạm. |
+| `PIN_LOCKOUT_THRESHOLD`| `int` | `5` | Số lần thử PIN sai tối đa trước khi khóa tạm thời. |
+| `PIN_LOCKOUT_MINUTES` | `int` | `15` | Thời gian khóa bàn phím số khi vượt ngưỡng thử sai (phút). |
+
+### 3.5. Cấu trúc Bảng SQLite `local_gallery_cache` (`DATA-KSK-007`)
+
+Bảng bộ đệm snapshot vector khuôn mặt phục vụ khởi động nguội ngoại tuyến (Cold-Start Offline) khi trạm Kiosk bật nguồn mà chưa có kết nối mạng:
+
+```sql
+CREATE TABLE IF NOT EXISTS local_gallery_cache (
+    employee_id INTEGER PRIMARY KEY,
+    employee_code TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    department TEXT NOT NULL,
+    vector_data BLOB NOT NULL,          -- Mảng 512 số thực float32 (2048 bytes)
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_gallery_emp_code ON local_gallery_cache(employee_code);
+```
+
+| Thuộc tính | Kiểu dữ liệu SQLite | Ràng buộc | Giá trị mặc định | Ý nghĩa & Mô tả |
+| :--- | :--- | :--- | :--- | :--- |
+| `employee_id` | `INTEGER` | PRIMARY KEY | — | Mã định danh nhân viên trong hệ thống trung tâm. |
+| `employee_code` | `TEXT` | NOT NULL | — | Mã số nhân viên (Ví dụ: `'NV-1042'`). |
+| `full_name` | `TEXT` | NOT NULL | — | Họ và tên đầy đủ của nhân viên. |
+| `department` | `TEXT` | NOT NULL | — | Tên phòng ban / bộ phận công tác. |
+| `vector_data` | `BLOB` | NOT NULL | — | Mảng 512 số thực float32 (kích thước chính xác 2048 bytes). |
+| `updated_at` | `TEXT` | NOT NULL | `(datetime('now'))` | Mốc thời gian đồng bộ bản ghi vector gần nhất (UTC). |
+
+* **Bảo mật & Giới hạn dung lượng**:
+  * Tệp CSDL SQLite trạm được cô lập trong sandbox thư mục dữ liệu ứng dụng của HĐH, phân quyền chỉ đọc/ghi cho tiến trình Kiosk.
+  * Giới hạn dung lượng: Với quy mô $10,000$ nhân sự, bảng chiếm tối đa $\approx 25\text{ MB}$, hoàn toàn an toàn cho ổ đĩa trạm.
+  * Đồng bộ: Mỗi khi nhận được danh mục từ `GET /api/v1/kiosks/{id}/gallery` hoặc bản tin STOMP, Kiosk cập nhật đồng thời ma trận RAM và bảng này (`INSERT OR REPLACE`).
 
