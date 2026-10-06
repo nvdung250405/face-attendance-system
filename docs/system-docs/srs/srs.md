@@ -60,5 +60,5 @@ Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS) vận hành th
 
 ## 3. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
 
-* **Chi tiết Mô hình Token JWT (Decision 1)**: Thời hạn hiệu lực của access token (khuyến nghị 60 phút) và refresh token (7 ngày) kết hợp bảng lưu trữ refresh token trên máy chủ để hỗ trợ thu hồi quyền tức thì (revocation) khi nhân viên thôi việc đột xuất. Điều kiện resolve: chốt chi tiết tại thiết kế `service-docs/backend-service/fr-nfr/fr-nfr-design.md`.
+* **Chi tiết Mô hình Token JWT (Decision 1 — ĐÃ GIẢI QUYẾT)**: Thời hạn hiệu lực được chốt là access token **1 giờ** và refresh token **7 ngày** kèm bảng lưu trữ refresh token dạng **băm một chiều** trên máy chủ để hỗ trợ thu hồi quyền tức thì (revocation) khi nhân viên thôi việc đột xuất hoặc đổi mật khẩu. Quyết định chi tiết tại `DD-SYS-026`; yêu cầu tương ứng là `FR-SYS-023` (vòng đời phiên) và `DATA-SYS-022` (thực thể phiên làm việc).
 * **Ranh giới Cấu hình TLS/WSS (Decision 10)**: Việc kết thúc TLS (TLS termination) được cấu hình tại Reverse Proxy (Nginx / Caddy / Cloudflare) khi đưa vào môi trường Production; mã nguồn ứng dụng nội bộ cho phép chạy HTTP/WS thuần để tối giản môi trường kiểm thử phát triển cục bộ. Điều kiện resolve: quy định chi tiết tại `system-docs/plans/deploy-plan.md`.
