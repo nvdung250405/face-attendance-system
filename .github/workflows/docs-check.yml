@@ -50,9 +50,15 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
     runs-on: ubuntu-latest
+    env:
+      # Cho phép kiểm tra change control (sdlc-docs.md 14.3): leaf `Baselined`
+      # bị sửa trong pull request phải tăng `version`.
+      DOCS_CHECK_BASE_REF: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -60,4 +66,12 @@ jobs:
           python-version: '3.11'
 
       - name: Run SDLC Docs Integrity Check
-        run: python tools/docs-check/check_docs.py
+        run: python tools/docs-check/check_docs.py --matrix docs-traceability-matrix.md
+
+      - name: Upload traceability matrix
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-traceability-matrix
+          path: docs-traceability-matrix.md
+          if-no-files-found: ignore
