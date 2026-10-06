@@ -1,13 +1,13 @@
 ---
 title: Kiosk Local Data Specifications
-version: 2.0
+version: 2.1
 status: Approved
 owner: Edge Vision Lead & Data Engineer
 ---
 
 # DATA SPECS — Đặc tả Dữ liệu Cục bộ Phân hệ Kiosk
 
-Đặc tả các thực thể dữ liệu cục bộ, cấu trúc bộ nhớ RAM biên, hàng đợi ngoại tuyến SQLite và các quy tắc bảo vệ quyền riêng tư dữ liệu sinh trắc học trên trạm Kiosk.
+Đặc tả các thực thể dữ liệu cục bộ, cấu trúc bộ nhớ RAM biên, hàng đợi ngoại tuyến SQLite, bộ đệm snapshot gallery và các quy tắc bảo vệ quyền riêng tư dữ liệu sinh trắc học trên trạm Kiosk theo chuẩn SDLC v3.0 ([sdlc-docs.md](../../../sdlc-docs.md) §7.2).
 
 ---
 
@@ -15,10 +15,10 @@ owner: Edge Vision Lead & Data Engineer
 
 | ID | Statement | Category | Priority | Basis | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
-| `DATA-KSK-001` | Quản lý thực thể Hàng đợi Ngoại tuyến (`offline_punches`) lưu trữ toàn bộ giao dịch chấm công trong SQLite WAL cục bộ khi mất mạng. | Entity | Must | `DATA-SYS-004`, `PD-002` | Lưu employee_id, punch_timestamp ISO-8601, punch_type, verification_method, confidence_score, kiosk_id, is_synced (0/1), retry_count; bảo toàn dữ liệu RPO = 0. | Approved |
-| `DATA-KSK-002` | Quản lý thực thể Ma trận Gallery RAM (`GalleryMatrix`) duy trì thường trực $N \times 512$ vector ArcFace đã chuẩn hóa L2 để so khớp Cosine 1:N dưới 2ms. | Entity | Must | `DATA-SYS-005`, `PD-006` | Mảng numpy float32 kèm mảng id_map và hashmap metadata; hỗ trợ nạp nóng Atomic Swap mà không lock Camera Stream. | Approved |
-| `DATA-KSK-003` | Quản lý thực thể Bộ đệm Cooldown Biên (`LocalCooldownCache`) lưu trữ mốc giờ quẹt gần nhất của từng nhân viên trong RAM để chặn quẹt dồn dập. | Entity | Must | `DATA-SYS-012`, `PD-001` | Cửa sổ cooldown 120s; từ chối và báo "Đã ghi nhận" khi quẹt lặp; luồng nền tự dọn dẹp mục sau 300s. | Approved |
-| `DATA-KSK-004` | Quản lý thực thể Cấu hình Vận hành Trạm (`KioskConfig`) lưu trữ các tham số camera, URL backend, secret token và các ngưỡng AI từ biến môi trường. | Entity | Must | `DATA-SYS-001`, `PD-001` | Nạp đúng KIOSK_ID, BACKEND_URL, CAMERA_DEVICE_INDEX, ngưỡng similarity 0.50, liveness 0.85, stability 0.60s. | Approved |
+| `DATA-KSK-001` | Quản lý thực thể Hàng đợi Ngoại tuyến (`offline_punches`) lưu trữ toàn bộ giao dịch chấm công trong SQLite WAL cục bộ khi mất mạng. | Entity | Must | `FR-SYS-006`, `NFR-SYS-006`, `SRS-008`, `ARC-001`, `PD-004` | Lưu `employee_id`, `punch_timestamp` ISO-8601, `punch_type`, `verification_method`, `confidence_score`, `kiosk_id`, `is_synced` (0/1), `retry_count`; bảo toàn dữ liệu $\text{RPO} = 0$. | Approved |
+| `DATA-KSK-002` | Quản lý thực thể Ma trận Gallery RAM (`GalleryMatrix`) duy trì thường trực $N \times 512$ vector ArcFace đã chuẩn hóa L2 để so khớp Cosine 1:N dưới 2ms (nạp từ Backend hoặc snapshot cache SQLite cục bộ khi khởi động ngoại tuyến). | Entity | Must | `FR-SYS-003`, `FR-SYS-006`, `NFR-SYS-001`, `ARC-001`, `PD-002`, `INF-007` | Mảng `numpy.ndarray float32` kèm mảng `id_map` và hashmap `metadata_registry`; hỗ trợ nạp nóng Atomic Swap mà không lock Camera Stream; nạp fallback từ bộ đệm SQLite khi khởi động ngoại tuyến. | Approved |
+| `DATA-KSK-003` | Quản lý thực thể Bộ đệm Cooldown Biên (`LocalCooldownCache`) lưu trữ mốc giờ quẹt gần nhất của từng nhân viên trong RAM để chặn quẹt dồn dập. | Entity | Must | `FR-SYS-005`, `NFR-SYS-003`, `ARC-001`, `PD-001` | Cửa sổ cooldown 120s; từ chối và báo "Đã ghi nhận" khi quẹt lặp; luồng nền tự dọn dẹp mục sau 300s. | Approved |
+| `DATA-KSK-004` | Quản lý thực thể Cấu hình Vận hành Trạm (`KioskConfig`) lưu trữ các tham số camera, URL backend, secret token và các ngưỡng AI từ biến môi trường. | Entity | Must | `SRS-006`, `FR-SYS-020`, `STK-034`, `PD-001` | Nạp đúng `KIOSK_ID`, `BACKEND_URL`, `CAMERA_DEVICE_INDEX`, ngưỡng similarity 0.50, liveness 0.85, stability 0.60s. | Approved |
 
 ---
 
@@ -26,8 +26,8 @@ owner: Edge Vision Lead & Data Engineer
 
 | ID | Statement | Category | Priority | Basis | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
-| `DATA-KSK-005` | Nguyên tắc Không Lưu Ảnh Thô (Zero Raw Image Retention tại biên): Tuyệt đối không lưu khung hình camera hay ảnh crop khuôn mặt xuống đĩa cứng Kiosk. | Privacy | Must | `DATA-SYS-005`, `PD-005` | Khung hình và crop chỉ nằm trong RAM trong chu kỳ suy luận (< 350ms) và được giải phóng ngay lập tức sau khi hoàn tất. | Approved |
-| `DATA-KSK-006` | Quy tắc Vòng đời Hàng đợi Ngoại tuyến (Offline Queue Retention): Dọn dẹp bản ghi đã đồng bộ sau 30 ngày, bảo toàn vĩnh viễn bản ghi chưa gửi. | Retention | Must | `DATA-SYS-014`, `PD-002` | Bản ghi có is_synced = 1 tự động xóa sau 30 ngày; bản ghi có is_synced = 0 được bảo lưu vĩnh viễn đến khi gửi thành công. | Approved |
+| `DATA-KSK-005` | Nguyên tắc Không Lưu Ảnh Thô (Zero Raw Image Retention tại biên): Tuyệt đối không lưu khung hình camera hay ảnh crop khuôn mặt xuống đĩa cứng Kiosk. | Privacy | Must | `SRS-004`, `SRS-001`, `NFR-SYS-007`, `PD-005` | Khung hình và crop chỉ nằm trong RAM trong chu kỳ suy luận ($< 350\text{ ms}$) và được giải phóng ngay lập tức sau khi hoàn tất chu kỳ; kiểm tra hệ thống tệp không tồn tại file ảnh. | Approved |
+| `DATA-KSK-006` | Quy tắc Vòng đời Hàng đợi Ngoại tuyến (Offline Queue Retention): Dọn dẹp bản ghi đã đồng bộ sau 30 ngày, bảo toàn vĩnh viễn bản ghi chưa gửi. | Retention | Must | `NFR-SYS-006`, `SRS-008`, `PD-002` | Bản ghi có `is_synced = 1` tự động xóa sau 30 ngày; bản ghi có `is_synced = 0` được bảo lưu vĩnh viễn đến khi gửi bù thành công lên máy chủ. | Approved |
 
 ---
 
@@ -77,3 +77,4 @@ owner: Edge Vision Lead & Data Engineer
 | `SIMILARITY_THRESHOLD`| `float` | `0.50` | Ngưỡng Cosine Similarity tối thiểu để xác nhận danh tính. |
 | `LIVENESS_THRESHOLD` | `float` | `0.85` | Ngưỡng liveness MiniFASNet tối thiểu chống giả mạo. |
 | `STABILITY_SECONDS` | `float` | `0.60` | Thời gian giữ ổn định trong Oval trước khi nhận diện. |
+
