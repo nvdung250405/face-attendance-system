@@ -2,6 +2,7 @@ package com.fas.migration;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
+import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,8 +55,13 @@ class FlywayMigrationTest {
 
         MigrationInfo current = flyway.info().current();
         assertThat(current).isNotNull();
-        assertThat(current.getVersion().getVersion()).isEqualTo("1");
         assertThat(current.getState().isApplied()).isTrue();
+
+        // Phiên bản hiện tại phải là migration mới nhất có trên classpath (V1, V2, ... khi bổ sung).
+        MigrationInfo[] all = flyway.info().all();
+        assertThat(all).isNotEmpty();
+        assertThat(current.getVersion()).isEqualTo(all[all.length - 1].getVersion());
+        assertThat(current.getVersion()).isGreaterThanOrEqualTo(MigrationVersion.fromVersion("2"));
     }
 
     @Test
