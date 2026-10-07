@@ -7,23 +7,39 @@ owner: Edge Vision Lead & Requirements Analyst
 
 # FR/NFR SPECS — Đặc tả Yêu cầu Chức năng & Phi chức năng Phân hệ Kiosk
 
-Tài liệu xác lập toàn bộ các yêu cầu chức năng (`FR-KSK-`) và phi chức năng (`NFR-KSK-`) của trạm điểm danh cận biên `kiosk-app` theo chuẩn SDLC v3.0 ([sdlc-docs.md](../../../sdlc-docs.md) §7.2), được phân tích dựa trên chu trình tương tác thực tế của các tác nhân (`ACT-001`, `ACT-003`).
+Tài liệu xác lập toàn bộ các yêu cầu chức năng (`FR-KSK-`) và phi chức năng (`NFR-KSK-`) của trạm điểm danh cận biên `kiosk-app` theo chuẩn SDLC v3.0 ([sdlc-docs.md](../../../sdlc-docs.md) §7.2), được phân tích dựa trên chu trình tương tác thực tế của các tác nhân con người (`ACT-001`, `ACT-003`) và ngữ cảnh tích hợp ngoại vi (`Backend Service`, `EXT-001`, `EXT-003`).
 
 ---
 
 ## 1. Actor Lifecycle & Operational Context (Ngữ cảnh & Vòng đời Tác nhân)
 
-Phân hệ Kiosk tương tác trực tiếp với hai tác nhân chủ đạo:
+Phân hệ Kiosk vận hành như một thiết bị trạm biên tự phục vụ (Self-service Edge Station), đóng vai trò cầu nối tương tác trực tiếp giữa người dùng tại chỗ và hạ tầng dịch vụ máy chủ trung tâm:
+
+### 1.1. Vòng đời Tác nhân Con người (Human Actors Lifecycle)
+
 * **Nhân viên Điểm danh (`ACT-001`)**:
   1. *Tiếp cận & Định vị*: Bước vào vùng quan sát trạm ($0.6 - 1.2\text{ m}$), căn chỉnh khuôn mặt vào khung Oval chỉ báo 4 màu.
   2. *Điểm danh Sinh trắc học*: Giữ tư thế ổn định ($0.5 - 1.0\text{ s}$), hệ thống thực thi kiểm tra liveness thụ động và so khớp Cosine 1:N trong RAM.
   3. *Tiếp nhận Kết quả & Cooldown*: Nhận phản hồi âm thanh và hiển thị thẻ kết quả ($2.5\text{ s}$); kích hoạt bộ đệm Cooldown 120s chống quẹt dồn dập.
-  4. *Điểm danh Dự phòng bằng Mã PIN*: Khi khuôn mặt không khớp hoặc nhân viên đã rút Informed Consent (vô hiệu hóa sinh trắc học theo Nghị định 356/2025/NĐ-CP), chạm F2/nút PIN Pad, nhập mã PIN 6 số để thẩm định trực tuyến qua Backend.
-  5. *Tự Đăng ký Khuôn mặt (Onboarding)*: Nhân viên mới tiếp nhận mã OTP 48h từ Cổng Web, thực hiện quy trình tự đăng ký In-Viewport 3 bước để nạp vector mẫu ban đầu.
+  4. *Điểm danh Dự phòng bằng Mã PIN*: Khi khuôn mặt không khớp hoặc nhân viên đã rút Informed Consent (vô hiệu hóa sinh trắc học theo Nghị định 356/2025/NĐ-CP), chạm nút PIN Pad (hoặc phím F2), nhập mã nhân viên (`employeeCode`) và mã PIN 6 số để thẩm định trực tuyến qua Backend.
+  5. *Tự Đăng ký Khuôn mặt (Onboarding)*: Nhân viên mới tiếp nhận mã OTP 48h từ Cổng Web, thực hiện quy trình tự đăng ký In-Viewport 3 bước trực tiếp trước camera Kiosk để nạp vector mẫu ban đầu.
+
 * **Quản trị viên Hệ thống / Kỹ thuật viên Vận hành Trạm (`ACT-003`)**:
-  1. *Khởi động & Nạp Danh mục (Cold Start)*: Nạp biến môi trường cấu hình, khởi tạo camera DirectShow $\ge 15\text{ FPS}$, tải danh mục vector từ Backend hoặc nạp fallback từ `local_gallery_cache` cục bộ khi mất mạng.
-  2. *Đồng bộ Thời gian thực & Ngoại tuyến*: Lắng nghe kênh STOMP nạp nóng vector mới; tự động chuyển sang hàng đợi SQLite WAL khi mất mạng ($\text{RPO} = 0$) và tự gửi bù theo lô tối đa 50 bản ghi khi có mạng lại.
-  3. *Ổn định & Quyền Riêng tư*: Đảm bảo vòng lặp AI vận hành liên tục 8h không rò rỉ RAM ($\Delta_{\text{RAM}} \le 10\%$), watchdog tự kết nối lại camera sau 3s khi mất tín hiệu cáp, và tuyệt đối không lưu ảnh thô trên đĩa.
+  1. *Thiết lập & Khởi tạo Biên (Bootstrap)*: Cấu hình biến môi trường cục bộ (`.env`), cấu hình thông số camera, nạp Secret Token trạm hiển thị một lần từ Backend và khởi chạy dịch vụ Kiosk.
+  2. *Vận hành & Phím tắt Bảo trì tại Chỗ*: Sử dụng bàn phím vật lý thao tác phím nóng (`F2` mở PIN Pad, `F3` kích hoạt modal Onboarding, `Esc` đóng modal quay về camera chính) khi hỗ trợ nhân viên hoặc kiểm tra giao diện trạm.
+  3. *Bảo trì Thiết bị & Khắc phục Sự cố*: Kiểm tra góc đặt camera, cắm lại cáp tín hiệu UVC khi có sự cố, kiểm tra nhật ký log ứng dụng cục bộ và khởi động lại trạm khi cần bảo dưỡng phần cứng.
+
+### 1.2. Ngữ cảnh Tương tác Hệ thống & Phần cứng Ngoại vi (External Systems & Hardware Context)
+
+* **Dịch vụ Máy chủ Trung tâm (`Backend Service` — Central API & Event Broker)**:
+  1. *Khởi động & Nạp Danh mục Ban đầu*: Kiosk gửi yêu cầu nén `gzip` qua TLS 1.3 kéo toàn bộ danh mục vector nhân sự active về nạp vào RAM; tự động chuyển sang đọc snapshot `local_gallery_cache` (AES-256-GCM) nếu mất mạng.
+  2. *Tiếp nhận & Thẩm định Giao dịch*: Tiếp nhận bản ghi điểm danh thời gian thực; thực hiện thẩm định tập trung mã PIN 6 số (chống brute-force per-device và per-account) và mã Onboarding OTP.
+  3. *Phát sóng Đồng bộ Nóng (STOMP Broker)*: Chủ động đẩy thông điệp thêm mới (`ADD`) hoặc xóa bỏ (`DELETE`) vector nhân sự qua kênh `/topic/kiosk-gallery` để Kiosk Atomic Swap tức thì trên RAM mà không làm giật khung hình camera.
+  4. *Đồng bộ Bù Ngoại tuyến & Giám sát Sức khỏe*: Tiếp nhận gói lô tối đa 50 bản ghi điểm danh ngoại tuyến khi mạng phục hồi; tiếp nhận nhịp tim heartbeat định kỳ 30s để cập nhật `last_ping_at` phục vụ giám sát trạm.
+
+* **Camera Quang học UVC (`EXT-001`)**: Thiết bị ghi hình vật lý cung cấp luồng khung hình video liên tục $\ge 15\text{ FPS}$ (khuyến nghị 30 FPS) qua DirectShow; kết hợp với vòng lặp watchdog tự kết nối lại trong vòng $\le 3\text{ s}$ khi gián đoạn tín hiệu cáp.
+
+* **Nguồn Chuẩn Giờ Mạng NTP (`EXT-003`)**: Đồng bộ mốc thời gian hệ điều hành trạm Kiosk với máy chủ trung tâm với sai lệch $\le 50\text{ ms}$, đảm bảo tính pháp lý và độ chính xác của timestamp chấm công.
 
 ---
 
