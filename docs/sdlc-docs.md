@@ -469,7 +469,13 @@ DEPLOY PLAN
 | `Requires` | STACK | `STK-` |
 | `Applies to` | STACK | System / Subsystem |
 
-### 10.2. `Basis` targets
+### 10.2. Reference direction
+
+> **Lifecycle trace: downstream → upstream. Do not create reverse references.**
+
+`Includes` và `Depends on` là quan hệ có semantics riêng; chúng có thể đi ngang hoặc ngược hướng lifecycle mà không tạo ownership/dependency ngược.
+
+### 10.3. `Basis` targets
 
 | Item | Target |
 |---|---|
@@ -480,7 +486,7 @@ DEPLOY PLAN
 | `APC-` | upstream decision/source |
 | `RSK-` | risk source upstream |
 
-### 10.3. Trace chính
+### 10.4. Trace chính
 
 ```text
 Build:      INFO → (PI, STACK) → SPEC → DESIGN → PLAN → BUILD
