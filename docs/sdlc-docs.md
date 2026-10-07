@@ -94,6 +94,8 @@ docs/
 
 ### 2.1. Quy tắc
 
+- **Format:** table chỉ dùng cho dữ liệu ngắn, phẳng và thiên về tra cứu; schema dùng field list; item thực tế dùng record block; dữ liệu lồng/nhiều dòng có thể dùng YAML.
+  `Record block:` `### <ID>` rồi `**Field:** value`; không nhét nội dung dài vào table.
 - Một nội dung chỉ có một owner.
 - System không chứa implementation detail riêng của subsystem.
 - Subsystem không copy System; refinement/allocation dùng ID.
@@ -107,7 +109,7 @@ Subsystem là một unit có boundary, owner và lifecycle riêng; có thể là
 ### 2.2. Tailoring
 
 ```text
-Element | Default | Applied | Reason | Impact
+Tailoring record — Fields: Element, Default, Applied, Reason, Impact
 ```
 
 Ghi tailoring trong `meta.md` khi project thêm/bớt facet, đổi representation hoặc schema. Không được phá vỡ ownership, ID bất biến và trace bằng ID.
@@ -162,11 +164,11 @@ INFO
 ```
 
 ```text
-RQ:  ID | Question | Serves | Status
-SRC: ID | Citation | Type | Published | Accessed | Reliability | Location | Status
-INF: ID | Statement | Type | Topic | Derived from | Confidence | Answers | Implication | Conflicts with | Status
-ANL: ID | Analysis | Derived from | Impacts | Status
-GAP: ID | Kind | Missing knowledge | Refers to | Blocks | Resolution | Status
+RQ- — Fields: ID, Question, Serves, Status
+SRC- — Fields: ID, Citation, Type, Published, Accessed, Reliability, Location, Status
+INF- — Fields: ID, Statement, Type, Topic, Derived from, Confidence, Answers, Implication, Conflicts with, Status
+ANL- — Fields: ID, Analysis, Derived from, Impacts, Status
+GAP- — Fields: ID, Kind, Missing knowledge, Refers to, Blocks, Resolution, Status
 ```
 
 `INF-` trace nguồn bằng `Derived from`; `ANL-` là analysis; `GAP-` là phần chưa biết/mâu thuẫn cần resolve.
@@ -191,7 +193,7 @@ PI
 Decision schema:
 
 ```text
-ID | Decision | Rationale | Alternatives | Consequences | Basis | Status
+Decision item — Fields: ID, Decision, Rationale, Alternatives, Consequences, Basis, Status
 ```
 
 `PD-` là decision item-level. Constraint công nghệ bắt buộc thuộc PI; lựa chọn cụ thể thuộc STACK.
@@ -210,7 +212,7 @@ STACK
 ```
 
 ```text
-ID | Category | Name | Version | Applies to | Role | Basis | Requires | Status
+Stack item — Fields: ID, Category, Name, Version, Applies to, Role, Basis, Requires, Status
 ```
 
 `Requires` chỉ trỏ `STK-`; tiêu chí/evidence lựa chọn nằm ở INFO/PI; Design/Plan reference `STK-`.
@@ -268,7 +270,7 @@ DESIGN trả lời **hiện thực SPEC bằng structure, behavior và decisions
 Element schema:
 
 ```text
-ID | Name | Definition | Uses | Realizes | Decisions | Status
+Design element — Fields: ID, Name, Definition, Uses, Realizes, Decisions, Status
 ```
 
 `Realizes` → Spec; `Uses` → Design / `STK-` / `EXT-`; `Decisions` → `DD-`.
@@ -354,7 +356,7 @@ PLAN LEAF
 ```
 
 ```text
-ID | Name | Description | Covers | Depends on | Done when | Status
+Work item — Fields: ID, Name, Description, Covers, Depends on, Done when, Status
 ```
 
 | Plan | Prefix | `Covers` |
@@ -377,9 +379,9 @@ PROJECT PLAN
 ```
 
 ```text
-Phase/Milestone/Gate: ID | Name | Type | Includes | Depends on | Target | Estimate | Owner | Exit criteria | Status
-Role:                 ID | Role | Responsibility | Assignee
-Risk:                 ID | Risk | Probability | Impact | Response | Owner | Basis | Status
+Phase / Milestone / Gate — Fields: ID, Name, Type, Includes, Depends on, Target, Estimate, Owner, Exit criteria, Status
+Role — Fields: ID, Role, Responsibility, Assignee
+Risk — Fields: ID, Risk, Probability, Impact, Response, Owner, Basis, Status
 ```
 
 Project Plan là nơi duy nhất quản lý schedule, target, estimate và assignment.
@@ -417,7 +419,7 @@ TASK PLAN
 ```
 
 ```text
-ID | Name | Description | Derived from | Depends on | Wave | Done when | Status
+Task — Fields: ID, Name, Description, Derived from, Depends on, Wave, Done when, Status
 ```
 
 - `Derived from` → đúng một `BLD-` hoặc `FND-` cùng scope.
