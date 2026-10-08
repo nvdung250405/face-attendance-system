@@ -5,9 +5,10 @@ Tài liệu này định hình cách trợ lý AI (GitHub Copilot / Antigravity 
 ---
 
 ## 1. Nguyên tắc Trọng yếu
+
 1. **Đọc Registry trước khi hành động**:
    - Tham chiếu [docs/meta.md](file:///d:/workspace/VSCode/nvdung/face-attendance-system/docs/meta.md) và [docs/sdlc-docs.md](file:///d:/workspace/VSCode/nvdung/face-attendance-system/docs/sdlc-docs.md) để xác định đúng leaf tài liệu sở hữu thông tin.
-   - Nạp ngữ cảnh theo mã ID (`FR-`, `DDS-`, `BLD-`, `TST-`), không nạp toàn bộ cây tài liệu vào ngữ cảnh.
+   - Nạp ngữ cảnh theo mã ID (`FR-`, `ARC-`, `SOL-`, `DD-`, `BLD-`, `TST-`), không nạp toàn bộ cây tài liệu vào ngữ cảnh ([sdlc-docs.md](file:///d:/workspace/VSCode/nvdung/face-attendance-system/docs/sdlc-docs.md) §12.5).
 2. **Tôn trọng Single Source of Truth**:
    - Không tự ý định nghĩa lại requirement hoặc kiến trúc thuộc phạm vi của leaf khác.
    - Sửa đổi trực tiếp tại owner, không copy nội dung.

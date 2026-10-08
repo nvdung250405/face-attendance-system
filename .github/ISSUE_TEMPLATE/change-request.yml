@@ -1,5 +1,5 @@
 name: "Change Request (Yêu cầu Thay đổi Item Baselined)"
-description: "Đề xuất sửa đổi một item thuộc leaf đã Baselined theo sdlc-docs.md mục 13.3."
+description: "Đề xuất sửa đổi một item thuộc leaf đã Baselined theo sdlc-docs.md mục 12.3."
 title: "[CR-<ID>] <Tóm tắt yêu cầu thay đổi>"
 labels: ["change-request"]
 body:
@@ -13,7 +13,7 @@ body:
     id: target_item_id
     attributes:
       label: "Mã Item ID bị thay đổi"
-      description: "Nhập ID của item cần thay đổi (ví dụ: FR-SYS-001, DDS-SYS-002, SPEC-BKE-003)."
+      description: "Nhập ID của item cần thay đổi (ví dụ: FR-SYS-001, ARC-002, SOL-BE-003)."
       placeholder: "FR-SYS-001"
     validations:
       required: true
@@ -31,7 +31,7 @@ body:
     attributes:
       label: "Phân tích Tác động (Impact Analysis)"
       description: "Những downstream items nào sẽ bị ảnh hưởng (các item có Basis, Realizes, Covers, Uses trỏ vào ID này)?"
-      placeholder: "Ảnh hưởng tới DDS-..., BLD-..., TST-..."
+      placeholder: "Ảnh hưởng tới ARC-..., SOL-..., BLD-..., TST-..."
     validations:
       required: true
 

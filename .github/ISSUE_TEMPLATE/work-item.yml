@@ -13,8 +13,8 @@ body:
     id: work_item_id
     attributes:
       label: "Mã Work Item ID"
-      description: "Nhập ID work item theo đúng scheme (ví dụ: BLD-BKE-001, TST-KSK-002, DPL-001, FND-SYS-001, TASK-BKE-001)."
-      placeholder: "BLD-BKE-001"
+      description: "Nhập ID work item theo đúng scheme (ví dụ: BLD-BE-001, TST-KSK-002, DPL-SYS-001, FND-SYS-001, TASK-BE-001)."
+      placeholder: "BLD-BE-001"
     validations:
       required: true
 
@@ -48,7 +48,7 @@ body:
       options:
         - label: "Mọi work item trong `Depends on` đã chuyển sang trạng thái `Done`"
           required: true
-        - label: "Thiết kế kiến trúc liên quan (`ARC-` / `DDS-`) đã được Approved"
+        - label: "Thiết kế kiến trúc liên quan (`ARC-` / `SOL-` / `DD-`) đã được Approved"
           required: true
 
   - type: textarea

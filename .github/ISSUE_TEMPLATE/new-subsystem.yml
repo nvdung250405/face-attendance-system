@@ -1,5 +1,5 @@
 name: "New Subsystem / Unit (Thêm Phân hệ Mới)"
-description: "Quy trình đăng ký và khởi tạo phân hệ mới theo sdlc-docs.md mục 13.2."
+description: "Quy trình đăng ký và khởi tạo phân hệ mới theo sdlc-docs.md mục 12.2."
 title: "[NEW-SUBSYSTEM] <Tên phân hệ mới> (<SCOPE>)"
 labels: ["new-subsystem"]
 body:
@@ -31,17 +31,17 @@ body:
     attributes:
       label: "Phê duyệt Kiến trúc Tổng thể"
       options:
-        - label: "Quyết định kiến trúc (`ARC-...`) bổ sung phân hệ này đã được Approved trong System DDS"
+        - label: "Quyết định kiến trúc (`ARC-...`) bổ sung phân hệ này đã được Approved trong System Spec set (`system-docs/specs/spec.md`)"
           required: true
 
   - type: checkboxes
     id: required_facets
     attributes:
       label: "Các Thành phần Tài liệu Cần Thiết lập"
-      description: "Cấu trúc chuẩn gồm srs/, dds/ và plans/; các facet tài liệu chọn theo trách nhiệm kỹ thuật."
+      description: "Cấu trúc chuẩn gồm specs/ và plans/; các facet tài liệu chọn theo trách nhiệm kỹ thuật (sdlc-docs.md §2, §7.2)."
       options:
-        - label: "`srs/fr-nfr-specs.md`, `dds/fr-nfr-design.md`, các plan trong `plans/` (Bắt buộc cho mọi phân hệ)"
+        - label: "`specs/spec.md`, `specs/fr-nfr.md`, các plan trong `plans/` (Bắt buộc cho mọi phân hệ)"
           required: true
-        - label: "`data` (`srs/data-specs.md`, `dds/data-design.md` nếu phân hệ quản lý CSDL / lưu trữ riêng)"
-        - label: "`api` (`srs/api-specs.md`, `dds/api-design.md` nếu phân hệ cung cấp/tiêu thụ API contract)"
-        - label: "`ui-ux` (`srs/ui-ux-specs.md`, `dds/ui-ux-design.md` nếu phân hệ có giao diện người dùng trực tiếp)"
+        - label: "`data` (`specs/data.md` nếu phân hệ quản lý CSDL / lưu trữ riêng)"
+        - label: "`api` (`specs/api.md` nếu phân hệ cung cấp/tiêu thụ API contract)"
+        - label: "`ui-ux` (`specs/ui-ux.md` nếu phân hệ có giao diện người dùng trực tiếp)"
