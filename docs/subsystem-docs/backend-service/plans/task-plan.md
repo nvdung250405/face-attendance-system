@@ -3,6 +3,9 @@ title: Backend Task Plan
 version: 2.0
 status: Approved
 owner: Backend Lead
+type: plan
+scope: BE
+updated: 2026-10-08
 ---
 
 # TASK PLAN — Kế hoạch Thi công Chi tiết Phân hệ Backend

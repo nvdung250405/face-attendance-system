@@ -3,6 +3,9 @@ title: Backend Foundation Setup Plan
 version: 2.0
 status: Approved
 owner: Backend Lead & DevOps
+type: plan
+scope: BE
+updated: 2026-10-08
 ---
 
 # FOUNDATION SETUP PLAN — Kế hoạch Thiết lập Nền tảng Phân hệ Backend
