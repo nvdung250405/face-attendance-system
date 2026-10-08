@@ -1,8 +1,11 @@
 ---
 title: Kiosk App Task Plan
-version: 1.0
+version: 2.0
 status: Approved
 owner: Edge Vision Lead & UI Lead
+type: plan
+scope: KSK
+updated: 2026-10-08
 ---
 
 # TASK PLAN — Kế hoạch Thi công Chi tiết Phân hệ Kiosk App

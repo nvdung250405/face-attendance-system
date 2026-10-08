@@ -3,6 +3,9 @@ title: Danh mục Công nghệ & Công cụ (Tech & Tool Stack)
 version: 1.1
 status: Approved
 owner: Lead System Architect
+type: stack
+scope: SYS
+updated: 2026-10-08
 ---
 
 # STACK — Danh mục Công nghệ & Công cụ (Tech & Tool Stack)

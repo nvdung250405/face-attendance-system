@@ -1,21 +1,24 @@
 ---
-title: Kiosk Core Test Plan
-version: 1.0
+title: Kiosk App Subsystem Test Plan
+version: 2.0
 status: Approved
-owner: Edge Vision QA Lead
+owner: Edge Vision QA Lead & UI QA Lead
+type: plan
+scope: KSK
+updated: 2026-10-08
 ---
 
-# FR/NFR TEST PLAN — Kế hoạch Kiểm thử Nội bộ Phân hệ Kiosk
+# TEST PLAN — Kế hoạch Kiểm thử Tổng thể Phân hệ Kiosk
 
 ## 1. Approach & Frameworks (Công cụ & Phương pháp Kiểm thử)
 
-* **Framework**: `pytest`, `pytest-qt`, `pytest-cov`.
-* **Môi trường giả lập**: Khung hình camera tĩnh (Synthetic Frames) và video ghi sẵn phục vụ chạy tự động trong CI/CD.
+* **Framework**: `pytest`, `pytest-qt`, `pytest-cov`, `pytest-httpx`.
+* **Môi trường giả lập**: Khung hình camera tĩnh (Synthetic Frames), video ghi sẵn phục vụ CI/CD tự động, Mock STOMP Broker và giả lập phản hồi HTTP.
 * **Tiêu chuẩn hoàn thành**: 100% ca kiểm thử pass; độ bao phủ dòng lệnh gói cốt lõi $\ge 80\%$.
 
 ---
 
-## 2. Core Test Items (Danh mục Ca Kiểm thử Kiosk)
+## 2. Core Vision & Inference Test Items (Ca Kiểm thử Chuỗi Thị giác & Logic Cốt lõi)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -28,38 +31,12 @@ owner: Edge Vision QA Lead
 | `TST-KSK-019` | Bộ Đệm Cooldown 120s Chống Quét Dồn dập | Kiểm tra cơ chế chặn quẹt liên tiếp trong 120s của cùng một nhân viên. | `FR-KSK-005` | `BLD-KSK-003` | Quẹt liên tiếp trong 120s bị từ chối; hiển thị thông báo "Đã ghi nhận". | Done |
 | `TST-KSK-020` | Hàng đợi Ngoại tuyến SQLite WAL khi Mất mạng | Kiểm tra lưu trữ đệm an toàn vào `offline_punches` khi không có kết nối mạng. | `FR-KSK-006`, `NFR-KSK-003` | `BLD-KSK-017` | Mất mạng ghi bản ghi vào `offline_punches`; tắt máy cưỡng bức không hỏng CSDL. | Done |
 | `TST-KSK-021` | Kiểm thử Tự Phục hồi Camera khi Mất Tín hiệu | Kiểm tra vòng lặp tự động kết nối lại camera DirectShow khi bị rút cáp. | `NFR-KSK-005` | `BLD-KSK-012` | Rút camera đột ngột; ứng dụng kích hoạt vòng lặp kết nối lại mỗi 3s không crash. | Done |
-| `TST-KSK-022` | Kiểm thử Thẩm định PIN Dự phòng qua Backend | Kiểm tra luồng nhập PIN 6 số gọi `POST /api/v1/kiosk/verify-pin` và việc chỉ ghi nhận điểm danh khi Backend trả 200. | `FR-KSK-004` | `BLD-KSK-019` | PIN đúng (200) tạo đúng một bản ghi điểm danh; PIN sai (401 `PIN_INVALID`) **không** tạo bản ghi; khi bị khoá (423 `PIN_LOCKED`) hiển thị đếm ngược theo `lockedUntil`; nhân sự đã rút Consent chỉ điểm danh được bằng PIN; kiosk không so khớp PIN tại chỗ. | Planned |
+| `TST-KSK-022` | Kiểm thử Thẩm định PIN Dự phòng qua Backend | Kiểm tra luồng nhập PIN 6 số gọi `POST /api/v1/kiosks/{id}/verify-pin` và việc chỉ ghi nhận điểm danh khi Backend trả 200. | `FR-KSK-004` | `BLD-KSK-019` | PIN đúng (200) tạo đúng một bản ghi điểm danh; PIN sai (401 `PIN_INVALID`) không tạo bản ghi; khi bị khoá (423 `PIN_LOCKED`) hiển thị đếm ngược theo `lockedUntil`; nhân sự đã rút Consent chỉ điểm danh được bằng PIN; kiosk không so khớp PIN tại chỗ. | Planned |
 | `TST-KSK-023` | Kiểm thử Vòng đời Bộ nhớ Khung hình 8 giờ | Chạy ngâm tải 8 giờ liên tục với camera và pipeline suy luận; theo dõi mức tiêu thụ RAM. | `NFR-KSK-004` | `BLD-KSK-019` | Biến thiên RAM $\le 10\%$ sau 8 giờ; không rò rỉ mảng `np.ndarray` khung hình/ảnh crop; cảnh báo xuất hiện khi vượt ngưỡng cấu hình. | Planned |
 
 ---
-title: Kiosk Local Data Test Plan
-version: 1.0
-status: Approved
-owner: Edge Vision QA Lead
----
 
-# DATA TEST PLAN — Kế hoạch Kiểm thử Dữ liệu Cục bộ Kiosk
-
-## 1. Scope & Objectives (Phạm vi & Mục tiêu)
-
-* **Phạm vi**: Toàn bộ hệ thống lưu trữ dữ liệu tại biên của Kiosk gồm CSDL cục bộ SQLite WAL (`kiosk_local.db`), ma trận bộ nhớ RAM NumPy và cơ chế Atomic Swap khi nạp nóng vector.
-* **Mục tiêu**:
-  * Đảm bảo không xảy ra khóa tranh chấp (Zero Lock Contention) giữa luồng ghi điểm danh và luồng đọc đồng bộ ngầm.
-  * Xác nhận ma trận RAM 1,000 nhân sự so khớp Cosine Similarity $< 2\text{ms}$.
-  * Kiểm chứng tính bền vững dữ liệu ngoại tuyến ($\text{RPO} = 0$) kể cả khi ứng dụng bị tắt cưỡng bức.
-
----
-
-## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử Dữ liệu Kiosk)
-
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :---: | :---: |
-| `APC-KSK-005` | Kiểm thử đa tiến trình đồng thời (Concurrent Read/Write Testing) trên SQLite WAL. | Xác nhận cơ chế WAL cho phép luồng nhận diện ghi điểm danh ngay cả khi worker đồng bộ đang đọc dữ liệu đệm. | `DTD-KSK-001`, `STK-005` | Accepted |
-| `APC-KSK-006` | Đo lường hiệu năng vector hóa với ma trận NumPy kích thước lớn ($N = 2,000$). | Đảm bảo hệ thống vẫn giữ được tốc độ phản hồi tức thì khi quy mô doanh nghiệp tăng gấp đôi. | `DATA-KSK-002`, `NFR-KSK-001` | Accepted |
-
----
-
-## 3. Data Test Items (Danh mục Ca Kiểm thử Dữ liệu Kiosk)
+## 3. Local Data Test Items (Ca Kiểm thử Dữ liệu Cục bộ Kiosk)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -72,39 +49,7 @@ owner: Edge Vision QA Lead
 
 ---
 
-## 4. Defect Management (Quản lý Lỗi Dữ liệu Biên)
-
-* Lỗi xung đột khóa đĩa `sqlite3.OperationalError: database is locked` được xếp mức **Critical (P1)** và bắt buộc kiểm tra lại cấu hình timeout 5.0s và WAL journal.
-
----
-title: Kiosk API Test Plan
-version: 1.0
-status: Approved
-owner: Edge Vision QA Lead
----
-
-# API TEST PLAN — Kế hoạch Kiểm thử Tầng Mạng Phân hệ Kiosk
-
-## 1. Scope & Objectives (Phạm vi & Mục tiêu)
-
-* **Phạm vi**: Toàn bộ các giao tiếp mạng giữa ứng dụng Kiosk Desktop với Backend thông qua HTTP REST Client (`httpx`) và WebSocket STOMP Subscriber (`stomp.py`).
-* **Mục tiêu**:
-  * Đảm bảo cơ chế tự động chuyển tiếp ngoại tuyến (Offline Fallback) kích hoạt chính xác khi mất kết nối mạng.
-  * Xác nhận luồng đồng bộ ngầm định kỳ 10s gom lô tối đa 50 bản ghi gửi bù thành công 100%.
-  * Kiểm chứng việc tiếp nhận bản tin STOMP `/topic/kiosk-gallery` và nạp nóng vector vào RAM không làm gián đoạn luồng camera.
-
----
-
-## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử Mạng Kiosk)
-
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :---: | :---: |
-| `APC-KSK-009` | Giả lập máy chủ Backend bằng `pytest-httpx` và Mock STOMP Broker. | Cho phép chạy kiểm thử tự động cô lập trong CI mà không phụ thuộc hạ tầng mạng thật. | `STK-007`, `API-KSK-001` | Accepted |
-| `APC-KSK-010` | Kiểm thử tiêm lỗi ngắt kết nối mạng (Network Chaos Testing). | Xác thực tính ổn định của vòng lặp kết nối lại (Exponential Backoff) và lưu đệm dữ liệu. | `NFR-KSK-003`, `RSK-001` | Accepted |
-
----
-
-## 3. API Test Items (Danh mục Ca Kiểm thử Mạng Kiosk)
+## 4. API & Network Test Items (Ca Kiểm thử Giao tiếp Mạng Kiosk)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -115,39 +60,7 @@ owner: Edge Vision QA Lead
 
 ---
 
-## 4. Defect Management (Quản lý Lỗi Giao tiếp Mạng)
-
-* Sự cố mất gói tin điểm danh không lưu đệm được xếp loại **Blocker (P0)** và cần được kiểm tra với cơ chế khóa SQLite WAL.
-
----
-title: Kiosk UI/UX Test Plan
-version: 1.0
-status: Approved
-owner: Product Designer & QA Lead
----
-
-# UI/UX TEST PLAN — Kế hoạch Kiểm thử Giao diện & Trải nghiệm Phân hệ Kiosk
-
-## 1. Scope & Objectives (Phạm vi & Mục tiêu)
-
-* **Phạm vi**: Toàn bộ các thành phần giao diện người dùng PySide6/QML, tỷ lệ co giãn $S$ trên màn hình dọc 9:16, máy trạng thái viền Oval, bàn phím số ảo PIN Pad và các modal tự phục vụ.
-* **Mục tiêu**:
-  * Đảm bảo thời gian phản hồi giao diện tức thì $\le 50\text{ms}$ khi máy trạng thái chuyển đổi.
-  * Xác thực kích thước vùng chạm phím bấm tối thiểu $60 \times 60\text{px}$ thuận tiện thao tác một chạm trên màn hình cảm ứng.
-  * Kiểm chứng luồng tự đăng ký khuôn mặt 3 bước tự ẩn/hiện popup theo đúng tài liệu thiết kế Figma.
-
----
-
-## 2. Approach Decisions (Quyết định Tiếp cận Kiểm thử Giao diện)
-
-| ID | Decision | Rationale | Basis | Status |
-| :--- | :--- | :--- | :---: | :---: |
-| `APC-KSK-007` | Sử dụng `pytest-qt` kiểm thử tự động tương tác chạm và tín hiệu QML. | Mô phỏng chính xác sự kiện chạm màn hình, gõ phím ảo và kiểm tra trạng thái hiển thị của các thành phần đồ họa. | `STK-003`, `UI-KSK-001` | Accepted |
-| `APC-KSK-008` | Kiểm định hiển thị trực quan đa độ phân giải (Visual Regression: 720x1280, 1080x1920, 2160x3840). | Bảo đảm công thức tỷ lệ co giãn $S = \min(W/1080, H/1920)$ không làm biến dạng hình học vector và phông chữ. | `UXD-KSK-005`, `NFR-KSK-002` | Accepted |
-
----
-
-## 3. UI/UX Test Items (Danh mục Ca Kiểm thử Giao diện Kiosk)
+## 5. UI/UX Test Items (Ca Kiểm thử Giao diện & Trải nghiệm Kiosk)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -158,6 +71,8 @@ owner: Product Designer & QA Lead
 
 ---
 
-## 4. Defect Management (Quản lý Lỗi Giao diện Kiosk)
+## 6. Defect Management & Severity (Quản lý Lỗi Phân hệ)
 
-* Lỗi làm vỡ giao diện (Layout Broken) hoặc kẹt máy trạng thái Oval (Freeze State) được xếp mức **Critical (P1)** và phải khắc phục ngay lập tức.
+* **Blocker (P0)**: Mất mát giao dịch điểm danh ngoại tuyến, rò rỉ hình ảnh thô ra đĩa cứng, sập ứng dụng khi camera đứt kết nối.
+* **Critical (P1)**: Xung đột khóa SQLite `database is locked`, vỡ bố cục giao diện khi co giãn độ phân giải, treo máy trạng thái Oval.
+* **Major (P2)**: Quá thời gian phản hồi nhận diện (> 1.0s end-to-end), rò rỉ RAM nhỏ (< 15% sau 8 giờ).

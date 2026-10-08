@@ -3,6 +3,9 @@ title: Nghiên cứu & Dữ liệu Bằng chứng (Research & Information)
 version: 1.0
 status: Approved
 owner: Research Lead
+type: info
+scope: SYS
+updated: 2026-10-08
 ---
 
 # INFO — Nghiên cứu & Dữ liệu Bằng chứng (Research & Information)

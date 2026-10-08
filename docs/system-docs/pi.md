@@ -3,6 +3,9 @@ title: Khởi tạo Dự án (Project Initiation)
 version: 1.0
 status: Approved
 owner: Project Manager
+type: pi
+scope: SYS
+updated: 2026-10-08
 ---
 
 # PI — Khởi tạo Dự án (Project Initiation)

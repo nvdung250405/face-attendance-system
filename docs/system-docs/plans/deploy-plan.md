@@ -1,13 +1,16 @@
 ---
 title: System Deploy Plan
-version: 1.1
+version: 2.0
 status: Approved
 owner: Release Engineer
+type: plan
+scope: SYS
+updated: 2026-10-08
 ---
 
 # DEPLOY PLAN — Kế hoạch Triển khai & Vận hành Hệ thống
 
-Kế hoạch đóng gói, phát hành, thiết lập cấu hình môi trường vận hành, quy trình kiểm tra khói (Smoke Test) và phương án phục hồi sau sự cố cho toàn bộ Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS) theo chuẩn SDLC v3.0 ([sdlc-docs.md](../../sdlc-docs.md) §9.7).
+Kế hoạch đóng gói, phát hành, thiết lập cấu hình môi trường vận hành, quy trình kiểm tra khói (Smoke Test) và phương án phục hồi sau sự cố cho toàn bộ Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS) theo chuẩn SDLC v3.0 ([sdlc-docs.md](../../sdlc-docs.md) §8.7).
 
 ---
 
@@ -52,7 +55,7 @@ Kế hoạch đóng gói, phát hành, thiết lập cấu hình môi trường 
 | `DPL-SYS-001` | Khởi tạo Container CSDL PostgreSQL | Khởi chạy container `fas-postgres` (PostgreSQL 16-alpine) gắn volume bền vững `pgdata`, cấu hình user/pass và database `fas_db`. | `STK-012`, `STK-022`, `ARC-004` | `FND-SYS-006` | Cổng 5432 mở; pg_isready trả về 0; volume `pgdata` được mount thành công. | Planned |
 | `DPL-SYS-002` | Triển khai Container Máy chủ Backend | Đóng gói Java 21 Spring Boot thành container `fas-backend`, nạp biến môi trường bảo mật (`MASTER_KEY_AES` qua Docker secrets hoặc file cấu hình host phân quyền nghiêm ngặt), kết nối CSDL và kích hoạt Actuator metrics. | `STK-010`, `STK-011`, `STK-034`, `STK-035`, `ARC-002`, `ARC-012`, `NFR-SYS-008` | `DPL-SYS-001` | Cổng 8080 nội bộ mở; Flyway hoàn tất migration; endpoint `/actuator/health` và `/actuator/prometheus` trả về trạng thái UP trong $\le 200\text{ ms}$. | Planned |
 | `DPL-SYS-003` | Triển khai Container Reverse Proxy & Web Portal | Đóng gói Nginx Reverse Proxy (`STK-036`) và bản build tĩnh ReactJS, cấu hình TLS 1.3 với cơ chế tự động gia hạn chứng chỉ, định tuyến `/api` và `/ws` về backend. | `STK-017`, `STK-019`, `STK-036`, `ARC-003`, `ARC-005`, `NFR-SYS-007` | `DPL-SYS-002` | Cổng 443 mở với chứng chỉ TLS 1.3 hợp lệ; trình duyệt tải Web Portal an toàn; proxy REST và STOMP thông suốt; HTTP 80 tự động chuyển hướng sang 443. | Planned |
-| `DPL-SYS-004` | Đóng gói Tệp Thực thi Kiosk Desktop | Sử dụng PyInstaller biên dịch toàn bộ mã nguồn Kiosk và tài nguyên assets thành file thực thi độc lập `FAS_Kiosk_vX.Y.Z.exe` kèm tệp mã băm kiểm chuẩn `manifest.sha256` trên Windows 11. | `STK-001`, `STK-024`, `ARC-001`, `NFR-SYS-001`, `NFR-SYS-009` | `BLD-SYS-002` | File thực thi khởi động thành công trên máy tính Windows mà không cần cài sẵn môi trường Python; mã băm khớp manifest; bộ nhớ RAM ổn định $< 800\text{ MB}$. | Planned |
+| `DPL-SYS-004` | Đóng gói Tệp Thực thi Kiosk Desktop | Sử dụng PyInstaller biên dịch toàn bộ mã nguồn Kiosk và tài nguyên assets thành file thực thi độc lập `FAS_Kiosk_vX.Y.Z.exe` kèm tệp mã băm kiểm chuẩn `manifest.sha256` trên Windows 11. | `STK-001`, `STK-024`, `ARC-001`, `NFR-SYS-001`, `NFR-SYS-009` | `BLD-KSK-018` | File thực thi khởi động thành công trên máy tính Windows mà không cần cài sẵn môi trường Python; mã băm khớp manifest; bộ nhớ RAM ổn định $< 800\text{ MB}$. | Planned |
 | `DPL-SYS-005` | Xác minh Sức khỏe Toàn hệ thống (Smoke Check) | Thực hiện 1 lượt điểm danh thử nghiệm: Quét mặt tại Kiosk $\rightarrow$ Backend ghi CSDL $\rightarrow$ Hiển thị trên Web Live Dashboard trong $\le 1.2\text{ s}$. | `ARC-001`, `ARC-002`, `ARC-003`, `ARC-004`, `ARC-008`, `NFR-SYS-003` | `DPL-SYS-001`, `DPL-SYS-002`, `DPL-SYS-003`, `DPL-SYS-004` | Dữ liệu hiển thị trên Web trong vòng $\le 1.2\text{ s}$; âm thanh Kiosk phát phản hồi chính xác; trạng thái online cập nhật. | Planned |
 | `DPL-SYS-006` | Thiết lập Quy trình Sao lưu & Phục hồi CSDL | Cấu hình cronjob tự động tạo bản sao lưu `pg_dump` nén hàng ngày lúc 02:00, mã hóa tệp sao lưu bằng OpenSSL AES-256 trước khi lưu đĩa, lưu giữ 30 ngày và kiểm chứng phục hồi khẩn cấp. | `ARC-004`, `SRS-009`, `NFR-SYS-008` | `DPL-SYS-001` | Bản sao lưu sinh ra định kỳ và được mã hóa bảo vệ; quy trình phục hồi khôi phục toàn vẹn dữ liệu trong vòng $\le 15.8\text{ phút}$ ($\text{RTO} \le 15.8\text{ phút}$). | Planned |
 

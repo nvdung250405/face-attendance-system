@@ -1,13 +1,16 @@
 ---
 title: System Foundation Setup Plan
-version: 1.1
+version: 2.0
 status: Approved
 owner: Lead DevOps Engineer
+type: plan
+scope: SYS
+updated: 2026-10-08
 ---
 
 # FOUNDATION SETUP PLAN — Kế hoạch Chuẩn bị Nền tảng Chung Hệ thống
 
-Kế hoạch thiết lập cơ sở hạ tầng nền tảng, công cụ phát triển, cấu trúc kho mã nguồn và môi trường thực thi dùng chung cho toàn bộ Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS) theo chuẩn SDLC v3.0 ([sdlc-docs.md](../../sdlc-docs.md) §9.3).
+Kế hoạch thiết lập cơ sở hạ tầng nền tảng, công cụ phát triển, cấu trúc kho mã nguồn và môi trường thực thi dùng chung cho toàn bộ Hệ thống Chấm công bằng Nhận diện Khuôn mặt (FAS) theo chuẩn SDLC v3.0 ([sdlc-docs.md](../../sdlc-docs.md) §8.3).
 
 ---
 
