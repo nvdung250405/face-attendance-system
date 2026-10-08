@@ -1,8 +1,11 @@
 ---
 title: Web Portal Task Plan
-version: 1.0
+version: 2.0
 status: Approved
 owner: Frontend Lead
+type: plan
+scope: WEB
+updated: 2026-10-08
 ---
 
 # TASK PLAN — Kế hoạch Thi công Chi tiết Cổng Web Portal
