@@ -23,20 +23,20 @@ Phân hệ Kiosk vận hành như một thiết bị trạm cận biên tự ph�
 
 ### 1.1. Actors (Tác nhân Tương tác)
 
-Phân hệ Kiosk kế thừa và tham chiếu trực tiếp các tác nhân chuẩn hóa cấp toàn hệ thống ([System Spec Core](../../system-docs/specs/spec.md#11-actors-sổ-đăng-ký-tác-nhân-người-dùng-toàn-hệ-thống)):
-* **[`ACT-001`](../../system-docs/specs/spec.md) — Nhân viên (Employee)**:
+Phân hệ Kiosk kế thừa và tham chiếu trực tiếp các tác nhân chuẩn hóa cấp toàn hệ thống ([System Spec Core](../../../system-docs/specs/spec.md#11-actors-sổ-đăng-ký-tác-nhân-người-dùng-toàn-hệ-thống)):
+* **[`ACT-001`](../../../system-docs/specs/spec.md) — Nhân viên (Employee)**:
   * Điểm danh sinh trắc học khuôn mặt không chạm thời gian thực tại camera Kiosk (`FR-KSK-001..003`).
   * Điểm danh dự phòng bằng bàn phím số ảo PIN khi có sự cố nhận diện hoặc khi đã rút Informed Consent (`FR-KSK-004`).
   * Tự nạp mẫu khuôn mặt 3 bước trực tiếp tại camera Kiosk bằng mã Onboarding OTP 6 số (`FR-KSK-007`).
-* **[`ACT-003`](../../system-docs/specs/spec.md) — Quản trị viên Hệ thống (System Admin)**:
+* **[`ACT-003`](../../../system-docs/specs/spec.md) — Quản trị viên Hệ thống (System Admin)**:
   * Khởi tạo và kích hoạt trạm Kiosk bằng Secret Token cấp phát từ Backend (`FR-KSK-009`).
   * Thao tác phím nóng bảo trì tại chỗ: F4 (Chẩn đoán kết nối), F10 (Cấu hình trạm), F12 (Xem nhật ký hoạt động).
   * Mở khóa trạm khẩn cấp qua mã PIN cục bộ (`KIOSK_ADMIN_PIN`) khi trạm bị phong tỏa (`LOCKED`) và mất mạng (`FR-KSK-012`).
 
 ### 1.2. External Systems & Devices (Hệ thống & Thiết bị Ngoại vi)
 
-* **[`EXT-001`](../../system-docs/specs/spec.md) — Camera Quang học UVC / Webcam**: Kết nối phần cứng qua cổng USB, cung cấp luồng khung hình video liên tục $\ge 15\text{ FPS}$ (khuyến nghị $\ge 24\text{ FPS}$) qua driver OpenCV DirectShow / Media Foundation.
-* **[`EXT-003`](../../system-docs/specs/spec.md) — Nguồn Chuẩn Giờ Mạng (NTP Server)**: Đồng bộ mốc thời gian hệ điều hành máy trạm với sai lệch $\le 50\text{ ms}$ so với máy chủ Backend qua cổng UDP 123.
+* **[`EXT-001`](../../../system-docs/specs/spec.md) — Camera Quang học UVC / Webcam**: Kết nối phần cứng qua cổng USB, cung cấp luồng khung hình video liên tục $\ge 15\text{ FPS}$ (khuyến nghị $\ge 24\text{ FPS}$) qua driver OpenCV DirectShow / Media Foundation.
+* **[`EXT-003`](../../../system-docs/specs/spec.md) — Nguồn Chuẩn Giờ Mạng (NTP Server)**: Đồng bộ mốc thời gian hệ điều hành máy trạm với sai lệch $\le 50\text{ ms}$ so với máy chủ Backend qua cổng UDP 123.
 * **Máy chủ Doanh nghiệp (`backend-service`)**: Đối tác cung cấp dịch vụ RESTful API tiếp nhận giao dịch điểm danh (`POST /api/v1/kiosk/punch`), thẩm định PIN dự phòng (`POST /api/v1/kiosk/verify-pin`), cấp phát dữ liệu mẫu và đẩy sự kiện đồng bộ gallery thời gian thực qua WebSocket STOMP topic `/topic/kiosk-gallery`.
 
 ---

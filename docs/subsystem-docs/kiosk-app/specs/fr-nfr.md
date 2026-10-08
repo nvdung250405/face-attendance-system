@@ -20,19 +20,19 @@ Tài liệu này là **Spec Facet FR/NFR của Phân hệ Kiosk** (`kiosk-app`) 
 
 ## 1. Actor Lifecycle & Operational Context (Ngữ cảnh & Vòng đời Tác nhân)
 
-Phân hệ Kiosk vận hành như một thiết bị trạm biên tự phục vụ (Self-service Edge Station), kế thừa và tham chiếu trực tiếp các vai trò tác nhân và thực thể ngoại vi được chuẩn hóa tại cấp toàn hệ thống ([System Spec Core](../../system-docs/specs/spec.md)):
+Phân hệ Kiosk vận hành như một thiết bị trạm biên tự phục vụ (Self-service Edge Station), kế thừa và tham chiếu trực tiếp các vai trò tác nhân và thực thể ngoại vi được chuẩn hóa tại cấp toàn hệ thống ([System Spec Core](../../../system-docs/specs/spec.md)):
 
 * **Tác nhân Con người (Human Actors)**:
-  * **[`ACT-001`](../../system-docs/specs/spec.md) — Nhân viên (Employee)**: Tác nhân chính thực hiện các tương tác điểm danh khuôn mặt không chạm, điểm danh dự phòng bằng mã PIN, tự đăng ký mẫu khuôn mặt qua OTP và xử lý các phản hồi ngoại lệ.
-  * **[`ACT-003`](../../system-docs/specs/spec.md) — Quản trị viên Hệ thống (System Admin)**: Tác nhân chịu trách nhiệm cấu hình thiết bị trạm, quản lý biến môi trường, thao tác phím nóng bảo trì tại chỗ, chẩn đoán trạng thái hệ thống, đọc nhật ký, xử lý sự cố phần cứng và mở khóa trạm khẩn cấp.
+  * **[`ACT-001`](../../../system-docs/specs/spec.md) — Nhân viên (Employee)**: Tác nhân chính thực hiện các tương tác điểm danh khuôn mặt không chạm, điểm danh dự phòng bằng mã PIN, tự đăng ký mẫu khuôn mặt qua OTP và xử lý các phản hồi ngoại lệ.
+  * **[`ACT-003`](../../../system-docs/specs/spec.md) — Quản trị viên Hệ thống (System Admin)**: Tác nhân chịu trách nhiệm cấu hình thiết bị trạm, quản lý biến môi trường, thao tác phím nóng bảo trì tại chỗ, chẩn đoán trạng thái hệ thống, đọc nhật ký, xử lý sự cố phần cứng và mở khóa trạm khẩn cấp.
 * **Ngữ cảnh Tích hợp Ngoại vi (External Systems & Hardware Context)**:
   * **Dịch vụ Máy chủ Trung tâm (`Backend Service`)**: Cung cấp dịch vụ RESTful API, kênh WebSocket STOMP Broker hai chiều và phát lệnh điều khiển từ xa cho trạm Kiosk.
-  * **[`EXT-001`](../../system-docs/specs/spec.md) — Camera Quang học UVC / Webcam**: Thiết bị phần cứng USB cung cấp luồng khung hình video liên tục $\ge 15\text{ FPS}$ qua DirectShow / Media Foundation.
-  * **[`EXT-003`](../../system-docs/specs/spec.md) — Nguồn Chuẩn Giờ Mạng NTP**: Dịch vụ mạng đồng bộ mốc thời gian hệ thống chuẩn giữa Kiosk và Backend với sai lệch $\le 50\text{ ms}$ qua cổng UDP 123.
+  * **[`EXT-001`](../../../system-docs/specs/spec.md) — Camera Quang học UVC / Webcam**: Thiết bị phần cứng USB cung cấp luồng khung hình video liên tục $\ge 15\text{ FPS}$ qua DirectShow / Media Foundation.
+  * **[`EXT-003`](../../../system-docs/specs/spec.md) — Nguồn Chuẩn Giờ Mạng NTP**: Dịch vụ mạng đồng bộ mốc thời gian hệ thống chuẩn giữa Kiosk và Backend với sai lệch $\le 50\text{ ms}$ qua cổng UDP 123.
 
 ### 1.1. Vòng đời Nghiệp vụ Tác nhân Con người (Human Actors Lifecycle)
 
-* **Nhân viên ([`ACT-001`](../../system-docs/specs/spec.md) — Employee)**:
+* **Nhân viên ([`ACT-001`](../../../system-docs/specs/spec.md) — Employee)**:
   1. *Điểm danh Sinh trắc học Không chạm (Touchless Biometric Attendance)*:
      * **Hành vi tác nhân**: Bước vào vùng quan sát nhận diện của trạm (0.6 - 1.2 m), hướng khuôn mặt thẳng vào camera, căn chỉnh khuôn mặt vào khung hiển thị Oval và duy trì tư thế ổn định (0.5 - 1.0 s).
      * **Phản hồi nghiệp vụ của Kiosk**: Tự động phát hiện khuôn mặt (`FR-KSK-001`), kiểm tra thực thể sống thụ động chống giả mạo (`FR-KSK-002`, `NFR-KSK-007`), so khớp đặc trưng 1:N trong bộ nhớ RAM (`FR-KSK-003`, `NFR-KSK-001`, `NFR-KSK-006`) và phản hồi kết quả trực quan kèm âm thanh; gửi giao dịch điểm danh trực tuyến (`FR-KSK-006`) hoặc đệm an toàn vào CSDL cục bộ khi mất mạng (`FR-KSK-015`); đồng thời kích hoạt quy tắc giãn cách thời gian Cooldown 120 giây (`FR-KSK-005`).
@@ -58,7 +58,7 @@ Phân hệ Kiosk vận hành như một thiết bị trạm biên tự phục v�
      * **Hành vi tác nhân**: Thao tác bấm nút "Hủy" hoặc bỏ đi mà không hoàn tất việc nhập PIN hay đăng ký khuôn mặt.
      * **Phản hồi nghiệp vụ của Kiosk**: Đóng ngay lập tức các giao diện phụ khi bấm Hủy; hoặc tự động đếm ngược và đóng về màn hình chờ sau đúng thời gian Timeout (mặc định 30 giây, cấu hình 10 - 120 giây theo `FR-KSK-011`, `FR-KSK-013`), giải phóng bộ nhớ phiên.
 
-* **Quản trị viên Hệ thống ([`ACT-003`](../../system-docs/specs/spec.md) — System Admin)**:
+* **Quản trị viên Hệ thống ([`ACT-003`](../../../system-docs/specs/spec.md) — System Admin)**:
   1. *Thiết lập Vận hành & Khởi động Trạm (Station Provisioning & Startup)*:
      * **Hành vi tác nhân**: Nạp các tham số cấu hình khởi tạo trạm (định danh thiết bị, địa chỉ dịch vụ máy chủ, mã bí mật xác thực trạm, các ngưỡng nhận diện AI và thời gian chờ), kích hoạt trạm và khởi chạy dịch vụ điểm danh.
      * **Phản hồi nghiệp vụ của Kiosk**: Kiểm tra tính sẵn sàng của thiết bị phần cứng, xác thực trạm với máy chủ, tải danh mục mẫu sinh trắc học về lưu đệm mã hóa AES-256-GCM (`DATA-KSK-007`), nạp ma trận RAM và chuyển sang trạng thái sẵn sàng phục vụ 24/7 (`FR-KSK-009`). Nếu gặp lỗi khởi động, Kiosk kích hoạt quy trình tự bảo vệ và hiển thị hướng dẫn phục hồi (`FR-KSK-017`).

@@ -99,6 +99,6 @@ TASK-WEB-012 + TASK-WEB-020 ──→ TASK-WEB-021 (Full Portal Integration) ─
 
 ## 5. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
 
-* **Phụ thuộc Hợp đồng Backend**: `TASK-WEB-005` (data contracts) và `TASK-WEB-013/014` (xác thực/refresh token) phải bám theo hợp đồng Backend đã chốt tại `service-docs/backend-service/api/api-specs.md`; khi Backend bổ sung giao diện mới, `TASK-WEB-005` phải cập nhật DTO tương ứng trước khi task giao diện tiêu thụ nó bắt đầu.
+* **Phụ thuộc Hợp đồng Backend**: `TASK-WEB-005` (data contracts) và `TASK-WEB-013/014` (xác thực/refresh token) phải bám theo hợp đồng Backend đã chốt tại `subsystem-docs/backend-service/specs/api.md`; khi Backend bổ sung giao diện mới, `TASK-WEB-005` phải cập nhật DTO tương ứng trước khi task giao diện tiêu thụ nó bắt đầu.
 * **Kiểm thử Giao diện**: Các task UI/UX cần kiểm thử thủ công trên tối thiểu 3 kích thước màn hình; kiểm thử tự động chỉ phủ logic store/interceptor.
 * **Độc lập Pull Request theo Task**: Mỗi `TASK-WEB-` thi công trên một nhánh riêng; các task cùng Wave không phụ thuộc nhau nên giao song song được.
