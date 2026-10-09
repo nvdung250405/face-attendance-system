@@ -25,6 +25,8 @@ public enum ApiErrorCode {
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tài nguyên"),
     PIN_INVALID(HttpStatus.UNAUTHORIZED, "Mã PIN không đúng"),
     PIN_LOCKED(HttpStatus.LOCKED, "Mã PIN đang bị khóa"),
+    SHIFT_OVERLAPPING(HttpStatus.CONFLICT, "Khoảng thời gian phân ca bị chồng lấn"),
+    SHIFT_IN_USE(HttpStatus.CONFLICT, "Ca làm việc đang được phân công"),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ"),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Định dạng nội dung không được hỗ trợ"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống nội bộ");

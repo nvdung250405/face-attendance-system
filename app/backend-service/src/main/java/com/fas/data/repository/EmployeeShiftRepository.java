@@ -18,6 +18,10 @@ public interface EmployeeShiftRepository extends JpaRepository<EmployeeShift, Lo
 
     List<EmployeeShift> findByUserId(Long userId);
 
+    List<EmployeeShift> findByShiftId(Long shiftId);
+
+    boolean existsByShiftId(Long shiftId);
+
     @Query("SELECT es FROM EmployeeShift es " +
            "WHERE es.user.id = :userId " +
            "AND es.effectiveFrom <= :date " +
