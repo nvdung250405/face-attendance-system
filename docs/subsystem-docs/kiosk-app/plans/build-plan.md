@@ -1,12 +1,14 @@
 ---
-title: Kiosk App Service Build Plan
-version: 1.0
+title: Kiosk App Subsystem Build Plan
+version: 2.0
 status: Approved
 owner: Edge Vision Lead & UI Lead
+type: plan
+scope: KSK
+updated: 2026-10-08
 ---
 
 # BUILD PLAN — Kế hoạch Xây dựng & Tích hợp Tổng thể Phân hệ Kiosk
-
 
 ## 1. Approach (Chiến lược Thực hiện)
 
@@ -22,14 +24,14 @@ Phân hệ `kiosk-app` áp dụng chiến lược gom nhóm và sắp xếp th�
 
 ## 2. Build Order (Thứ tự Xây dựng & Điều phối Xuyên Facet)
 
-Bảng điều phối gom nhóm toàn bộ các work item từ các facet build plan (`foundation-setup-plan.md`, `data-build-plan.md`, `fr-nfr-build-plan.md`, `api-build-plan.md`, `ui-ux-build-plan.md`) thành các Wave có thứ tự thực thi tuần tự:
+Bảng điều phối gom nhóm toàn bộ các work item từ các facet kỹ thuật thành các Wave có thứ tự thực thi tuần tự:
 
 | Wave | Includes | Depends on | Done when |
 | :--- | :--- | :--- | :--- |
 | **Wave 1: Foundation Setup** | `FND-KSK-001`, `FND-KSK-002`, `FND-KSK-003`, `FND-KSK-004`, `FND-KSK-005` | — | Môi trường ảo Python, thư viện PySide6/OpenCV, kiểm định mã băm 3 mô hình ONNX và driver camera DirectShow hoạt động ổn định. |
 | **Wave 2: Local Data Persistence** | `BLD-KSK-001`, `BLD-KSK-002`, `BLD-KSK-003` | Wave 1 | CSDL SQLite WAL cục bộ khởi tạo chuẩn; hàng đợi ngoại tuyến và ma trận NumPy RAM 1,000 vector so khớp $< 2\text{ ms}$. |
 | **Wave 3: Vision Pipeline & UI Tokens** | `BLD-KSK-004`, `BLD-KSK-005`, `BLD-KSK-012`, `BLD-KSK-013`, `BLD-KSK-014`, `BLD-KSK-015`, `BLD-KSK-016` | Wave 2 | Camera worker đọc khung hình mượt mà; YuNet, Oval gate, Liveness, ArcFace trích xuất vector chuẩn; QML tokens và bố cục 9:16 sẵn sàng. |
-| **Wave 4: UI Interaction & Offline Buffer**| `BLD-KSK-006`, `BLD-KSK-007`, `BLD-KSK-008`, `BLD-KSK-017` | Wave 3 | Khung Oval 4 màu đổi trạng thái nhạy bén; thẻ kết quả kính mờ phát âm thanh; 3 modal (PIN, Đăng ký, Trợ giúp) tích hợp hoàn tất. |
+| **Wave 4: UI Interaction & Offline Buffer** | `BLD-KSK-006`, `BLD-KSK-007`, `BLD-KSK-008`, `BLD-KSK-017` | Wave 3 | Khung Oval 4 màu đổi trạng thái nhạy bén; thẻ kết quả kính mờ phát âm thanh; 3 modal (PIN, Đăng ký, Trợ giúp) tích hợp hoàn tất. |
 | **Wave 5: Network Communication & Sync** | `BLD-KSK-009`, `BLD-KSK-010`, `BLD-KSK-011` | Wave 4 | HTTP client httpx gửi punch/batch mượt mà; STOMP worker nhận nạp nóng vector mới; Offline sync worker đẩy bù tự động khi có mạng. |
 | **Wave 6: Edge Full Integration** | `BLD-KSK-018` | Wave 5 | Luồng toàn trình từ Camera $\rightarrow$ AI $\rightarrow$ SQLite $\rightarrow$ QML $\rightarrow$ API vận hành trơn tru; tổng thời gian nhận diện $\le 100\text{ ms}$. |
 
@@ -42,23 +44,11 @@ Bảng điều phối gom nhóm toàn bộ các work item từ các facet build 
 | `BLD-KSK-018` | Tích hợp Toàn trình Luồng Điểm danh Biên | Ghép nối luồng video camera, máy trạng thái Oval QML, pipeline suy luận AI (YuNet + MiniFASNet + ArcFace), ghi đệm SQLite WAL và đồng bộ HTTP/STOMP. | `ARC-001`, `SOL-KSK-001`, `UXD-KSK-001`, `APD-KSK-001`, `DTD-KSK-001` | `BLD-KSK-008`, `BLD-KSK-011` | Điểm danh thành công hiển thị thẻ kết quả xanh trong $< 100\text{ ms}$; tự động lưu SQLite khi mất mạng và đồng bộ bù khi có mạng. | Planned |
 
 ---
-title: Kiosk Core Build Plan
-version: 1.0
-status: Approved
-owner: Edge Vision Lead
----
 
-# FR/NFR BUILD PLAN — Kế hoạch Thi công Cốt lõi Phân hệ Kiosk
+## 4. Core Build Work Items (Hạng mục Thi công Chuỗi Thị giác & Logic Cốt lõi)
 
-
-## 1. Approach & Sequencing (Chiến lược Thi công)
-
-Xây dựng các module xử lý độc lập và tích hợp theo chuỗi tín hiệu bất đồng bộ:
+Chuỗi tín hiệu bất đồng bộ:
 $$\text{Camera Ingestion} \rightarrow \text{YuNet \& Oval Gate} \rightarrow \text{Liveness Gate} \rightarrow \text{ArcFace Extractor} \rightarrow \text{RAM Matcher} \rightarrow \text{SQLite WAL Queue}$$
-
----
-
-## 2. Core Build Work Items (Danh mục Hạng mục Thi công Cốt lõi)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -67,26 +57,14 @@ $$\text{Camera Ingestion} \rightarrow \text{YuNet \& Oval Gate} \rightarrow \tex
 | `BLD-KSK-014` | Lập trình Cổng Căn chỉnh Oval | Xây dựng bộ kiểm chuẩn hình học và độ ổn định thời gian $0.5 - 1.0\text{ s}$ trước khi kích hoạt nhận diện. | `SOL-KSK-003` | `BLD-KSK-013` | Giữ ổn định đúng thời gian mới mở cổng; phát thông điệp điều hướng màu Vàng. | Done |
 | `BLD-KSK-015` | Tích hợp Lọc Liveness MiniFASNet | Nạp mô hình ONNX MiniFASNet, crop vùng mặt 1.5x, tính xác suất $S \ge 0.85$. | `SOL-KSK-004` | `BLD-KSK-013` | Chặn ảnh in 2D và video màn hình; thời gian suy luận $\le 50\text{ ms}$. | Done |
 | `BLD-KSK-016` | Tích hợp Trích xuất ArcFace & RAM Matcher | Căn chỉnh Affine $112\times 112\text{ px}$, trích xuất vector 512D chuẩn hóa L2, nhân ma trận Cosine qua NumPy. | `SOL-KSK-005`, `SOL-KSK-006` | `BLD-KSK-015` | So khớp ma trận 1,000 nhân sự $< 2\text{ ms}$; ngưỡng Cosine $\ge 0.50$. | Done |
-| `BLD-KSK-019` | Lập trình Thẩm định PIN Dự phòng, Vòng đời Bộ nhớ & Cấu hình Trạm | Xây dựng luồng gọi `verify-pin` và ánh xạ lỗi PIN (401/423) sang UI, bộ quản lý cấp phát/giải phóng mảng khung hình, vòng lặp tự phục hồi camera và `KioskConfig` nạp từ `.env`. Phụ thuộc client HTTP thuộc facet `api` được giải quyết tại `TASK-KSK-028` (Mục 13.2). | `SOL-KSK-007`, `SOL-KSK-008`, `SOL-KSK-009`, `DTD-KSK-005` | `FND-KSK-002` | PIN chỉ được chấp nhận khi Backend trả 200 và không tạo bản ghi khi thất bại; RAM biến thiên $\le 10\%$ sau 8 giờ; camera tự phục hồi $\le 3\text{ s}$; thiếu biến cấu hình bắt buộc thì khởi động thất bại kèm thông báo rõ. | Planned |
-| `BLD-KSK-017` | Lập trình Hàng đợi SQLite WAL | Quản lý CSDL `kiosk_local.db` chế độ WAL, hàm `enqueue_punch()`, `fetch_unsynced_batch()`, `mark_synced()`. | `SOL-KSK-008` | `FND-KSK-005` | Ghi đệm an toàn khi mất mạng; đọc non-blocking song song. | Done |
+| `BLD-KSK-019` | Lập trình Thẩm định PIN Dự phòng, Vòng đời Bộ nhớ & Cấu hình Trạm | Xây dựng luồng gọi `verify-pin` và ánh xạ lỗi PIN (401/423) sang UI, bộ quản lý cấp phát/giải phóng mảng khung hình, vòng lặp tự phục hồi camera và `KioskConfig` nạp từ `.env`. | `SOL-KSK-007`, `SOL-KSK-008`, `SOL-KSK-009`, `DTD-KSK-005` | `FND-KSK-002` | PIN chỉ được chấp nhận khi Backend trả 200 và không tạo bản ghi khi thất bại; RAM biến thiên $\le 10\%$ sau 8 giờ; camera tự phục hồi $\le 3\text{ s}$; thiếu biến cấu hình bắt buộc thì khởi động thất bại kèm thông báo rõ. | Planned |
+| `BLD-KSK-017` | Lập trình Hàng đợi SQLite WAL | Quản lý CSDL `kiosk_local.db` chế độ WAL, hàm `enqueue_punch()`, `fetch_unsynced_batch()`, `mark_synced()`. | `SOL-KSK-011` | `FND-KSK-005` | Ghi đệm an toàn khi mất mạng; đọc non-blocking song song. | Done |
 
 ---
-title: Kiosk Local Data Build Plan
-version: 2.0
-status: Approved
-owner: Edge Vision Lead
----
 
-# DATA BUILD PLAN — Kế hoạch Thi công Tầng Dữ liệu Cục bộ Kiosk
-
-
-## 1. Approach & Sequencing (Chiến lược Thi công Dữ liệu Cục bộ)
+## 5. Local Data Build Work Items (Hạng mục Thi công Dữ liệu Cục bộ)
 
 $$\text{SQLite WAL Database Setup} \rightarrow \text{Offline Queue Operations} \rightarrow \text{NumPy RAM Matrix \& Cooldown Handler}$$
-
----
-
-## 2. Data Build Work Items (Danh mục Hạng mục Thi công Dữ liệu)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -95,22 +73,10 @@ $$\text{SQLite WAL Database Setup} \rightarrow \text{Offline Queue Operations} \
 | `BLD-KSK-003` | Lập trình Ma trận Gallery RAM & Cooldown | Xây dựng bộ quản lý ma trận NumPy $\mathbf{M} \in \mathbb{R}^{N \times 512}$, tính Cosine $\vec{s} = \mathbf{M} \cdot \vec{u}^T$, nạp nóng Atomic Swap và Cooldown Cache 120s. | `DATA-KSK-002`, `DATA-KSK-003`, `DTD-KSK-002`, `DTD-KSK-003` | `FND-KSK-002` | Tính tích vô hướng $< 2\text{ ms}$ cho $N = 1000$; nạp nóng vector mới vào RAM mà không làm giật khung hình camera. | Done |
 
 ---
-title: Kiosk API Build Plan
-version: 2.0
-status: Approved
-owner: Edge Vision Lead
----
 
-# API BUILD PLAN — Kế hoạch Thi công Tầng Mạng Phân hệ Kiosk
-
-
-## 1. Approach & Sequencing (Chiến lược Thi công Tầng Mạng)
+## 6. API Build Work Items (Hạng mục Thi công Tầng Mạng)
 
 $$\text{HTTP Client Wrapper (httpx)} \rightarrow \text{STOMP Subscriber Worker (stomp.py)} \rightarrow \text{Offline Sync Worker (SQLite WAL)}$$
-
----
-
-## 2. API Build Work Items (Danh mục Hạng mục Thi công Tầng Mạng)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
@@ -119,23 +85,11 @@ $$\text{HTTP Client Wrapper (httpx)} \rightarrow \text{STOMP Subscriber Worker (
 | `BLD-KSK-011` | Lập trình Offline Sync Worker | Xây dựng luồng ngầm định kỳ 10s quét bảng `offline_punches`; gom lô tối đa 50 bản ghi gửi `POST /sync-batch` và cập nhật `is_synced = 1`. | `APD-KSK-003` | `BLD-KSK-009` | Tự động đồng bộ bù khi mạng phục hồi mà không làm nghẽn UI Event Loop. | Done |
 
 ---
-title: Kiosk UI/UX Build Plan
-version: 2.0
-status: Approved
-owner: Edge Vision Lead & UI Engineer
----
 
-# UI/UX BUILD PLAN — Kế hoạch Thi công Giao diện Phân hệ Kiosk
-
-
-## 1. Approach & Sequencing (Chiến lược Thi công Giao diện)
+## 7. UI Build Work Items (Hạng mục Thi công Giao diện)
 
 Xây dựng giao diện QML theo 5 giai đoạn liên tục:
 $$\text{Design Tokens} \rightarrow \text{Viewport Layouts (9:16)} \rightarrow \text{Proportional Scaling} \rightarrow \text{Modals \& Dialogs} \rightarrow \text{Animation \& Sounds}$$
-
----
-
-## 2. UI Build Work Items (Danh mục Hạng mục Thi công Giao diện)
 
 | ID | Name | Description | Covers | Depends on | Done when | Status |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |

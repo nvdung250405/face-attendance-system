@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Kiểm tra tính toàn vẹn của hệ thống tài liệu SDLC (docs-check).
 
-Hiện thực các kiểm tra structural mà `docs/sdlc-docs.md` và `.github/github-docs.md`
+Hiện thực các kiểm tra structural mà `docs/sdlc-docs.md` (v3.x) và `.github/github-docs.md`
 yêu cầu:
 
-* Mục 3.4  — front matter, version, tập giá trị Status theo loại item.
-* Mục 11.2 — trace field và target hợp lệ của `Basis`.
-* Mục 12   — prefix/ID scheme, ID bất biến và không trùng.
-* Mục 13.2 — quy tắc orphan: design có `Realizes`, work item có `Covers`,
+* Mục 3.1  — conventions, front matter, version, tập giá trị Status theo loại item.
+* Mục 9.3  — trace field và target hợp lệ của `Basis`.
+* Mục 10   — prefix/ID scheme, ID bất biến và không trùng.
+* Mục 11.3 — artifact structural rules: design có `Realizes`, work item có `Covers`,
              `TASK-` có `Derived from`, requirement có design + test item,
              BLD/FND của service phải được phân rã thành `TASK-`,
              `BLD-` của facet không `Depends on` facet khác.
-* Mục 14.4 — tham chiếu trỏ tới ID tồn tại, `Wave` hợp lệ và wave(task) >
-             wave của mọi task mà nó phụ thuộc, xuất ma trận traceability.
-* Mục 10   — `api-specs.md` là leaf optional; các leaf khác bắt buộc theo facet.
+* Mục 12.4 — CI invariants: blocking structural checks (FM, ID, REF, STR)
+             và các tiêu chí semantic/coverage thuộc warning/allowlist.
+* Mục 2    — cấu trúc cây tài liệu `specs/`, `plans/` ở System và Subsystem.
 
-Sáu phép thử chất lượng ở mục 13.1 là human review, script này KHÔNG thay thế.
+Sáu phép thử chất lượng ở mục 11.2 là human review, script này KHÔNG thay thế.
 
 Cách dùng:
     python tools/docs-check/check_docs.py [--matrix <đường dẫn>] [--baseline]
@@ -40,7 +40,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Registry theo sdlc-docs.md mục 3.1, 10.1, 11
+# Registry theo sdlc-docs.md mục 3.1, 10, 11.3
 # ---------------------------------------------------------------------------
 
 LEAF_STATUSES = {"Draft", "In Review", "Approved", "Baselined", "Deprecated"}
@@ -52,31 +52,31 @@ UNSCOPED_TYPES = {"RQ", "SRC", "INF", "ANL", "GAP", "PD", "STK", "ACT", "EXT", "
 KNOWN_SCOPES = {"SYS", "BE", "WEB", "KSK"}
 
 STATUS_BY_TYPE = {
-    "RQ": {"Draft", "Open", "In progress", "Resolved", "Closed", "Obsolete"},
-    "GAP": {"Draft", "Open", "In progress", "Resolved", "Closed", "Obsolete"},
-    "ANL": {"Draft", "Reviewed", "Accepted", "Superseded", "Deprecated"},
+    "RQ": {"Draft", "Open", "In progress", "In Progress", "Resolved", "Closed", "Obsolete"},
+    "GAP": {"Draft", "Open", "In progress", "In Progress", "Resolved", "Closed", "Obsolete"},
+    "ANL": {"Draft", "Reviewed", "Accepted", "Superseded", "Rejected", "Deprecated"},
     "SRC": {"Unverified", "Verified", "Obsolete"},
-    "INF": {"Unverified", "Verified", "Obsolete"},
-    "PD": {"Proposed", "Accepted", "Superseded", "Deprecated"},
-    "DD": {"Proposed", "Accepted", "Implemented", "Deprecated"},
-    "APC": {"Proposed", "Accepted", "Superseded", "Deprecated"},
-    "STK": {"Proposed", "Adopted", "Superseded", "Deprecated"},
-    "ARC": {"Proposed", "Accepted", "Implemented", "Deprecated"},
-    "SOL": {"Proposed", "Accepted", "Implemented", "Deprecated"},
-    "UXD": {"Proposed", "Accepted", "Implemented", "Deprecated"},
-    "APD": {"Proposed", "Accepted", "Implemented", "Deprecated"},
-    "DTD": {"Proposed", "Accepted", "Implemented", "Deprecated"},
-    "FND": {"Planned", "In progress", "Blocked", "Done", "Cancelled"},
-    "BLD": {"Planned", "In progress", "Blocked", "Done", "Cancelled"},
-    "TST": {"Planned", "In progress", "Blocked", "Done", "Cancelled"},
-    "DPL": {"Planned", "In progress", "Blocked", "Done", "Cancelled"},
-    "PRJ": {"Planned", "In progress", "Blocked", "Done", "Cancelled"},
-    "TASK": {"Ready", "In progress", "Blocked", "Done", "Cancelled"},
-    "RSK": {"Open", "Mitigating", "Accepted", "Closed"},
+    "INF": {"Draft", "Reviewed", "Unverified", "Verified", "Superseded", "Rejected", "Obsolete"},
+    "PD": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Superseded", "Deprecated"},
+    "DD": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Implemented", "Superseded", "Deprecated"},
+    "APC": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Superseded", "Deprecated"},
+    "STK": {"Proposed", "Approved", "Adopted", "Superseded", "Deprecated"},
+    "ARC": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Implemented", "Superseded", "Deprecated"},
+    "SOL": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Implemented", "Superseded", "Deprecated"},
+    "UXD": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Implemented", "Superseded", "Deprecated"},
+    "APD": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Implemented", "Superseded", "Deprecated"},
+    "DTD": {"Draft", "In Review", "Proposed", "Accepted", "Approved", "Implemented", "Superseded", "Deprecated"},
+    "FND": {"Planned", "Ready", "In progress", "In Progress", "Blocked", "Done", "Cancelled"},
+    "BLD": {"Planned", "Ready", "In progress", "In Progress", "Blocked", "Done", "Cancelled"},
+    "TST": {"Planned", "Ready", "In progress", "In Progress", "Passed", "Failed", "Blocked", "Done", "Cancelled"},
+    "DPL": {"Planned", "Ready", "In progress", "In Progress", "Blocked", "Done", "Cancelled"},
+    "PRJ": {"Planned", "Ready", "In progress", "In Progress", "Blocked", "Done", "Cancelled"},
+    "TASK": {"Planned", "Ready", "In progress", "In Progress", "Blocked", "Done", "Cancelled"},
+    "RSK": {"Open", "In progress", "In Progress", "Mitigating", "Mitigated", "Accepted", "Closed"},
 }
 SPEC_TYPES = {"SRS", "FR", "NFR", "UI", "API", "DATA"}
 INFO_TYPES = {"RQ", "GAP", "SRC", "INF", "ANL"}
-SPEC_ITEM_STATUS = {"Draft", "Approved", "Implemented", "Verified", "Deferred", "Rejected"}
+SPEC_ITEM_STATUS = {"Draft", "In Review", "Approved", "Implemented", "Verified", "Deferred", "Rejected", "Superseded", "Deprecated"}
 
 DESIGN_TYPES = {"ARC", "SOL", "UXD", "APD", "DTD"}
 WORK_TYPES = {"FND", "BLD", "TST", "DPL"}
@@ -87,7 +87,7 @@ SERVICE_INTERFACE_TYPES = {"API"}
 TRACE_COLUMNS = ("Basis", "Realizes", "Covers", "Uses", "Requires", "Derived from",
                  "Depends on", "Decisions")
 
-# Target hợp lệ của `Basis` theo sdlc-docs.md mục 11.2 (chỉ áp cho item type được quy định rõ)
+# Target hợp lệ của `Basis` theo sdlc-docs.md mục 9.3 (chỉ áp cho item type được quy định rõ)
 BASIS_FORBIDDEN = {
     "PD": {"SRS", "FR", "NFR", "UI", "API", "DATA", "ARC", "SOL", "UXD", "APD", "DTD",
            "DD", "FND", "BLD", "TASK", "TST", "DPL", "PRJ", "APC"},
@@ -95,12 +95,12 @@ BASIS_FORBIDDEN = {
     "STK": {"SRS", "FR", "NFR", "UI", "API", "DATA", "ARC", "SOL", "UXD", "APD", "DTD",
             "DD", "FND", "BLD", "TASK", "TST"},
 }
-BASIS_SPEC_ALLOWED = {"SRC", "INF", "ANL", "PD", "SRS", "FR", "NFR", "UI", "API", "DATA", "ARC", "STK", "RSK", "RQ", "GAP", "ACT"}
+BASIS_SPEC_ALLOWED = {"SRC", "INF", "ANL", "PD", "SRS", "FR", "NFR", "UI", "API", "DATA", "ARC", "STK", "RSK", "RQ", "GAP", "ACT", "EXT", "DD"}
 
 MOSCOW = {"Must", "Should", "Could", "Won't"}
 
 FACET_BY_PREFIX = {
-    "SOL": "fr-nfr",
+    "SOL": "core",
     "DTD": "data",
     "DATA": "data",
     "APD": "api",
@@ -220,6 +220,37 @@ def parse_tables(text: str):
         yield idx, header, cells
 
 
+def normalize_header(header: str) -> str:
+    """Chuẩn hóa tiêu đề cột về dạng canonical (hỗ trợ song ngữ và format Markdown)."""
+    h = header.strip()
+    h_lower = h.lower()
+    if "covers" in h_lower or "bao phủ" in h_lower:
+        return "Covers"
+    if "depends on" in h_lower or "phụ thuộc" in h_lower:
+        return "Depends on"
+    if "realizes" in h_lower or "hiện thực" in h_lower:
+        return "Realizes"
+    if "basis" in h_lower or "cơ sở" in h_lower:
+        return "Basis"
+    if "decisions" in h_lower or "quyết định" in h_lower:
+        return "Decisions"
+    if "derived from" in h_lower or "nguồn gốc" in h_lower:
+        return "Derived from"
+    if "done when" in h_lower or "tiêu chí" in h_lower or "criteria" in h_lower:
+        return "Done when"
+    if "status" in h_lower or "trạng thái" in h_lower:
+        return "Status"
+    if "name" in h_lower or "tên" in h_lower:
+        return "Name"
+    if "wave" in h_lower:
+        return "Wave"
+    if "priority" in h_lower or "ưu tiên" in h_lower:
+        return "Priority"
+    if "owner" in h_lower or "chủ sở hữu" in h_lower:
+        return "Owner"
+    return h
+
+
 def load_leaves(docs_dir: Path) -> dict[str, Leaf]:
     leaves: dict[str, Leaf] = {}
     for path in sorted(docs_dir.rglob("*.md")):
@@ -232,7 +263,7 @@ def load_leaves(docs_dir: Path) -> dict[str, Leaf]:
             m = ID_RE.fullmatch(cells[0])
             if not m:
                 continue
-            columns = {header[i] if i < len(header) else f"col{i}": cell
+            columns = {normalize_header(header[i]) if i < len(header) else f"col{i}": cell
                        for i, cell in enumerate(cells)}
             item = Item(item_id=m.group(1), leaf=rel, columns=columns, line=lineno,
                         status=columns.get("Status", ""), name=columns.get("Name", ""))
@@ -507,25 +538,68 @@ def check_waves(defines, problems):
 
 
 def check_tree_structure(leaves, problems):
+    system_files: set[str] = set()
     subsystems: dict[str, set[str]] = defaultdict(set)
     for leaf in leaves.values():
         parts = leaf.rel.split("/")
-        # docs / subsystem-docs / <subsystem> / <dir> / <leaf file>
-        if len(parts) == 5 and parts[1] == "subsystem-docs":
-            subsystems[parts[2]].add(f"{parts[3]}/{parts[4]}")
+        # docs / system-docs / ...
+        if len(parts) >= 3 and parts[1] == "system-docs":
+            system_files.add("/".join(parts[2:]))
+        # docs / subsystem-docs / <subsystem> / ...
+        elif len(parts) >= 4 and parts[1] == "subsystem-docs":
+            subsystems[parts[2]].add("/".join(parts[3:]))
+
+    # Kiểm tra system-docs (§2)
+    required_system = (
+        "info.md", "pi.md", "tech-tool-stack.md",
+        "specs/spec.md",
+        "plans/project-plan.md", "plans/foundation-setup-plan.md",
+        "plans/test-plan.md", "plans/deploy-plan.md"
+    )
+    for req in required_system:
+        if req not in system_files:
+            problems.append(Problem("STR001", f"system-docs: thiếu {req} (§2)"))
+
+    # Kiểm tra từng subsystem (§2, §7.2)
+    required_subsystem = (
+        "specs/spec.md",
+        "plans/foundation-setup-plan.md", "plans/build-plan.md",
+        "plans/test-plan.md", "plans/task-plan.md"
+    )
+    allowed_optional_specs = {"specs/data.md", "specs/api.md", "specs/ui-ux.md"}
+
     for sub, rel_files in sorted(subsystems.items()):
-        for p in ("plans/foundation-setup-plan.md", "plans/build-plan.md", "plans/test-plan.md", "plans/task-plan.md"):
-            if p not in rel_files:
-                problems.append(Problem("STR001", f"{sub}: thiếu {p} (§2)"))
-        if "srs/fr-nfr-specs.md" not in rel_files:
-            problems.append(Problem("STR001", f"{sub}: thiếu srs/fr-nfr-specs.md (§2)"))
-        if "dds/fr-nfr-design.md" not in rel_files:
-            problems.append(Problem("STR001", f"{sub}: thiếu dds/fr-nfr-design.md (§2)"))
-        for facet in ("data", "api", "ui-ux"):
-            spec = f"srs/{facet}-specs.md"
-            design = f"dds/{facet}-design.md"
-            if (spec in rel_files) != (design in rel_files):
-                problems.append(Problem("STR001", f"{sub}: thiếu cặp tương ứng cho facet '{facet}' ({spec} và {design}) (§2)"))
+        for req in required_subsystem:
+            if req not in rel_files:
+                problems.append(Problem("STR001", f"{sub}: thiếu {req} (§2)"))
+
+        # Chặn thư mục cũ srs/ và dds/
+        legacy_files = [f for f in rel_files if f.startswith("srs/") or f.startswith("dds/")]
+        for leg in legacy_files:
+            problems.append(Problem("STR001", f"{sub}: chứa tệp cấu trúc cũ không hợp lệ '{leg}' (SDLC v3.x dùng specs/) (§2)"))
+
+        # Các tệp specs/ chỉ được nằm trong danh mục hợp lệ
+        for f in rel_files:
+            if f.startswith("specs/") and f not in required_subsystem and f not in allowed_optional_specs:
+                problems.append(Problem("STR001", f"{sub}: tệp spec không chuẩn '{f}' (§2, §7.2)"))
+
+
+def check_structural_constraints(defines, problems):
+    """Kiểm tra structural constraints có tính xác định cao theo §12.4."""
+    for item_id, items in defines.items():
+        itype = type_of(item_id)
+        for item in items:
+            # TASK- và BLD- chỉ ở Subsystem
+            if itype in ("TASK", "BLD"):
+                if not item.leaf.startswith("docs/subsystem-docs/"):
+                    problems.append(Problem("STR002", f"{item_id}: '{itype}' chỉ được xuất hiện ở Subsystem (§12.4)", item_id))
+
+            # System FND- không có TASK- (đã kiểm tra qua Derived from)
+            # Gate không có Covers
+            if "gate" in (item.name or "").lower():
+                covers_val = item.columns.get("Covers", "").strip()
+                if covers_val and covers_val not in ("-", "—") and ID_RE.search(covers_val):
+                    problems.append(Problem("STR003", f"{item_id}: Gate không được có 'Covers' (§12.4)", item_id))
 
 
 def check_change_control(leaves, problems, base_ref: str | None):
@@ -577,8 +651,8 @@ def load_allowlist(path: Path):
 def write_baseline(path: Path, problems: list[Problem], expiry_days: int = 60):
     grouped: dict[str, set[str]] = defaultdict(set)
     for problem in problems:
-        if problem.item_id:
-            grouped[problem.code].add(problem.item_id)
+        key = problem.item_id or problem.message
+        grouped[problem.code].add(key)
     payload = {
         "expires": (date.today() + timedelta(days=expiry_days)).isoformat(),
         "issue": 35,
@@ -629,6 +703,7 @@ def main() -> int:
     check_facet_dependencies(defines, problems)
     check_waves(defines, problems)
     check_tree_structure(leaves, problems)
+    check_structural_constraints(defines, problems)
     check_change_control(leaves, problems, os.environ.get("DOCS_CHECK_BASE_REF"))
 
     if args.baseline:
@@ -648,12 +723,12 @@ def main() -> int:
     suppressed: set[tuple[str, str]] = set()
     for problem in problems:
         codes = allowed.get(problem.code, set())
-        if "*" in codes or (problem.item_id and problem.item_id in codes):
+        if "*" in codes or (problem.item_id and problem.item_id in codes) or problem.message in codes:
             suppressed.add(problem.key())
             continue
         unexpected.append(problem)
 
-    matched = {(p.code, p.item_id) for p in problems if p.item_id}
+    matched = {(p.code, p.item_id or p.message) for p in problems}
     stale = [e for e in entries
              if not (set(e.get("ids", [])) & {i for _, i in matched}) and not e.get("all")]
 

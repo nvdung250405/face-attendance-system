@@ -1,17 +1,20 @@
 ---
 title: Web Portal Task Plan
-version: 1.0
+version: 2.0
 status: Approved
 owner: Frontend Lead
+type: plan
+scope: WEB
+updated: 2026-10-08
 ---
 
 # TASK PLAN — Kế hoạch Thi công Chi tiết Cổng Web Portal
 
 ## 1. Approach (Chiến lược Thực hiện)
 
-Tài liệu này là lớp kế hoạch thi công giữa các build plan facet (`foundation-setup-plan.md`, `data-build-plan.md`, `fr-nfr-build-plan.md`, `api-build-plan.md`, `ui-ux-build-plan.md`) và giai đoạn viết mã, tuân thủ Mục 9.4.1 của [docs/sdlc-docs.md](../../../sdlc-docs.md).
+Tài liệu này là lớp kế hoạch thi công giữa các đơn vị quy hoạch (`BLD-`, `FND-`) trong `foundation-setup-plan.md`, `build-plan.md` và giai đoạn viết mã, tuân thủ Mục 8.7 của [docs/sdlc-docs.md](../../../sdlc-docs.md).
 * **Nguyên tắc phân rã**: Mỗi `TASK-WEB-` hoàn thành trọn vẹn trong một Pull Request và `Derived from` **đúng một** `BLD-`/`FND-` cùng service.
-* **Giải quyết phụ thuộc**: Phụ thuộc xuyên facet (ví dụ hook STOMP thuộc `fr-nfr` phụ thuộc dịch vụ STOMP thuộc `api`) được giải quyết **tại đây** bằng `Depends on` giữa các `TASK-`, không ghi trong build plan facet (Mục 13.2).
+* **Giải quyết phụ thuộc**: Phụ thuộc xuyên facet (ví dụ hook STOMP thuộc `spec` phụ thuộc dịch vụ STOMP thuộc `api`) được giải quyết **tại đây** bằng `Depends on` giữa các `TASK-`, không ghi trong build plan (Mục 13.2).
 * **Cơ chế Wave**: `Wave(task) = 1 + max(Wave(dep))` theo Mục 14.4; các task cùng Wave độc lập và có thể thi công song song.
 
 ### Approach Decisions (Quyết định Tiếp cận Thi công Chi tiết)
@@ -96,6 +99,6 @@ TASK-WEB-012 + TASK-WEB-020 ──→ TASK-WEB-021 (Full Portal Integration) ─
 
 ## 5. Assumptions & Open Issues (Giả định & Vấn đề Chưa giải quyết)
 
-* **Phụ thuộc Hợp đồng Backend**: `TASK-WEB-005` (data contracts) và `TASK-WEB-013/014` (xác thực/refresh token) phải bám theo hợp đồng Backend đã chốt tại `service-docs/backend-service/api/api-specs.md`; khi Backend bổ sung giao diện mới, `TASK-WEB-005` phải cập nhật DTO tương ứng trước khi task giao diện tiêu thụ nó bắt đầu.
+* **Phụ thuộc Hợp đồng Backend**: `TASK-WEB-005` (data contracts) và `TASK-WEB-013/014` (xác thực/refresh token) phải bám theo hợp đồng Backend đã chốt tại `subsystem-docs/backend-service/specs/api.md`; khi Backend bổ sung giao diện mới, `TASK-WEB-005` phải cập nhật DTO tương ứng trước khi task giao diện tiêu thụ nó bắt đầu.
 * **Kiểm thử Giao diện**: Các task UI/UX cần kiểm thử thủ công trên tối thiểu 3 kích thước màn hình; kiểm thử tự động chỉ phủ logic store/interceptor.
 * **Độc lập Pull Request theo Task**: Mỗi `TASK-WEB-` thi công trên một nhánh riêng; các task cùng Wave không phụ thuộc nhau nên giao song song được.

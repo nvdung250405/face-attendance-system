@@ -1,12 +1,14 @@
 ---
 title: Web Portal Foundation Setup Plan
-version: 1.0
+version: 2.0
 status: Approved
 owner: Web Lead & DevOps Engineer
+type: plan
+scope: WEB
+updated: 2026-10-08
 ---
 
 # FOUNDATION SETUP PLAN — Kế hoạch Thiết lập Nền tảng Phân hệ Web Portal
-
 
 ## 1. Mục tiêu & Phạm vi (Objectives & Scope)
 
@@ -15,9 +17,9 @@ owner: Web Lead & DevOps Engineer
 
 ---
 
-## 2. Foundation Work Items (Hạng mục Thiết lập Nền tảng Web Portal)
+## 2. Danh mục Hạng mục Thiết lập Nền tảng (`FND-WEB-`)
 
-| ID | Name | Description | Covers | Depends on | Done when | Status |
+| ID | Tên Hạng mục | Mô tả Chi tiết | Bao phủ (`Covers`) | Phụ thuộc (`Depends on`) | Tiêu chí Hoàn thành (`Done when`) | Trạng thái |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
 | `FND-WEB-001` | Khởi tạo Dự án Vite & React TypeScript | Cấu hình `package.json`, `tsconfig.json`, `vite.config.ts` với strict type checking. | `STK-015`, `STK-016` | `FND-SYS-001` | Lệnh `npm run build` thành công; không có cảnh báo TypeScript. | Done |
 | `FND-WEB-002` | Cấu hình Tailwind CSS & Design Tokens | Cài đặt Tailwind CSS, cấu hình font Inter và bảng mã màu đồng bộ với thiết kế Kiosk. | `STK-017` | `FND-WEB-001` | Các class Tailwind biên dịch chính xác; áp dụng được biến màu hệ thống. | Done |

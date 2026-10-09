@@ -1,17 +1,20 @@
 ---
 title: Kiosk App Task Plan
-version: 1.0
+version: 2.0
 status: Approved
 owner: Edge Vision Lead & UI Lead
+type: plan
+scope: KSK
+updated: 2026-10-08
 ---
 
 # TASK PLAN — Kế hoạch Thi công Chi tiết Phân hệ Kiosk App
 
 ## 1. Approach (Chiến lược Thực hiện)
 
-Tài liệu này là lớp kế hoạch thi công giữa các build plan facet (`foundation-setup-plan.md`, `data-build-plan.md`, `fr-nfr-build-plan.md`, `api-build-plan.md`, `ui-ux-build-plan.md`) và giai đoạn viết mã, tuân thủ Mục 9.4.1 của [docs/sdlc-docs.md](../../../sdlc-docs.md).
+Tài liệu này là lớp kế hoạch thi công giữa các đơn vị quy hoạch (`BLD-`, `FND-`) trong `foundation-setup-plan.md`, `build-plan.md` và giai đoạn viết mã, tuân thủ Mục 8.7 của [docs/sdlc-docs.md](../../../sdlc-docs.md).
 * **Nguyên tắc phân rã**: Mỗi `TASK-KSK-` là một đơn vị thi công hoàn thành trọn vẹn trong một Pull Request và `Derived from` **đúng một** `BLD-`/`FND-` cùng service.
-* **Giải quyết phụ thuộc**: Phụ thuộc xuyên facet (ví dụ tầng giao tiếp mạng `api` và luồng AI `fr-nfr`) được giải quyết **tại đây** thông qua `Depends on` giữa các `TASK-`, không ghi trong build plan facet.
+* **Giải quyết phụ thuộc**: Phụ thuộc xuyên facet (ví dụ tầng giao tiếp mạng `api` và luồng AI `spec`) được giải quyết **tại đây** thông qua `Depends on` giữa các `TASK-`, không ghi trong build plan.
 * **Cơ chế Wave**: `Wave(task) = 1 + max(Wave(dep))` theo Mục 14.4 của `sdlc-docs.md`; các task trong cùng Wave độc lập và có thể thi công song song.
 
 ### Approach Decisions (Quyết định Tiếp cận Thi công Chi tiết)

@@ -51,7 +51,7 @@ jobs:
     if: needs.detect-changes.outputs.docs_changed == 'true'
     runs-on: ubuntu-latest
     env:
-      # Cho phép kiểm tra change control (sdlc-docs.md 14.3): leaf `Baselined`
+      # Cho phép kiểm tra change control (sdlc-docs.md §12.3): leaf `Baselined`
       # bị sửa trong pull request phải tăng `version`.
       DOCS_CHECK_BASE_REF: ${{ github.event.pull_request.base.sha }}
     steps:

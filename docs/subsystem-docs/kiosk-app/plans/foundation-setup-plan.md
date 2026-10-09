@@ -3,6 +3,9 @@ title: Kiosk Foundation Setup Plan
 version: 2.0
 status: Approved
 owner: Edge Vision Lead & DevOps
+type: plan
+scope: KSK
+updated: 2026-10-08
 ---
 
 # FOUNDATION SETUP PLAN — Kế hoạch Thiết lập Nền tảng Phân hệ Kiosk
