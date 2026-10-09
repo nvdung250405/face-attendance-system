@@ -40,8 +40,7 @@ Tài liệu Cấp Hệ thống xác lập khuôn khổ định hướng chiến 
 ### 1.2. Bộ Đặc tả Kỹ thuật Hệ thống Hợp nhất (`system-docs/specs/`)
 | Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
 | :--- | :---: | :---: | :--- |
-| [**`system-docs/specs/spec.md`**](system-docs/specs/spec.md) | `SYS-SPEC` | `ACT-`, `EXT-`, `ARC-`, `DD-SYS-` | Kiến trúc tổng thể hệ thống, phân rã 3 phân hệ, tác nhân/hệ thống ngoài và 28 quyết định kiến trúc then chốt (`DD-SYS-001..028`). |
-| [**`system-docs/specs/fr-nfr.md`**](system-docs/specs/fr-nfr.md) | `SYS-FRNFR` | `FR-SYS-`, `NFR-SYS-`, `SOL-SYS-` | 27 Yêu cầu chức năng (`FR-SYS-001..027`), 10 tiêu chuẩn chất lượng (`NFR-SYS-001..010`), và 20 giải pháp hệ thống (`SOL-SYS-001..020`). |
+| [**`system-docs/specs/spec.md`**](system-docs/specs/spec.md) | `SYS-SPEC` | `ACT-`, `EXT-`, `SRS-`, `FR-SYS-`, `NFR-SYS-`, `ARC-`, `SOL-SYS-`, `DD-SYS-` | Spec Core: Kiến trúc tổng thể hệ thống, phân rã 3 phân hệ, tác nhân/hệ thống ngoài, 10 yêu cầu xuyên suốt, 28 yêu cầu chức năng, 10 tiêu chuẩn chất lượng, 31 giải pháp kỹ thuật và 28 quyết định kiến trúc then chốt (`DD-SYS-001..028`). |
 
 ### 1.3. Kế hoạch Quản lý & Vận hành Hệ thống (`system-docs/plans/`)
 | Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
@@ -63,8 +62,7 @@ Tài liệu Cấp Phân hệ đi sâu vào từng phân hệ độc lập trong 
 | Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
 | :--- | :--- | :---: | :---: | :--- |
 | **Hub** | [**`kiosk-app/README.md`**](subsystem-docs/kiosk-app/README.md) | `KSK-HUB` | — | Tổng quan phân hệ Kiosk và cẩm nang điều hướng tài liệu. |
-| **Kiến trúc Lõi** | [**`specs/spec.md`**](subsystem-docs/kiosk-app/specs/spec.md) | `KSK-SPEC` | `DD-KSK-` | Mô hình 4 luồng PySide6, vòng đời tác nhân, bảo mật Windows DPAPI và 24 quyết định kỹ thuật (`DD-KSK-001..024`). |
-| **Nghiệp vụ & Giải pháp** | [**`specs/fr-nfr.md`**](subsystem-docs/kiosk-app/specs/fr-nfr.md) | `KSK-FRNFR` | `FR-KSK-`, `NFR-KSK-`, `SOL-KSK-` | 17 Yêu cầu chức năng, 11 tiêu chuẩn phi chức năng, 11 giải pháp và chuỗi xử lý thị giác máy tính biên. |
+| **Spec Core** | [**`specs/spec.md`**](subsystem-docs/kiosk-app/specs/spec.md) | `KSK-SPEC` | `ACT-`, `EXT-`, `FR-KSK-`, `NFR-KSK-`, `SOL-KSK-`, `DD-KSK-` | Mô hình 4 luồng PySide6, pipeline AI, 17 FR, 11 NFR, 11 giải pháp và 6 quyết định kỹ thuật (`DD-KSK-001..006`). |
 | **Dữ liệu Cục bộ** | [**`specs/data.md`**](subsystem-docs/kiosk-app/specs/data.md) | `KSK-DATA` | `DATA-KSK-`, `DTD-KSK-` | Hàng đợi SQLite WAL (`kiosk_local.db`), ma trận vector RAM NumPy và mã hóa DPAPI 2-phase rotation. |
 | **Giao diện Truyền thông** | [**`specs/api.md`**](subsystem-docs/kiosk-app/specs/api.md) | `KSK-API` | `API-KSK-`, `APD-KSK-` | Hợp đồng HTTP REST API (`punch`, `sync-batch`, `gallery`), kết nối WebSocket STOMP và worker đồng bộ bù. |
 | **Giao diện Người dùng** | [**`specs/ui-ux.md`**](subsystem-docs/kiosk-app/specs/ui-ux.md) | `KSK-UIUX` | `UI-KSK-`, `UXD-KSK-` | Thiết kế màn hình cảm ứng dọc 9:16, Oval 4 màu thích ứng, bàn phím số ảo PIN Pad và luồng Onboarding OTP. |
@@ -81,8 +79,7 @@ Tài liệu Cấp Phân hệ đi sâu vào từng phân hệ độc lập trong 
 | Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
 | :--- | :--- | :---: | :---: | :--- |
 | **Hub** | [**`backend-service/README.md`**](subsystem-docs/backend-service/README.md) | `BE-HUB` | — | Tổng quan phân hệ Backend và cẩm nang điều hướng tài liệu. |
-| **Kiến trúc Lõi** | [**`specs/spec.md`**](subsystem-docs/backend-service/specs/spec.md) | `BE-SPEC` | `DD-BE-` | Kiến trúc phân tầng Spring Boot 3.4.x, Java 21 LTS, HikariCP, Caffeine cache và 26 quyết định kỹ thuật (`DD-BE-001..026`). |
-| **Nghiệp vụ & Giải pháp** | [**`specs/fr-nfr.md`**](subsystem-docs/backend-service/specs/fr-nfr.md) | `BE-FRNFR` | `FR-BE-`, `NFR-BE-`, `SOL-BE-` | 25 Yêu cầu chức năng, 5 tiêu chuẩn phi chức năng, 28 giải pháp nghiệp vụ và sơ đồ tuần tự xử lý. |
+| **Spec Core** | [**`specs/spec.md`**](subsystem-docs/backend-service/specs/spec.md) | `BE-SPEC` | `FR-BE-`, `NFR-BE-`, `SOL-BE-`, `DD-BE-` | Kiến trúc phân tầng Spring Boot 3.4.x, Java 21 LTS, 25 FR, 5 NFR, 28 giải pháp nghiệp vụ và 26 quyết định kỹ thuật (`DD-BE-001..026`). |
 | **Lưu trữ CSDL** | [**`specs/data.md`**](subsystem-docs/backend-service/specs/data.md) | `BE-DATA` | `DATA-BE-`, `DTD-BE-` | Lược đồ CSDL PostgreSQL 16, Flyway migrations (`V1`..`V5`), AES-256-GCM crypto và Caffeine cache TTL 120s. |
 | **Hợp đồng API** | [**`specs/api.md`**](subsystem-docs/backend-service/specs/api.md) | `BE-API` | `API-BE-`, `APD-BE-` | 44 REST endpoints, 3 STOMP topics, RFC 7807 Error Dictionary và chi tiết schema từng trường. |
 | **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/backend-service/plans/foundation-setup-plan.md) | `BE-FSP` | `FND-BE-` | Môi trường Java 21, Maven toolchain, Spring Boot Starter và cấu hình ban đầu. |
@@ -98,8 +95,7 @@ Tài liệu Cấp Phân hệ đi sâu vào từng phân hệ độc lập trong 
 | Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
 | :--- | :--- | :---: | :---: | :--- |
 | **Hub** | [**`web-portal/README.md`**](subsystem-docs/web-portal/README.md) | `WEB-HUB` | — | Tổng quan phân hệ Web Portal và cẩm nang điều hướng tài liệu. |
-| **Kiến trúc Lõi** | [**`specs/spec.md`**](subsystem-docs/web-portal/specs/spec.md) | `WEB-SPEC` | `DD-WEB-` | Kiến trúc SPA React 19, TypeScript, Vite 8, phân quyền Dual-Role và 20 quyết định kỹ thuật (`DD-WEB-001..020`). |
-| **Nghiệp vụ & Giải pháp** | [**`specs/fr-nfr.md`**](subsystem-docs/web-portal/specs/fr-nfr.md) | `WEB-FRNFR` | `FR-WEB-`, `NFR-WEB-`, `SOL-WEB-` | 14 Yêu cầu chức năng, 4 tiêu chuẩn phi chức năng, 12 giải pháp và sơ đồ tương tác tuần tự. |
+| **Spec Core** | [**`specs/spec.md`**](subsystem-docs/web-portal/specs/spec.md) | `WEB-SPEC` | `FR-WEB-`, `NFR-WEB-`, `SOL-WEB-`, `DD-WEB-` | Kiến trúc SPA React 19, TypeScript, Vite 8, phân quyền Dual-Role, 14 FR, 4 NFR, 12 giải pháp và 20 quyết định kỹ thuật (`DD-WEB-001..020`). |
 | **Dữ liệu Client** | [**`specs/data.md`**](subsystem-docs/web-portal/specs/data.md) | `WEB-DATA` | `DATA-WEB-`, `DTD-WEB-` | Safe Storage Adapters (LocalStorage, SessionStorage), TypeScript contracts và TanStack Query cache. |
 | **Giao tiếp Mạng** | [**`specs/api.md`**](subsystem-docs/web-portal/specs/api.md) | `WEB-API` | `API-WEB-`, `APD-WEB-` | Axios client với Mutex Token Refresh Queue chống Race Condition khi gặp 401, STOMP hooks. |
 | **Giao diện Người dùng** | [**`specs/ui-ux.md`**](subsystem-docs/web-portal/specs/ui-ux.md) | `WEB-UIUX` | `UI-WEB-`, `UXD-WEB-` | Design Tokens Indigo Clean SaaS, layout Admin Shell, modal ký cam kết Nghị định 13/2023 và Calendar Grid. |

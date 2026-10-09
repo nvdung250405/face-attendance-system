@@ -33,8 +33,7 @@ docs/subsystem-docs/backend-service/
 ├── README.md                      # [Tài liệu hiện tại] Cẩm nang & Bản đồ định hướng phân hệ Backend
 │
 ├── specs/                         # Bộ tài liệu đặc tả & thiết kế kỹ thuật hợp nhất
-│   ├── spec.md                    # Kiến trúc lõi, layered model, Spring Boot 3.4.x & quyết định kỹ thuật DD-BE-
-│   ├── fr-nfr.md                  # Nghiệp vụ chức năng (FR-BE-), phi chức năng (NFR-BE-), giải pháp (SOL-BE-)
+│   ├── spec.md                    # Spec Core: Kiến trúc lõi, FR-BE-, NFR-BE-, SOL-BE- & quyết định kỹ thuật DD-BE-
 │   ├── data.md                    # Lưu trữ PostgreSQL 16, DDL, Flyway, Caffeine Cache & Crypto (DATA-BE-, DTD-BE-)
 │   └── api.md                     # Hợp đồng RESTful API & STOMP Broker, RFC 7807 Error Dictionary (API-BE-, APD-BE-)
 │
@@ -54,11 +53,10 @@ docs/subsystem-docs/backend-service/
 | Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix Sở hữu | Nguồn Tham chiếu Upstream |
 | :--- | :--- | :---: | :---: | :--- |
 | **Trang chủ** | [README.md](README.md) | `BE-HUB` | — | `docs/meta.md`, `system-docs/specs/spec.md` (`ARC-002`) |
-| **Lõi Phân hệ** | [specs/spec.md](specs/spec.md) | `BE-SPEC` | `DD-BE-` | `system-docs/specs/spec.md` (`ARC-002`, `DD-SYS-001..028`) |
-| **FR/NFR Facet** | [specs/fr-nfr.md](specs/fr-nfr.md) | `BE-FRNFR`| `FR-BE-`, `NFR-BE-`, `SOL-BE-` | `system-docs/specs/fr-nfr.md` (`FR-SYS-`, `NFR-SYS-`, `SOL-SYS-`) |
+| **Spec Core** | [specs/spec.md](specs/spec.md) | `BE-SPEC` | `FR-BE-`, `NFR-BE-`, `SOL-BE-`, `DD-BE-` | `system-docs/specs/spec.md` (`ARC-002`, `FR-SYS-`, `NFR-SYS-`, `SOL-SYS-`, `DD-SYS-`) |
 | **Data Facet** | [specs/data.md](specs/data.md) | `BE-DATA` | `DATA-BE-`, `DTD-BE-` | `system-docs/specs/spec.md` (`DD-SYS-007`, `DD-SYS-010`) |
 | **API Facet** | [specs/api.md](specs/api.md) | `BE-API` | `API-BE-`, `APD-BE-` | `system-docs/specs/spec.md` (`DD-SYS-001`, `DD-SYS-012`) |
 | **Kế hoạch Nền tảng** | [plans/foundation-setup-plan.md](plans/foundation-setup-plan.md) | `BE-FSP` | `FND-BE-` | `system-docs/plans/foundation-setup-plan.md` |
 | **Kế hoạch Xây dựng** | [plans/build-plan.md](plans/build-plan.md) | `BE-BLD` | `BLD-BE-` | `plans/foundation-setup-plan.md`, `specs/spec.md` |
 | **Kế hoạch Task** | [plans/task-plan.md](plans/task-plan.md) | `BE-TSK` | `TASK-BE-` | `plans/build-plan.md` |
-| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `BE-TST` | `TST-BE-` | `specs/fr-nfr.md`, `specs/data.md`, `specs/api.md` |
+| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `BE-TST` | `TST-BE-` | `specs/spec.md`, `specs/data.md`, `specs/api.md` |

@@ -100,7 +100,7 @@ BASIS_SPEC_ALLOWED = {"SRC", "INF", "ANL", "PD", "SRS", "FR", "NFR", "UI", "API"
 MOSCOW = {"Must", "Should", "Could", "Won't"}
 
 FACET_BY_PREFIX = {
-    "SOL": "fr-nfr",
+    "SOL": "core",
     "DTD": "data",
     "DATA": "data",
     "APD": "api",
@@ -552,7 +552,7 @@ def check_tree_structure(leaves, problems):
     # Kiểm tra system-docs (§2)
     required_system = (
         "info.md", "pi.md", "tech-tool-stack.md",
-        "specs/spec.md", "specs/fr-nfr.md",
+        "specs/spec.md",
         "plans/project-plan.md", "plans/foundation-setup-plan.md",
         "plans/test-plan.md", "plans/deploy-plan.md"
     )
@@ -562,7 +562,7 @@ def check_tree_structure(leaves, problems):
 
     # Kiểm tra từng subsystem (§2, §7.2)
     required_subsystem = (
-        "specs/spec.md", "specs/fr-nfr.md",
+        "specs/spec.md",
         "plans/foundation-setup-plan.md", "plans/build-plan.md",
         "plans/test-plan.md", "plans/task-plan.md"
     )

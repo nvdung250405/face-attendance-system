@@ -40,7 +40,7 @@ body:
       label: "Các Thành phần Tài liệu Cần Thiết lập"
       description: "Cấu trúc chuẩn gồm specs/ và plans/; các facet tài liệu chọn theo trách nhiệm kỹ thuật (sdlc-docs.md §2, §7.2)."
       options:
-        - label: "`specs/spec.md`, `specs/fr-nfr.md`, các plan trong `plans/` (Bắt buộc cho mọi phân hệ)"
+        - label: "`specs/spec.md`, các plan trong `plans/` (Bắt buộc cho mọi phân hệ)"
           required: true
         - label: "`data` (`specs/data.md` nếu phân hệ quản lý CSDL / lưu trữ riêng)"
         - label: "`api` (`specs/api.md` nếu phân hệ cung cấp/tiêu thụ API contract)"

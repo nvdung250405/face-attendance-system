@@ -32,8 +32,7 @@ docs/subsystem-docs/kiosk-app/
 ├── README.md                      # [Tài liệu hiện tại] Cẩm nang & Bản đồ định hướng phân hệ
 │
 ├── specs/                         # Bộ tài liệu đặc tả & thiết kế kỹ thuật hợp nhất
-│   ├── spec.md                    # Kiến trúc lõi, bối cảnh, 4-thread model & quyết định kỹ thuật DD-KSK-
-│   ├── fr-nfr.md                  # Nghiệp vụ chức năng (FR-KSK-), phi chức năng (NFR-KSK-), giải pháp (SOL-KSK-)
+│   ├── spec.md                    # Spec Core: Kiến trúc lõi, 4-thread model, FR-KSK-, NFR-KSK-, SOL-KSK- & quyết định kỹ thuật DD-KSK-
 │   ├── data.md                    # Lưu trữ CSDL SQLite WAL, bộ nhớ RAM & bảo mật DPAPI (DATA-KSK-, DTD-KSK-)
 │   ├── api.md                     # Giao diện RESTful & STOMP WebSocket (API-KSK-, APD-KSK-)
 │   └── ui-ux.md                   # Trải nghiệm màn hình dọc 9:16, QML & tokens (UI-KSK-, UXD-KSK-)
@@ -52,12 +51,11 @@ docs/subsystem-docs/kiosk-app/
 | Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix Sở hữu | Nguồn Tham chiếu Upstream |
 | :--- | :--- | :---: | :---: | :--- |
 | **Trang chủ** | [README.md](README.md) | `KSK-HUB` | — | `docs/meta.md`, `system-docs/specs/spec.md` (`ARC-001`) |
-| **Lõi Phân hệ** | [specs/spec.md](specs/spec.md) | `KSK-SPEC` | `DD-KSK-` | `system-docs/specs/spec.md` (`ARC-001..018`, `DD-SYS-001..028`) |
-| **FR/NFR Facet** | [specs/fr-nfr.md](specs/fr-nfr.md) | `KSK-FRNFR`| `FR-KSK-`, `NFR-KSK-`, `SOL-KSK-` | `system-docs/specs/fr-nfr.md` (`FR-SYS-`, `NFR-SYS-`, `SOL-SYS-`) |
+| **Spec Core** | [specs/spec.md](specs/spec.md) | `KSK-SPEC` | `ACT-`, `EXT-`, `FR-KSK-`, `NFR-KSK-`, `SOL-KSK-`, `DD-KSK-` | `system-docs/specs/spec.md` (`ARC-001..018`, `FR-SYS-`, `NFR-SYS-`, `SOL-SYS-`, `DD-SYS-001..028`) |
 | **Data Facet** | [specs/data.md](specs/data.md) | `KSK-DATA` | `DATA-KSK-`, `DTD-KSK-` | `system-docs/specs/spec.md` (`DD-SYS-006`, `DD-SYS-010`) |
 | **API Facet** | [specs/api.md](specs/api.md) | `KSK-API` | `API-KSK-`, `APD-KSK-` | `system-docs/specs/spec.md` (`DD-SYS-001`, `DD-SYS-012`) |
 | **UI/UX Facet** | [specs/ui-ux.md](specs/ui-ux.md) | `KSK-UIUX` | `UI-KSK-`, `UXD-KSK-` | `system-docs/specs/spec.md` (`DD-SYS-004`, `DD-SYS-011`) |
 | **Kế hoạch Nền tảng** | [plans/foundation-setup-plan.md](plans/foundation-setup-plan.md) | `KSK-FSP` | `FND-KSK-` | `system-docs/plans/foundation-setup-plan.md` |
 | **Kế hoạch Xây dựng** | [plans/build-plan.md](plans/build-plan.md) | `KSK-BLD` | `BLD-KSK-` | `plans/foundation-setup-plan.md`, `specs/spec.md` |
 | **Kế hoạch Task** | [plans/task-plan.md](plans/task-plan.md) | `KSK-TSK` | `TASK-KSK-` | `plans/build-plan.md` |
-| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `KSK-TST` | `TST-KSK-` | `specs/fr-nfr.md`, `specs/data.md`, `specs/api.md`, `specs/ui-ux.md` |
+| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `KSK-TST` | `TST-KSK-` | `specs/spec.md`, `specs/data.md`, `specs/api.md`, `specs/ui-ux.md` |

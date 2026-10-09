@@ -32,8 +32,7 @@ docs/subsystem-docs/web-portal/
 ├── README.md                      # [Tài liệu hiện tại] Cẩm nang & Bản đồ định hướng phân hệ Web Portal
 │
 ├── specs/                         # Bộ tài liệu đặc tả & thiết kế kỹ thuật hợp nhất
-│   ├── spec.md                    # Kiến trúc lõi, SPA React 19, Vite 8, layered model & quyết định kỹ thuật DD-WEB-
-│   ├── fr-nfr.md                  # Nghiệp vụ chức năng (FR-WEB-), phi chức năng (NFR-WEB-), giải pháp (SOL-WEB-)
+│   ├── spec.md                    # Spec Core: Kiến trúc SPA React 19, Vite 8, FR-WEB-, NFR-WEB-, SOL-WEB- & quyết định kỹ thuật DD-WEB-
 │   ├── data.md                    # Lưu trữ client, Safe Storage, TypeScript contracts & TanStack Query (DATA-WEB-, DTD-WEB-)
 │   ├── api.md                     # Hợp đồng RESTful API & STOMP Broker, Mutex Refresh Queue (API-WEB-, APD-WEB-)
 │   └── ui-ux.md                   # Trải nghiệm Indigo Clean SaaS, Admin Shell, Consent Modal & Tokens (UI-WEB-, UXD-WEB-)
@@ -52,12 +51,11 @@ docs/subsystem-docs/web-portal/
 | Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix Sở hữu | Nguồn Tham chiếu Upstream |
 | :--- | :--- | :---: | :---: | :--- |
 | **Trang chủ** | [README.md](README.md) | `WEB-HUB` | — | `docs/meta.md`, `system-docs/specs/spec.md` (`ARC-003`) |
-| **Lõi Phân hệ** | [specs/spec.md](specs/spec.md) | `WEB-SPEC` | `DD-WEB-` | `system-docs/specs/spec.md` (`ARC-003`, `DD-SYS-001..028`) |
-| **FR/NFR Facet** | [specs/fr-nfr.md](specs/fr-nfr.md) | `WEB-FRNFR`| `FR-WEB-`, `NFR-WEB-`, `SOL-WEB-` | `system-docs/specs/fr-nfr.md` (`FR-SYS-`, `NFR-SYS-`, `SOL-SYS-`) |
+| **Spec Core** | [specs/spec.md](specs/spec.md) | `WEB-SPEC` | `FR-WEB-`, `NFR-WEB-`, `SOL-WEB-`, `DD-WEB-` | `system-docs/specs/spec.md` (`ARC-003`, `FR-SYS-`, `NFR-SYS-`, `SOL-SYS-`, `DD-SYS-001..028`) |
 | **Data Facet** | [specs/data.md](specs/data.md) | `WEB-DATA` | `DATA-WEB-`, `DTD-WEB-` | `system-docs/specs/spec.md` (`DD-SYS-003`, `DD-SYS-004`) |
 | **API Facet** | [specs/api.md](specs/api.md) | `WEB-API` | `API-WEB-`, `APD-WEB-` | `system-docs/specs/spec.md` (`DD-SYS-001`, `DD-SYS-004`) |
 | **UI/UX Facet** | [specs/ui-ux.md](specs/ui-ux.md) | `WEB-UIUX` | `UI-WEB-`, `UXD-WEB-` | `system-docs/specs/spec.md` (`DD-SYS-003`, `DD-SYS-004`) |
 | **Kế hoạch Nền tảng** | [plans/foundation-setup-plan.md](plans/foundation-setup-plan.md) | `WEB-FSP` | `FND-WEB-` | `system-docs/plans/foundation-setup-plan.md` |
 | **Kế hoạch Xây dựng** | [plans/build-plan.md](plans/build-plan.md) | `WEB-BLD` | `BLD-WEB-` | `plans/foundation-setup-plan.md`, `specs/spec.md` |
 | **Kế hoạch Task** | [plans/task-plan.md](plans/task-plan.md) | `WEB-TSK` | `TASK-WEB-` | `plans/build-plan.md` |
-| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `WEB-TST` | `TST-WEB-` | `specs/fr-nfr.md`, `specs/data.md`, `specs/api.md`, `specs/ui-ux.md` |
+| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `WEB-TST` | `TST-WEB-` | `specs/spec.md`, `specs/data.md`, `specs/api.md`, `specs/ui-ux.md` |

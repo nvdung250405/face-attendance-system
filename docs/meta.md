@@ -29,8 +29,7 @@ docs/
 │   ├── tech-tool-stack.md                       # Công nghệ, framework, runtime, nền tảng và công cụ dự án [STK-]
 │   │
 │   ├── specs/                                   # SPEC — Yêu cầu & Thiết kế Hệ thống
-│   │   ├── spec.md                              # Ngữ cảnh hệ thống (ACT-, EXT-), yêu cầu xuyên suốt (SRS-), kiến trúc (ARC-), quyết định (DD-SYS-)
-│   │   └── fr-nfr.md                            # Yêu cầu chức năng (FR-SYS-), phi chức năng (NFR-SYS-), thiết kế giải pháp (SOL-SYS-)
+│   │   └── spec.md                              # Spec Core: Ngữ cảnh (ACT-, EXT-), yêu cầu (SRS-, FR-SYS-, NFR-SYS-), kiến trúc & giải pháp (ARC-, SOL-SYS-), quyết định (DD-SYS-)
 │   │
 │   └── plans/                                   # PLAN — Kế hoạch Cấp Hệ thống
 │       ├── project-plan.md                      # Kế hoạch tổng thể, giai đoạn, mốc (PRJ-), vai trò (ROL-), rủi ro (RSK-)
@@ -43,8 +42,7 @@ docs/
     ├── backend-service/                         # Phân hệ Máy chủ Doanh nghiệp (Java 21, Spring Boot, PostgreSQL)
     │   ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Backend
     │   ├── specs/                               # SPEC — Yêu cầu & Thiết kế Backend
-    │   │   ├── spec.md                          # Ngữ cảnh phân hệ, kiến trúc nội bộ, quyết định (DD-BE-)
-    │   │   ├── fr-nfr.md                        # Yêu cầu nghiệp vụ & giải pháp thiết kế (FR-BE-, NFR-BE-, SOL-BE-)
+    │   │   ├── spec.md                          # Spec Core: Ngữ cảnh, FR-BE-, NFR-BE-, kiến trúc nội bộ, giải pháp (SOL-BE-), quyết định (DD-BE-)
     │   │   ├── data.md                          # Thực thể CSDL PostgreSQL, lược đồ DDL, toàn vẹn (DATA-BE-, DTD-BE-)
     │   │   └── api.md                           # Ranh giới REST & STOMP, interface, contract (API-BE-, APD-BE-)
     │   └── plans/                               # PLAN — Kế hoạch thi công Backend
@@ -56,8 +54,7 @@ docs/
     ├── kiosk-app/                               # Phân hệ Trạm Điểm danh Cận biên (Python 3, PySide6, OpenCV)
     │   ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Kiosk
     │   ├── specs/                               # SPEC — Yêu cầu & Thiết kế Kiosk
-    │   │   ├── spec.md                          # Ngữ cảnh phân hệ, kiến trúc nội bộ, quyết định (DD-KSK-)
-    │   │   ├── fr-nfr.md                        # Nhận diện, liveness, so khớp, pipeline AI (FR-KSK-, NFR-KSK-, SOL-KSK-)
+    │   │   ├── spec.md                          # Spec Core: Ngữ cảnh, FR-KSK-, NFR-KSK-, pipeline AI, giải pháp (SOL-KSK-), quyết định (DD-KSK-)
     │   │   ├── data.md                          # SQLite WAL, GalleryMatrix, Key Lifecycle (DATA-KSK-, DTD-KSK-)
     │   │   ├── api.md                           # Giao tiếp HTTP Client, offline sync, STOMP (API-KSK-, APD-KSK-)
     │   │   └── ui-ux.md                         # Hành trình tương tác Oval, trạng thái, tokens (UI-KSK-, UXD-KSK-)
@@ -70,8 +67,7 @@ docs/
     └── web-portal/                              # Phân hệ Cổng Web Quản trị & Người dùng (React, TypeScript)
         ├── README.md                            # Cẩm nang & Bản đồ định hướng phân hệ Web Portal
         ├── specs/                               # SPEC — Yêu cầu & Thiết kế Web Portal
-        │   ├── spec.md                          # Ngữ cảnh phân hệ, kiến trúc SPA, quyết định (DD-WEB-)
-        │   ├── fr-nfr.md                        # Phân quyền, giám sát, auth guards (FR-WEB-, NFR-WEB-, SOL-WEB-)
+        │   ├── spec.md                          # Spec Core: Ngữ cảnh, FR-WEB-, NFR-WEB-, kiến trúc SPA, giải pháp (SOL-WEB-), quyết định (DD-WEB-)
         │   ├── data.md                          # Client cache, session, storage adapter (DATA-WEB-, DTD-WEB-)
         │   ├── api.md                           # Axios Client, interceptor, refresh token (API-WEB-, APD-WEB-)
         │   └── ui-ux.md                         # Luồng người dùng, ký cam kết, design system (UI-WEB-, UXD-WEB-)
@@ -93,8 +89,7 @@ docs/
 | `system-docs/info.md` | Ta biết gì: sự thật, bằng chứng và phân tích? | Nguồn khảo sát ngoài (`SRC-`) | PI, SPEC, STACK | Bắt buộc |
 | `system-docs/pi.md` | Làm gì, trong phạm vi nào, quyết định cấp dự án gì? | INFO | STACK, SPEC, Project Plan | Bắt buộc |
 | `system-docs/tech-tool-stack.md` | Dùng công nghệ, framework, công cụ và nền tảng nào? | INFO, PI | SPEC (Design), PLAN | Bắt buộc |
-| `system-docs/specs/spec.md` | Ngữ cảnh hệ thống (`ACT-`, `EXT-`), yêu cầu xuyên suốt (`SRS-`), kiến trúc (`ARC-`), quyết định (`DD-SYS-`) | INFO, PI | Subsystem Specs, Test Plan, Deploy Plan | Bắt buộc |
-| `system-docs/specs/fr-nfr.md` | Hệ thống phải làm gì (`FR-SYS-`), đạt chất lượng nào (`NFR-SYS-`), thiết kế giải pháp chung (`SOL-SYS-`) | INFO, PI, upstream Spec | Subsystem Specs, Test Plan | Bắt buộc |
+| `system-docs/specs/spec.md` | Spec Core: Ngữ cảnh (`ACT-`, `EXT-`), yêu cầu (`SRS-`, `FR-SYS-`, `NFR-SYS-`), kiến trúc & giải pháp (`ARC-`, `SOL-SYS-`), quyết định (`DD-SYS-`) | INFO, PI | Subsystem Specs, Test Plan, Deploy Plan | Bắt buộc |
 | `system-docs/plans/project-plan.md` | Khi nào, ai làm, rủi ro nào, theo lifecycle nào? | PI, SPEC | — | Bắt buộc |
 | `system-docs/plans/foundation-setup-plan.md` | Chuẩn bị nền tảng chung nào để build bắt đầu? | STACK, `ARC-` | Subsystem FSP / Subsystem Build Plans | Bắt buộc |
 | `system-docs/plans/test-plan.md` | Kiểm chứng yêu cầu hệ thống bằng cách nào? | System Specs (trực tiếp) | Quá trình TEST | Bắt buộc |
@@ -107,8 +102,7 @@ docs/
 Áp dụng mô hình **Spec Set** và quy tắc phân rã theo facet quy định tại §2, §7, §8 của [sdlc-docs.md](sdlc-docs.md):
 Mỗi phân hệ (`subsystem-docs/<subsystem-code>/`) tổ chức thành 2 thư mục con chuẩn: `specs/` và `plans/`:
 - `specs/`:
-  * `spec.md` (Spec core): Ngữ cảnh phân hệ, kiến trúc nội bộ, quyết định thiết kế phân hệ (`DD-`).
-  * `fr-nfr.md` (luôn có): Năng lực nghiệp vụ và chất lượng cùng các giải pháp thiết kế (`FR-`, `NFR-`, `SOL-`).
+  * `spec.md` (Spec core): Ngữ cảnh phân hệ, yêu cầu chức năng (`FR-`), phi chức năng (`NFR-`), kiến trúc nội bộ, giải pháp thiết kế (`SOL-`) và quyết định thiết kế (`DD-`).
   * `data.md`: Thực thể dữ liệu, mô hình lưu trữ, DDL, toàn vẹn (`DATA-`, `DTD-`) (khi sở hữu dữ liệu).
   * `api.md`: Ranh giới giao tiếp mạng, hợp đồng, endpoint, schema (`API-`, `APD-`) (khi sở hữu/tiêu thụ API).
   * `ui-ux.md`: Luồng tác vụ, màn hình, visual tokens (`UI-`, `UXD-`) (khi có tương tác người dùng).
@@ -120,8 +114,7 @@ Mỗi phân hệ (`subsystem-docs/<subsystem-code>/`) tổ chức thành 2 thư 
 
 | Leaf Type | Đường dẫn Chuẩn | Trách nhiệm Kỹ thuật | Upstream | Downstream |
 | :--- | :--- | :--- | :--- | :--- |
-| **Spec Core** | `specs/spec.md` | Ngữ cảnh phân hệ, kiến trúc nội bộ, quyết định thiết kế nội bộ | System Specs (`ARC-`) | Subsystem Facets, Plans |
-| **FR/NFR Spec & Design** | `specs/fr-nfr.md` | Năng lực nghiệp vụ, tiêu chuẩn chất lượng và giải pháp logic | System Specs, `ARC-`, STACK | Build Plan, Test Plan |
+| **Spec Core** | `specs/spec.md` | Ngữ cảnh phân hệ, yêu cầu FR/NFR, kiến trúc nội bộ, giải pháp SOL-, quyết định thiết kế DD- | System Specs (`ARC-`) | Subsystem Facets, Plans |
 | **Data Spec & Design** | `specs/data.md` | Thực thể dữ liệu, quy tắc toàn vẹn, DDL CSDL, vòng đời dữ liệu | System Specs, `ARC-`, STACK | Build Plan, Test Plan |
 | **API Spec & Design** | `specs/api.md` | Ranh giới giao tiếp, REST/STOMP contracts, serialization | System Specs, `ARC-`, STACK | Build Plan, Test Plan |
 | **UI/UX Spec & Design** | `specs/ui-ux.md` | Tác vụ người dùng, luồng tương tác, design tokens, layout | System Specs, `ARC-`, STACK | Build Plan, Test Plan |
@@ -181,13 +174,13 @@ updated: YYYY-MM-DD
 | `ACT-` | Tác nhân người dùng | `system-docs/specs/spec.md` (System-level: `ACT-001`), subsystem reference lại | System-global / Subsystem local |
 | `EXT-` | Hệ thống / Phần cứng bên ngoài | `system-docs/specs/spec.md` (System-level: `EXT-001`), subsystem reference lại | System-global / Subsystem local |
 | `SRS-` | Yêu cầu hệ thống xuyên suốt | `system-docs/specs/spec.md` | `SYS` duy nhất (`SRS-001`) |
-| `FR-` | Yêu cầu chức năng | `*/specs/fr-nfr.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
-| `NFR-` | Yêu cầu phi chức năng (Chất lượng) | `*/specs/fr-nfr.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `FR-` | Yêu cầu chức năng | `*/specs/spec.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `NFR-` | Yêu cầu phi chức năng (Chất lượng) | `*/specs/spec.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
 | `UI-` | Đặc tả tương tác người dùng | `subsystem-docs/*/specs/ui-ux.md` | Có (`KSK`, `WEB`) |
 | `API-` | Đặc tả interface / hợp đồng | `subsystem-docs/*/specs/api.md` | Có (`BE`, `KSK`, `WEB`) |
 | `DATA-` | Đặc tả thực thể dữ liệu | `subsystem-docs/*/specs/data.md` | Có (`BE`, `KSK`, `WEB`) |
 | `ARC-` | Phần tử kiến trúc & Topology | `system-docs/specs/spec.md` | `SYS` duy nhất (`ARC-001`) |
-| `SOL-` | Giải pháp thiết kế nghiệp vụ/chất lượng | `*/specs/fr-nfr.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
+| `SOL-` | Giải pháp thiết kế nghiệp vụ/chất lượng | `*/specs/spec.md` | Có (`SYS`, `BE`, `KSK`, `WEB`) |
 | `UXD-` | Thiết kế giao diện & tokens | `subsystem-docs/*/specs/ui-ux.md` | Có (`KSK`, `WEB`) |
 | `APD-` | Thiết kế API chi tiết | `subsystem-docs/*/specs/api.md` | Có (`BE`, `KSK`, `WEB`) |
 | `DTD-` | Thiết kế dữ liệu chi tiết | `subsystem-docs/*/specs/data.md` | Có (`BE`, `KSK`, `WEB`) |
@@ -278,11 +271,11 @@ Tuân thủ Mục 2.2 của `sdlc-docs.md`, dự án Face Attendance System th�
 | Leaf | Một tệp tài liệu trong cây; mỗi leaf có một owner nội dung. |
 | Item | Một dòng có ID trong bảng của leaf (requirement, definition, design element, work item, task, test item). |
 | Spec set | Toàn bộ các file trong thư mục `specs/` của một scope (`spec.md` + các Spec facets). |
-| Spec core | Tệp `spec.md`; giữ context, architecture/internal architecture và decisions của scope. |
-| Spec facet | Spec file theo góc trách nhiệm (`fr-nfr.md`, `data.md`, `api.md`, `ui-ux.md`). |
+| Spec core | Tệp `spec.md`; giữ context, requirements (FR-/NFR-), architecture/internal architecture, solutions (SOL-) và decisions của scope. |
+| Spec facet | Spec file theo góc trách nhiệm chuyên biệt (`data.md`, `api.md`, `ui-ux.md`). |
 | Execution-bearing | Work item đủ nhỏ để thực hiện trực tiếp mà không cần phân rã `TASK-` con. |
 | SCOPE | Mã phạm vi trong ID: `SYS` (cấp hệ thống), `BE`, `KSK`, `WEB` (cấp phân hệ / subsystem). |
-| Facet | Góc trách nhiệm của phân hệ: `fr-nfr`, `data`, `api`, `ui-ux`. |
+| Facet | Góc trách nhiệm chuyên biệt của phân hệ: `data`, `api`, `ui-ux`. |
 | Trace field | Trường liên kết quan hệ giữa các item: `Basis`, `Uses`, `Realizes`, `Decisions`, `Covers`, `Derived from`, `Depends on`, `Requires`, `Constrained by`, `Applies to`. |
 | Task Attribute | Các thuộc tính thực thi của `TASK-`: `Wave` (số tự nhiên $\ge 1$ biểu diễn thứ tự thực thi), `Done when`, `Status`. |
 | Evidence | Sản phẩm của BUILD/TEST/DEPLOY nằm ngoài cây tài liệu (mã nguồn, kết quả test, release record). |
@@ -295,13 +288,13 @@ Các quyết định dưới đây phải được chốt **tại leaf sở hữ
 
 | Số | Nội dung cần chốt | Leaf sở hữu | Trạng thái |
 | :---: | :--- | :--- | :---: |
-| 1 | Mô hình token: Access Token 1 giờ + Refresh Token 7 ngày dạng băm một chiều trong CSDL PostgreSQL (`DD-SYS-026`) | `system-docs/specs/spec.md` (`SRS-006`) và `subsystem-docs/backend-service/specs/fr-nfr.md` | **Đã chốt** (v1.1) |
-| 2 | Thuật toán băm OTP: HMAC-SHA-256 kèm pepper bảo mật phục vụ tra cứu tức thì | `subsystem-docs/backend-service/specs/data.md` và `subsystem-docs/backend-service/specs/fr-nfr.md` | **Đã chốt** (v1.1) |
-| 3 | Ngưỡng Cosine similarity (0.50) và Liveness (0.85 vận hành, 0.90 enrollment +5% margin) | `system-docs/specs/fr-nfr.md` (`FR-SYS-002`, `FR-SYS-009`) và `system-docs/specs/spec.md` (`DD-SYS-027`) | **Đã chốt** (v1.5) |
-| 4 | Chu kỳ tính toán nhận diện toàn trình tại trạm biên: $\le 350\text{ ms}$ trên CPU cho danh mục 1,000 NV | `system-docs/specs/fr-nfr.md` (`NFR-SYS-001`, `NFR-SYS-003`) và `kiosk-app/specs/fr-nfr.md` (`NFR-KSK-001`) | **Đã chốt** (v1.5) |
-| 5 | Chỉ số nhận diện sinh trắc học 1:N: FNIR $\le 5.0\%$ tại FPIR $\le 0.1\%$ trên tập 1,000 NV | `system-docs/pi.md` và `kiosk-app/specs/fr-nfr.md` (`NFR-KSK-006`) | **Đã chốt** (v1.5) |
+| 1 | Mô hình token: Access Token 1 giờ + Refresh Token 7 ngày dạng băm một chiều trong CSDL PostgreSQL (`DD-SYS-026`) | `system-docs/specs/spec.md` (`SRS-006`) và `subsystem-docs/backend-service/specs/spec.md` (`FR-BE-001`, `DD-BE-001`) | **Đã chốt** (v1.1) |
+| 2 | Thuật toán băm OTP: HMAC-SHA-256 kèm pepper bảo mật phục vụ tra cứu tức thì | `subsystem-docs/backend-service/specs/data.md` và `subsystem-docs/backend-service/specs/spec.md` (`FR-BE-005`) | **Đã chốt** (v1.1) |
+| 3 | Ngưỡng Cosine similarity (0.50) và Liveness (0.85 vận hành, 0.90 enrollment +5% margin) | `system-docs/specs/spec.md` (`FR-SYS-002`, `FR-SYS-009`, `DD-SYS-027`) | **Đã chốt** (v1.5) |
+| 4 | Chu kỳ tính toán nhận diện toàn trình tại trạm biên: $\le 350\text{ ms}$ trên CPU cho danh mục 1,000 NV | `system-docs/specs/spec.md` (`NFR-SYS-001`, `NFR-SYS-003`) và `kiosk-app/specs/spec.md` (`NFR-KSK-001`) | **Đã chốt** (v1.5) |
+| 5 | Chỉ số nhận diện sinh trắc học 1:N: FNIR $\le 5.0\%$ tại FPIR $\le 0.1\%$ trên tập 1,000 NV | `system-docs/pi.md` và `kiosk-app/specs/spec.md` (`NFR-KSK-006`) | **Đã chốt** (v1.5) |
 | 6 | Giao thức thời gian thực: Kiosk dùng raw WebSocket STOMP (`/ws`), Web Portal dùng SockJS (`/ws-sockjs`) | `system-docs/specs/spec.md` (`ARC-002`) và `backend-service/specs/api.md` | **Đã chốt** (v1.1) |
 | 7 | Mã hóa tĩnh vector sinh trắc học: Bắt buộc AES-256-GCM đối xứng (IV 12B, Tag 16B) kèm Master Key độc lập | `system-docs/specs/spec.md` (`ARC-005`, `DD-SYS-028`) và `backend-service/specs/data.md` | **Đã chốt** (v1.1) |
 | 8 | Mục tiêu độ sẵn sàng hệ thống: $\ge 99.9\%$ giờ hành chính; RPO = 0 cho offline punch; RTO $\le 30$ phút | `system-docs/plans/deploy-plan.md` và `kiosk-app/specs/data.md` | **Đã chốt** (v2.6) |
-| 9 | Tải mục tiêu Backend: Đỉnh $\ge 200\text{ RPS}$ cho xác thực điểm danh, $\le 300\text{ ms}$ thời gian phản hồi | `subsystem-docs/backend-service/specs/fr-nfr.md` (`NFR-BE-002`) | **Đã chốt** (v1.1) |
+| 9 | Tải mục tiêu Backend: Đỉnh $\ge 200\text{ RPS}$ cho xác thực điểm danh, $\le 300\text{ ms}$ thời gian phản hồi | `subsystem-docs/backend-service/specs/spec.md` (`NFR-BE-002`) | **Đã chốt** (v1.1) |
 | 10 | Bắt buộc TLS 1.3 và Rate Limiting $\le 5\text{ req/min}$ trên các endpoint xác thực nhạy cảm | `system-docs/specs/spec.md` (`SRS-002`, `ARC-013`) | **Đã chốt** (v1.1) |
