@@ -17,4 +17,8 @@ public interface EnrollmentSessionRepository extends JpaRepository<EnrollmentSes
     Optional<EnrollmentSession> findByOtpHashAndIsUsedFalseAndExpiresAtAfter(String otpHash, Instant now);
 
     List<EnrollmentSession> findByUserIdAndIsUsedFalse(Long userId);
+
+    List<EnrollmentSession> findByUserIdAndIsUsedFalseAndExpiresAtAfter(Long userId, Instant now);
+
+    List<EnrollmentSession> findByIsUsedFalseAndExpiresAtAfter(Instant now);
 }

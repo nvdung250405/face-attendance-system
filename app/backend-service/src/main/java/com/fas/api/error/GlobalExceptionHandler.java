@@ -158,6 +158,15 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Xử lý ngoại lệ nghiệp vụ có kiểm soát (ApiException).
+     */
+    @ExceptionHandler(ApiException.class)
+    public ProblemDetail handleApiException(ApiException ex, HttpServletRequest request) {
+        logger.warn("Lỗi nghiệp vụ tại {}: code={}, message={}", request.getRequestURI(), ex.getErrorCode(), ex.getMessage());
+        return problemDetail(ex.getErrorCode(), ex.getMessage(), List.of(), request);
+    }
+
+    /**
      * Lưới an toàn cuối cùng: không để lộ chi tiết kỹ thuật của lỗi hệ thống ra ngoài.
      */
     @ExceptionHandler(Exception.class)
