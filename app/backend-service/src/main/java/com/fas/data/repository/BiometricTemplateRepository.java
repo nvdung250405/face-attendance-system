@@ -21,6 +21,8 @@ public interface BiometricTemplateRepository extends JpaRepository<BiometricTemp
 
     List<BiometricTemplate> findByIsActiveTrue();
 
+    List<BiometricTemplate> findByUserId(Long userId);
+
     @Modifying
     @Query("DELETE FROM BiometricTemplate bt WHERE bt.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
