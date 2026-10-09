@@ -1,0 +1,324 @@
+package com.fas.service;
+
+import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.request.ConsentRequest;
+import com.fas.api.dto.request.KioskEnrollFaceRequest;
+import com.fas.api.dto.request.KioskVerifyOtpRequest;
+import com.fas.api.dto.response.ConsentResult;
+import com.fas.api.dto.response.EnrollmentResult;
+import com.fas.api.dto.response.OtpVerificationResult;
+import com.fas.api.error.ApiErrorCode;
+import com.fas.api.error.ApiException;
+import com.fas.api.websocket.StompEventBroadcaster;
+import com.fas.data.crypto.BiometricCryptoService;
+import com.fas.data.entity.BiometricTemplate;
+import com.fas.data.entity.EnrollmentSession;
+import com.fas.data.entity.Kiosk;
+import com.fas.data.entity.User;
+import com.fas.data.enums.EmployeeStatus;
+import com.fas.data.repository.BiometricTemplateRepository;
+import com.fas.data.repository.EnrollmentSessionRepository;
+import com.fas.data.repository.KioskRepository;
+import com.fas.data.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+/**
+ * Dịch vụ Quản lý Đăng ký Khuôn mặt & Vòng đời OTP 48h (SOL-BE-005, SOL-BE-013, BLD-BE-013, TASK-BE-015).
+ *
+ * <p>Quy trình nghiệp vụ 3 bước:
+ * <ol>
+ *   <li><b>Ký thỏa thuận Informed Consent & Sinh OTP (Web)</b>: Tạo phiên {@code enrollment_sessions},
+ *       sinh mã OTP 6 số ngẫu nhiên băm BCrypt với hiệu lực 48 giờ.</li>
+ *   <li><b>Thẩm định OTP tại trạm Kiosk</b>: Kiểm tra tính hợp lệ và thời hạn OTP, cấp {@code sessionToken}
+ *       tạm thời có hiệu lực 15 phút.</li>
+ *   <li><b>Nạp vector khuôn mặt & Kích hoạt nhân sự</b>: Thẩm định {@code sessionToken}, mã hóa vector 512D
+ *       bằng AES-256-GCM qua {@link BiometricCryptoService}, lưu {@link BiometricTemplate}, chuyển trạng thái
+ *       nhân viên sang {@link EmployeeStatus#ACTIVE}, đánh dấu OTP đã dùng và phát sóng STOMP nạp nóng.</li>
+ * </ol>
+ */
+@Service
+public class EnrollmentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EnrollmentService.class);
+
+    private static final int OTP_VALIDITY_HOURS = 48;
+    private static final int SESSION_TOKEN_TTL_MINUTES = 15;
+
+    private final UserRepository userRepository;
+    private final EnrollmentSessionRepository enrollmentSessionRepository;
+    private final BiometricTemplateRepository biometricTemplateRepository;
+    private final KioskRepository kioskRepository;
+    private final BiometricCryptoService biometricCryptoService;
+    private final StompEventBroadcaster stompEventBroadcaster;
+    private final PasswordEncoder passwordEncoder;
+    private final SecureRandom secureRandom = new SecureRandom();
+
+    /** Bộ nhớ đệm tạm thời lưu trữ các sessionToken đã xác minh hợp lệ tại trạm Kiosk. */
+    private final ConcurrentMap<String, VerifiedSession> verifiedSessions = new ConcurrentHashMap<>();
+
+    public EnrollmentService(
+            UserRepository userRepository,
+            EnrollmentSessionRepository enrollmentSessionRepository,
+            BiometricTemplateRepository biometricTemplateRepository,
+            KioskRepository kioskRepository,
+            BiometricCryptoService biometricCryptoService,
+            StompEventBroadcaster stompEventBroadcaster,
+            PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.enrollmentSessionRepository = enrollmentSessionRepository;
+        this.biometricTemplateRepository = biometricTemplateRepository;
+        this.kioskRepository = kioskRepository;
+        this.biometricCryptoService = biometricCryptoService;
+        this.stompEventBroadcaster = stompEventBroadcaster;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
+     * Bước 1: Tiếp nhận cam kết Informed Consent và sinh mã OTP 6 số có hạn 48 giờ.
+     *
+     * @param userId   định danh nhân viên ký cam kết trên Web Portal
+     * @param request  dữ liệu cam kết gồm cờ đồng thuận và phiên bản chính sách
+     * @param clientIp địa chỉ IP của thiết bị thực hiện ký
+     * @return kết quả ký cam kết chứa mã OTP, ảnh QR và mốc hết hạn
+     */
+    @Transactional
+    public ConsentResult createConsentSession(Long userId, ConsentRequest request, String clientIp) {
+        if (request == null || Boolean.FALSE.equals(request.agreed())) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Cần đồng ý với thỏa thuận Informed Consent để tiếp tục");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy nhân viên với ID: " + userId));
+
+        if (user.getStatus() == EmployeeStatus.TERMINATED) {
+            throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Tài khoản nhân viên đã thôi việc, không thể đăng ký khuôn mặt");
+        }
+
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(OTP_VALIDITY_HOURS, ChronoUnit.HOURS);
+
+        // Sinh mã OTP 6 chữ số cryptographically secure
+        String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
+        String otpHash = passwordEncoder.encode(otp);
+
+        EnrollmentSession session = EnrollmentSession.builder()
+                .user(user)
+                .otpHash(otpHash)
+                .consentVersion(request.consentVersion())
+                .consentSignedAt(now)
+                .clientIp(clientIp != null && !clientIp.isBlank() ? clientIp : "127.0.0.1")
+                .expiresAt(expiresAt)
+                .isUsed(false)
+                .createdAt(now)
+                .build();
+
+        enrollmentSessionRepository.save(session);
+        logger.info("Khởi tạo phiên đăng ký OTP thành công: userId={}, expiresAt={}", userId, expiresAt);
+
+        OffsetDateTime expiresAtOffset = OffsetDateTime.ofInstant(expiresAt, ApiResponse.VIETNAM_ZONE);
+        OffsetDateTime consentSignedAtOffset = OffsetDateTime.ofInstant(now, ApiResponse.VIETNAM_ZONE);
+        String qrCodeDataUrl = "otp:" + otp;
+        String notice = "Mã OTP gồm 6 chữ số có hiệu lực trong 48 giờ. Vui lòng sử dụng mã này hoặc mã QR tại trạm Kiosk gần nhất để hoàn tất đăng ký nhận diện khuôn mặt.";
+
+        return new ConsentResult(otp, qrCodeDataUrl, expiresAtOffset, consentSignedAtOffset, notice);
+    }
+
+    /**
+     * Bước 2: Thẩm định mã OTP tại trạm Kiosk và cấp token phiên tạm thời.
+     *
+     * @param request yêu cầu thẩm định chứa mã OTP và kioskId
+     * @return kết quả thẩm định chứa thông tin nhân sự và sessionToken
+     */
+    @Transactional(readOnly = true)
+    public OtpVerificationResult verifyOtp(KioskVerifyOtpRequest request) {
+        if (request == null || request.otp() == null || request.otp().isBlank()) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Mã OTP không được để trống");
+        }
+
+        validateKiosk(request.kioskId());
+
+        Instant now = Instant.now();
+        List<EnrollmentSession> activeSessions = enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(now);
+        EnrollmentSession matchedSession = null;
+
+        for (EnrollmentSession session : activeSessions) {
+            if (passwordEncoder.matches(request.otp(), session.getOtpHash())) {
+                matchedSession = session;
+                break;
+            }
+        }
+
+        if (matchedSession == null) {
+            // Đối soát với các phiên đã sử dụng hoặc hết hạn để trả mã lỗi chính xác
+            List<EnrollmentSession> allSessions = enrollmentSessionRepository.findAll();
+            for (EnrollmentSession session : allSessions) {
+                if (passwordEncoder.matches(request.otp(), session.getOtpHash())) {
+                    if (Boolean.TRUE.equals(session.getIsUsed())) {
+                        throw new ApiException(ApiErrorCode.OTP_ALREADY_USED, "Mã OTP này đã được sử dụng");
+                    }
+                    if (session.getExpiresAt().isBefore(now)) {
+                        throw new ApiException(ApiErrorCode.OTP_EXPIRED, "Mã OTP đã hết hạn");
+                    }
+                }
+            }
+            throw new ApiException(ApiErrorCode.OTP_INVALID, "Mã OTP không đúng hoặc không tồn tại");
+        }
+
+        User user = matchedSession.getUser();
+        if (user == null || user.getStatus() == EmployeeStatus.TERMINATED) {
+            throw new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Nhân sự không tồn tại hoặc đã thôi việc");
+        }
+
+        // Cấp sessionToken ngẫu nhiên bảo mật
+        String sessionToken = UUID.randomUUID().toString().replace("-", "");
+        verifiedSessions.put(sessionToken, new VerifiedSession(matchedSession.getId(), user.getId(), now, request.kioskId()));
+        logger.info("Thẩm định OTP thành công tại Kiosk {}: userId={}, employeeCode={}",
+                request.kioskId(), user.getId(), user.getEmployeeCode());
+
+        return new OtpVerificationResult(
+                sessionToken,
+                user.getId(),
+                user.getEmployeeCode(),
+                user.getFullName(),
+                user.getDepartment()
+        );
+    }
+
+    /**
+     * Bước 3: Nạp vector ArcFace 512D mới, mã hóa AES-256-GCM, kích hoạt ACTIVE và phát sóng STOMP.
+     *
+     * @param request yêu cầu nạp vector chứa OTP, sessionToken, vector512 và kioskId
+     * @return kết quả kích hoạt mẫu sinh trắc học
+     */
+    @Transactional
+    public EnrollmentResult enrollFace(KioskEnrollFaceRequest request) {
+        if (request == null) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Yêu cầu đăng ký không được rỗng");
+        }
+
+        validateKiosk(request.kioskId());
+
+        VerifiedSession tokenData = verifiedSessions.get(request.sessionToken());
+        if (tokenData == null) {
+            throw new ApiException(ApiErrorCode.OTP_INVALID, "Phiên xác minh OTP không tồn tại hoặc đã hết hiệu lực");
+        }
+
+        if (Duration.between(tokenData.verifiedAt(), Instant.now()).toMinutes() > SESSION_TOKEN_TTL_MINUTES) {
+            verifiedSessions.remove(request.sessionToken());
+            throw new ApiException(ApiErrorCode.OTP_EXPIRED, "Phiên xác minh OTP tại Kiosk đã quá hạn 15 phút");
+        }
+
+        EnrollmentSession session = enrollmentSessionRepository.findById(tokenData.sessionId())
+                .orElseThrow(() -> new ApiException(ApiErrorCode.OTP_INVALID, "Không tìm thấy phiên đăng ký"));
+
+        Instant now = Instant.now();
+        if (Boolean.TRUE.equals(session.getIsUsed())) {
+            throw new ApiException(ApiErrorCode.OTP_ALREADY_USED, "Mã OTP này đã được sử dụng");
+        }
+        if (session.getExpiresAt().isBefore(now)) {
+            throw new ApiException(ApiErrorCode.OTP_EXPIRED, "Mã OTP đã hết hạn");
+        }
+        if (!passwordEncoder.matches(request.otp(), session.getOtpHash())) {
+            throw new ApiException(ApiErrorCode.OTP_INVALID, "Mã OTP không khớp với phiên xác minh");
+        }
+
+        List<Float> vector512 = request.vector512();
+        if (vector512 == null || vector512.size() != BiometricCryptoService.VECTOR_DIMENSION) {
+            throw new ApiException(ApiErrorCode.INVALID_VECTOR_DIMENSION, "Vector phải có đúng 512 chiều");
+        }
+
+        float[] vectorArray = new float[BiometricCryptoService.VECTOR_DIMENSION];
+        for (int i = 0; i < BiometricCryptoService.VECTOR_DIMENSION; i++) {
+            Float val = vector512.get(i);
+            if (val == null || Float.isNaN(val) || Float.isInfinite(val)) {
+                throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Giá trị vector tại chiều " + i + " không hợp lệ");
+            }
+            vectorArray[i] = val;
+        }
+
+        // Mã hóa AES-256-GCM với IV 12 bytes ngẫu nhiên
+        BiometricCryptoService.EncryptedVector encrypted = biometricCryptoService.encryptVector(vectorArray);
+
+        User user = session.getUser();
+        if (user == null || user.getStatus() == EmployeeStatus.TERMINATED) {
+            throw new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Nhân sự không tồn tại hoặc đã thôi việc");
+        }
+
+        // Vô hiệu hóa mẫu khuôn mặt đang active trước đó nếu có
+        Optional<BiometricTemplate> currentActiveTemplate = biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId());
+        currentActiveTemplate.ifPresent(template -> {
+            template.setIsActive(false);
+            biometricTemplateRepository.save(template);
+            logger.info("Vô hiệu hóa mẫu sinh trắc học cũ: templateId={}, userId={}", template.getId(), user.getId());
+        });
+
+        // Lưu mẫu khuôn mặt mới đã mã hóa
+        BiometricTemplate newTemplate = BiometricTemplate.builder()
+                .user(user)
+                .encryptedVector(encrypted.cipherText())
+                .encryptionIv(encrypted.iv())
+                .algorithm("ARCFACE_512D")
+                .version(1)
+                .isActive(true)
+                .build();
+        BiometricTemplate savedTemplate = biometricTemplateRepository.save(newTemplate);
+
+        // Đánh dấu phiên OTP đã sử dụng
+        session.setIsUsed(true);
+        enrollmentSessionRepository.save(session);
+
+        // Kích hoạt trạng thái nhân sự thành ACTIVE
+        user.setStatus(EmployeeStatus.ACTIVE);
+        userRepository.save(user);
+
+        // Thu hồi sessionToken
+        verifiedSessions.remove(request.sessionToken());
+
+        // Phát sóng nạp nóng vector mới tới toàn bộ trạm Kiosk qua STOMP topic /topic/kiosk-gallery
+        OffsetDateTime nowVietnam = OffsetDateTime.now(ApiResponse.VIETNAM_ZONE);
+        stompEventBroadcaster.broadcastGalleryVectorAdded(
+                user.getId(),
+                user.getEmployeeCode(),
+                user.getFullName(),
+                vector512,
+                nowVietnam
+        );
+
+        logger.info("Đăng ký khuôn mặt thành công: userId={}, templateId={}, employeeCode={}",
+                user.getId(), savedTemplate.getId(), user.getEmployeeCode());
+
+        return new EnrollmentResult(
+                user.getId(),
+                savedTemplate.getId(),
+                EmployeeStatus.ACTIVE,
+                nowVietnam
+        );
+    }
+
+    private void validateKiosk(String kioskId) {
+        if (kioskId != null && !kioskId.isBlank()) {
+            Optional<Kiosk> kioskOpt = kioskRepository.findById(kioskId);
+            if (kioskOpt.isPresent() && Boolean.FALSE.equals(kioskOpt.get().getIsActive())) {
+                throw new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED, "Trạm Kiosk đã bị vô hiệu hóa: " + kioskId);
+            }
+        }
+    }
+
+    /** Bản ghi theo dõi phiên Kiosk đã xác minh OTP thành công. */
+    private record VerifiedSession(Long sessionId, Long userId, Instant verifiedAt, String kioskId) {}
+}
