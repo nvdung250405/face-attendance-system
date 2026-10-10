@@ -1,5 +1,6 @@
 package com.fas.service;
 
+import com.fas.api.dto.request.AdjustAttendanceRequest;
 import com.fas.api.dto.request.KioskPunchRequest;
 import com.fas.api.dto.response.AttendanceLogItem;
 import com.fas.api.dto.response.PunchResult;
@@ -482,4 +483,71 @@ class AttendanceServiceTest {
             assertThat(result.recordId()).isEqualTo(1008L);
         }
     }
+
+    @Nested
+    @DisplayName("Kịch bản điều chỉnh giờ công thủ công (adjustAttendanceLog - FR-BE-008, SOL-BE-007)")
+    class AdjustAttendanceLogTests {
+
+        @Test
+        @DisplayName("Điều chỉnh giờ công thành công -> Cập nhật các trường và trả về AttendanceLogItem")
+        void adjustAttendanceLog_Success() {
+            Long logId = 500L;
+            AttendanceLog existingLog = AttendanceLog.builder()
+                    .id(logId)
+                    .user(sampleEmployee)
+                    .kiosk(sampleKiosk)
+                    .punchTimestamp(sampleTime.toInstant())
+                    .punchType(PunchType.CHECK_IN)
+                    .verificationMethod(VerificationMethod.VERIFICATION_FACE)
+                    .status(AttendanceStatus.LATE)
+                    .lateMinutes(25)
+                    .build();
+
+            when(attendanceLogRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            OffsetDateTime newTimestamp = sampleTime.minusMinutes(25);
+            AdjustAttendanceRequest request = new AdjustAttendanceRequest(
+                    newTimestamp,
+                    AttendanceStatus.ON_TIME,
+                    0,
+                    "Nhân viên có giải trình được duyệt"
+            );
+
+            AttendanceLogItem item = attendanceService.adjustAttendanceLog(logId, request);
+
+            assertThat(item).isNotNull();
+            assertThat(item.recordId()).isEqualTo(logId);
+            assertThat(item.status()).isEqualTo(AttendanceStatus.ON_TIME);
+            assertThat(item.lateMinutes()).isEqualTo(0);
+
+            ArgumentCaptor<AttendanceLog> captor = ArgumentCaptor.forClass(AttendanceLog.class);
+            verify(attendanceLogRepository).save(captor.capture());
+            AttendanceLog saved = captor.getValue();
+            assertThat(saved.getStatus()).isEqualTo(AttendanceStatus.ON_TIME);
+            assertThat(saved.getLateMinutes()).isEqualTo(0);
+            assertThat(saved.getPunchTimestamp()).isEqualTo(newTimestamp.toInstant());
+        }
+
+        @Test
+        @DisplayName("Không tìm thấy bản ghi điểm danh -> Ném ApiException RESOURCE_NOT_FOUND")
+        void adjustAttendanceLog_NotFound_ThrowsApiException() {
+            Long notFoundId = 9999L;
+            when(attendanceLogRepository.findById(notFoundId)).thenReturn(Optional.empty());
+
+            AdjustAttendanceRequest request = new AdjustAttendanceRequest(
+                    null,
+                    AttendanceStatus.ON_TIME,
+                    0,
+                    "Không tìm thấy log"
+            );
+
+            assertThatThrownBy(() -> attendanceService.adjustAttendanceLog(notFoundId, request))
+                    .isInstanceOf(ApiException.class)
+                    .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.RESOURCE_NOT_FOUND));
+
+            verify(attendanceLogRepository, never()).save(any());
+        }
+    }
 }
+

@@ -1,6 +1,7 @@
 package com.fas.service;
 
 import com.fas.api.dto.event.AttendancePunchEvent;
+import com.fas.api.dto.request.AdjustAttendanceRequest;
 import com.fas.api.dto.request.KioskPunchRequest;
 import com.fas.api.dto.response.AttendanceLogItem;
 import com.fas.api.dto.response.PunchResult;
@@ -8,6 +9,8 @@ import com.fas.api.dto.response.ShiftEvaluationResult;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
 import com.fas.api.websocket.StompEventBroadcaster;
+import com.fas.service.audit.AuditContextHolder;
+import com.fas.service.audit.Auditable;
 import com.fas.data.cache.CooldownManager;
 import com.fas.data.entity.AttendanceLog;
 import com.fas.data.entity.Kiosk;
@@ -243,4 +246,70 @@ public class AttendanceService {
         AttendanceLog latestLog = list.get(list.size() - 1);
         return latestLog.getPunchType() == PunchType.CHECK_IN ? PunchType.CHECK_OUT : PunchType.CHECK_IN;
     }
+
+    /**
+     * Điều chỉnh bản ghi điểm danh phục vụ HR/Admin sửa giờ công thủ công (FR-BE-008, SOL-BE-007, DD-BE-002).
+     * <p>Được đánh chặn bởi {@link Auditable} để tự động sinh bản ghi kiểm toán bất biến trong {@code audit_logs}.</p>
+     *
+     * @param logId   định danh bản ghi điểm danh cần chỉnh sửa
+     * @param request dữ liệu thông số điều chỉnh giờ công
+     * @return bản ghi điểm danh sau khi đã điều chỉnh
+     */
+    @Auditable(action = "UPDATE_ATTENDANCE", entityType = "ATTENDANCE_LOG", entityId = "#logId")
+    @Transactional
+    public AttendanceLogItem adjustAttendanceLog(Long logId, AdjustAttendanceRequest request) {
+        AttendanceLog attendanceLog = attendanceLogRepository.findById(logId)
+                .orElseThrow(() -> {
+                    log.warn("Không tìm thấy bản ghi điểm danh ID={} để điều chỉnh", logId);
+                    return new ApiException(ApiErrorCode.RESOURCE_NOT_FOUND,
+                            "Không tìm thấy bản ghi điểm danh ID=" + logId);
+                });
+
+        // 1. Chụp trạng thái trước khi sửa (before state) vào context holder
+        AuditContextHolder.setBeforeState(mapToAuditState(attendanceLog));
+
+        // 2. Cập nhật các trường dữ liệu theo yêu cầu
+        if (request.punchTimestamp() != null) {
+            attendanceLog.setPunchTimestamp(request.punchTimestamp().toInstant());
+        }
+        if (request.status() != null) {
+            attendanceLog.setStatus(request.status());
+        }
+        if (request.lateMinutes() != null) {
+            attendanceLog.setLateMinutes(Math.max(0, request.lateMinutes()));
+        }
+
+        AttendanceLog saved = attendanceLogRepository.save(attendanceLog);
+        log.info("Đã điều chỉnh bản ghi điểm danh ID={} (Status={}, LateMinutes={}): {}",
+                saved.getId(), saved.getStatus(), saved.getLateMinutes(), request.reason());
+
+        // 3. Trả về kết quả sau khi chỉnh sửa
+        User user = saved.getUser();
+        OffsetDateTime punchOffset = saved.getPunchTimestamp().atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        return new AttendanceLogItem(
+                saved.getId(),
+                user != null ? user.getId() : null,
+                user != null ? user.getEmployeeCode() : null,
+                user != null ? user.getFullName() : null,
+                user != null ? user.getDepartment() : null,
+                punchOffset,
+                saved.getPunchType(),
+                saved.getVerificationMethod(),
+                saved.getStatus(),
+                saved.getLateMinutes(),
+                saved.getKiosk() != null ? saved.getKiosk().getId() : null
+        );
+    }
+
+    private java.util.Map<String, Object> mapToAuditState(AttendanceLog log) {
+        java.util.Map<String, Object> state = new java.util.LinkedHashMap<>();
+        state.put("id", log.getId());
+        state.put("userId", log.getUser() != null ? log.getUser().getId() : null);
+        state.put("punchTimestamp", log.getPunchTimestamp() != null ? log.getPunchTimestamp().toString() : null);
+        state.put("punchType", log.getPunchType() != null ? log.getPunchType().name() : null);
+        state.put("status", log.getStatus() != null ? log.getStatus().name() : null);
+        state.put("lateMinutes", log.getLateMinutes());
+        return state;
+    }
 }
+
