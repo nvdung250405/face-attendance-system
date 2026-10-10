@@ -6,5 +6,6 @@ package com.fas.data.enums;
 public enum Role {
     ADMIN,
     HR_MANAGER,
-    EMPLOYEE
+    EMPLOYEE,
+    DPO
 }

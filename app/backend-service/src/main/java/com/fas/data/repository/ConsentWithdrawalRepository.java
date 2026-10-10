@@ -1,6 +1,8 @@
 package com.fas.data.repository;
 
 import com.fas.data.entity.ConsentWithdrawal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,4 +20,6 @@ public interface ConsentWithdrawalRepository extends JpaRepository<ConsentWithdr
 
     /** Các vết rút Consent đã tới hạn tiêu hủy dữ liệu sinh trắc nhưng chưa xử lý (FR-BE-022). */
     List<ConsentWithdrawal> findByProcessedAtIsNullAndBiometricDisposalDueAtLessThanEqual(Instant threshold);
+
+    Page<ConsentWithdrawal> findAllByOrderByWithdrawnAtDesc(Pageable pageable);
 }

@@ -23,6 +23,8 @@ public enum ApiErrorCode {
     OTP_ALREADY_USED(HttpStatus.CONFLICT, "Mã OTP đã sử dụng"),
     EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy nhân sự"),
     EMPLOYEE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã nhân viên hoặc email đã tồn tại"),
+    KIOSK_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy trạm Kiosk"),
+    KIOSK_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã trạm Kiosk đã tồn tại"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tài nguyên"),
     PIN_INVALID(HttpStatus.UNAUTHORIZED, "Mã PIN không đúng"),
     PIN_LOCKED(HttpStatus.LOCKED, "Mã PIN đang bị khóa"),
