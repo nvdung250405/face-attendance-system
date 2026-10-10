@@ -27,6 +27,10 @@ public enum ApiErrorCode {
     PIN_LOCKED(HttpStatus.LOCKED, "Mã PIN đang bị khóa"),
     SHIFT_OVERLAPPING(HttpStatus.CONFLICT, "Khoảng thời gian phân ca bị chồng lấn"),
     SHIFT_IN_USE(HttpStatus.CONFLICT, "Ca làm việc đang được phân công"),
+    EXCUSE_ALREADY_PENDING(HttpStatus.CONFLICT, "Lượt điểm danh đã có đơn giải trình đang chờ xử lý"),
+    EXCUSE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "Đơn giải trình đã được xử lý"),
+    EXCUSE_WINDOW_EXPIRED(HttpStatus.BAD_REQUEST, "Đã quá thời hạn 30 ngày để nộp đơn giải trình"),
+    PERIOD_LOCKED(HttpStatus.CONFLICT, "Kỳ công đã chốt"),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ"),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Định dạng nội dung không được hỗ trợ"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống nội bộ");
