@@ -56,6 +56,9 @@ class StompEventBroadcasterTest {
     @Autowired
     private StompEventBroadcaster broadcaster;
 
+    @Autowired
+    private com.fas.security.jwt.JwtTokenProvider jwtTokenProvider;
+
     private WebSocketStompClient stompClient;
     private StompSession session;
 
@@ -65,8 +68,13 @@ class StompEventBroadcasterTest {
         // Broker phát payload dạng application/json; converter này giữ nguyên phần thân JSON để kiểm tra
         // đúng hợp đồng (StringMessageConverter mặc định chỉ nhận text/plain nên frame sẽ bị bỏ).
         stompClient.setMessageConverter(new JsonBodyMessageConverter());
+
+        StompHeaders connectHeaders = new StompHeaders();
+        String token = jwtTokenProvider.generateToken("admin@fas.com", "ADMIN");
+        connectHeaders.add("Authorization", "Bearer " + token);
+
         session = stompClient
-                .connectAsync("ws://localhost:" + port + "/ws-attendance", new StompSessionHandlerAdapter() {
+                .connectAsync("ws://localhost:" + port + "/ws-attendance", new org.springframework.web.socket.WebSocketHttpHeaders(), connectHeaders, new StompSessionHandlerAdapter() {
                 })
                 .get(AWAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
