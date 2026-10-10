@@ -34,6 +34,7 @@ public enum ApiErrorCode {
     EXCUSE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "Đơn giải trình đã được xử lý"),
     EXCUSE_WINDOW_EXPIRED(HttpStatus.BAD_REQUEST, "Đã quá thời hạn 30 ngày để nộp đơn giải trình"),
     PERIOD_LOCKED(HttpStatus.CONFLICT, "Kỳ công đã chốt"),
+    LAST_ADMIN_CANNOT_BE_DEMOTED(HttpStatus.CONFLICT, "Không thể thu hồi hoặc hạ cấp tài khoản Quản trị viên cuối cùng"),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ"),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Định dạng nội dung không được hỗ trợ"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống nội bộ");
