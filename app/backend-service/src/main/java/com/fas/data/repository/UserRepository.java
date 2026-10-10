@@ -36,4 +36,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Tìm kiếm nhân sự đã thôi việc quá thời hạn phục vụ quy tắc tiêu hủy sinh trắc học 20 ngày.
      */
     List<User> findByStatusAndTerminatedDateLessThanEqual(EmployeeStatus status, LocalDate terminatedDate);
+
+    Page<User> findByStatusOrderByTerminatedDateDesc(EmployeeStatus status, Pageable pageable);
 }
