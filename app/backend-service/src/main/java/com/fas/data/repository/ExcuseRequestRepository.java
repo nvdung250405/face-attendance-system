@@ -21,6 +21,12 @@ public interface ExcuseRequestRepository extends JpaRepository<ExcuseRequest, Lo
     /** Danh sách đơn theo trạng thái xử lý (FR-BE-015). */
     Page<ExcuseRequest> findByStatus(ExcuseRequestStatus status, Pageable pageable);
 
+    /** Danh sách đơn của một nhân viên lọc theo trạng thái xử lý. */
+    Page<ExcuseRequest> findByUserIdAndStatus(Long userId, ExcuseRequestStatus status, Pageable pageable);
+
     /** Kiểm tra một lượt chấm đã có đơn đang chờ xử lý hay chưa (tránh nộp trùng). */
     Optional<ExcuseRequest> findByAttendanceLogIdAndStatus(Long attendanceLogId, ExcuseRequestStatus status);
+
+    /** Kiểm tra tồn tại đơn theo lượt chấm và trạng thái. */
+    boolean existsByAttendanceLogIdAndStatus(Long attendanceLogId, ExcuseRequestStatus status);
 }
