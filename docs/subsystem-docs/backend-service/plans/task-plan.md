@@ -1,11 +1,11 @@
 ---
 title: Backend Task Plan
-version: 2.0
+version: 2.1
 status: Approved
 owner: Backend Lead
 type: plan
 scope: BE
-updated: 2026-10-08
+updated: 2026-10-12
 ---
 
 # TASK PLAN — Kế hoạch Thi công Chi tiết Phân hệ Backend
@@ -70,6 +70,7 @@ Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa c�
 | `TASK-BE-038` | Lập trình Vòng đời Quyền & Tra cứu Tự phục vụ                     | Xây dựng`RoleManagementService` và `EmployeeAttendanceQueryService`.                                                                                                                                          | `BLD-BE-033` |                `TASK-BE-011`, `TASK-BE-008`                | Wave 8  | Thay đổi role ghi audit giá trị trước/sau; thu hồi ADMIN cuối cùng trả 409 kể cả khi hai yêu cầu đồng thời; nhân viên chỉ truy vấn được dữ liệu của mình.                                            |  Done  |
 | `TASK-BE-039` | Lập trình Controllers Vòng đời                                    | Xây dựng`CredentialRecoveryController`, `LogoutController`, `PayrollPeriodController`, `ConsentWithdrawalController`, `DataSubjectRequestController`, `RoleManagementController` và `NotificationController`. | `BLD-BE-034` | `TASK-BE-036`, `TASK-BE-037`, `TASK-BE-038`, `TASK-BE-010` | Wave 10 | Các endpoint trả đúng mã theo hợp đồng; phân quyền`ADMIN`/`HR_MANAGER`/`DPO`/`EMPLOYEE` chính xác; thông báo và lịch sử công chỉ trả dữ liệu của người gọi.                                          |  Done  |
 | `TASK-BE-040` | Lập trình Migration V5 Gỡ bỏ Cờ Buộc đổi Mật khẩu                 | Viết`V5__drop_must_change_password.sql` gỡ cột khỏi bảng `users`, gỡ trường `mustChangePassword` khỏi entity `User` và cập nhật ca kiểm thử trạng thái xác thực.                                              | `BLD-BE-035` |                       `TASK-BE-023`                        | Wave 7  | Migration V5 chạy thành công trên CSDL đã áp dụng`V1`–`V4` mà không mất bản ghi; lược đồ sau cùng không còn cột `must_change_password`; test khẳng định cột đã bị gỡ và dữ liệu xác thực còn nguyên. |  Done  |
+| `TASK-BE-041` | Tích hợp Swagger UI & OpenAPI Specification                       | Cấu hình `springdoc-openapi-starter-webmvc-ui`, mở quyền truy cập `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html` trên `SecurityFilterChain` và cấu hình Bearer JWT Auth Scheme cho Swagger UI.                                   | `FND-BE-004` |                       `TASK-BE-022`                        | Wave 12 | Truy cập `/v3/api-docs` trả về OpenAPI JSON spec hợp lệ; Swagger UI hiển thị thông suốt không bị chặn 401; kiểm thử tích hợp OpenApiIntegrationTest pass 100%.                                      |  Done  |
 
 ---
 
@@ -113,7 +114,7 @@ TASK-BE-011 + TASK-BE-008        ──→ TASK-BE-038 (Role Governance & Self-s
 TASK-BE-036 + TASK-BE-037 + TASK-BE-038 + TASK-BE-010 ──→ TASK-BE-039 (Lifecycle Controllers)
 
 [Integration Layer]
-TASK-BE-019 + TASK-BE-020 + TASK-BE-021 ──→ TASK-BE-022 (Full Integration) ──→ BUILD
+TASK-BE-019 + TASK-BE-020 + TASK-BE-021 ──→ TASK-BE-022 (Full Integration) ──→ TASK-BE-041 (Swagger & OpenAPI Spec) ──→ BUILD
 ```
 
 ---
@@ -133,6 +134,7 @@ Wave được tính theo quy tắc Mục 14.4: `Wave(task) = 1 + max(Wave(dep))`
 - **Wave 9: Batch Sync, Portal, Compliance & Lifecycle Services**: `TASK-BE-014`, `TASK-BE-020`, `TASK-BE-026`, `TASK-BE-027`, `TASK-BE-034`, `TASK-BE-036`.
 - **Wave 10: Kiosk REST & Lifecycle Controllers**: `TASK-BE-019`, `TASK-BE-039`.
 - **Wave 11: Service Integration**: `TASK-BE-022`.
+- **Wave 12: API Documentation & Integration Review**: `TASK-BE-041`.
 
 ---
 
