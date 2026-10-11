@@ -24,9 +24,19 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final com.fas.data.repository.UserRepository userRepository;
 
     public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+        this(tokenProvider, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public JwtAuthenticationFilter(
+            JwtTokenProvider tokenProvider,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.fas.data.repository.UserRepository userRepository
+    ) {
         this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -39,17 +49,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
             String username = tokenProvider.getUsernameFromToken(token);
-            String role = tokenProvider.getRoleFromToken(token);
 
-            List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-                    new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "EMPLOYEE"))
-            );
+            // Kiểm tra trạng thái tài khoản: TERMINATED/SUSPENDED không dùng được access token còn hạn (FR-BE-020, DD-BE-023)
+            boolean userAllowed = true;
+            if (userRepository != null && StringUtils.hasText(username)) {
+                java.util.Optional<com.fas.data.entity.User> userOpt = userRepository.findByEmail(username)
+                        .or(() -> userRepository.findByEmployeeCode(username));
+                if (userOpt.isPresent()) {
+                    com.fas.data.enums.EmployeeStatus status = userOpt.get().getStatus();
+                    if (status == com.fas.data.enums.EmployeeStatus.TERMINATED || status == com.fas.data.enums.EmployeeStatus.SUSPENDED) {
+                        userAllowed = false;
+                    }
+                }
+            }
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            if (userAllowed) {
+                String role = tokenProvider.getRoleFromToken(token);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                        new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "EMPLOYEE"))
+                );
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                SecurityContextHolder.clearContext();
+            }
         }
 
         filterChain.doFilter(request, response);
