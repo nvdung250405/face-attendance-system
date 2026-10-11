@@ -5,6 +5,7 @@ import com.fas.api.dto.request.KioskEnrollFaceRequest;
 import com.fas.api.dto.request.KioskVerifyOtpRequest;
 import com.fas.api.dto.response.ConsentResult;
 import com.fas.api.dto.response.EnrollmentResult;
+import com.fas.api.dto.response.GalleryResponse;
 import com.fas.api.dto.response.OtpVerificationResult;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
@@ -423,6 +424,62 @@ class EnrollmentServiceTest {
         assertThatThrownBy(() -> enrollmentService.enrollFace(request))
                 .isInstanceOf(ApiException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.INVALID_VECTOR_DIMENSION);
+    }
+
+    @Test
+    @DisplayName("Lấy danh mục gallery thành công cho các nhân viên ACTIVE")
+    void testGetGallery_ReturnsActiveDecryptedTemplates() {
+        User activeUser = User.builder()
+                .id(1042L)
+                .employeeCode("NV-1042")
+                .fullName("Ngô Văn Dũng")
+                .status(EmployeeStatus.ACTIVE)
+                .department("Phòng Kỹ thuật")
+                .build();
+
+        BiometricTemplate activeTemplate = BiometricTemplate.builder()
+                .id(1L)
+                .user(activeUser)
+                .encryptedVector(new byte[]{1, 2, 3})
+                .encryptionIv(new byte[]{4, 5, 6})
+                .version(2)
+                .isActive(true)
+                .createdAt(Instant.now())
+                .build();
+
+        User terminatedUser = User.builder()
+                .id(2L)
+                .employeeCode("NV-2000")
+                .fullName("Trần Thị B")
+                .status(EmployeeStatus.TERMINATED)
+                .build();
+
+        BiometricTemplate terminatedTemplate = BiometricTemplate.builder()
+                .id(2L)
+                .user(terminatedUser)
+                .encryptedVector(new byte[]{7, 8})
+                .encryptionIv(new byte[]{9, 10})
+                .version(1)
+                .isActive(true)
+                .build();
+
+        when(biometricTemplateRepository.findByIsActiveTrue())
+                .thenReturn(List.of(activeTemplate, terminatedTemplate));
+
+        float[] decryptedVector = new float[512];
+        decryptedVector[0] = 0.5f;
+        when(biometricCryptoService.decryptVector(activeTemplate.getEncryptedVector(), activeTemplate.getEncryptionIv()))
+                .thenReturn(decryptedVector);
+
+        GalleryResponse response = enrollmentService.getGallery();
+
+        assertThat(response).isNotNull();
+        assertThat(response.galleryVersion()).isEqualTo(2);
+        assertThat(response.totalCount()).isEqualTo(1);
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().get(0).employeeCode()).isEqualTo(sampleUser.getEmployeeCode());
+        assertThat(response.items().get(0).vector512()).hasSize(512);
+        assertThat(response.items().get(0).vector512().get(0)).isEqualTo(0.5f);
     }
 
     private List<Float> createValidVector512() {
