@@ -120,12 +120,12 @@ public class AttendanceService {
                     "Tài khoản nhân viên không ở trạng thái hoạt động: " + employee.getStatus());
         }
 
-        // 3. Phân tách thời gian
-        OffsetDateTime punchTimeOffset = request.punchTimestamp();
+        // 3. Phân tách thời gian theo múi giờ hợp đồng hệ thống (Asia/Ho_Chi_Minh)
+        OffsetDateTime punchTimeOffset = request.punchTimestamp().atZoneSameInstant(ApiResponse.VIETNAM_ZONE).toOffsetDateTime();
         Instant punchInstant = punchTimeOffset.toInstant();
         LocalDate punchDate = punchTimeOffset.toLocalDate();
         LocalTime punchTime = punchTimeOffset.toLocalTime();
-        ZoneId zoneId = punchTimeOffset.getOffset();
+        ZoneId zoneId = ApiResponse.VIETNAM_ZONE;
 
         // 4. Kiểm tra Cooldown 120s
         if (cooldownManager.isCooldownActive(employee.getId(), punchDate, punchInstant)) {
