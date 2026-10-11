@@ -6,6 +6,8 @@ import com.fas.api.dto.request.KioskEnrollFaceRequest;
 import com.fas.api.dto.request.KioskVerifyOtpRequest;
 import com.fas.api.dto.response.ConsentResult;
 import com.fas.api.dto.response.EnrollmentResult;
+import com.fas.api.dto.response.GalleryItem;
+import com.fas.api.dto.response.GalleryResponse;
 import com.fas.api.dto.response.OtpVerificationResult;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
@@ -31,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -308,6 +311,59 @@ public class EnrollmentService {
                 EmployeeStatus.ACTIVE,
                 nowVietnam
         );
+    }
+
+    /**
+     * Lấy toàn bộ danh mục vector ArcFace 512D đã giải mã của các nhân viên đang ACTIVE
+     * ({@code GET /api/v1/kiosk/gallery} - APD-BE-001, API-BE-005).
+     *
+     * @return danh mục vector kèm phiên bản hiện hành và số lượng bản ghi
+     */
+    @Transactional(readOnly = true)
+    public GalleryResponse getGallery() {
+        List<BiometricTemplate> templates = biometricTemplateRepository.findByIsActiveTrue();
+        List<GalleryItem> items = new ArrayList<>();
+        int maxVersion = 1;
+
+        for (BiometricTemplate template : templates) {
+            User user = template.getUser();
+            if (user == null || user.getStatus() != EmployeeStatus.ACTIVE) {
+                continue;
+            }
+
+            if (template.getVersion() != null && template.getVersion() > maxVersion) {
+                maxVersion = template.getVersion();
+            }
+
+            try {
+                float[] decrypted = biometricCryptoService.decryptVector(
+                        template.getEncryptedVector(),
+                        template.getEncryptionIv()
+                );
+                List<Float> vectorList = new ArrayList<>(decrypted.length);
+                for (float v : decrypted) {
+                    vectorList.add(v);
+                }
+
+                OffsetDateTime updatedAt = template.getCreatedAt() != null
+                        ? OffsetDateTime.ofInstant(template.getCreatedAt(), ApiResponse.VIETNAM_ZONE)
+                        : OffsetDateTime.now(ApiResponse.VIETNAM_ZONE);
+
+                items.add(new GalleryItem(
+                        user.getId(),
+                        user.getEmployeeCode(),
+                        user.getFullName(),
+                        user.getDepartment(),
+                        vectorList,
+                        updatedAt
+                ));
+            } catch (Exception ex) {
+                logger.error("Không thể giải mã vector sinh trắc học cho nhân sự ID={}: {}",
+                        user.getId(), ex.getMessage());
+            }
+        }
+
+        return new GalleryResponse(maxVersion, items.size(), items);
     }
 
     private void validateKiosk(String kioskId) {
