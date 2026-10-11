@@ -43,6 +43,13 @@ class SecurityConfigTest {
     }
 
     @Test
+    @DisplayName("Endpoint OpenAPI docs /v3/api-docs được cấu hình permitAll")
+    void openApiDocsShouldBePermitted() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("Endpoint bảo vệ trả về 401 Unauthorized khi thiếu JWT Token")
     void protectedEndpointShouldReturn401WhenNoToken() throws Exception {
         mockMvc.perform(get("/api/v1/users"))

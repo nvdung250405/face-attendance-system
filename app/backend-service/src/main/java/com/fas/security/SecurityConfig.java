@@ -58,6 +58,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         // 5. Trang lỗi mặc định
                         .requestMatchers("/error").permitAll()
+                        // 6. Tài liệu OpenAPI & Swagger UI
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // Mọi yêu cầu nghiệp vụ còn lại đều yêu cầu JWT Token
                         .anyRequest().authenticated()
                 )
