@@ -1,7 +1,9 @@
 package com.fas.service;
 
-import com.fas.api.dto.event.AttendancePunchEvent;
+import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.AdjustAttendanceRequest;
+import com.fas.api.dto.request.AttendanceSearchCriteria;
 import com.fas.api.dto.request.KioskPunchRequest;
 import com.fas.api.dto.response.AttendanceLogItem;
 import com.fas.api.dto.response.PunchResult;
@@ -23,18 +25,23 @@ import com.fas.data.enums.VerificationMethod;
 import com.fas.data.repository.AttendanceLogRepository;
 import com.fas.data.repository.KioskRepository;
 import com.fas.data.repository.UserRepository;
+import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -310,6 +317,63 @@ public class AttendanceService {
         state.put("status", log.getStatus() != null ? log.getStatus().name() : null);
         state.put("lateMinutes", log.getLateMinutes());
         return state;
+    }
+
+    /**
+     * Tra cứu, lọc và phân trang lịch sử điểm danh toàn công ty dành cho HR/Quản trị (API-BE-008, FR-BE-008).
+     *
+     * @param criteria tiêu chí lọc (thời gian, phòng ban, trạng thái, từ khóa)
+     * @param pageable thông tin phân trang và sắp xếp
+     * @return danh sách điểm danh dạng PageResponse
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<AttendanceLogItem> queryAttendanceLogs(AttendanceSearchCriteria criteria, Pageable pageable) {
+        Specification<AttendanceLog> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (criteria != null) {
+                if (criteria.fromDate() != null) {
+                    Instant fromInstant = criteria.fromDate().atStartOfDay(ApiResponse.VIETNAM_ZONE).toInstant();
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("punchTimestamp"), fromInstant));
+                }
+                if (criteria.toDate() != null) {
+                    Instant toInstant = criteria.toDate().atTime(23, 59, 59, 999_999_999).atZone(ApiResponse.VIETNAM_ZONE).toInstant();
+                    predicates.add(cb.lessThanOrEqualTo(root.get("punchTimestamp"), toInstant));
+                }
+                if (StringUtils.hasText(criteria.department())) {
+                    predicates.add(cb.equal(root.get("user").get("department"), criteria.department().trim()));
+                }
+                if (criteria.status() != null) {
+                    predicates.add(cb.equal(root.get("status"), criteria.status()));
+                }
+                if (StringUtils.hasText(criteria.keyword())) {
+                    String kw = "%" + criteria.keyword().trim().toLowerCase() + "%";
+                    Predicate nameMatch = cb.like(cb.lower(root.get("user").get("fullName")), kw);
+                    Predicate codeMatch = cb.like(cb.upper(root.get("user").get("employeeCode")), kw.toUpperCase());
+                    predicates.add(cb.or(nameMatch, codeMatch));
+                }
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<AttendanceLog> page = attendanceLogRepository.findAll(spec, pageable);
+        return PageResponse.map(page, log -> {
+            User u = log.getUser();
+            return new AttendanceLogItem(
+                    log.getId(),
+                    u != null ? u.getId() : null,
+                    u != null ? u.getEmployeeCode() : null,
+                    u != null ? u.getFullName() : null,
+                    u != null ? u.getDepartment() : null,
+                    log.getPunchTimestamp().atZone(ApiResponse.VIETNAM_ZONE).toOffsetDateTime(),
+                    log.getPunchType(),
+                    log.getVerificationMethod(),
+                    log.getStatus(),
+                    log.getLateMinutes() != null ? log.getLateMinutes() : 0,
+                    log.getKiosk() != null ? log.getKiosk().getId() : null
+            );
+        });
     }
 }
 
