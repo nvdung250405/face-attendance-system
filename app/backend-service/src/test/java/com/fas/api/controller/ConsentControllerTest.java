@@ -2,11 +2,9 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.request.ConsentRequest;
 import com.fas.api.dto.response.ConsentResult;
-import com.fas.api.dto.response.ConsentWithdrawalResponse;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
 import com.fas.data.repository.UserRepository;
-import com.fas.service.ConsentWithdrawalService;
 import com.fas.service.EnrollmentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +20,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.security.Principal;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
@@ -35,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Bộ kiểm thử REST Controller cho ConsentController
- * (API-BE-010, API-BE-041, APD-BE-002, FR-BE-005, FR-BE-022, TASK-BE-020, BLD-BE-007).
+ * (API-BE-010, APD-BE-002, FR-BE-005, TASK-BE-020, BLD-BE-007).
  */
 @ExtendWith(MockitoExtension.class)
 class ConsentControllerTest {
@@ -47,8 +44,7 @@ class ConsentControllerTest {
     @Mock
     private EnrollmentService enrollmentService;
 
-    @Mock
-    private ConsentWithdrawalService consentWithdrawalService;
+
 
     @Mock
     private UserRepository userRepository;
@@ -143,51 +139,6 @@ class ConsentControllerTest {
             mockMvc.perform(post("/api/v1/employee/consent")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
-        }
-    }
-
-    @Nested
-    @DisplayName("2. Rút cam kết Informed Consent (POST /api/v1/employee/consent/withdraw - API-BE-041)")
-    class WithdrawConsentTests {
-
-        @Test
-        @DisplayName("Rút cam kết thành công trả về 200 OK")
-        void withdrawConsent_Success() throws Exception {
-            Principal mockPrincipal = () -> "dung.nv@company.com";
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
-
-            ConsentWithdrawalResponse response = new ConsentWithdrawalResponse(
-                    1L, 1042L, "NV-1042",
-                    Instant.parse("2026-10-10T08:00:00Z"),
-                    "192.168.1.100",
-                    Instant.parse("2026-10-17T08:00:00Z"),
-                    null,
-                    Instant.parse("2026-10-10T08:00:00Z")
-            );
-
-            when(consentWithdrawalService.withdrawConsent(eq(1042L), any())).thenReturn(response);
-
-            mockMvc.perform(post("/api/v1/employee/consent/withdraw")
-                            .principal(mockPrincipal)
-                            .with(req -> {
-                                req.setRemoteAddr("192.168.1.100");
-                                return req;
-                            }))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.code").value("CONSENT_WITHDRAWN"))
-                    .andExpect(jsonPath("$.data.userId").value(1042))
-                    .andExpect(jsonPath("$.data.employeeCode").value("NV-1042"));
-
-            verify(consentWithdrawalService).withdrawConsent(eq(1042L), eq("192.168.1.100"));
-        }
-
-        @Test
-        @DisplayName("Rút cam kết khi chưa đăng nhập -> trả về 403 Forbidden")
-        void withdrawConsent_Unauthenticated_Returns403() throws Exception {
-            mockMvc.perform(post("/api/v1/employee/consent/withdraw"))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
         }

@@ -3,11 +3,9 @@ package com.fas.api.controller;
 import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.request.ConsentRequest;
 import com.fas.api.dto.response.ConsentResult;
-import com.fas.api.dto.response.ConsentWithdrawalResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
 import com.fas.data.repository.UserRepository;
-import com.fas.service.ConsentWithdrawalService;
 import com.fas.service.EnrollmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -23,7 +21,7 @@ import java.security.Principal;
 
 /**
  * REST Controller Quản lý Thỏa thuận Informed Consent của Nhân viên
- * (APD-BE-002, API-BE-010, API-BE-041, FR-BE-005, FR-BE-022, BLD-BE-007, TASK-BE-020).
+ * (APD-BE-002, API-BE-010, FR-BE-005, BLD-BE-007, TASK-BE-020).
  *
  * <p>Yêu cầu xác thực: Người dùng đã đăng nhập hệ thống (mọi vai trò hợp lệ).</p>
  */
@@ -33,15 +31,12 @@ import java.security.Principal;
 public class ConsentController {
 
     private final EnrollmentService enrollmentService;
-    private final ConsentWithdrawalService consentWithdrawalService;
     private final UserRepository userRepository;
 
     public ConsentController(
             EnrollmentService enrollmentService,
-            ConsentWithdrawalService consentWithdrawalService,
             UserRepository userRepository) {
         this.enrollmentService = enrollmentService;
-        this.consentWithdrawalService = consentWithdrawalService;
         this.userRepository = userRepository;
     }
 
@@ -67,28 +62,6 @@ public class ConsentController {
 
         ConsentResult result = enrollmentService.createConsentSession(userId, request, clientIp);
         return ApiResponse.ok("CONSENT_ACCEPTED", "Tiếp nhận cam kết thành công. Vui lòng đến trạm Kiosk để quét mặt.", result);
-    }
-
-    /**
-     * Rút lại thỏa thuận Informed Consent (POST /api/v1/employee/consent/withdraw - API-BE-041).
-     *
-     * @param servletRequest đối tượng request để trích xuất IP client
-     * @param principal      thông tin người dùng hiện tại
-     * @param headerUserId   mã định danh nhân viên dự phòng từ header
-     * @return kết quả rút cam kết gồm mốc thời gian và hạn tiêu hủy dữ liệu sinh trắc kèm HTTP 200 OK
-     */
-    @PostMapping("/withdraw")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<ConsentWithdrawalResponse> withdrawConsent(
-            HttpServletRequest servletRequest,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long headerUserId) {
-
-        Long userId = resolveCallerUserId(principal, headerUserId);
-        String clientIp = resolveClientIp(servletRequest);
-
-        ConsentWithdrawalResponse result = consentWithdrawalService.withdrawConsent(userId, clientIp);
-        return ApiResponse.ok("CONSENT_WITHDRAWN", "Rút cam kết Informed Consent thành công", result);
     }
 
     private Long resolveCallerUserId(Principal principal, Long headerUserId) {
