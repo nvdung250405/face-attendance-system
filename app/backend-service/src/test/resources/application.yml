@@ -40,3 +40,6 @@ fas:
 
   compliance:
     data-retention-days: 20
+
+  bootstrap:
+    enabled: false

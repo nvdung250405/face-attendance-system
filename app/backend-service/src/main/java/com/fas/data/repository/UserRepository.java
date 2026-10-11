@@ -31,6 +31,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     boolean existsByEmployeeCode(String employeeCode);
 
+    boolean existsByRole(Role role);
+
     Page<User> findByStatus(EmployeeStatus status, Pageable pageable);
 
     Page<User> findByDepartment(String department, Pageable pageable);
