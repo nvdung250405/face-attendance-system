@@ -1,5 +1,6 @@
 package com.fas.api.controller;
 
+import com.fas.api.dto.request.ChangePasswordRequest;
 import com.fas.api.dto.request.LoginRequest;
 import com.fas.api.dto.request.RefreshTokenRequest;
 import com.fas.api.dto.response.AuthenticatedUser;
@@ -8,8 +9,11 @@ import com.fas.api.dto.response.TokenResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.enums.EmployeeStatus;
 import com.fas.data.enums.Role;
+import com.fas.data.repository.UserRepository;
+import com.fas.service.AccountManagementService;
 import com.fas.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +27,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.security.Principal;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +51,12 @@ class AuthControllerTest {
 
     @Mock
     private AuthService authService;
+
+    @Mock
+    private AccountManagementService accountManagementService;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private AuthController authController;
@@ -184,6 +197,100 @@ class AuthControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        }
+    }
+
+    @Nested
+    @DisplayName("3. Đổi mật khẩu tự nguyện (POST /api/v1/auth/change-password)")
+    class ChangePasswordTests {
+
+        private final Principal mockPrincipal = () -> "dung.nv@company.com";
+
+        @Test
+        @DisplayName("Đổi mật khẩu thành công trả về 200 OK")
+        void changePassword_Success_Returns200() throws Exception {
+            ChangePasswordRequest request = new ChangePasswordRequest("OldPassword@123", "NewPassword@123", "NewPassword@123");
+            User user = User.builder().id(1042L).email("dung.nv@company.com").build();
+
+            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(user));
+            doNothing().when(accountManagementService).changePassword(eq(1042L), any(ChangePasswordRequest.class));
+
+            mockMvc.perform(post("/api/v1/auth/change-password")
+                            .principal(mockPrincipal)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.code").value("PASSWORD_CHANGED"))
+                    .andExpect(jsonPath("$.message").value("Đổi mật khẩu thành công"));
+
+            verify(accountManagementService).changePassword(eq(1042L), any(ChangePasswordRequest.class));
+        }
+
+        @Test
+        @DisplayName("Sai mật khẩu hiện tại -> trả về 401 Unauthorized")
+        void changePassword_WrongCurrentPassword_Returns401() throws Exception {
+            ChangePasswordRequest request = new ChangePasswordRequest("WrongPassword@123", "NewPassword@123", "NewPassword@123");
+            User user = User.builder().id(1042L).email("dung.nv@company.com").build();
+
+            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(user));
+            doThrow(new ApiException(ApiErrorCode.AUTH_INVALID_CREDENTIALS, "Mật khẩu hiện tại không chính xác"))
+                    .when(accountManagementService).changePassword(eq(1042L), any(ChangePasswordRequest.class));
+
+            mockMvc.perform(post("/api/v1/auth/change-password")
+                            .principal(mockPrincipal)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("AUTH_INVALID_CREDENTIALS"));
+        }
+
+        @Test
+        @DisplayName("Mật khẩu mới trùng mật khẩu hiện tại -> trả về 400 Bad Request")
+        void changePassword_SamePassword_Returns400() throws Exception {
+            ChangePasswordRequest request = new ChangePasswordRequest("CurrentPassword@123", "CurrentPassword@123", "CurrentPassword@123");
+            User user = User.builder().id(1042L).email("dung.nv@company.com").build();
+
+            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(user));
+            doThrow(new ApiException(ApiErrorCode.VALIDATION_FAILED, "Mật khẩu mới phải khác mật khẩu hiện tại"))
+                    .when(accountManagementService).changePassword(eq(1042L), any(ChangePasswordRequest.class));
+
+            mockMvc.perform(post("/api/v1/auth/change-password")
+                            .principal(mockPrincipal)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        }
+
+        @Test
+        @DisplayName("Mật khẩu xác nhận không khớp -> trả về 400 Bad Request")
+        void changePassword_ConfirmMismatch_Returns400() throws Exception {
+            ChangePasswordRequest request = new ChangePasswordRequest("CurrentPassword@123", "NewPassword@123", "MismatchPassword@123");
+            User user = User.builder().id(1042L).email("dung.nv@company.com").build();
+
+            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(user));
+            doThrow(new ApiException(ApiErrorCode.VALIDATION_FAILED, "Mật khẩu xác nhận không khớp"))
+                    .when(accountManagementService).changePassword(eq(1042L), any(ChangePasswordRequest.class));
+
+            mockMvc.perform(post("/api/v1/auth/change-password")
+                            .principal(mockPrincipal)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        }
+
+        @Test
+        @DisplayName("Chưa đăng nhập (thiếu Principal) -> trả về 403 Forbidden")
+        void changePassword_Unauthenticated_Returns403() throws Exception {
+            ChangePasswordRequest request = new ChangePasswordRequest("OldPassword@123", "NewPassword@123", "NewPassword@123");
+
+            mockMvc.perform(post("/api/v1/auth/change-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
         }
     }
 }
