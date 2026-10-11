@@ -5,6 +5,7 @@ import com.fas.data.enums.PunchType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -13,7 +14,7 @@ import java.time.Instant;
  * Spring Data JPA Repository cho thực thể AttendanceLog (DATA-BE-004 - attendance_logs).
  */
 @Repository
-public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Long>, AttendanceLogBatchRepository {
+public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Long>, AttendanceLogBatchRepository, JpaSpecificationExecutor<AttendanceLog> {
 
     Page<AttendanceLog> findByUserId(Long userId, Pageable pageable);
 

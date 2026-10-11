@@ -1,7 +1,9 @@
 package com.fas.service;
 
+import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.ChangePasswordRequest;
 import com.fas.api.dto.request.CreateEmployeeRequest;
+import com.fas.api.dto.request.EmployeeSearchCriteria;
 import com.fas.api.dto.request.UpdateEmployeeRequest;
 import com.fas.api.dto.request.UpdateEmployeeStatusRequest;
 import com.fas.api.dto.response.CreateEmployeeResponse;
@@ -17,7 +19,12 @@ import com.fas.data.repository.RefreshTokenRepository;
 import com.fas.data.repository.UserRepository;
 import com.fas.service.audit.AuditContextHolder;
 import com.fas.service.audit.Auditable;
+import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +34,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -374,5 +381,40 @@ public class AccountManagementService {
             chars[j] = temp;
         }
         return new String(chars);
+    }
+
+    /**
+     * Tra cứu và phân trang danh sách nhân sự cho HR/Quản trị (GET /api/v1/admin/employees - API-BE-011).
+     *
+     * @param criteria điều kiện lọc (status, department, keyword)
+     * @param pageable thông tin phân trang
+     * @return danh sách nhân sự phân trang
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<EmployeeItem> getEmployees(EmployeeSearchCriteria criteria, Pageable pageable) {
+        Specification<User> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (criteria != null) {
+                if (criteria.status() != null) {
+                    predicates.add(cb.equal(root.get("status"), criteria.status()));
+                }
+                if (StringUtils.hasText(criteria.department())) {
+                    predicates.add(cb.equal(root.get("department"), criteria.department().trim()));
+                }
+                if (StringUtils.hasText(criteria.keyword())) {
+                    String kw = "%" + criteria.keyword().trim().toLowerCase() + "%";
+                    Predicate nameMatch = cb.like(cb.lower(root.get("fullName")), kw);
+                    Predicate codeMatch = cb.like(cb.upper(root.get("employeeCode")), kw.toUpperCase());
+                    Predicate emailMatch = cb.like(cb.lower(root.get("email")), kw);
+                    predicates.add(cb.or(nameMatch, codeMatch, emailMatch));
+                }
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<User> page = userRepository.findAll(spec, pageable);
+        return PageResponse.map(page, this::toEmployeeItem);
     }
 }
