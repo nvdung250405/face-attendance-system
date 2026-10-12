@@ -73,6 +73,7 @@ Tài liệu này là lớp kế hoạch thi công (Execution Planning) giữa c�
 | `TASK-BE-041` | Tích hợp Swagger UI & OpenAPI Specification                       | Cấu hình `springdoc-openapi-starter-webmvc-ui`, mở quyền truy cập `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html` trên `SecurityFilterChain` và cấu hình Bearer JWT Auth Scheme cho Swagger UI.                                   | `FND-BE-007` |                       `TASK-BE-022`                        | Wave 12 | Truy cập `/v3/api-docs` trả về OpenAPI JSON spec hợp lệ; Swagger UI hiển thị thông suốt không bị chặn 401; kiểm thử tích hợp OpenApiIntegrationTest pass 100%.                                      |  Done  |
 | `TASK-BE-042` | Đóng gói Dockerfile & Quản lý Khởi chạy Tập trung qua Docker Compose | Xây dựng multi-stage `Dockerfile` (Java 21 / Alpine), tạo script quản lý `scripts/manage-services.ps1`, và kiểm chứng khởi chạy tập trung `fas-postgres` và `fas-backend` qua Docker Compose.                                            | `FND-BE-006` |                       `TASK-BE-041`                        | Wave 13 | Container `fas-backend` và `fas-postgres` build & up thành công trong cùng Docker network `fas-net`; Swagger UI và Actuator health phản hồi HTTP 200 từ localhost:8080.                            |  Done  |
 | `TASK-BE-043` | Lập trình Bộ Khung Kiểm thử Hợp đồng & Giả lập Tích hợp Backend   | Xây dựng bộ mock contracts, test fixtures và integration harness cho REST API và WebSocket STOMP phục vụ ghép nối với Kiosk App và Web Portal.                                                              | `FND-BE-008` |                       `TASK-BE-022`                        | Wave 12 | Bộ mock hợp đồng, mock responses (kèm sync batch, STOMP event fixtures) hoạt động ổn định; contract tests kiểm chứng đúng định dạng DTO cho Kiosk và Portal.                                          |  Done  |
+| `TASK-BE-044` | Lập trình Kiosk Health Endpoint & Kịch bản Dữ liệu Mẫu E2E        | Xây dựng endpoint `GET /api/v1/kiosk/health` công khai (`permitAll`) phản hồi trạng thái `UP` cho Kiosk App, cấu hình Spring Security, và chuẩn bị bộ dữ liệu mẫu (Kiosk, Ca kíp, Nhân viên phân ca) phục vụ kiểm thử E2E. | `BLD-BE-006` |                `TASK-BE-019`, `TASK-BE-042`                | Wave 14 | Endpoint `/api/v1/kiosk/health` trả về HTTP 200 trạng thái `UP` không yêu cầu xác thực; Kiosk App chuyển trạng thái mạng sang ONLINE (xanh lá); kịch bản dữ liệu mẫu nạp thành công 1 Kiosk, 1 Ca kíp, 1 Nhân viên gán ca; test kiểm thử tích hợp đạt 100%. |  Done  |
 
 ---
 
@@ -117,7 +118,7 @@ TASK-BE-036 + TASK-BE-037 + TASK-BE-038 + TASK-BE-010 ──→ TASK-BE-039 (Lif
 
 [Integration Layer]
 TASK-BE-019 + TASK-BE-020 + TASK-BE-021 ──→ TASK-BE-022 (Full Integration)
-    ├── TASK-BE-041 (Swagger & OpenAPI Spec) ──→ TASK-BE-042 (Centralized Docker Compose) ──→ BUILD
+    ├── TASK-BE-041 (Swagger & OpenAPI Spec) ──→ TASK-BE-042 (Centralized Docker Compose) ──→ TASK-BE-044 (Kiosk Health & E2E Seed Data) ──→ BUILD
     └── TASK-BE-043 (Contract Testing & Integration Harness)
 ```
 
@@ -140,6 +141,7 @@ Wave được tính theo quy tắc Mục 14.4: `Wave(task) = 1 + max(Wave(dep))`
 - **Wave 11: Service Integration**: `TASK-BE-022`.
 - **Wave 12: API Documentation & Contract Testing**: `TASK-BE-041`, `TASK-BE-043`.
 - **Wave 13: Centralized Deployment & Container Orchestration**: `TASK-BE-042`.
+- **Wave 14: Kiosk Connectivity & E2E Readiness**: `TASK-BE-044`.
 
 ---
 
