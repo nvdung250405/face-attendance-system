@@ -58,6 +58,9 @@ Tài liệu này là lớp kế hoạch thi công giữa các đơn vị quy ho�
 | `TASK-KSK-027` | Tích hợp Toàn trình Luồng Điểm danh Biên | Ghép camera, máy trạng thái Oval, pipeline AI, ghi đệm SQLite WAL và đồng bộ HTTP/STOMP. | `BLD-KSK-018` | `TASK-KSK-017`, `TASK-KSK-020` | Wave 7 | Điểm danh thành công hiển thị thẻ xanh < 100 ms; tự lưu SQLite khi mất mạng và đồng bộ bù khi có mạng. | Ready |
 | `TASK-KSK-028` | Lập trình Thẩm định PIN Dự phòng, Vòng đời Bộ nhớ & Cấu hình Trạm | Xây dựng luồng `verify-pin` với ánh xạ lỗi 401/423 sang UI, bộ quản lý cấp phát/giải phóng mảng khung hình, vòng lặp tự phục hồi camera và `KioskConfig` nạp từ `.env`. | `BLD-KSK-019` | `TASK-KSK-017`, `TASK-KSK-018` | Wave 7 | PIN chỉ được chấp nhận khi Backend trả 200 và không tạo bản ghi khi thất bại; PIN bị khoá hiển thị đếm ngược theo `lockedUntil`; RAM biến thiên ≤ 10% sau 8 giờ; camera tự phục hồi ≤ 3 s; thiếu biến cấu hình bắt buộc thì khởi động thất bại kèm thông báo rõ. | Ready |
 | `TASK-KSK-029` | Chuẩn hóa Hợp đồng API Đồng bộ Lô Ngoại tuyến Kiosk | Chuẩn hóa payload gửi qua `POST /api/v1/kiosk/sync-batch` (`batchSize`, `batchCount`, `localQueueId`, `localId`, ISO timestamp kèm timezone, enum `VERIFICATION_FACE`/`VERIFICATION_PIN`) tương thích 100% với Backend `KioskSyncBatchRequest` và tương thích ngược với mock handler. | `BLD-KSK-011` | `TASK-KSK-020` | Wave 5 | Gửi thành công gói lô đồng bộ nhận HTTP 200 từ Backend; 15/15 unit tests của Kiosk app pass. | Ready |
+| `TASK-KSK-030` | Lập trình Cơ chế Giám sát Sức khỏe Mạng & Watchdog Camera Biên | Xây dựng module watchdog tự động phát hiện mất tín hiệu camera UVC hoặc rớt mạng HTTP/WebSocket, thực hiện tái khởi động nguồn luồng video và chuyển trạng thái thẻ Oval sang cảnh báo. | `FND-KSK-010` | `TASK-KSK-020` | Wave 5 | Camera tự khôi phục kết nối trong 3 giây khi ngắt/cắm lại; mạng phục hồi kích hoạt luồng đồng bộ lô tự động không làm gián đoạn UI. | Ready |
+| `TASK-KSK-031` | Lập trình Bộ Khung Kiểm thử Hợp đồng Mạng với MockTransport | Thiết lập môi trường kiểm thử mạng không phụ thuộc backend thực với httpx.MockTransport, giả lập các mã phản hồi HTTP 200/401/423/409/500 cho các API sync-batch, verify-pin, attendance. | `FND-KSK-011` | `TASK-KSK-018` | Wave 4 | Toàn bộ suite unit/contract tests chạy thông suốt không cần mở server mạng bên ngoài; bao phủ đủ các case timeout, retry và mã lỗi. | Ready |
+| `TASK-KSK-032` | Thiết lập Fixtures Kiểm thử SQLite Cục bộ & Dọn dẹp WAL | Tạo fixture pytest quản lý CSDL tạm thời cho kiểm thử, tạo dữ liệu mẫu offline_punches, xác minh cơ chế dọn dẹp WAL checkpoint tự động. | `FND-KSK-012` | `TASK-KSK-005` | Wave 4 | Fixture cô lập hoàn toàn giữa các ca kiểm thử, không để lại file database rác hay khoá lock WAL sau khi test hoàn tất. | Ready |
 
 ---
 
@@ -72,7 +75,7 @@ TASK-KSK-001 (Virtualenv)
             │                                        └──→ TASK-KSK-021 (Camera Reader) ──→ TASK-KSK-022 (YuNet)
             │                                                                                  ├── TASK-KSK-023 (Oval Gate)
             │                                                                                  └── TASK-KSK-024 (Liveness) ──→ TASK-KSK-025 (ArcFace & Matcher)
-            ├── TASK-KSK-005 (SQLite WAL Init)  ──→ TASK-KSK-009 (WAL Smoke Test), TASK-KSK-026 (WAL Queue)
+            ├── TASK-KSK-005 (SQLite WAL Init)  ──→ TASK-KSK-009 (WAL Smoke Test), TASK-KSK-026 (WAL Queue), TASK-KSK-032 (SQLite Fixtures)
             ├── TASK-KSK-006 (Import Smoke Test)
             ├── TASK-KSK-010 (SQLite Schema)    ──→ TASK-KSK-011 (Offline Queue)
             ├── TASK-KSK-012 (RAM Gallery & Cooldown)
@@ -80,7 +83,10 @@ TASK-KSK-001 (Virtualenv)
             │                                                                        ├── TASK-KSK-016 (Result Card)
             │                                                                        └── TASK-KSK-017 (Three Modals)
             └── TASK-KSK-018 (HTTP Client)      ──→ TASK-KSK-019 (STOMP Worker)
-                                                └──→ TASK-KSK-020 (Offline Sync Worker) ──→ TASK-KSK-029 (Sync Contract)
+                                                ├── TASK-KSK-031 (MockTransport Harness)
+                                                └── TASK-KSK-020 (Offline Sync Worker)
+                                                        ├── TASK-KSK-029 (Sync Contract)
+                                                        └── TASK-KSK-030 (Edge Watchdog)
 
 [Integration Layer]
 TASK-KSK-017 + TASK-KSK-020 + TASK-KSK-029 ──→ TASK-KSK-027 (Edge Full Integration) ──→ BUILD
@@ -93,8 +99,8 @@ TASK-KSK-017 + TASK-KSK-020 + TASK-KSK-029 ──→ TASK-KSK-027 (Edge Full Int
 * **Wave 1: Foundation Toolchain**: `TASK-KSK-001`.
 * **Wave 2: Dependencies & Requirements**: `TASK-KSK-002`.
 * **Wave 3: AI Models, Camera, SQLite, HTTP & Design Tokens**: `TASK-KSK-003`, `TASK-KSK-004`, `TASK-KSK-005`, `TASK-KSK-006`, `TASK-KSK-010`, `TASK-KSK-012`, `TASK-KSK-013`, `TASK-KSK-018`.
-* **Wave 4: Environment Smoke Tests, Layout, Offline Queue & Sync**: `TASK-KSK-007`, `TASK-KSK-008`, `TASK-KSK-009`, `TASK-KSK-011`, `TASK-KSK-014`, `TASK-KSK-019`, `TASK-KSK-020`, `TASK-KSK-021`, `TASK-KSK-026`.
-* **Wave 5: Vision Detection, Oval UI State Machine & Sync Contract**: `TASK-KSK-015`, `TASK-KSK-022`, `TASK-KSK-029`.
+* **Wave 4: Environment Smoke Tests, Layout, Offline Queue, Sync & Test Fixtures**: `TASK-KSK-007`, `TASK-KSK-008`, `TASK-KSK-009`, `TASK-KSK-011`, `TASK-KSK-014`, `TASK-KSK-019`, `TASK-KSK-020`, `TASK-KSK-021`, `TASK-KSK-026`, `TASK-KSK-031`, `TASK-KSK-032`.
+* **Wave 5: Vision Detection, Oval UI State Machine, Sync Contract & Watchdog**: `TASK-KSK-015`, `TASK-KSK-022`, `TASK-KSK-029`, `TASK-KSK-030`.
 * **Wave 6: Liveness, Result Card & Modals**: `TASK-KSK-016`, `TASK-KSK-017`, `TASK-KSK-023`, `TASK-KSK-024`.
 * **Wave 7: ArcFace Matcher, Edge Integration & PIN Fallback**: `TASK-KSK-025`, `TASK-KSK-027`, `TASK-KSK-028`.
 
