@@ -29,32 +29,54 @@ updated: 2026-10-08
 
 ---
 
-## 2. Hệ thống Design Tokens & Visual Language (Tailwind Tokens)
+## 2. Hệ thống Design Tokens & Visual Language (Chuẩn Figma & Tailwind)
 
-### 2.1. Bảng Màu Chuẩn Doanh nghiệp (Tailwind Color Tokens)
-Toàn bộ Cổng Web Portal sử dụng bảng màu **Indigo Clean SaaS** hiện đại, mang lại cảm giác tin cậy và chuyên nghiệp cho khối quản trị nhân sự:
+### 2.1. Bảng Màu Chuẩn Doanh nghiệp (Figma & Tailwind Color Tokens)
+Toàn bộ Cổng Web Portal hiện thực hóa chính xác bảng màu trích xuất từ file thiết kế Figma `cjujVstyrnFOPulVcNfAXX` kết hợp phong cách **Indigo Clean SaaS** hiện đại:
 
-| Tên Token Màu | Mã Màu Hex | Lớp Tailwind CSS Tương ứng | Vai trò Áp dụng trong Giao diện |
+| Tên Token Màu | Mã Màu Hex | Lớp Tailwind CSS Tương ứng | Vai trò Áp dụng trong Giao diện Figma |
 | :--- | :--- | :--- | :--- |
+| `color_brand_dark_navy` | `#102D53` | `slate-950` / custom | Nền không gian thương hiệu màn hình Đăng nhập (Figma `3:23919`). |
+| `color_brand_navy_card` | `#1E3A5F` | custom | Card bề mặt bên trong vùng thương hiệu Navy tối. |
+| `color_brand_light_blue` | `#80B4FF` | `blue-300` | Text phụ và icon nhấn trên nền thương hiệu Dark Navy. |
 | `color_brand_primary` | `#4F46E5` | `indigo-600` | Màu thương hiệu chính, nút tác vụ chính, icon active. |
 | `color_brand_hover` | `#4338CA` | `indigo-700` | Trạng thái hover của nút bấm chính. |
 | `color_brand_light` | `#EEF2FF` | `indigo-50` | Nền menu mục đang chọn, badge thương hiệu nhẹ. |
-| `color_bg_app` | `#F8FAFC` | `slate-50` | Nền toàn bộ ứng dụng Web (Canvas Background). |
+| `color_bg_app` | `#F3F6FA` | `slate-100` / custom | Nền canvas toàn bộ ứng dụng Web theo chuẩn Figma canvas. |
 | `color_surface_card` | `#FFFFFF` | `white` | Nền các thẻ card dữ liệu, bảng, hộp thoại modal. |
 | `color_border_subtle` | `#E2E8F0` | `slate-200` | Đường kẻ bảng, viền thẻ card, đường phân cách header. |
 | `color_text_primary` | `#0F172A` | `slate-900` | Tiêu đề chính, nội dung bảng, con số thống kê lớn. |
 | `color_text_secondary` | `#64748B` | `slate-500` | Chú thích phụ, nhãn cột bảng, mốc thời gian. |
-| `color_status_success` | `#10B981` | `emerald-500` | Trạng thái "Đúng giờ", kết nối WebSocket trực tiếp. |
-| `color_status_warning` | `#F59E0B` | `amber-500` | Trạng thái "Đi muộn", cảnh báo mạng chập chờn. |
-| `color_status_danger` | `#EF4444` | `rose-500` | Trạng thái "Chưa đến", "Vắng mặt", cảnh báo lỗi. |
+| `color_status_success` | `#10B981` | `emerald-500` | Trạng thái "Đúng giờ", kết nối WebSocket trực tiếp (`#ECFDF5`). |
+| `color_status_warning` | `#F59E0B` | `amber-500` | Trạng thái "Đi muộn", cảnh báo mạng chập chờn (`#FFFBEB`). |
+| `color_status_danger` | `#EF4444` | `rose-500` | Trạng thái "Chưa đến", "Vắng mặt", cảnh báo lỗi (`#FEF2F2`). |
 
 ### 2.2. Thang Typography & Spacing
-* Phông chữ cơ sở: **Inter** (Google Fonts) hỗ trợ chữ số dạng Tabular Monospace cho bảng biểu.
+* Phông chữ cơ sở: **Inter** (Google Fonts) hỗ trợ chữ số dạng Tabular Monospace (`font-variant-numeric: tabular-nums`) cho bảng biểu.
 * Tiêu đề Trang (`h1`): Font $30\text{ px}$ (`text-3xl`), Bold, `text-slate-900`.
 * Tiêu đề Khu vực / Thẻ (`h2`): Font $20\text{ px}$ (`text-xl`), Semi-Bold.
 * Tiêu đề Cột Bảng (`th`): Font $12\text{ px}$ (`text-xs`), Medium, Uppercase, `text-slate-500`.
 * Nội dung Dòng Bảng (`td`): Font $14\text{ px}$ (`text-sm`), Regular, `text-slate-800`.
-* Bán kính bo góc: Thẻ card bo `rounded-xl` ($12\text{ px}$), Nút bấm bo `rounded-lg` ($8\text{ px}$).
+* Bán kính bo góc: Thẻ card bo `rounded-xl` ($12\text{ px}$), Nút bấm & Input bo `rounded-lg` ($8\text{ px}$).
+
+---
+
+### 2.3. Bảng Ánh xạ Khung Giao diện Figma (Figma Frame Mapping Matrix)
+Toàn bộ giao diện thi công bám sát 11 Frame chuẩn từ file thiết kế [FAS Figma Project (cjujVstyrnFOPulVcNfAXX)](https://www.figma.com/design/cjujVstyrnFOPulVcNfAXX/Untitled?node-id=0-1):
+
+| Node ID | Tên Khung Figma | Kích thước | Liên kết Đặc tả | Thành phần & Trách nhiệm Giao diện |
+| :---: | :--- | :---: | :---: | :--- |
+| `3:23918` | `FAS · Đăng nhập` | $1440\times 1000$ | `UI-WEB-001`, `UXD-WEB-001` | Split-Screen: Cột trái Brand Space $650\text{ px}$ (`#102D53`), Cột phải Form Đăng nhập $790\text{ px}$ (`#FFFFFF`). |
+| `3:23971` | `FAS · Cam kết chưa đọc hết` | $1440\times 1000$ | `UI-WEB-002`, `UXD-WEB-002` | Modal Cam kết Informed Consent: Khóa nút ký khi chưa cuộn đến đáy văn bản ($100\%$). |
+| `3:24074` | `FAS · Cam kết sẵn sàng ký` | $1440\times 1000$ | `UI-WEB-002`, `UXD-WEB-002` | Mở khóa nút "Xác nhận & Ký cam kết điện tử" sau khi cuộn hết văn bản điều khoản pháp lý. |
+| `3:24178` | `FAS · Chờ kích hoạt tại Kiosk` | $1440\times 1000$ | `UI-WEB-002`, `UXD-WEB-002` | Hộp OTP 6 số kích thước lớn ($44\text{ px}$ bold), QR Code $200\times 200\text{ px}$ và đếm ngược 48h. |
+| `3:24578` | `FAS · Kích hoạt thành công` | $1440\times 1200$ | `UI-WEB-002`, `UXD-WEB-002` | Tự động chuyển cảnh thành công khi nhận thông điệp STOMP quét mặt xong tại Kiosk. |
+| `3:24853` | `FAS · Giám sát chấm công trực tiếp` | $1440\times 1160$ | `UI-WEB-003`, `UXD-WEB-003`, `UXD-WEB-004` | Dashboard HR: 4 Thẻ KPI thời gian thực + Bảng Live Table có hiệu ứng Green Flash $1.5\text{ s}$. |
+| `3:25062` | `FAS · Lịch sử và báo cáo` | $1440\times 1240$ | `UI-WEB-004` | Bộ lọc đa chiều, phân trang bảng công và thanh tác vụ xuất báo cáo. |
+| `3:25329` | `FAS · Xem trước báo cáo chấm công` | $1440\times 1320$ | `UI-WEB-004` | Modal xem trước bố cục dữ liệu xuất Excel/PDF trước khi tải về. |
+| `3:25513` | `FAS · Bảng công cá nhân tháng 9` | $1440\times 1100$ | `UI-WEB-005`, `UXD-WEB-005` | Employee Portal: Calendar Grid 7 cột theo tháng, ô ngày tô màu theo trạng thái. |
+| `3:25772` | `FAS · Chi tiết ngày 15 tháng 9` | $1440\times 1100$ | `UI-WEB-005`, `UXD-WEB-005` | Drawer trượt từ bên phải ($420\text{ px}$) hiển thị chi tiết các lượt quẹt thẻ trong ngày. |
+| `3:26077` | `FAS · Tham chiếu phản hồi & hành vi` | $1440\times 1842$ | `UXD-WEB-007` | Hướng dẫn trạng thái tương tác: loading spinner, toast, empty state, badges. |
 
 ---
 
@@ -150,7 +172,61 @@ graph TD
 
 ---
 
-## 6. Quy chuẩn Thích ứng Đa Màn hình (Responsive Breakpoints)
+## 6. Đặc tả Chi tiết Màn hình Đăng nhập (FAS · Đăng nhập — Figma `3:23918`)
+
+```text
+┌──────────────────────────────────────┬────────────────────────────────────────────┐
+│  CỘT TRÁI: KHÔNG GIAN THƯƠNG HIỆU    │  CỘT PHẢI: KHU VỰC ĐĂNG NHẬP               │
+│  (Width: 650px, Background: #102D53) │  (Width: 790px, Background: #FFFFFF)       │
+├──────────────────────────────────────┼────────────────────────────────────────────┤
+│                                      │                                            │
+│  [Logo FAS 35x35px] FAS              │           Đăng nhập tài khoản              │
+│                                      │           Chào mừng quay trở lại FAS       │
+│  Hệ thống Điểm danh Khuôn mặt        │                                            │
+│  Doanh nghiệp Chuẩn xác & An toàn    │       ┌─────────────────────────────┐      │
+│                                      │       │ Email doanh nghiệp          │      │
+│  • Nhận diện trực tiếp < 100ms       │       │ [ admin@fas.com           ] │      │
+│  • Tuân thủ Nghị định 13/2023        │       └─────────────────────────────┘      │
+│  • Không lưu ảnh thô trên máy trạm   │                                            │
+│                                      │       ┌─────────────────────────────┐      │
+│                                      │       │ Mật khẩu                    │      │
+│  [Card] Cam kết bảo vệ dữ liệu       │       │ [ ••••••••••••         (👁) ] │      │
+│  Dữ liệu cá nhân được tôn trọng      │       └─────────────────────────────┘      │
+│  và bảo vệ nghiêm ngặt.              │                                            │
+│                                      │       [X] Ghi nhớ đăng nhập   Quên mật khẩu?│
+│                                      │                                            │
+│  FAS · Không gian làm việc của bạn   │       ┌─────────────────────────────┐      │
+│                                      │       │   [ Đăng nhập hệ thống ]    │      │
+│                                      │       └─────────────────────────────┘      │
+└──────────────────────────────────────┴────────────────────────────────────────────┘
+```
+
+* **Cột trái (Brand Space — $650\text{ px}$)**:
+  * Nền: `#102D53`, Padding: $64\text{ px}$, Khoảng cách giữa các khối (`itemSpacing`): $36\text{ px}$.
+  * Badge logo: Nền trắng $12.5\%$ bo góc $8\text{ px}$, icon `scan-face` ($21\times 21\text{ px}$), chữ `FAS` màu trắng font Inter $24\text{ px}$ bold.
+  * Khối cam kết dưới đáy: Icon `lock-keyhole` màu `#A7C9F6`, text "Dữ liệu cá nhân được tôn trọng và bảo vệ." (font 12px, màu `#B5C8E1`), nhãn phụ "FAS · Không gian làm việc của bạn" (font 11px, màu `#809DBF`).
+* **Cột phải (Auth Form — $790\text{ px}$)**:
+  * Nền: `#FFFFFF`, Container form căn giữa (max-width: $440\text{ px}$).
+  * Input: Chiều cao $44\text{ px}$, viền `#E2E8F0`, bo góc $8\text{ px}$, focus outline `#4F46E5`.
+  * Nút bấm: Màu thương hiệu `#4F46E5` (hover `#4338CA`), chiều cao $46\text{ px}$, bo góc $8\text{ px}$, chữ trắng bold $15\text{ px}$, tích hợp spinner khi đang gửi yêu cầu xác thực.
+
+---
+
+## 7. Đặc tả Chi tiết Lịch biểu Cá nhân & Drawer (Figma `3:25513` & `3:25772`)
+
+* **Lưới Tháng Calendar Grid (`3:25513`)**:
+  * Bố cục 7 cột (Thứ Hai $\rightarrow$ Chủ Nhật), tiêu đề cột in hoa xám nhạt (`text-xs font-semibold text-slate-500`).
+  * Mỗi ô ngày: Kích thước linh hoạt, viền `#E2E8F0`, số ngày góc trên bên trái, bên dưới chứa huy hiệu giờ:
+    * Giờ vào (`CHECK_IN`): Màu xanh ngọc `#059669` trên nền `#ECFDF5`.
+    * Giờ ra (`CHECK_OUT`): Màu tím đậm `#4338CA` trên nền `#EEF2FF`.
+    * Ngày đi muộn: Thêm chấm cảnh báo màu cam `#F59E0B`.
+* **Drawer Chi tiết Ngày (`3:25772`)**:
+  * Chiều rộng: $420\text{ px}$, trượt từ cạnh phải với hiệu ứng chuyển động $250\text{ ms}$ Ease-Out.
+  * Nội dung: Tiêu đề ngày tháng, tổng số giờ làm việc thực tế, danh sách chi tiết các lượt quẹt thẻ (giờ chính xác đến giây, phương thức Khuôn mặt/PIN, mã trạm Kiosk và trạng thái thẩm định).
+
+---
+
+## 8. Quy chuẩn Thích ứng Đa Màn hình (Responsive Breakpoints)
 
 | Breakpoint | Kích thước Màn hình | Hành vi Biến đổi Bố cục |
 | :--- | :--- | :--- |
