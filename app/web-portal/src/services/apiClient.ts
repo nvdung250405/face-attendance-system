@@ -7,6 +7,7 @@ import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axio
 import type { AuthSession } from '@/types'
 
 import { safeLocalStorage } from './storage'
+import { attachTokenRefreshInterceptor } from './tokenRefreshInterceptor'
 
 export const AUTH_STORAGE_KEY = 'fas_auth_session'
 export const DEFAULT_TIMEOUT_MS = 10000 // 10.0 giây theo SLA đặc tả DD-WEB-008
@@ -74,6 +75,7 @@ export function createApiClient(customBaseUrl?: string, timeoutMs: number = DEFA
   })
 
   attachRequestInterceptor(client)
+  attachTokenRefreshInterceptor(client)
   return client
 }
 
