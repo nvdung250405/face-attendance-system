@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import type { AttendanceStatus, UserRole } from '@/types'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 
 function App() {
   const [count, setCount] = useState(0)
+  const defaultRole: UserRole = 'HR_MANAGER'
+  const sampleStatus: AttendanceStatus = 'ON_TIME'
 
   return (
     <main className="min-h-screen bg-bg-app text-text-primary p-8 flex flex-col items-center justify-center">
@@ -31,10 +34,10 @@ function App() {
 
         <div className="flex flex-wrap gap-2 justify-center py-2">
           <span className="px-3 py-1 bg-brand-light text-brand-primary text-xs font-medium rounded-full">
-            Brand Indigo
+            Vai trò mặc định: {defaultRole}
           </span>
           <span className="px-3 py-1 bg-emerald-50 text-status-success text-xs font-medium rounded-full">
-            Đúng giờ
+            Trạng thái mẫu: {sampleStatus}
           </span>
           <span className="px-3 py-1 bg-amber-50 text-status-warning text-xs font-medium rounded-full">
             Đi muộn
