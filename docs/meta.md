@@ -1,11 +1,11 @@
 ---
 title: Metadata & Quy ước Quản trị Bộ tài liệu SDLC
-version: 4.0
+version: 4.1
 status: Approved
 owner: Lead System Architect
 type: meta
 scope: PROJECT
-updated: 2026-10-08
+updated: 2026-10-12
 ---
 
 # META — Metadata & Quy ước Quản trị Bộ tài liệu SDLC
@@ -33,7 +33,7 @@ docs/
 │   │
 │   └── plans/                                   # PLAN — Kế hoạch Cấp Hệ thống
 │       ├── project-plan.md                      # Kế hoạch tổng thể, giai đoạn, mốc (PRJ-), vai trò (ROL-), rủi ro (RSK-)
-│       ├── foundation-setup-plan.md             # Kế hoạch chuẩn bị nền tảng chung toàn hệ thống (FND-SYS-)
+│       ├── foundation-setup-plan.md             # Kế hoạch chuẩn bị nền tảng chung, mạng Docker nội bộ & điều khiển dịch vụ (FND-SYS-)
 │       ├── test-plan.md                         # Kế hoạch kiểm thử tích hợp & nghiệm thu hệ thống (TST-SYS-)
 │       └── deploy-plan.md                       # Kế hoạch phát hành, triển khai môi trường và dự phòng (DPL-SYS-)
 │
@@ -46,7 +46,7 @@ docs/
     │   │   ├── data.md                          # Thực thể CSDL PostgreSQL, lược đồ DDL, toàn vẹn (DATA-BE-, DTD-BE-)
     │   │   └── api.md                           # Ranh giới REST & STOMP, interface, contract (API-BE-, APD-BE-)
     │   └── plans/                               # PLAN — Kế hoạch thi công Backend
-    │       ├── foundation-setup-plan.md         # Foundation Setup Plan riêng của Backend (FND-BE-)
+    │       ├── foundation-setup-plan.md         # Foundation Setup Plan riêng Backend: Java 21, Docker multi-stage, OpenAPI/Actuator (FND-BE-)
     │       ├── build-plan.md                    # Kế hoạch thi công theo facet (BLD-BE-)
     │       ├── test-plan.md                     # Kế hoạch kiểm thử theo facet (TST-BE-)
     │       └── task-plan.md                     # Kế hoạch phân rã thi công, thứ tự dependency & wave (TASK-BE-)
@@ -56,10 +56,10 @@ docs/
     │   ├── specs/                               # SPEC — Yêu cầu & Thiết kế Kiosk
     │   │   ├── spec.md                          # Spec Core: Ngữ cảnh, FR-KSK-, NFR-KSK-, pipeline AI, giải pháp (SOL-KSK-), quyết định (DD-KSK-)
     │   │   ├── data.md                          # SQLite WAL, GalleryMatrix, Key Lifecycle (DATA-KSK-, DTD-KSK-)
-    │   │   ├── api.md                           # Giao tiếp HTTP Client, offline sync, STOMP (API-KSK-, APD-KSK-)
+    │   │   └── api.md                           # Giao tiếp HTTP Client, offline sync, STOMP (API-KSK-, APD-KSK-)
     │   │   └── ui-ux.md                         # Hành trình tương tác Oval, trạng thái, tokens (UI-KSK-, UXD-KSK-)
     │   └── plans/                               # PLAN — Kế hoạch thi công Kiosk
-    │       ├── foundation-setup-plan.md         # Foundation Setup Plan riêng của Kiosk (FND-KSK-)
+    │       ├── foundation-setup-plan.md         # Foundation Setup Plan riêng Kiosk: Python venv, ONNX, watchdog biên & MockTransport (FND-KSK-)
     │       ├── build-plan.md                    # Kế hoạch thi công theo facet (BLD-KSK-)
     │       ├── test-plan.md                     # Kế hoạch kiểm thử theo facet (TST-KSK-)
     │       └── task-plan.md                     # Kế hoạch phân rã thi công, thứ tự dependency & wave (TASK-KSK-)
@@ -72,7 +72,7 @@ docs/
         │   ├── api.md                           # Axios Client, interceptor, refresh token (API-WEB-, APD-WEB-)
         │   └── ui-ux.md                         # Luồng người dùng, ký cam kết, design system (UI-WEB-, UXD-WEB-)
         └── plans/                               # PLAN — Kế hoạch thi công Web Portal
-            ├── foundation-setup-plan.md         # Foundation Setup Plan riêng của Web Portal (FND-WEB-)
+            ├── foundation-setup-plan.md         # Foundation Setup Plan riêng Web Portal: React SPA, Nginx container, Reverse Proxy CORS (FND-WEB-)
             ├── build-plan.md                    # Kế hoạch thi công theo facet (BLD-WEB-)
             ├── test-plan.md                     # Kế hoạch kiểm thử theo facet (TST-WEB-)
             └── task-plan.md                     # Kế hoạch phân rã thi công, thứ tự dependency & wave (TASK-WEB-)
@@ -118,7 +118,7 @@ Mỗi phân hệ (`subsystem-docs/<subsystem-code>/`) tổ chức thành 2 thư 
 | **Data Spec & Design** | `specs/data.md` | Thực thể dữ liệu, quy tắc toàn vẹn, DDL CSDL, vòng đời dữ liệu | System Specs, `ARC-`, STACK | Build Plan, Test Plan |
 | **API Spec & Design** | `specs/api.md` | Ranh giới giao tiếp, REST/STOMP contracts, serialization | System Specs, `ARC-`, STACK | Build Plan, Test Plan |
 | **UI/UX Spec & Design** | `specs/ui-ux.md` | Tác vụ người dùng, luồng tương tác, design tokens, layout | System Specs, `ARC-`, STACK | Build Plan, Test Plan |
-| **Foundation Setup Plan** | `plans/foundation-setup-plan.md` | Kế hoạch chuẩn bị môi trường, công cụ riêng của phân hệ | System Foundation Plan, STACK, `ARC-` | `task-plan.md` |
+| **Foundation Setup Plan** | `plans/foundation-setup-plan.md` | Kế hoạch chuẩn bị môi trường, công cụ riêng, chuỗi đóng gói và kiểm thử hợp đồng của phân hệ | System Foundation Plan, STACK, `ARC-` | `task-plan.md` |
 | **Build Plan** | `plans/build-plan.md` | Kế hoạch xây dựng phân hệ; phân section theo facet (`BLD-`) | Subsystem Design elements, Foundation | `task-plan.md` / BUILD |
 | **Test Plan** | `plans/test-plan.md` | Kế hoạch kiểm thử phân hệ; phân section theo facet (`TST-`) | Subsystem Specs (trực tiếp) | Quá trình TEST |
 | **Task Plan** | `plans/task-plan.md` | Phân rã `BLD-`/`FND-` thành `TASK-`, giải quyết dependency và wave | `build-plan.md`, `foundation-setup-plan.md` | Quá trình BUILD (`TASK-`) |

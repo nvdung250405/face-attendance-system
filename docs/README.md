@@ -5,7 +5,7 @@ status: Approved
 owner: Solution Architect & SDLC Governance Lead
 type: hub
 scope: PROJECT
-updated: 2026-10-08
+updated: 2026-10-12
 ---
 
 # Danh mục Điều hướng Toàn bộ Bộ tài liệu SDLC (Master Documentation Portal)
@@ -45,8 +45,8 @@ Tài liệu Cấp Hệ thống xác lập khuôn khổ định hướng chiến 
 ### 1.3. Kế hoạch Quản lý & Vận hành Hệ thống (`system-docs/plans/`)
 | Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
 | :--- | :---: | :---: | :--- |
-| [**`system-docs/plans/project-plan.md`**](system-docs/plans/project-plan.md) | `PLN-PRJ` | `APC-SYS-`, `PRJ-`, `ROL-`, `RSK-` | Kế hoạch tổ chức, WBS 5 Phase, 6 mốc nghiệm thu (Milestones) và ma trận rủi ro hệ thống. |
-| [**`system-docs/plans/foundation-setup-plan.md`**](system-docs/plans/foundation-setup-plan.md) | `PLN-FND` | `APC-SYS-`, `FND-SYS-` | Kế hoạch chuẩn bị hạ tầng Monorepo, môi trường thực thi và chuỗi công cụ phát triển chung. |
+| [**`system-docs/plans/project-plan.md`**](system-docs/plans/project-plan.md) | `PLN-PRJ` | `APC-SYS-`, `PRJ-`, `ROL-`, `RSK-` | Kế hoạch tổ chức, WBS 5 Phase, 5 mốc nghiệm thu (Milestones), quyết định môi trường lab và ma trận rủi ro hệ thống. |
+| [**`system-docs/plans/foundation-setup-plan.md`**](system-docs/plans/foundation-setup-plan.md) | `PLN-FND` | `APC-SYS-`, `FND-SYS-` | Kế hoạch chuẩn bị hạ tầng Monorepo, mạng Docker `fas-network`, script điều khiển `manage-services.ps1`, seed CSDL và môi trường thực thi chung. |
 | [**`system-docs/plans/deploy-plan.md`**](system-docs/plans/deploy-plan.md) | `PLN-DPL` | `APC-SYS-`, `DPL-SYS-` | Kế hoạch đóng gói, phát hành, triển khai môi trường và kịch bản dự phòng khôi phục. |
 | [**`system-docs/plans/test-plan.md`**](system-docs/plans/test-plan.md) | `PLN-TST` | `APC-SYS-`, `TST-SYS-` | Kế hoạch kiểm thử tích hợp, ma trận kiểm định chất lượng toàn trình và tiêu chí nghiệm thu. |
 
@@ -66,7 +66,7 @@ Tài liệu Cấp Phân hệ đi sâu vào từng phân hệ độc lập trong 
 | **Dữ liệu Cục bộ** | [**`specs/data.md`**](subsystem-docs/kiosk-app/specs/data.md) | `KSK-DATA` | `DATA-KSK-`, `DTD-KSK-` | Hàng đợi SQLite WAL (`kiosk_local.db`), ma trận vector RAM NumPy và mã hóa DPAPI 2-phase rotation. |
 | **Giao diện Truyền thông** | [**`specs/api.md`**](subsystem-docs/kiosk-app/specs/api.md) | `KSK-API` | `API-KSK-`, `APD-KSK-` | Hợp đồng HTTP REST API (`punch`, `sync-batch`, `gallery`), kết nối WebSocket STOMP và worker đồng bộ bù. |
 | **Giao diện Người dùng** | [**`specs/ui-ux.md`**](subsystem-docs/kiosk-app/specs/ui-ux.md) | `KSK-UIUX` | `UI-KSK-`, `UXD-KSK-` | Thiết kế màn hình cảm ứng dọc 9:16, Oval 4 màu thích ứng, bàn phím số ảo PIN Pad và luồng Onboarding OTP. |
-| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/kiosk-app/plans/foundation-setup-plan.md) | `KSK-FSP` | `FND-KSK-` | Thiết lập môi trường Python 3.14, công cụ PySide6/OpenCV và kiểm định trọng số ONNX. |
+| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/kiosk-app/plans/foundation-setup-plan.md) | `KSK-FSP` | `FND-KSK-` | Thiết lập môi trường Python 3.14, PySide6/OpenCV, kiểm định ONNX, watchdog camera biên và khung test hợp đồng MockTransport. |
 | **Kế hoạch Xây dựng** | [**`plans/build-plan.md`**](subsystem-docs/kiosk-app/plans/build-plan.md) | `KSK-BLD` | `BLD-KSK-` | Kế hoạch xây dựng tổng thể phân hệ Kiosk theo các Wave và chuẩn hóa Task. |
 | **Kế hoạch Task** | [**`plans/task-plan.md`**](subsystem-docs/kiosk-app/plans/task-plan.md) | `KSK-TSK` | `TASK-KSK-` | Phân rã thi công chi tiết từng Task theo DAG và thứ tự phụ thuộc. |
 | **Kế hoạch Kiểm thử** | [**`plans/test-plan.md`**](subsystem-docs/kiosk-app/plans/test-plan.md) | `KSK-TST` | `TST-KSK-` | Ma trận kiểm thử đơn vị, chống giả mạo PAD, đồng bộ ngoại tuyến và kiểm thử ngâm tải RAM 8h. |
@@ -82,7 +82,7 @@ Tài liệu Cấp Phân hệ đi sâu vào từng phân hệ độc lập trong 
 | **Spec Core** | [**`specs/spec.md`**](subsystem-docs/backend-service/specs/spec.md) | `BE-SPEC` | `FR-BE-`, `NFR-BE-`, `SOL-BE-`, `DD-BE-` | Kiến trúc phân tầng Spring Boot 3.4.x, Java 21 LTS, 25 FR, 5 NFR, 28 giải pháp nghiệp vụ và 26 quyết định kỹ thuật (`DD-BE-001..026`). |
 | **Lưu trữ CSDL** | [**`specs/data.md`**](subsystem-docs/backend-service/specs/data.md) | `BE-DATA` | `DATA-BE-`, `DTD-BE-` | Lược đồ CSDL PostgreSQL 16, Flyway migrations (`V1`..`V5`), AES-256-GCM crypto và Caffeine cache TTL 120s. |
 | **Hợp đồng API** | [**`specs/api.md`**](subsystem-docs/backend-service/specs/api.md) | `BE-API` | `API-BE-`, `APD-BE-` | 44 REST endpoints, 3 STOMP topics, RFC 7807 Error Dictionary và chi tiết schema từng trường. |
-| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/backend-service/plans/foundation-setup-plan.md) | `BE-FSP` | `FND-BE-` | Môi trường Java 21, Maven toolchain, Spring Boot Starter và cấu hình ban đầu. |
+| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/backend-service/plans/foundation-setup-plan.md) | `BE-FSP` | `FND-BE-` | Môi trường Java 21, Maven, Spring Boot, Actuator probes, tài liệu OpenAPI 3.0, Dockerfile multi-stage và test fixtures ghép nối. |
 | **Kế hoạch Xây dựng** | [**`plans/build-plan.md`**](subsystem-docs/backend-service/plans/build-plan.md) | `BE-BLD` | `BLD-BE-` | Kế hoạch xây dựng & tích hợp tổng thể phân hệ Backend theo Wave. |
 | **Kế hoạch Task** | [**`plans/task-plan.md`**](subsystem-docs/backend-service/plans/task-plan.md) | `BE-TSK` | `TASK-BE-` | Phân rã nhiệm vụ thi công chi tiết theo DAG và thứ tự phụ thuộc. |
 | **Kế hoạch Kiểm thử** | [**`plans/test-plan.md`**](subsystem-docs/backend-service/plans/test-plan.md) | `BE-TST` | `TST-BE-` | Kiểm thử tích hợp JUnit 5, MockMvc, Testcontainers PostgreSQL 16 và Karate API. |
@@ -99,7 +99,7 @@ Tài liệu Cấp Phân hệ đi sâu vào từng phân hệ độc lập trong 
 | **Dữ liệu Client** | [**`specs/data.md`**](subsystem-docs/web-portal/specs/data.md) | `WEB-DATA` | `DATA-WEB-`, `DTD-WEB-` | Safe Storage Adapters (LocalStorage, SessionStorage), TypeScript contracts và TanStack Query cache. |
 | **Giao tiếp Mạng** | [**`specs/api.md`**](subsystem-docs/web-portal/specs/api.md) | `WEB-API` | `API-WEB-`, `APD-WEB-` | Axios client với Mutex Token Refresh Queue chống Race Condition khi gặp 401, STOMP hooks. |
 | **Giao diện Người dùng** | [**`specs/ui-ux.md`**](subsystem-docs/web-portal/specs/ui-ux.md) | `WEB-UIUX` | `UI-WEB-`, `UXD-WEB-` | Design Tokens Indigo Clean SaaS, layout Admin Shell, modal ký cam kết Nghị định 13/2023 và Calendar Grid. |
-| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/web-portal/plans/foundation-setup-plan.md) | `WEB-FSP` | `FND-WEB-` | Thiết lập môi trường Node.js 24+, Vite 8, React 19, TypeScript và Tailwind CSS 4. |
+| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/web-portal/plans/foundation-setup-plan.md) | `WEB-FSP` | `FND-WEB-` | Thiết lập Node.js 24+, Vite, React 19, Tailwind CSS, đóng gói SPA Nginx Alpine, Reverse Proxy chống CORS và mock client contract harness. |
 | **Kế hoạch Xây dựng** | [**`plans/build-plan.md`**](subsystem-docs/web-portal/plans/build-plan.md) | `WEB-BLD` | `BLD-WEB-` | Kế hoạch xây dựng & tích hợp tổng thể phân hệ Web Portal qua 5 Wave. |
 | **Kế hoạch Task** | [**`plans/task-plan.md`**](subsystem-docs/web-portal/plans/task-plan.md) | `WEB-TSK` | `TASK-WEB-` | Phân rã nhiệm vụ thi công chi tiết theo DAG và thứ tự phụ thuộc. |
 | **Kế hoạch Kiểm thử** | [**`plans/test-plan.md`**](subsystem-docs/web-portal/plans/test-plan.md) | `WEB-TST` | `TST-WEB-` | Kiểm thử Vitest, React Testing Library, MSW và Playwright E2E đa viewport. |
