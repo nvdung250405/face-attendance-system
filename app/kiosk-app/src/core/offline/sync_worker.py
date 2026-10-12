@@ -6,7 +6,7 @@ Tài liệu tham chiếu:
 - DDS.md (Mục 2.1, Mục 3.1 & Mục 4.3 - REST API /api/v1/kiosk/sync-batch)
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -146,11 +146,11 @@ class OfflineSyncWorker(QThread):
                     dt = datetime.fromisoformat(raw_time).astimezone()
                     iso_time = dt.isoformat()
                 except Exception:
-                    iso_time = datetime.now(timezone.utc).isoformat()
+                    iso_time = datetime.now(UTC).isoformat()
             elif isinstance(raw_time, datetime):
                 iso_time = raw_time.isoformat()
             else:
-                iso_time = str(raw_time) if raw_time else datetime.now(timezone.utc).isoformat()
+                iso_time = str(raw_time) if raw_time else datetime.now(UTC).isoformat()
 
             raw_method = p.get("verification_method", "VERIFICATION_FACE")
             if raw_method == "FACE":
