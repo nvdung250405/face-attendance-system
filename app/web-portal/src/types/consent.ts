@@ -3,15 +3,19 @@
  */
 
 export interface ConsentRequest {
-  consentVersion: string
-  accepted: boolean
+  consentVersion?: string
+  accepted?: boolean
+  agreed?: boolean
+  consentTimestamp?: string
 }
 
 export interface ConsentResult {
   readonly otp: string
+  readonly qrCodeData?: string
   readonly qrCodeDataUrl?: string
   readonly expiresAt: string
-  readonly consentSignedAt: string
+  readonly consentSignedAt?: string
+  readonly kioskLocations?: string[]
   readonly notice?: string
 }
 
@@ -19,8 +23,10 @@ export interface ConsentFlowSession {
   consentSigned: boolean
   otp: string
   qrCodeData: string
+  qrCodeDataUrl?: string
   expiresAt: string
   kioskTargetHint?: string
+  kioskLocations?: string[]
 }
 
 export interface ConsentWithdrawalResponse {
