@@ -24,6 +24,9 @@ function App() {
           <p className="text-sm text-text-secondary">
             Thiết kế đồng bộ Figma Tokens & Tailwind CSS 4
           </p>
+          <div className="text-xs text-text-secondary font-mono bg-slate-100 rounded px-2 py-1 inline-block">
+            API Endpoint: {import.meta.env.VITE_API_BASE_URL}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2 justify-center py-2">
