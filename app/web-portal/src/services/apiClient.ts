@@ -6,22 +6,19 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import type { AuthSession } from '@/types'
 
+import { safeLocalStorage } from './storage'
+
 export const AUTH_STORAGE_KEY = 'fas_auth_session'
 export const DEFAULT_TIMEOUT_MS = 10000 // 10.0 giây theo SLA đặc tả DD-WEB-008
 
 /**
- * Trích xuất an toàn Access Token từ LocalStorage
- * Có bọc try-catch chống sập ứng dụng trong Private Browsing hoặc khi JSON hỏng.
+ * Trích xuất an toàn Access Token từ SafeLocalStorage (DTD-WEB-001, DD-WEB-003)
+ * Tự động dự phòng qua MemoryStorage khi chạy trong Private Browsing.
  */
 export function getStoredAccessToken(): string | null {
   try {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return null
-    }
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
-    if (!raw) return null
-    const session = JSON.parse(raw) as Partial<AuthSession>
-    return session.accessToken || null
+    const session = safeLocalStorage.getItem<Partial<AuthSession>>(AUTH_STORAGE_KEY)
+    return session?.accessToken || null
   } catch {
     return null
   }
