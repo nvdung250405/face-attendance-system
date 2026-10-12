@@ -30,7 +30,7 @@ Tài liệu này là lớp kế hoạch thi công giữa các đơn vị quy ho�
 | ID | Name | Description | Derived from | Depends on | Wave | Done when | Status |
 | :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: |
 | `TASK-WEB-001` | Khởi tạo Dự án Vite & React TypeScript | Cấu hình `package.json`, `tsconfig.json`, `vite.config.ts` với strict type checking. | `FND-WEB-001` | — | Wave 1 | `npm run build` thành công, không cảnh báo TypeScript. | Done |
-| `TASK-WEB-002` | Cấu hình Tailwind CSS & Design Tokens | Cài Tailwind, font Inter và bảng màu đồng bộ với thiết kế Kiosk. | `FND-WEB-002` | `TASK-WEB-001` | Wave 2 | Class Tailwind biên dịch đúng; áp dụng được biến màu hệ thống. | Ready |
+| `TASK-WEB-002` | Cấu hình Tailwind CSS & Design Tokens | Cài Tailwind, font Inter và bảng màu đồng bộ với thiết kế Kiosk. | `FND-WEB-002` | `TASK-WEB-001` | Wave 2 | Class Tailwind biên dịch đúng; áp dụng được biến màu hệ thống. | Done |
 | `TASK-WEB-003` | Cài đặt Thư viện Phụ trợ Web | Cài `axios`, `@stomp/stompjs`, `sockjs-client`, `lucide-react`, `zustand` với phiên bản khóa. | `FND-WEB-003` | `TASK-WEB-001` | Wave 2 | `npm install` sạch; `npm audit` không có lỗ hổng nghiêm trọng. | Ready |
 | `TASK-WEB-004` | Cấu hình Biến Môi trường & Proxy Dev | Thiết lập `.env` với `VITE_API_BASE_URL` và reverse proxy trong Vite. | `FND-WEB-004` | `TASK-WEB-001` | Wave 2 | Gọi API tới Backend qua `/api` thành công, không bị CORS. | Ready |
 | `TASK-WEB-005` | Xây dựng TypeScript Data Contracts | Khởi tạo interfaces/DTOs/Enums cho AuthSession, UserProfile, AttendanceRecord, Pagination, QueryParams. | `BLD-WEB-001` | `TASK-WEB-001` | Wave 2 | Biên dịch không cảnh báo type; DTOs đồng bộ 100% với hợp đồng Backend. | Ready |
