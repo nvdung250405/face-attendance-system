@@ -57,6 +57,7 @@ Tài liệu này là lớp kế hoạch thi công giữa các đơn vị quy ho�
 | `TASK-KSK-026` | Hàng đợi SQLite WAL cho Đồng bộ | Quản lý `kiosk_local.db` chế độ WAL với `enqueue_punch()`, `fetch_unsynced_batch()`, `mark_synced()`. | `BLD-KSK-017` | `TASK-KSK-005` | Wave 4 | Ghi đệm an toàn khi mất mạng; đọc non-blocking song song. | Ready |
 | `TASK-KSK-027` | Tích hợp Toàn trình Luồng Điểm danh Biên | Ghép camera, máy trạng thái Oval, pipeline AI, ghi đệm SQLite WAL và đồng bộ HTTP/STOMP. | `BLD-KSK-018` | `TASK-KSK-017`, `TASK-KSK-020` | Wave 7 | Điểm danh thành công hiển thị thẻ xanh < 100 ms; tự lưu SQLite khi mất mạng và đồng bộ bù khi có mạng. | Ready |
 | `TASK-KSK-028` | Lập trình Thẩm định PIN Dự phòng, Vòng đời Bộ nhớ & Cấu hình Trạm | Xây dựng luồng `verify-pin` với ánh xạ lỗi 401/423 sang UI, bộ quản lý cấp phát/giải phóng mảng khung hình, vòng lặp tự phục hồi camera và `KioskConfig` nạp từ `.env`. | `BLD-KSK-019` | `TASK-KSK-017`, `TASK-KSK-018` | Wave 7 | PIN chỉ được chấp nhận khi Backend trả 200 và không tạo bản ghi khi thất bại; PIN bị khoá hiển thị đếm ngược theo `lockedUntil`; RAM biến thiên ≤ 10% sau 8 giờ; camera tự phục hồi ≤ 3 s; thiếu biến cấu hình bắt buộc thì khởi động thất bại kèm thông báo rõ. | Ready |
+| `TASK-KSK-029` | Chuẩn hóa Hợp đồng API Đồng bộ Lô Ngoại tuyến Kiosk | Chuẩn hóa payload gửi qua `POST /api/v1/kiosk/sync-batch` (`batchSize`, `batchCount`, `localQueueId`, `localId`, ISO timestamp kèm timezone, enum `VERIFICATION_FACE`/`VERIFICATION_PIN`) tương thích 100% với Backend `KioskSyncBatchRequest` và tương thích ngược với mock handler. | `BLD-KSK-011` | `TASK-KSK-020` | Wave 5 | Gửi thành công gói lô đồng bộ nhận HTTP 200 từ Backend; 15/15 unit tests của Kiosk app pass. | Ready |
 
 ---
 
@@ -79,10 +80,10 @@ TASK-KSK-001 (Virtualenv)
             │                                                                        ├── TASK-KSK-016 (Result Card)
             │                                                                        └── TASK-KSK-017 (Three Modals)
             └── TASK-KSK-018 (HTTP Client)      ──→ TASK-KSK-019 (STOMP Worker)
-                                                └──→ TASK-KSK-020 (Offline Sync Worker)
+                                                └──→ TASK-KSK-020 (Offline Sync Worker) ──→ TASK-KSK-029 (Sync Contract)
 
 [Integration Layer]
-TASK-KSK-017 + TASK-KSK-020 ──→ TASK-KSK-027 (Edge Full Integration) ──→ BUILD
+TASK-KSK-017 + TASK-KSK-020 + TASK-KSK-029 ──→ TASK-KSK-027 (Edge Full Integration) ──→ BUILD
 ```
 
 ---
@@ -93,7 +94,7 @@ TASK-KSK-017 + TASK-KSK-020 ──→ TASK-KSK-027 (Edge Full Integration) ─�
 * **Wave 2: Dependencies & Requirements**: `TASK-KSK-002`.
 * **Wave 3: AI Models, Camera, SQLite, HTTP & Design Tokens**: `TASK-KSK-003`, `TASK-KSK-004`, `TASK-KSK-005`, `TASK-KSK-006`, `TASK-KSK-010`, `TASK-KSK-012`, `TASK-KSK-013`, `TASK-KSK-018`.
 * **Wave 4: Environment Smoke Tests, Layout, Offline Queue & Sync**: `TASK-KSK-007`, `TASK-KSK-008`, `TASK-KSK-009`, `TASK-KSK-011`, `TASK-KSK-014`, `TASK-KSK-019`, `TASK-KSK-020`, `TASK-KSK-021`, `TASK-KSK-026`.
-* **Wave 5: Vision Detection & Oval UI State Machine**: `TASK-KSK-015`, `TASK-KSK-022`.
+* **Wave 5: Vision Detection, Oval UI State Machine & Sync Contract**: `TASK-KSK-015`, `TASK-KSK-022`, `TASK-KSK-029`.
 * **Wave 6: Liveness, Result Card & Modals**: `TASK-KSK-016`, `TASK-KSK-017`, `TASK-KSK-023`, `TASK-KSK-024`.
 * **Wave 7: ArcFace Matcher, Edge Integration & PIN Fallback**: `TASK-KSK-025`, `TASK-KSK-027`, `TASK-KSK-028`.
 

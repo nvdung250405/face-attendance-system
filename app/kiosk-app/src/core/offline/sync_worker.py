@@ -6,6 +6,7 @@ Tài liệu tham chiếu:
 - DDS.md (Mục 2.1, Mục 3.1 & Mục 4.3 - REST API /api/v1/kiosk/sync-batch)
 """
 
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -139,20 +140,45 @@ class OfflineSyncWorker(QThread):
         url = f"{self.backend_url}/kiosk/sync-batch"
         records_payload = []
         for p in punches:
+            raw_time = p.get("punch_timestamp") or p.get("punch_time")
+            if isinstance(raw_time, str) and not raw_time.endswith("Z") and "+" not in raw_time:
+                try:
+                    dt = datetime.fromisoformat(raw_time).astimezone()
+                    iso_time = dt.isoformat()
+                except Exception:
+                    iso_time = datetime.now(UTC).isoformat()
+            elif isinstance(raw_time, datetime):
+                iso_time = raw_time.isoformat()
+            else:
+                iso_time = str(raw_time) if raw_time else datetime.now(UTC).isoformat()
+
+            raw_method = p.get("verification_method", "VERIFICATION_FACE")
+            if raw_method == "FACE":
+                method = "VERIFICATION_FACE"
+            elif raw_method == "PIN":
+                method = "VERIFICATION_PIN"
+            elif raw_method in ("VERIFICATION_FACE", "VERIFICATION_PIN"):
+                method = raw_method
+            else:
+                method = "VERIFICATION_FACE"
+
+            raw_score = p.get("confidence_score") if p.get("confidence_score") is not None else p.get("similarity_score")
+            score = round(float(raw_score), 4) if raw_score is not None else 0.85
+
             rec = {
+                "localQueueId": int(p.get("id")),
                 "localId": p.get("id"),
-                "punchId": str(p.get("id")),
-                "employeeId": p.get("employee_id"),
-                "punchTimestamp": p.get("punch_timestamp") or p.get("punch_time"),
-                "punchType": p.get("punch_type", "CHECK_IN"),
-                "verificationMethod": p.get("verification_method", "VERIFICATION_FACE"),
-                "confidenceScore": p.get("confidence_score") if p.get("confidence_score") is not None else p.get("similarity_score"),
+                "employeeId": int(p.get("employee_id")),
+                "punchTimestamp": iso_time,
+                "verificationMethod": method,
+                "confidenceScore": score,
             }
             records_payload.append(rec)
 
         payload = {
             "kioskId": self.kiosk_id,
-            "batchCount": len(punches),
+            "batchSize": len(records_payload),
+            "batchCount": len(records_payload),
             "records": records_payload,
         }
 
