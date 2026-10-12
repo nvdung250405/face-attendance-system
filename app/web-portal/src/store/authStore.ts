@@ -6,6 +6,7 @@
 import { create } from 'zustand'
 import type { AuthSession, UserProfile, UserRole } from '@/types'
 import { AUTH_STORAGE_KEY } from '@/services/apiClient'
+import { safeLocalStorage, onStorageKeyChange } from '@/services/storage'
 
 export function getDefaultPathForRole(role?: UserRole): string {
   switch (role) {
@@ -21,38 +22,24 @@ export function getDefaultPathForRole(role?: UserRole): string {
 }
 
 /**
- * Đọc phiên an toàn từ LocalStorage
+ * Đọc phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003)
  */
 export function readSessionFromStorage(): AuthSession | null {
-  try {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return null
-    }
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
-    if (!raw) return null
-    const session = JSON.parse(raw) as AuthSession
-    if (!session || !session.accessToken || !session.user) {
-      return null
-    }
-    return session
-  } catch {
+  const session = safeLocalStorage.getItem<AuthSession>(AUTH_STORAGE_KEY)
+  if (!session || !session.accessToken || !session.user) {
     return null
   }
+  return session
 }
 
 /**
- * Lưu phiên an toàn vào LocalStorage
+ * Lưu phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003)
  */
 export function writeSessionToStorage(session: AuthSession | null): void {
-  try {
-    if (typeof window === 'undefined' || !window.localStorage) return
-    if (session) {
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-    } else {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY)
-    }
-  } catch {
-    // QuotaExceededError hoặc Private Browsing fallback
+  if (session) {
+    safeLocalStorage.setItem(AUTH_STORAGE_KEY, session)
+  } else {
+    safeLocalStorage.removeItem(AUTH_STORAGE_KEY)
   }
 }
 
@@ -126,34 +113,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 }))
 
 /**
- * Lắng nghe sự kiện storage trên window để đồng bộ đa tab (DD-WEB-004)
+ * Lắng nghe sự kiện storage trên window để đồng bộ đa tab (DTD-WEB-002, DD-WEB-004)
  */
 export function setupMultiTabAuthSync(): () => void {
-  if (typeof window === 'undefined') return () => {}
-
-  const handleStorageChange = (event: StorageEvent) => {
-    if (event.key === AUTH_STORAGE_KEY) {
-      if (!event.newValue) {
-        useAuthStore.getState().clearSession()
-      } else {
-        try {
-          const newSession = JSON.parse(event.newValue) as AuthSession
-          if (newSession && newSession.accessToken) {
-            useAuthStore.setState({
-              session: newSession,
-              user: newSession.user,
-              isAuthenticated: true,
-            })
-          }
-        } catch {
-          useAuthStore.getState().clearSession()
-        }
-      }
+  return onStorageKeyChange<AuthSession>(AUTH_STORAGE_KEY, (newSession) => {
+    if (!newSession || !newSession.accessToken) {
+      useAuthStore.getState().clearSession()
+    } else {
+      useAuthStore.setState({
+        session: newSession,
+        user: newSession.user,
+        isAuthenticated: true,
+      })
     }
-  }
-
-  window.addEventListener('storage', handleStorageChange)
-  return () => {
-    window.removeEventListener('storage', handleStorageChange)
-  }
+  })
 }
