@@ -1,121 +1,57 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
-import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="min-h-screen bg-bg-app text-text-primary p-8 flex flex-col items-center justify-center">
+      <div className="max-w-xl w-full bg-surface-card border border-border-subtle rounded-xl shadow-sm p-6 text-center space-y-6">
+        <div className="flex justify-center items-center gap-4">
+          <a href="https://vite.dev" target="_blank" rel="noreferrer">
+            <img src={viteLogo} className="h-12 w-12 hover:scale-105 transition-transform" alt="Vite logo" />
+          </a>
+          <a href="https://react.dev" target="_blank" rel="noreferrer">
+            <img src={reactLogo} className="h-12 w-12 hover:scale-105 transition-transform" alt="React logo" />
+          </a>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-text-primary">
+            Face Attendance Portal
+          </h1>
+          <p className="text-sm text-text-secondary">
+            Thiết kế đồng bộ Figma Tokens & Tailwind CSS 4
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="flex flex-wrap gap-2 justify-center py-2">
+          <span className="px-3 py-1 bg-brand-light text-brand-primary text-xs font-medium rounded-full">
+            Brand Indigo
+          </span>
+          <span className="px-3 py-1 bg-emerald-50 text-status-success text-xs font-medium rounded-full">
+            Đúng giờ
+          </span>
+          <span className="px-3 py-1 bg-amber-50 text-status-warning text-xs font-medium rounded-full">
+            Đi muộn
+          </span>
+          <span className="px-3 py-1 bg-rose-50 text-status-danger text-xs font-medium rounded-full">
+            Vắng mặt
+          </span>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => setCount((c) => c + 1)}
+            className="px-5 py-2.5 bg-brand-primary hover:bg-brand-hover text-white text-sm font-medium rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2"
+          >
+            Số lượt kiểm tra: {count}
+          </button>
+        </div>
+      </div>
+    </main>
   )
 }
 
