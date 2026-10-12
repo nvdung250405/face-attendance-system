@@ -12,14 +12,14 @@ Framework dùng chung cho nhiều dự án; định nghĩa lifecycle, cấu trú
 INFO → PI → (Requirements ‖ STACK) → Design → PLAN → BUILD → TEST → DEPLOY → MAINTAIN
 ```
 
-| Semantic activity / layer | Câu hỏi |
+| Semantic activity / layer | Câu hỏi / ý nghĩa |
 |---|---|
 | INFO | Ta biết gì? |
 | PI | Làm gì, trong phạm vi và định hướng nào? |
 | Requirements | Phải làm gì và đáp ứng gì? |
 | STACK | Dùng công nghệ/tool/platform nào? |
 | Design | Hiện thực Requirements bằng structure, behavior, decisions nào? |
-| SPEC | Tầng lifecycle chứa Requirements + Design trong một Spec set | 
+| SPEC (layer/container) | Tầng lifecycle chứa Requirements + Design trong một Spec set; không phải semantic activity riêng. |
 | PLAN | Cần làm work gì và theo dependency nào? |
 | BUILD | Implementation |
 | TEST | Verification |
@@ -63,12 +63,11 @@ docs/
 │   ├── tech-tool-stack.md               # Technology/tool/platform. [STK-]
 │   │
 │   ├── specs/                           # SPEC — requirements + design.
-│   │   └── spec.md                      # System context + requirements + architecture/design + decisions.
-│   │                                       # [ACT-/EXT-/SRS-/FR-/NFR-/ARC-/SOL-/DD-]
+│   │   └── spec.md                      # Context + requirements + architecture/design + decisions. [ACT-/EXT-/SRS-/FR-/NFR-/ARC-/SOL-/DD-]
 │   │
 │   └── plans/                           # PLAN — system plans.
 │       ├── project-plan.md              # Phase/milestone/role/risk. [APC-/PRJ-/ROL-/RSK-]
-│       ├── foundation-setup-plan.md     # Common foundation. [FND-]
+│       ├── foundation-setup-plan.md     # Build/test/integration env, shared infra, tooling. [FND-]
 │       ├── test-plan.md                 # System verification. [TST-]
 │       └── deploy-plan.md               # Release/rollout/rollback. [DPL-]
 │
@@ -77,14 +76,13 @@ docs/
     └── <subsystem-code>/
         │
         ├── specs/                       # SPEC — context, requirements + design.
-        │   ├── spec.md                  # Subsystem context + FR/NFR + internal architecture + decisions.
-        │   │                               # [ACT-/EXT-/FR-/NFR-/SOL-/DD-]
+        │   ├── spec.md                  # Context + FR/NFR + internal architecture + decisions. [ACT-/EXT-/FR-/NFR-/SOL-/DD-]
         │   ├── data.md                  # Data requirements + design. [DATA-/DTD-] (khi sở hữu data)
         │   ├── api.md                   # API requirements + design. [API-/APD-] (khi sở hữu API)
         │   └── ui-ux.md                 # UI/UX requirements + design. [UI-/UXD-] (khi có user trực tiếp)
         │
         └── plans/                       # PLAN — subsystem plans.
-            ├── foundation-setup-plan.md # Foundation riêng. [FND-]
+            ├── foundation-setup-plan.md # Local env, toolchain, packaging, integration readiness. [FND-]
             ├── build-plan.md            # Build; section theo Core → DATA → API → UI/UX. [BLD-]
             ├── test-plan.md             # Test; section theo Core → DATA → API → UI/UX. [TST-]
             └── task-plan.md             # Tasks/dependency. [TASK-]
@@ -146,9 +144,9 @@ Optional: id, created, baseline
   - `SRC-`: `Unverified`, `Verified`, `Obsolete`.
   - `INF-` / `ANL-`: `Draft`, `Reviewed`, `Superseded`, `Rejected`.
   - `RSK-`: `Open`, `In Progress`, `Mitigated`, `Closed`.
-  - PI Decision: `Draft`, `In Review`, `Approved`, `Superseded`, `Deprecated`.
+  - Decision item (`PD-`, `DD-`, `APC-`): `Draft`, `In Review`, `Approved`, `Superseded`, `Deprecated`.
   - STACK: `Proposed`, `Approved`, `Superseded`, `Deprecated`.
-  - Spec / Design / Design Decision: `Draft`, `In Review`, `Approved`, `Superseded`, `Deprecated`.
+  - Spec / Design element: `Draft`, `In Review`, `Approved`, `Superseded`, `Deprecated`.
   - Plan / Foundation / Build / Task / Deploy: `Planned`, `Ready`, `In Progress`, `Blocked`, `Done`, `Cancelled`.
   - Test: `Planned`, `Ready`, `In Progress`, `Passed`, `Failed`, `Blocked`.
   - Gate: `Planned`, `Ready`, `Passed`, `Failed`, `Waived`.
@@ -211,13 +209,13 @@ PI
 └── Glossary
 ```
 
-Decision schema:
+Decision item schema dùng chung cho `PD-`, `DD-` và `APC-`:
 
 ```text
 Decision item — Required: ID, Decision, Rationale, Basis, Status; Optional: Alternatives, Consequences
 ```
 
-`PD-` là decision item-level. Constraint công nghệ bắt buộc thuộc PI và được ghi thành `PD-`; lựa chọn cụ thể thuộc STACK.
+Schema chung không làm thay đổi ownership: `PD-` thuộc `pi.md`; `DD-` thuộc Spec file sở hữu Design element mà Decision áp dụng; `APC-` thuộc Plan sở hữu Approach decision (xem §10). Constraint công nghệ bắt buộc thuộc PI và được ghi thành `PD-`; lựa chọn công nghệ cụ thể thuộc STACK.
 
 ---
 
@@ -259,12 +257,12 @@ Quy tắc item chung:
 
 ```text
 Requirement — Required: ID, Statement, Category, Priority, Acceptance, Status; Optional: Basis, Applies to
-Design element — Required: ID, Name, Definition, Status; Optional: Uses, Realizes, Decisions
+Design element — Required: ID, Name, Definition, Status; Optional: Basis, Uses, Realizes, Decisions
 ```
 
 - Requirement phải trung lập công nghệ; Design có thể reference `STK-`.
 - `Realizes` nối Design với Requirement; `Uses` nối dependency của Design; `Decisions` nối `DD-`.
-- `Basis` là bắt buộc khi Requirement là refinement/allocation của upstream; `Applies to` là bắt buộc với System Requirement khi có allocation xuống subsystem; `Realizes` là bắt buộc với Design, trừ `ARC-` chỉ mô tả boundary/topology.
+- `Basis` là bắt buộc khi Requirement là refinement/allocation của upstream; Design dùng `Basis` để trace nguồn/parent design khi có liên quan, với target theo §9.3. `Applies to` là bắt buộc với System Requirement khi có allocation xuống subsystem; `Realizes` là bắt buộc với Design, trừ `ARC-` chỉ mô tả boundary/topology.
 - `Applies to` vắng mặt nghĩa là Requirement không có allocation downstream; với System Requirement, scope mặc định là `SYS`. Khi có allocation, `Applies to` liệt kê đầy đủ các scope được phân bổ; coverage đầy đủ khi mỗi scope có realization/verification cần thiết và `Acceptance` được phủ đầy đủ.
 - Priority của Requirement phản ánh priority trong scope hiện tại; refinement local có thể dùng priority khác nhưng không được làm mất nghĩa vụ hoặc Acceptance của upstream Requirement.
 - Không tạo requirement mới từ Design.
@@ -406,10 +404,26 @@ Project Plan là nơi duy nhất quản lý schedule, target, estimate và assig
 
 ## 8.3. Foundation Setup Plan
 
-Chuẩn bị environment, toolchain, repository/scaffolding, access và configuration.
+Foundation Setup chuẩn bị environment, toolchain, repository/scaffolding, infrastructure, access và configuration phục vụ build, test và integration.
 
-- System: foundation dùng chung.
-- Subsystem: foundation riêng; có thể phụ thuộc `FND-SYS-*`.
+| Concern | System FSP | Subsystem FSP |
+|---|---|---|
+| Environment | Build/test environment dùng chung; integration environment. | Local environment. |
+| Shared infrastructure | Broker, shared database, gateway, DNS, cross-subsystem network policy. | — |
+| Credentials | Cross-subsystem service account, secret manager, quyền dùng chung. | Credential/configuration riêng của subsystem khi cần. |
+| Tooling / access | CI/CD, artifact registry, repo access và scaffolding dùng chung khi cần. | Subsystem toolchain; repository/scaffolding riêng khi cần. |
+| Packaging toolchain | — | Dockerfile standard, base-image standard, CI packaging step. |
+| Integration readiness | Provision/cấu hình integration environment; verify connectivity và smoke check tối thiểu. | Health check (readiness/liveness), configuration, service registration, API version exposure, graceful shutdown. |
+| Contract testing | — | Contract-test harness. |
+| Data seed/reset | Cơ chế seed/reset cho integration environment. | Seed data/fixtures riêng của subsystem khi cần. |
+
+System FSP chịu trách nhiệm provision integration environment, cấu hình hạ tầng và quyền kết nối giữa các subsystem, rồi verify kết nối. Smoke check chỉ xác nhận môi trường sẵn sàng; không thay thế verification scenarios của Test Plan. Test Plan xác định dữ liệu dùng trong từng kịch bản; System FSP chuẩn bị cơ chế seed/reset.
+
+FSP chuẩn bị tiêu chuẩn và cơ chế đóng gói; BUILD tạo image/artifact cụ thể và DEPLOY sử dụng artifact đó.
+
+**Ranh giới:** Environment/configuration phục vụ release/run, staging, production và rollout thuộc Deploy Plan. FSP chuẩn bị nền tảng; không thay Build Plan thực hiện code, Test Plan xác định verification hoặc Deploy Plan triển khai hệ thống.
+
+**Không bắt buộc mọi subsystem có đủ tất cả nhóm.** Chỉ tạo work item khi subsystem thực sự cần trách nhiệm tương ứng.
 
 ## 8.4. Build Plan — Subsystem
 
@@ -487,7 +501,7 @@ Phần `Gate` tuân theo schema chung ở §8.1; Deploy Plan chỉ xác định 
 | `Realizes` | Spec/Design | Requirement |
 | `Decisions` | Spec/Design | `DD-` |
 | `Covers` | Plan | Foundation → `STK-`, `ARC-`; Build → Design; Test → Requirement; Deploy → `ARC-`, `STK-`, `NFR-` |
-| `Includes` | Project / Plan | execution work item (`BLD-`, `FND-`, `TST-`, `DPL-`, `TASK-`) hoặc child Plan document có `id` thuộc phạm vi quản lý |
+| `Includes` | Phase / Milestone / Checkpoint trong Project Plan | execution work item (`BLD-`, `FND-`, `TST-`, `DPL-`, `TASK-`) hoặc child Plan document có `id` thuộc phạm vi quản lý |
 | `Derived from` (INFO) | INF-/ANL- | `INF-` → `SRC-`; `ANL-` → `SRC-`, `INF-` |
 | `Derived from` (Task) | Task | một `BLD-`/`FND-` |
 | `Depends on` | Plan / Project / Task | execution dependency |
@@ -505,7 +519,7 @@ Phần `Gate` tuân theo schema chung ở §8.1; Deploy Plan chỉ xác định 
 
 > **Trace lifecycle: downstream → upstream. Không tạo reference ngược.**
 
-`Includes` là quan hệ containment/organization: Project hoặc Plan dùng nó để biểu diễn execution work item hoặc child Plan document thuộc phạm vi quản lý. Child Plan document được dùng làm target của `Includes` phải có document `id`; `Includes` không hàm ý dependency, coverage, realization hay completion.
+`Includes` là quan hệ containment/organization, chỉ khai báo trên `Phase` / `Milestone` / `Checkpoint` trong Project Plan để biểu diễn execution work item hoặc child Plan document thuộc phạm vi quản lý. Child Plan document được dùng làm target của `Includes` phải có document `id`; `Includes` không hàm ý dependency, coverage, realization hay completion. Plan work item không có field `Includes`.
 
 Các relation sau không tạo lifecycle trace: `Includes`, `Depends on`, `Constrained by`, và INFO relations (`Serves`, `Answers`, `Impacts`, `Conflicts with`, `Refers to`, `Blocks`). CI kiểm theo target riêng của từng relation.
 
@@ -657,7 +671,7 @@ CI enforce các invariant có tính xác định cao và kiểm tra được b�
 - Front matter hợp lệ và có đủ required fields.
 - ID đúng scheme, immutable trong lifecycle, và không duplicate.
 - Mọi reference trỏ tới ID tồn tại và đúng loại target theo relation.
-- `Includes` target là execution work item hoặc Plan document có `id`.
+- `Includes` chỉ xuất hiện trên `Phase` / `Milestone` / `Checkpoint` trong Project Plan; target là execution work item hoặc Plan document có `id`.
 - Structural constraints: `TASK-` và `BLD-` chỉ ở Subsystem; `FND-SYS-*` không có `TASK-`; `Gate` không có `Covers`.
 
 Coverage, completeness, acceptance quality, Wave ordering, priority, baseline revision và semantic suitability thuộc warning hoặc human review. CI xanh không thay thế human review.
@@ -680,5 +694,6 @@ Chỉ ghi mapping không hiển nhiên; không phải tuyên bố tuân thủ.
 |---|---|
 | System Specification / Architecture | ISO/IEC/IEEE 42010:2022; C4; arc42 |
 | Decisions | ADR (Nygard) |
+| Foundation, Build Plan | Environment, toolchain, integration readiness, build work planning; ISO/IEC/IEEE 12207:2026; configuration management practices |
 | Task planning | PMBOK work breakdown/activity sequencing; agile delivery practices |
 | Traceability | ISO/IEC/IEEE 29148; ISO/IEC/IEEE 12207 |

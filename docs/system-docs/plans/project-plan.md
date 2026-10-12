@@ -49,7 +49,7 @@ Kế hoạch điều phối tổng thể, phân bổ các chặng phát triển,
 | `PRJ-001` | M1: Nền tảng Kiosk & Edge Vision | Milestone | `FND-SYS-001..003`, `FND-SYS-007`, `BLD-KSK-001..018` | — | 2026-10-02 | 2 weeks | `ROL-001` | Kho monorepo sẵn sàng, tài liệu Spec v2.0 được phê duyệt | Chạy được app Kiosk điểm danh và lưu trữ ngoại tuyến SQLite WAL thành công | Done |
 | `PRJ-002` | M2: Máy chủ Doanh nghiệp, Bảo mật & Hệ thống API | Milestone | `FND-SYS-004`, `FND-SYS-006`, `BLD-BE-001..029` | `PRJ-001` | 2026-10-16 | 2 weeks | `ROL-001` | M1 hoàn thành; Hợp đồng OpenAPI và STOMP Contract đã chốt | Toàn bộ REST API, WebSocket STOMP và mã hóa AES-256-GCM vượt qua 100% unit tests | In progress |
 | `PRJ-003` | M3: Cổng Web Quản trị, Tự phục vụ & Live Dashboard | Milestone | `FND-SYS-005`, `BLD-WEB-001..021` | `PRJ-002` | 2026-10-30 | 2 weeks | `ROL-001` | Backend REST API và WebSocket Broker sẵn sàng | Web Portal kết nối WebSocket nhận sự kiện real-time và quản trị đầy đủ dữ liệu | Planned |
-| `PRJ-004` | M4: Tích hợp Toàn trình, Đo lường KPI & Ma trận Kiểm thử | Milestone | `TST-SYS-001..034` | `PRJ-003` | 2026-11-15 | 2 weeks | `ROL-001` | Cả 3 phân hệ đã hoàn thành build; môi trường lab sẵn sàng | Điểm danh tại Kiosk đẩy dữ liệu real-time lên Web trong $\le 1.2\text{s}$; ngâm tải 8h $\Delta_{\text{RAM}} \le 10\%$ | Planned |
+| `PRJ-004` | M4: Tích hợp Toàn trình, Đo lường KPI & Ma trận Kiểm thử | Milestone | `FND-SYS-008..010`, `TST-SYS-001..034` | `PRJ-003` | 2026-11-15 | 2 weeks | `ROL-001` | Cả 3 phân hệ đã hoàn thành build; môi trường lab sẵn sàng | Điểm danh tại Kiosk đẩy dữ liệu real-time lên Web trong $\le 1.2\text{s}$; ngâm tải 8h $\Delta_{\text{RAM}} \le 10\%$ | Planned |
 | `PRJ-005` | M5: Đóng gói Phát hành, Nghiệm thu & Triển khai | Checkpoint | `DPL-SYS-001..006` | `PRJ-004` | 2026-11-30 | 2 weeks | `ROL-001` | Toàn bộ 34 ca kiểm thử pass; không còn lỗi P0/P1 | Docker Compose chạy thông suốt toàn bộ hệ thống; Smoke Check $\le 1.2\text{ s}$; 100% tài liệu SDLC đồng bộ | Planned |
 
 ---
@@ -68,7 +68,7 @@ Kế hoạch điều phối tổng thể, phân bổ các chặng phát triển,
 
 | Work item | Owner | Role |
 | :--- | :--- | :--- |
-| `FND-SYS-001..007` | `ROL-001` | Full-stack & AI Lead |
+| `FND-SYS-001..010` | `ROL-001` | Full-stack & AI Lead |
 | `DPL-SYS-001..006` | `ROL-001` | Full-stack & AI Lead |
 
 ---
