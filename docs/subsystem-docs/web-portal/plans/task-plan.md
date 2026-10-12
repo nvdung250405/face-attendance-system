@@ -58,6 +58,9 @@ Tài liệu này là lớp kế hoạch thi công giữa các đơn vị quy ho�
 | `TASK-WEB-027` | Lập trình Module Quản trị Trạm Kiosk & Tuân thủ | Xây dựng màn hình quản lý trạm Kiosk (token chỉ trong RAM, cảnh báo ping) và màn hình tra cứu audit/tuân thủ chỉ đọc cho `ADMIN`/`DPO`. | `BLD-WEB-021` | `TASK-WEB-023`, `TASK-WEB-022` | Wave 4 | Secret Token không xuất hiện trong LocalStorage/SessionStorage; trạm quá 5 phút không ping có cảnh báo; role `DPO` không thấy thao tác ghi. | Ready |
 | `TASK-WEB-028` | Xây dựng Màn hình Quản trị Danh mục & Kỳ công | Phát triển màn hình hồ sơ nhân sự, ca/phân ca trên lịch tuần và chốt kỳ công theo bố cục `UXD-WEB-006`. | `BLD-WEB-023` | `TASK-WEB-009`, `TASK-WEB-024`, `TASK-WEB-025` | Wave 6 | Form trong Drawer và cảnh báo nghiệp vụ hiển thị đúng trên đầu bảng; kỳ đã chốt vô hiệu hoá nút điều chỉnh. | Ready |
 | `TASK-WEB-029` | Xây dựng Màn hình Đổi mật khẩu Bắt buộc, Consent & Tuân thủ | Phát triển màn hình blocking đổi mật khẩu, luồng Consent/yêu cầu dữ liệu, trung tâm thông báo và màn hình trạm Kiosk/tuân thủ. | `BLD-WEB-024` | `TASK-WEB-009`, `TASK-WEB-026`, `TASK-WEB-027` | Wave 5 | Không rời được màn hình đổi mật khẩu bắt buộc bằng điều hướng; Secret Token chỉ hiển thị một lần; role `DPO` chỉ đọc. | Ready |
+| `TASK-WEB-030` | Chuẩn hóa Chuỗi Đóng gói Container SPA Nginx | Xây dựng Dockerfile multi-stage cho Web Portal (Node build + Nginx Alpine serve), cấu hình nginx.conf định tuyến fallback SPA /index.html. | `FND-WEB-005` | `TASK-WEB-001` | Wave 2 | Container build thành công, phục vụ tĩnh tài nguyên và định tuyến SPA mượt mà không lỗi 404 khi F5 trên các sub-routes. | Ready |
+| `TASK-WEB-031` | Cấu hình Reverse Proxy Chuyển tiếp & CORS Mitigation | Cấu hình Nginx proxy_pass chuyển tiếp /api/ và /ws-attendance sang Backend, thiết lập header CORS, WebSocket upgrade phục vụ môi trường tích hợp và Docker Compose. | `FND-WEB-006` | `TASK-WEB-004` | Wave 3 | Trình duyệt gọi API và WebSocket thông qua cùng host/port của Nginx mà không phát sinh lỗi CORS hay chặn Upgrade header. | Ready |
+| `TASK-WEB-032` | Thiết lập Bộ Khung Kiểm thử Hợp đồng Giao diện & Mock Client | Cài đặt Mock Service Worker (MSW) hoặc Axios Mock Adapter trong test runner (Vitest/Jest), định nghĩa fixtures phản hồi chuẩn cho API auth, live attendance, consent. | `FND-WEB-007` | `TASK-WEB-003` | Wave 3 | Các test suite giao diện và hook chạy độc lập với mock server cục bộ, kiểm thử được các nhánh timeout, refresh token và lỗi mạng. | Ready |
 
 ---
 
@@ -70,8 +73,9 @@ TASK-WEB-001 (Vite + React TS)
     │                                                                            ├── TASK-WEB-010 (KPI & Live Table)
     │                                                                            ├── TASK-WEB-011 (Consent Modal)
     │                                                                            └── TASK-WEB-012 (Personal Calendar)
-    ├── TASK-WEB-003 (Dependencies)
-    ├── TASK-WEB-004 (Env & Proxy)
+    ├── TASK-WEB-003 (Dependencies)       ──→ TASK-WEB-032 (Mock Contract Harness)
+    ├── TASK-WEB-004 (Env & Proxy)        ──→ TASK-WEB-031 (Reverse Proxy CORS)
+    ├── TASK-WEB-030 (Container Packaging)
     ├── TASK-WEB-005 (Data Contracts)     ──→ TASK-WEB-006 (Safe Storage)
     │                                     └──→ TASK-WEB-007 (Query Cache)
     ├── TASK-WEB-013 (Axios Client)       ──→ TASK-WEB-014 (Refresh Interceptor)
@@ -88,8 +92,8 @@ TASK-WEB-012 + TASK-WEB-020 ──→ TASK-WEB-021 (Full Portal Integration) ─
 ## 4. Execution Waves (Các Lớp Thực thi Song song)
 
 * **Wave 1: Foundation Toolchain**: `TASK-WEB-001`.
-* **Wave 2: Toolchain Config, Data Contracts, HTTP Client & Auth Store**: `TASK-WEB-002`, `TASK-WEB-003`, `TASK-WEB-004`, `TASK-WEB-005`, `TASK-WEB-013`, `TASK-WEB-016`.
-* **Wave 3: Storage, Cache, Theme, Refresh Token, Consent Flow & Lifecycle Clients**: `TASK-WEB-006`, `TASK-WEB-007`, `TASK-WEB-008`, `TASK-WEB-014`, `TASK-WEB-015`, `TASK-WEB-017`, `TASK-WEB-022`, `TASK-WEB-023`.
+* **Wave 2: Toolchain Config, Data Contracts, HTTP Client, Auth Store & Packaging**: `TASK-WEB-002`, `TASK-WEB-003`, `TASK-WEB-004`, `TASK-WEB-005`, `TASK-WEB-013`, `TASK-WEB-016`, `TASK-WEB-030`.
+* **Wave 3: Storage, Cache, Theme, Refresh Token, Consent Flow, Lifecycle Clients, Proxy & Mock Harness**: `TASK-WEB-006`, `TASK-WEB-007`, `TASK-WEB-008`, `TASK-WEB-014`, `TASK-WEB-015`, `TASK-WEB-017`, `TASK-WEB-022`, `TASK-WEB-023`, `TASK-WEB-031`, `TASK-WEB-032`.
 * **Wave 4: Admin Shell, STOMP Client & Lifecycle Modules**: `TASK-WEB-009`, `TASK-WEB-018`, `TASK-WEB-024`, `TASK-WEB-026`, `TASK-WEB-027`.
 * **Wave 5: Live Dashboard, Consent Modal, Calendar, HR Table, Shift/Payroll & Compliance Screens**: `TASK-WEB-010`, `TASK-WEB-011`, `TASK-WEB-012`, `TASK-WEB-019`, `TASK-WEB-025`, `TASK-WEB-029`.
 * **Wave 6: Export Module, Category & Payroll Screens**: `TASK-WEB-020`, `TASK-WEB-028`.
