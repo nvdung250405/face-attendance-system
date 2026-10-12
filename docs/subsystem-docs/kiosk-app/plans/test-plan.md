@@ -57,6 +57,7 @@ updated: 2026-10-08
 | `TST-KSK-010` | Chuyển tiếp Ngoại tuyến khi Lỗi Mạng | Kiểm tra tự động ghi SQLite khi ngắt mạng hoặc timeout 3.0s. | `API-KSK-001`, `FR-KSK-006` | `BLD-KSK-009` | Client tự động bắt lỗi timeout 3s, ghi vào `offline_punches` và báo thành công cục bộ. | Done |
 | `TST-KSK-011` | Đồng bộ Bù Gói Lô (Offline Sync Worker) | Kiểm tra worker ngầm 10s bốc lô 50 bản ghi gửi `sync-batch`. | `API-KSK-002`, `APD-KSK-003` | `BLD-KSK-011` | Khôi phục mạng; worker tự động gom lô 50 bản ghi gửi `sync-batch` và cập nhật `is_synced = 1`. | Done |
 | `TST-KSK-012` | Lắng nghe STOMP & Nạp Nóng Vector | Kiểm tra subscribe `/topic/kiosk-gallery` và Atomic Swap RAM. | `API-KSK-006`, `APD-KSK-002` | `BLD-KSK-010` | Nhận bản tin STOMP thêm nhân viên; ma trận RAM cập nhật vector mới ngay tức thì. | Done |
+| `TST-KSK-026` | Kiểm thử Hợp đồng API Xác thực OTP & Đăng ký Khuôn mặt | Kiểm tra gửi `verify-otp` nhận `sessionToken` và `enroll-face` gửi vector 512D chuẩn hóa kèm đầy đủ header xác thực. | `API-KSK-004`, `API-KSK-005` | `BLD-KSK-008` | Gửi `verify-otp` nhận `sessionToken` thành công; gửi `enroll-face` với vector 512D chuẩn hóa nhận 200; xử lý đúng mã lỗi envelope. | Done |
 
 ---
 

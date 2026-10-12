@@ -59,7 +59,9 @@ class EnrollmentController(QObject):
         self._otp: str = ""
 
         self._employee_id: int | None = None
+        self._employee_code: str = ""
         self._employee_name: str = ""
+        self._session_token: str = ""
         self._captured_embeddings: list[list[float]] = []
         self._target_frames: int = 3  # Chụp đủ 3 khung hình chuẩn
         self._last_capture_time: float = 0.0
@@ -157,19 +159,27 @@ class EnrollmentController(QObject):
             self.statusMessageChanged.emit(self._status_message)
             return False
 
-        url = f"{settings.backend_url}/api/v1/enrollment/verify-otp"
+        base_url = settings.backend_url.rstrip("/")
+        url = f"{base_url}/kiosk/verify-otp"
         headers = {
             "X-Kiosk-Id": settings.kiosk_id,
             "Authorization": f"Bearer {settings.kiosk_secret_token}",
+            "Content-Type": "application/json",
         }
-        payload = {"otp": self._otp}
+        payload = {
+            "otp": self._otp,
+            "kioskId": settings.kiosk_id,
+        }
 
         try:
             resp = self._client.post(url, json=payload, headers=headers)
             if resp.status_code == 200:
-                data = resp.json()
+                raw = resp.json()
+                data = raw.get("data", raw) if isinstance(raw, dict) else {}
+                self._session_token = data.get("sessionToken", "")
                 self._employee_id = data.get("employeeId", 0)
-                self._employee_name = data.get("employeeName", "")
+                self._employee_code = data.get("employeeCode", "")
+                self._employee_name = data.get("fullName") or data.get("employeeName", "")
                 self._current_step = 2
                 self._status_message = (
                     f"Xác thực thành công: {self._employee_name}. "
@@ -179,12 +189,16 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
                 return True
             else:
-                self._status_message = "Mã OTP không chính xác hoặc đã hết hạn!"
+                err_body = resp.json() if resp.text else {}
+                err_msg = err_body.get("message") or "Mã OTP không chính xác hoặc đã hết hạn!"
+                self._status_message = err_msg
                 self.statusMessageChanged.emit(self._status_message)
                 return False
         except Exception as exc:
             logger.warning("Không thể kết nối máy chủ xác thực OTP (%s). Kích hoạt chế độ demo.", exc)
+            self._session_token = "demo-session-token"
             self._employee_id = 1001
+            self._employee_code = "NV-DEMO"
             self._employee_name = "Nhân viên Demo (Ngoại tuyến)"
             self._current_step = 2
             self._status_message = (
@@ -303,14 +317,39 @@ class EnrollmentController(QObject):
         else:
             avatar_b64 = ""
 
-        url = f"{settings.backend_url}/api/v1/enrollment/complete"
+        base_url = settings.backend_url.rstrip("/")
+        url = f"{base_url}/kiosk/enroll-face"
         headers = {
             "X-Kiosk-Id": settings.kiosk_id,
             "Authorization": f"Bearer {settings.kiosk_secret_token}",
+            "Content-Type": "application/json",
         }
+
+        # Tính toán vector 512D trung bình và chuẩn hóa L2
+        if self._captured_embeddings:
+            mat = np.array(self._captured_embeddings, dtype=np.float32)
+            mean_vec = np.mean(mat, axis=0)
+            norm = float(np.linalg.norm(mean_vec))
+            if norm > 1e-6:
+                mean_vec = mean_vec / norm
+            vector512 = [float(x) for x in mean_vec]
+        else:
+            vector512 = [0.0] * 512
+            vector512[0] = 1.0
+
         payload: dict[str, Any] = {
-            "employeeId": self._employee_id or 1001,
             "otp": self._otp,
+            "sessionToken": getattr(self, "_session_token", "") or "demo-session-token",
+            "vector512": vector512,
+            "kioskId": settings.kiosk_id,
+        }
+
+        event_payload = {
+            "employeeId": self._employee_id or 1001,
+            "employeeCode": getattr(self, "_employee_code", ""),
+            "employeeName": self._employee_name,
+            "otp": self._otp,
+            "vector512": vector512,
             "faceEmbeddings": self._captured_embeddings,
             "avatarBase64": avatar_b64,
         }
@@ -322,20 +361,23 @@ class EnrollmentController(QObject):
                 self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công."
                 self.currentStepChanged.emit(self._current_step)
                 self.statusMessageChanged.emit(self._status_message)
-                self.enrollmentCompleted.emit(payload)
+                self.enrollmentCompleted.emit(event_payload)
             else:
+                err_body = resp.json() if resp.text else {}
+                err_msg = err_body.get("message") or f"Lỗi phản hồi HTTP {resp.status_code}"
+                logger.warning("Backend từ chối nạp khuôn mặt: %s. Chuyển demo fallback.", err_msg)
                 self._current_step = 3
-                self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
+                self._status_message = f"Đăng ký khuôn mặt hoàn tất (Chế độ demo: {err_msg})."
                 self.currentStepChanged.emit(self._current_step)
                 self.statusMessageChanged.emit(self._status_message)
-                self.enrollmentCompleted.emit(payload)
+                self.enrollmentCompleted.emit(event_payload)
         except Exception as exc:
             logger.warning("Lỗi gửi dữ liệu đăng ký lên Backend (%s). Hoàn tất ở chế độ demo.", exc)
             self._current_step = 3
             self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
             self.currentStepChanged.emit(self._current_step)
             self.statusMessageChanged.emit(self._status_message)
-            self.enrollmentCompleted.emit(payload)
+            self.enrollmentCompleted.emit(event_payload)
 
     @Slot()
     def reset(self) -> None:
@@ -343,6 +385,8 @@ class EnrollmentController(QObject):
         self._current_step = 1
         self._progress_percent = 0.0
         self._otp = ""
+        self._session_token = ""
+        self._employee_code = ""
         self._captured_embeddings = []
         self._employee_id = None
         self._status_message = "Vui lòng nhập mã OTP 6 chữ số để kích hoạt"
