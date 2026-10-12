@@ -61,6 +61,7 @@ Tài liệu này là lớp kế hoạch thi công giữa các đơn vị quy ho�
 | `TASK-KSK-030` | Lập trình Cơ chế Giám sát Sức khỏe Mạng & Watchdog Camera Biên | Xây dựng module watchdog tự động phát hiện mất tín hiệu camera UVC hoặc rớt mạng HTTP/WebSocket, thực hiện tái khởi động nguồn luồng video và chuyển trạng thái thẻ Oval sang cảnh báo. | `FND-KSK-010` | `TASK-KSK-020` | Wave 5 | Camera tự khôi phục kết nối trong 3 giây khi ngắt/cắm lại; mạng phục hồi kích hoạt luồng đồng bộ lô tự động không làm gián đoạn UI. | Ready |
 | `TASK-KSK-031` | Lập trình Bộ Khung Kiểm thử Hợp đồng Mạng với MockTransport | Thiết lập môi trường kiểm thử mạng không phụ thuộc backend thực với httpx.MockTransport, giả lập các mã phản hồi HTTP 200/401/423/409/500 cho các API sync-batch, verify-pin, attendance. | `FND-KSK-011` | `TASK-KSK-018` | Wave 4 | Toàn bộ suite unit/contract tests chạy thông suốt không cần mở server mạng bên ngoài; bao phủ đủ các case timeout, retry và mã lỗi. | Ready |
 | `TASK-KSK-032` | Thiết lập Fixtures Kiểm thử SQLite Cục bộ & Dọn dẹp WAL | Tạo fixture pytest quản lý CSDL tạm thời cho kiểm thử, tạo dữ liệu mẫu offline_punches, xác minh cơ chế dọn dẹp WAL checkpoint tự động. | `FND-KSK-012` | `TASK-KSK-005` | Wave 4 | Fixture cô lập hoàn toàn giữa các ca kiểm thử, không để lại file database rác hay khoá lock WAL sau khi test hoàn tất. | Ready |
+| `TASK-KSK-033` | Chuẩn hóa Hợp đồng API Xác thực OTP & Nạp Mẫu trong EnrollmentController | Chuẩn hóa URL và payload verify-otp và enroll-face theo đặc tả REST API Backend (endpoint `/kiosk/verify-otp`, sessionToken, kioskId, vector512, header xác thực), trích xuất bọc envelope data. | `BLD-KSK-008` | `TASK-KSK-017`, `TASK-KSK-018` | Wave 7 | Gọi API verify-otp và enroll-face khớp hợp đồng backend; trích xuất sessionToken và lưu vector512; toàn bộ unit test controller và check_docs pass. | Done |
 
 ---
 
@@ -89,6 +90,7 @@ TASK-KSK-001 (Virtualenv)
                                                         └── TASK-KSK-030 (Edge Watchdog)
 
 [Integration Layer]
+TASK-KSK-017 + TASK-KSK-018 ──→ TASK-KSK-033 (Enrollment Contract)
 TASK-KSK-017 + TASK-KSK-020 + TASK-KSK-029 ──→ TASK-KSK-027 (Edge Full Integration) ──→ BUILD
 ```
 
@@ -102,7 +104,7 @@ TASK-KSK-017 + TASK-KSK-020 + TASK-KSK-029 ──→ TASK-KSK-027 (Edge Full Int
 * **Wave 4: Environment Smoke Tests, Layout, Offline Queue, Sync & Test Fixtures**: `TASK-KSK-007`, `TASK-KSK-008`, `TASK-KSK-009`, `TASK-KSK-011`, `TASK-KSK-014`, `TASK-KSK-019`, `TASK-KSK-020`, `TASK-KSK-021`, `TASK-KSK-026`, `TASK-KSK-031`, `TASK-KSK-032`.
 * **Wave 5: Vision Detection, Oval UI State Machine, Sync Contract & Watchdog**: `TASK-KSK-015`, `TASK-KSK-022`, `TASK-KSK-029`, `TASK-KSK-030`.
 * **Wave 6: Liveness, Result Card & Modals**: `TASK-KSK-016`, `TASK-KSK-017`, `TASK-KSK-023`, `TASK-KSK-024`.
-* **Wave 7: ArcFace Matcher, Edge Integration & PIN Fallback**: `TASK-KSK-025`, `TASK-KSK-027`, `TASK-KSK-028`.
+* **Wave 7: ArcFace Matcher, Edge Integration, PIN Fallback & Enrollment Contract**: `TASK-KSK-025`, `TASK-KSK-027`, `TASK-KSK-028`, `TASK-KSK-033`.
 
 ---
 

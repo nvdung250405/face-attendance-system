@@ -252,3 +252,87 @@ def test_enrollment_controller_manual_complete_step(qapp):
     controller.currentStep = 1
     assert controller.currentStep == 1
 
+
+def test_tst_ksk_026_api_contract_alignment(qapp):
+    """TST-KSK-026: Kiểm thử hợp đồng API xác thực OTP và nạp mẫu theo chuẩn Backend."""
+    mock_client = MagicMock(spec=httpx.Client)
+    controller = EnrollmentController(client=mock_client)
+
+    # 1. Nhập OTP và gọi verify-otp
+    for d in "123456":
+        controller.appendOtpDigit(d)
+
+    mock_client.post.return_value = httpx.Response(
+        200,
+        json={
+            "code": "OTP_VERIFIED",
+            "message": "Xác thực mã OTP thành công",
+            "data": {
+                "sessionToken": "test-session-token-xyz",
+                "employeeId": 888,
+                "employeeCode": "NV-888",
+                "fullName": "Tran Van Test",
+                "department": "Engineering",
+            },
+        },
+    )
+
+    ok = controller.verifyOtp()
+    assert ok is True
+    assert controller.currentStep == 2
+    assert controller.employeeId == 888
+    assert controller.employeeName == "Tran Van Test"
+    assert controller._session_token == "test-session-token-xyz"
+
+    # Xác minh mock_client nhận đúng url và payload
+    verify_call = mock_client.post.call_args_list[0]
+    verify_url = verify_call[0][0]
+    verify_payload = verify_call[1]["json"]
+    verify_headers = verify_call[1]["headers"]
+
+    assert "/kiosk/verify-otp" in verify_url
+    assert verify_payload["otp"] == "123456"
+    assert "kioskId" in verify_payload
+    assert "X-Kiosk-Id" in verify_headers
+    assert "Authorization" in verify_headers
+
+    # 2. Giả lập nạp 3 embeddings và submit enrollment
+    vec1 = np.ones(512, dtype=np.float32)
+    vec1 = vec1 / np.linalg.norm(vec1)
+    controller._captured_embeddings = [vec1.tolist(), vec1.tolist()]
+
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    dummy_detection = _create_mock_detection(is_valid=True)
+
+    mock_client.post.return_value = httpx.Response(
+        200,
+        json={
+            "code": "FACE_ENROLLED",
+            "message": "Đăng ký khuôn mặt thành công",
+            "data": {"employeeId": 888, "status": "ACTIVE"},
+        },
+    )
+
+    completed_events = []
+    controller.enrollmentCompleted.connect(lambda p: completed_events.append(p))
+
+    controller._submit_enrollment(dummy_frame, dummy_detection)
+
+    assert controller.currentStep == 3
+    assert len(completed_events) == 1
+    assert completed_events[0]["employeeId"] == 888
+
+    # Xác minh request enroll-face
+    enroll_call = mock_client.post.call_args_list[1]
+    enroll_url = enroll_call[0][0]
+    enroll_payload = enroll_call[1]["json"]
+
+    assert "/kiosk/enroll-face" in enroll_url
+    assert enroll_payload["otp"] == "123456"
+    assert enroll_payload["sessionToken"] == "test-session-token-xyz"
+    assert len(enroll_payload["vector512"]) == 512
+    # L2 norm phải bằng 1.0 (sai số float 1e-4)
+    vec_norm = np.linalg.norm(np.array(enroll_payload["vector512"]))
+    assert pytest.approx(vec_norm, 1e-4) == 1.0
+
+
