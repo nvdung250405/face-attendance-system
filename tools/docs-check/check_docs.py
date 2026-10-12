@@ -85,7 +85,7 @@ REQUIREMENT_TYPES = {"SRS", "FR", "NFR", "UI", "API", "DATA"}
 SERVICE_INTERFACE_TYPES = {"API"}
 
 TRACE_COLUMNS = ("Basis", "Realizes", "Covers", "Uses", "Requires", "Derived from",
-                 "Depends on", "Decisions")
+                 "Depends on", "Decisions", "Includes")
 
 # Target hợp lệ của `Basis` theo sdlc-docs.md mục 9.3 (chỉ áp cho item type được quy định rõ)
 BASIS_FORBIDDEN = {
@@ -94,6 +94,11 @@ BASIS_FORBIDDEN = {
     "DD": {"FND", "BLD", "TASK", "TST", "DPL", "PRJ", "APC"},
     "STK": {"SRS", "FR", "NFR", "UI", "API", "DATA", "ARC", "SOL", "UXD", "APD", "DTD",
             "DD", "FND", "BLD", "TASK", "TST"},
+    "ARC": {"FND", "BLD", "TASK", "TST", "DPL", "PRJ", "APC"},
+    "SOL": {"FND", "BLD", "TASK", "TST", "DPL", "PRJ", "APC"},
+    "UXD": {"FND", "BLD", "TASK", "TST", "DPL", "PRJ", "APC"},
+    "APD": {"FND", "BLD", "TASK", "TST", "DPL", "PRJ", "APC"},
+    "DTD": {"FND", "BLD", "TASK", "TST", "DPL", "PRJ", "APC"},
 }
 BASIS_SPEC_ALLOWED = {"SRC", "INF", "ANL", "PD", "SRS", "FR", "NFR", "UI", "API", "DATA", "ARC", "STK", "RSK", "RQ", "GAP", "ACT", "EXT", "DD"}
 
@@ -248,6 +253,8 @@ def normalize_header(header: str) -> str:
         return "Priority"
     if "owner" in h_lower or "chủ sở hữu" in h_lower:
         return "Owner"
+    if "includes" in h_lower or "bao gồm" in h_lower:
+        return "Includes"
     return h
 
 
@@ -594,12 +601,29 @@ def check_structural_constraints(defines, problems):
                 if not item.leaf.startswith("docs/subsystem-docs/"):
                     problems.append(Problem("STR002", f"{item_id}: '{itype}' chỉ được xuất hiện ở Subsystem (§12.4)", item_id))
 
-            # System FND- không có TASK- (đã kiểm tra qua Derived from)
+            # System FND- không có TASK- và TASK- phải trỏ đúng subsystem
+            if itype == "TASK":
+                derived = item.columns.get("Derived from", "")
+                for ref in ID_RE.finditer(derived):
+                    target = ref.group(1)
+                    if target.startswith("FND-SYS"):
+                        problems.append(Problem("STR004", f"{item_id}: 'FND-SYS-*' không có TASK- (§12.4)", item_id))
+                    task_parts = item_id.split("-")
+                    target_parts = target.split("-")
+                    task_scope = task_parts[1] if len(task_parts) > 2 else ""
+                    target_scope = target_parts[1] if len(target_parts) > 2 else ""
+                    if task_scope and target_scope and task_scope != target_scope:
+                        problems.append(Problem("STR004", f"{item_id} ({task_scope}) không được Derived from {target} ({target_scope}) khác subsystem (§12.2)", item_id))
+
             # Gate không có Covers
             if "gate" in (item.name or "").lower():
                 covers_val = item.columns.get("Covers", "").strip()
                 if covers_val and covers_val not in ("-", "—") and ID_RE.search(covers_val):
                     problems.append(Problem("STR003", f"{item_id}: Gate không được có 'Covers' (§12.4)", item_id))
+
+            # Includes chỉ xuất hiện trên Phase / Milestone / Checkpoint trong Project Plan (PRJ-) (§9.1, §9.2, §12.4)
+            if "Includes" in item.columns and itype != "PRJ":
+                problems.append(Problem("STR005", f"{item_id}: 'Includes' chỉ được khai báo trên PRJ- trong Project Plan (§9.1, §12.4)", item_id))
 
 
 def check_change_control(leaves, problems, base_ref: str | None):
