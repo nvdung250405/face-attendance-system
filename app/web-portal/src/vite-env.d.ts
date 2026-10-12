@@ -9,3 +9,16 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+declare module '*/tailwind.config' {
+  const config: {
+    theme?: {
+      extend?: {
+        colors?: Record<string, unknown>
+        spacing?: Record<string, unknown>
+        animation?: Record<string, unknown>
+      }
+    }
+  }
+  export default config
+}
