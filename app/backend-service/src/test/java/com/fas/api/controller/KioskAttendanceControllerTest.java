@@ -52,7 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Bộ kiểm thử REST Controller cho KioskAttendanceController
- * (APD-BE-001, API-BE-003..007, APD-BE-006, BLD-BE-006, TST-BE-006, TST-BE-007, TASK-BE-019).
+ * (APD-BE-001, API-BE-003..007, API-BE-045, APD-BE-006, BLD-BE-006, TST-BE-006, TST-BE-007, TST-BE-040, TASK-BE-019, TASK-BE-044).
  */
 @ExtendWith(MockitoExtension.class)
 class KioskAttendanceControllerTest {
@@ -90,6 +90,21 @@ class KioskAttendanceControllerTest {
                 .locationName("Cổng chính Hà Nội")
                 .isActive(true)
                 .build();
+    }
+
+    @Nested
+    @DisplayName("Kiểm tra sức khỏe trạm Kiosk (GET /api/v1/kiosk/health)")
+    class KioskHealthTests {
+
+        @Test
+        @DisplayName("Kiểm tra sức khỏe trạm Kiosk thành công -> trả về 200 OK HEALTHY status UP")
+        void checkHealth_Success_Returns200() throws Exception {
+            mockMvc.perform(get("/api/v1/kiosk/health"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.code").value("HEALTHY"))
+                    .andExpect(jsonPath("$.data.status").value("UP"));
+        }
     }
 
     @Nested

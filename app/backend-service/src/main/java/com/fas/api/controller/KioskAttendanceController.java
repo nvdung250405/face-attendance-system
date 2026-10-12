@@ -17,6 +17,7 @@ import com.fas.service.AttendanceService;
 import com.fas.service.EnrollmentService;
 import com.fas.service.OfflineBatchSyncService;
 import jakarta.validation.Valid;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,10 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST Controller Tiếp nhận Giao dịch Trạm Kiosk
- * (APD-BE-001, API-BE-003..007, APD-BE-006, BLD-BE-006, TASK-BE-019).
+ * (APD-BE-001, API-BE-003..007, API-BE-045, APD-BE-006, BLD-BE-006, TASK-BE-019, TASK-BE-044).
  *
- * <p>Cung cấp 5 endpoint phục vụ nghiệp vụ Kiosk:
+ * <p>Cung cấp các endpoint phục vụ nghiệp vụ Kiosk:
  * <ul>
+ *   <li>{@code GET /api/v1/kiosk/health}: Kiểm tra trạng thái kết nối & sẵn sàng phục vụ của Backend</li>
  *   <li>{@code POST /api/v1/kiosk/punch}: Ghi nhận lượt điểm danh trực tiếp</li>
  *   <li>{@code POST /api/v1/kiosk/sync-batch}: Đồng bộ bù các lượt quẹt ngoại tuyến</li>
  *   <li>{@code GET /api/v1/kiosk/gallery}: Tải toàn bộ danh mục vector ArcFace 512D nạp RAM</li>
@@ -57,6 +59,18 @@ public class KioskAttendanceController {
         this.offlineBatchSyncService = offlineBatchSyncService;
         this.enrollmentService = enrollmentService;
         this.kioskRepository = kioskRepository;
+    }
+
+    /**
+     * Kiểm tra trạng thái hoạt động của Backend cho trạm Kiosk
+     * (GET /api/v1/kiosk/health - APD-BE-001, API-BE-045, TASK-BE-044).
+     *
+     * @return trạng thái hoạt động với mã HTTP 200 OK
+     */
+    @GetMapping("/health")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<Map<String, String>> checkHealth() {
+        return ApiResponse.ok("HEALTHY", "Kiosk attendance service is operational", Map.of("status", "UP"));
     }
 
     /**

@@ -60,6 +60,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 | `API-BE-042` | Cung cấp giao diện `POST /api/v1/employee/data-requests` gửi yêu cầu về dữ liệu cá nhân và `GET /api/v1/dpo/data-requests` để DPO xử lý. | REST Compliance | Must | `API-SYS-032`, `FR-BE-022` | Nhân viên gửi được yêu cầu truy cập/chỉnh sửa và theo dõi trạng thái phản hồi; role `DPO` xem được danh sách yêu cầu và cập nhật trạng thái xử lý; mọi thay đổi trạng thái ghi audit. | Approved |
 | `API-BE-043` | Cung cấp giao diện `PATCH /api/v1/admin/users/{id}/role` gán hoặc thu hồi role của tài khoản. | REST Admin | Must | `API-SYS-033`, `FR-BE-023` | Trả HTTP 200 kèm role sau thay đổi và ghi `audit_logs` giá trị trước/sau; thu hồi hoặc hạ cấp tài khoản `ADMIN` đang hoạt động cuối cùng trả HTTP 409; yêu cầu role `ADMIN`. | Approved |
 | `API-BE-044` | Cung cấp giao diện `GET /api/v1/notifications` và `PATCH /api/v1/notifications/{id}/read` phục vụ thông báo trong ứng dụng. | REST Notification | Should | `API-SYS-034`, `FR-BE-024` | Chỉ trả thông báo của người đang đăng nhập, sắp xếp mới nhất trước; đánh dấu đã đọc trả HTTP 200; không có kênh email/SMS trong phạm vi MVP. | Approved |
+| `API-BE-045` | Cung cấp giao diện `GET /api/v1/kiosk/health` cho trạm Kiosk kiểm tra tình trạng kết nối mạng và sẵn sàng phục vụ của Backend (công khai không yêu cầu token). | REST Kiosk | Must | `FR-BE-002`, `FR-BE-017`, `NFR-BE-004` | Trả về HTTP 200 kèm trạng thái `{"status": "UP"}` không yêu cầu header xác thực. | Approved |
 
 ### 1.2. Kênh Đẩy Dữ liệu Thời gian thực STOMP (`API-BE-`)
 
@@ -73,7 +74,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 
 | ID | Name | Definition | Uses | Realizes | Decisions | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
-| `APD-BE-001` | Cấu trúc REST API Phân hệ Kiosk | Thiết kế hợp đồng 5 endpoint REST phục vụ trạm Kiosk (`/punch`, `/sync-batch`, `/gallery`, `/verify-otp`, `/enroll-face`), tiền tố URL `/api/v1/kiosk`, xác thực qua header `X-Kiosk-Id`. | `STK-011` | `API-BE-003..007` | `DD-SYS-001`, `DD-BE-010` | Accepted |
+| `APD-BE-001` | Cấu trúc REST API Phân hệ Kiosk | Thiết kế hợp đồng các endpoint REST phục vụ trạm Kiosk (`/health`, `/punch`, `/sync-batch`, `/gallery`, `/verify-otp`, `/enroll-face`), tiền tố URL `/api/v1/kiosk`, trong đó `/health` công khai, các endpoint nghiệp vụ xác thực qua header `X-Kiosk-Id`. | `STK-011` | `API-BE-003..007`, `API-BE-022`, `API-BE-045` | `DD-SYS-001`, `DD-BE-010` | Accepted |
 | `APD-BE-002` | Cấu trúc REST API Cổng Web Portal | Thiết kế hợp đồng các endpoint REST phục vụ Web Portal (Auth, Admin Attendance, Employee Attendance, Consent Signing, Employee Management), xác thực Bearer JWT đa vai trò. | `STK-011` | `API-BE-001..002`, `API-BE-008..011` | `DD-SYS-001`, `DD-BE-009` | Accepted |
 | `APD-BE-003` | Cấu trúc Kênh Đẩy Dữ liệu STOMP | Thiết kế kênh WebSocket STOMP endpoint `/ws-attendance`, hỗ trợ SockJS fallback và cấu hình message broker tiền tố `/topic` phục vụ đẩy sự kiện thời gian thực tới Kiosk và Web. | `STK-012` | `API-BE-012..014` | `DD-SYS-004`, `DD-BE-011` | Accepted |
 | `APD-BE-004` | Mô hình Hợp đồng Dữ liệu & ProblemDetails | Chuẩn hóa định dạng bao bọc JSON, múi giờ ISO-8601 (+07:00), mã lỗi RFC 7807 ProblemDetails và bộ DTO validation annotations (`@NotNull`, `@Size`, `@Pattern`). | `STK-011` | `API-BE-015`, `API-BE-016` | `DD-BE-009` | Accepted |
@@ -270,6 +271,23 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
     "department": "Phòng Kỹ thuật"
   },
   "timestamp": "2026-10-08T08:30:15.120+07:00"
+}
+```
+
+### 3.6. `GET /api/v1/kiosk/health` (`API-BE-045`)
+* **Mục đích**: Kiểm tra tình trạng kết nối mạng và sẵn sàng phục vụ của Backend cho trạm Kiosk (Public / permitAll).
+* **Headers**: Không yêu cầu (công khai).
+* **Response 200 OK**:
+```json
+{
+  "success": true,
+  "code": "HEALTHY",
+  "message": "Kiosk attendance service is operational",
+  "data": {
+    "status": "UP",
+    "service": "backend-service"
+  },
+  "timestamp": "2026-10-12T14:15:00.000+07:00"
 }
 ```
 
