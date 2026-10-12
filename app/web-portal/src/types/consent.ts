@@ -29,3 +29,11 @@ export interface ConsentWithdrawalResponse {
   readonly biometricPurgeDeadline: string
   readonly message: string
 }
+
+export interface EnrollmentSuccessMessage {
+  readonly status: 'ENROLLMENT_SUCCESS'
+  readonly otp: string
+  readonly employeeId: number
+  readonly message: string
+  readonly activatedAt: string
+}
