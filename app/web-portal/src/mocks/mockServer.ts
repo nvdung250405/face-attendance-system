@@ -1,0 +1,248 @@
+/**
+ * Bộ Khung Mock Client Interceptor & API Contract Harness (TASK-WEB-032, FND-WEB-007).
+ *
+ * Cung cấp trình giả lập phản hồi HTTP Axios để phục vụ kiểm thử đơn vị, kiểm thử tích hợp
+ * và kiểm thử các kịch bản ngoại lệ (Network Error, Timeout, Refresh Token Mutex Queue, Conflict 409).
+ */
+
+import MockAdapter from 'axios-mock-adapter'
+import type { AxiosInstance } from 'axios'
+import { apiClient } from '@/services/apiClient'
+import {
+  mockLoginSuccessHr,
+  mockLoginSuccessEmployee,
+  mockLoginInvalidCredentials,
+  mockTokenRefreshSuccess,
+  mockAdminAttendancePageResponse,
+  mockEmployeeMonthlyTimesheet,
+  mockConsentSubmitSuccess,
+  mockWithdrawConsentSuccess,
+} from './fixtures'
+
+export interface MockServerOptions {
+  delayResponse?: number
+  onNoMatch?: 'passthrough' | 'throwException'
+}
+
+/**
+ * Khởi tạo MockAdapter bọc quanh Axios Client
+ */
+export function createMockServer(
+  client: AxiosInstance = apiClient,
+  options: MockServerOptions = { delayResponse: 0, onNoMatch: 'passthrough' }
+): MockAdapter {
+  return new MockAdapter(client, {
+    delayResponse: options.delayResponse ?? 0,
+    onNoMatch: options.onNoMatch ?? 'passthrough',
+  })
+}
+
+/**
+ * Thiết lập bộ mock handlers mặc định tuân thủ đầy đủ hợp đồng API Backend
+ */
+export function setupDefaultMockHandlers(mock: MockAdapter): MockAdapter {
+  // 1. POST /api/v1/auth/login
+  mock.onPost(/\/api\/v1\/auth\/login/).reply((config) => {
+    try {
+      const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+      const email = body?.email || body?.username
+
+      if (body?.password === 'WrongPassword' || body?.password === 'invalid') {
+        return [401, mockLoginInvalidCredentials]
+      }
+
+      if (email?.includes('hr') || email?.includes('admin')) {
+        return [200, mockLoginSuccessHr]
+      }
+
+      return [200, mockLoginSuccessEmployee]
+    } catch {
+      return [400, { success: false, code: 'BAD_REQUEST', message: 'Payload không hợp lệ' }]
+    }
+  })
+
+  // 2. POST /api/v1/auth/refresh
+  mock.onPost(/\/api\/v1\/auth\/refresh/).reply((config) => {
+    try {
+      const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+      if (!body?.refreshToken || body?.refreshToken === 'expired-token') {
+        return [401, { success: false, code: 'REFRESH_TOKEN_EXPIRED', message: 'Refresh token không hợp lệ' }]
+      }
+      return [200, mockTokenRefreshSuccess]
+    } catch {
+      return [401, { success: false, code: 'UNAUTHORIZED', message: 'Yêu cầu làm mới không hợp lệ' }]
+    }
+  })
+
+  // 3. POST /api/v1/auth/logout
+  mock.onPost(/\/api\/v1\/auth\/logout/).reply(204)
+
+  // 4. POST /api/v1/employee/consent
+  mock.onPost(/\/api\/v1\/employee\/consent(\/.*)?/).reply((config) => {
+    if (config.url?.endsWith('/withdraw')) {
+      return [200, mockWithdrawConsentSuccess]
+    }
+    return [200, mockConsentSubmitSuccess]
+  })
+
+  // 5. GET /api/v1/admin/attendance
+  mock.onGet(/\/api\/v1\/admin\/attendance/).reply(200, mockAdminAttendancePageResponse)
+
+  // 6. GET /api/v1/employee/attendance
+  mock.onGet(/\/api\/v1\/employee\/attendance/).reply(200, mockEmployeeMonthlyTimesheet)
+
+  // 7. GET /api/v1/notifications
+  mock.onGet(/\/api\/v1\/notifications/).reply(200, {
+    success: true,
+    code: 'OK',
+    message: 'Thành công',
+    data: [],
+    timestamp: new Date().toISOString(),
+  })
+
+  return mock
+}
+
+/**
+ * Helper mô phỏng lỗi mất mạng (Network Error)
+ */
+export function mockNetworkError(
+  mock: MockAdapter,
+  matcher: string | RegExp = /.*/,
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete' = 'get'
+): void {
+  switch (method) {
+    case 'post':
+      mock.onPost(matcher).networkError()
+      break
+    case 'put':
+      mock.onPut(matcher).networkError()
+      break
+    case 'patch':
+      mock.onPatch(matcher).networkError()
+      break
+    case 'delete':
+      mock.onDelete(matcher).networkError()
+      break
+    default:
+      mock.onGet(matcher).networkError()
+  }
+}
+
+/**
+ * Helper mô phỏng lỗi quá thời gian chờ (Timeout ECONNABORTED)
+ */
+export function mockTimeout(
+  mock: MockAdapter,
+  matcher: string | RegExp = /.*/,
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete' = 'get'
+): void {
+  switch (method) {
+    case 'post':
+      mock.onPost(matcher).timeout()
+      break
+    case 'put':
+      mock.onPut(matcher).timeout()
+      break
+    case 'patch':
+      mock.onPatch(matcher).timeout()
+      break
+    case 'delete':
+      mock.onDelete(matcher).timeout()
+      break
+    default:
+      mock.onGet(matcher).timeout()
+  }
+}
+
+/**
+ * Helper mô phỏng lỗi máy chủ (500 Internal Server Error / 503 Service Unavailable)
+ */
+export function mockServerError(
+  mock: MockAdapter,
+  matcher: string | RegExp = /.*/,
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete' = 'get',
+  statusCode: number = 500,
+  message: string = 'Máy chủ nội bộ gặp sự cố'
+): void {
+  const payload = {
+    success: false,
+    code: `HTTP_${statusCode}`,
+    message,
+    timestamp: new Date().toISOString(),
+  }
+
+  switch (method) {
+    case 'post':
+      mock.onPost(matcher).reply(statusCode, payload)
+      break
+    case 'put':
+      mock.onPut(matcher).reply(statusCode, payload)
+      break
+    case 'patch':
+      mock.onPatch(matcher).reply(statusCode, payload)
+      break
+    case 'delete':
+      mock.onDelete(matcher).reply(statusCode, payload)
+      break
+    default:
+      mock.onGet(matcher).reply(statusCode, payload)
+  }
+}
+
+/**
+ * Helper mô phỏng lỗi xung đột dữ liệu (HTTP 409 Conflict)
+ */
+export function mockConflictError(
+  mock: MockAdapter,
+  matcher: string | RegExp = /.*/,
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete' = 'post',
+  conflictData: {
+    code?: string
+    message?: string
+    details?: Record<string, string>
+    suggestedStartDate?: string
+    suggestedEndDate?: string
+  } = {}
+): void {
+  const payload = {
+    success: false,
+    code: conflictData.code || 'DATA_CONFLICT',
+    message: conflictData.message || 'Xung đột dữ liệu',
+    details: conflictData.details,
+    suggestedStartDate: conflictData.suggestedStartDate,
+    suggestedEndDate: conflictData.suggestedEndDate,
+    timestamp: new Date().toISOString(),
+  }
+
+  switch (method) {
+    case 'post':
+      mock.onPost(matcher).reply(409, payload)
+      break
+    case 'put':
+      mock.onPut(matcher).reply(409, payload)
+      break
+    case 'patch':
+      mock.onPatch(matcher).reply(409, payload)
+      break
+    case 'delete':
+      mock.onDelete(matcher).reply(409, payload)
+      break
+    default:
+      mock.onGet(matcher).reply(409, payload)
+  }
+}
+
+/**
+ * Dọn sạch toàn bộ mock handlers nhưng vẫn duy trì adapter
+ */
+export function resetMockServer(mock: MockAdapter): void {
+  mock.reset()
+}
+
+/**
+ * Khôi phục Axios Client về trạng thái ban đầu (gỡ bỏ adapter)
+ */
+export function restoreMockServer(mock: MockAdapter): void {
+  mock.restore()
+}
