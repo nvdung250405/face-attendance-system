@@ -16,10 +16,19 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout'
 import { useAuthStore } from '@/store/authStore'
 
-// Stub useStompConnectionStore để tránh import thực tế trong unit test
+// Stub useStompConnectionStore — cung cấp đủ interface (status + setStatus)
 vi.mock('@/store/stompConnectionStore', () => ({
-  useStompConnectionStore: () => ({ status: 'CONNECTED' }),
+  useStompConnectionStore: () => ({ status: 'CONNECTED', setStatus: vi.fn() }),
 }))
+
+// Stub useStompClient để AdminShellLayout không thử kết nối STOMP thật trong test
+vi.mock('@/services/hooks', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/hooks')>()
+  return {
+    ...actual,
+    useStompClient: () => ({ status: 'CONNECTED', isConnected: true, connect: vi.fn(), disconnect: vi.fn() }),
+  }
+})
 
 // ── Helper: Render AdminShellLayout trong MemoryRouter với session đã đăng nhập ──
 
