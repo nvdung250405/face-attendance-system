@@ -6,12 +6,14 @@
  * - TopHeader 64px sticky top-0.
  * - Main Viewport co giãn responsive từ mobile < 768px đến ≥ 1440px.
  * - Chuyển động CSS 200ms ease-in-out cho sidebar.
+ * - useStompClient (TASK-WEB-018) kích hoạt kết nối STOMP và đồng bộ trạng thái vào store.
  */
 
 import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopHeader } from './TopHeader'
+import { useStompClient } from '@/services/hooks'
 
 const SIDEBAR_WIDTH = 260
 const SIDEBAR_COLLAPSED_WIDTH = 72
@@ -19,6 +21,10 @@ const TOP_HEADER_HEIGHT = 64
 
 export const AdminShellLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false)
+
+  // Khởi động kết nối STOMP singleton và đồng bộ trạng thái vào stompConnectionStore
+  // để TopHeader hiển thị chỉ báo kết nối Kiosk Live (TASK-WEB-018)
+  useStompClient({ autoConnect: true })
 
   const sidebarWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH
 
