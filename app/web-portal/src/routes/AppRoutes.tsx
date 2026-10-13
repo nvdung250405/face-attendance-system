@@ -1,6 +1,7 @@
 /**
  * Bộ Định Tuyến Chính của Ứng dụng Cổng Web (SOL-WEB-001, BLD-WEB-012, DD-WEB-002).
  * Phân luồng điều hướng Dual-Role (HR/ADMIN/DPO vs EMPLOYEE) và bảo vệ Protected Routes.
+ * AdminShellLayout (UXD-WEB-001, TASK-WEB-009) bọc toàn bộ không gian được bảo vệ.
  */
 
 import React, { useEffect } from 'react'
@@ -8,6 +9,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore, setupMultiTabAuthSync, getDefaultPathForRole } from '@/store/authStore'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { PublicRoute } from '@/components/auth/PublicRoute'
+import { AdminShellLayout } from '@/components/layout/AdminShellLayout'
 import { LoginView } from '@/views/auth/LoginView'
 import { AdminDashboardView } from '@/views/admin/AdminDashboardView'
 import { EmployeeDashboardView } from '@/views/employee/EmployeeDashboardView'
@@ -46,22 +48,25 @@ export const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Không gian Quản trị HR / ADMIN / DPO */}
-      <Route
-        path="/admin"
-        element={<ProtectedRoute allowedRoles={['HR_MANAGER', 'ADMIN', 'DPO']} />}
-      >
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboardView />} />
-      </Route>
+      {/* ── Không gian được bảo vệ — bọc bởi AdminShellLayout ── */}
+      <Route element={<AdminShellLayout />}>
+        {/* Không gian Quản trị HR / ADMIN / DPO */}
+        <Route
+          path="/admin"
+          element={<ProtectedRoute allowedRoles={['HR_MANAGER', 'ADMIN', 'DPO']} />}
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardView />} />
+        </Route>
 
-      {/* Không gian Tự phục vụ Nhân viên EMPLOYEE */}
-      <Route
-        path="/employee"
-        element={<ProtectedRoute allowedRoles={['EMPLOYEE']} />}
-      >
-        <Route index element={<Navigate to="/employee/dashboard" replace />} />
-        <Route path="dashboard" element={<EmployeeDashboardView />} />
+        {/* Không gian Tự phục vụ Nhân viên EMPLOYEE */}
+        <Route
+          path="/employee"
+          element={<ProtectedRoute allowedRoles={['EMPLOYEE']} />}
+        >
+          <Route index element={<Navigate to="/employee/dashboard" replace />} />
+          <Route path="dashboard" element={<EmployeeDashboardView />} />
+        </Route>
       </Route>
 
       {/* Trang lỗi & 404 */}
