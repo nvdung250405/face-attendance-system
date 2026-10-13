@@ -43,3 +43,26 @@ export interface DailyAttendanceItem {
   status?: AttendanceStatus
   lateMinutes?: number
 }
+
+export interface LiveAttendanceMessage extends AttendanceRecord {
+  eventType?: 'ATTENDANCE_PUNCHED' | string
+}
+
+export interface MonthlyTimesheet {
+  period: string
+  employeeId: number
+  totalWorkingDays: number
+  presentDays: number
+  lateDays: number
+  absentDays: number
+  excusePendingDays: number
+  dailyRecords: Array<{
+    date: string
+    dayOfWeek: string
+    checkIn: string | null
+    checkOut: string | null
+    status: AttendanceStatus | string
+    workingHours: number
+    shiftCode: string
+  }>
+}
