@@ -13,6 +13,8 @@ import { AdminShellLayout } from '@/components/layout/AdminShellLayout'
 import { LoginView } from '@/views/auth/LoginView'
 import { AdminDashboardView } from '@/views/admin/AdminDashboardView'
 import { EmployeeManagementView } from '@/views/admin/EmployeeManagementView'
+import { AdminKioskManagementView } from '@/views/admin/AdminKioskManagementView'
+import { AdminAuditLogView } from '@/views/admin/AdminAuditLogView'
 import { EmployeeDashboardView } from '@/views/employee/EmployeeDashboardView'
 import { EmployeeConsentView } from '@/views/employee/EmployeeConsentView'
 import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsView'
@@ -68,6 +70,8 @@ export const AppRoutes: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="kiosks" element={<AdminKioskManagementView />} />
+          <Route path="audit-logs" element={<AdminAuditLogView />} />
         </Route>
 
         {/* Không gian Tự phục vụ Nhân viên EMPLOYEE */}
