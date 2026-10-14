@@ -50,6 +50,16 @@ export function resolveBaseUrl(explicitUrl?: string): string {
 export function attachRequestInterceptor(instance: AxiosInstance): number {
   return instance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+      // Chuẩn hóa đường dẫn: Tránh lặp lại /api/v1 khi baseURL đã chứa /api/v1
+      if (
+        config.url &&
+        config.baseURL &&
+        config.baseURL.endsWith('/api/v1') &&
+        config.url.startsWith('/api/v1')
+      ) {
+        config.url = config.url.slice('/api/v1'.length) || '/'
+      }
+
       const token = getStoredAccessToken()
       if (token && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${token}`

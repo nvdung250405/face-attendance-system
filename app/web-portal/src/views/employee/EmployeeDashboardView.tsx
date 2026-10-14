@@ -6,6 +6,7 @@ import React, { useState } from 'react'
 import { ShieldCheck, Sparkles, KeyRound, QrCode } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal } from '@/components/consent'
+import { PersonalAttendanceCalendar } from '@/components/calendar'
 import { consentService } from '@/services/consentService'
 
 export const EmployeeDashboardView: React.FC = () => {
@@ -136,6 +137,9 @@ export const EmployeeDashboardView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Lịch chấm công cá nhân 7 cột & xuất báo cáo (TASK-WEB-012, BLD-WEB-008) */}
+      <PersonalAttendanceCalendar />
 
       {/* Modal Ký cam kết Informed Consent */}
       <ConsentModal
