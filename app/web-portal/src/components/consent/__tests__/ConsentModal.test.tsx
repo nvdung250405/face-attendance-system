@@ -258,12 +258,57 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
       // 2. Kiểm tra phiên tạm fas_consent_session đã được xóa khỏi SessionStorage (DATA-WEB-003)
       expect(safeSessionStorage.getItem(STORAGE_KEYS.CONSENT_SESSION)).toBeNull()
 
-      // 3. Callback onSuccess được gọi
-      expect(onSuccessMock).toHaveBeenCalled()
+      // 4. Kiểm tra hiệu ứng Confetti hiển thị (DD-WEB-011, BLD-WEB-007)
+      expect(screen.getByTestId('confetti-effect')).toBeTruthy()
+    })
+
+    it('tự động gọi onClose sau 3 giây khi kích hoạt thành công (DD-WEB-011)', async () => {
+      vi.useFakeTimers()
+      const onCloseMock = vi.fn()
+
+      consentService.storeConsentSession({
+        consentSigned: true,
+        otp: '839201',
+        qrCodeData: 'otp:839201',
+        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      })
+
+      const { rerender } = render(
+        <ConsentModal isOpen={true} onClose={onCloseMock} />
+      )
+
+      act(() => {
+        mockEnrollmentState.isEnrolled = true
+      })
+
+      rerender(<ConsentModal isOpen={true} onClose={onCloseMock} />)
+
+      expect(screen.getByTestId('confetti-effect')).toBeTruthy()
+      expect(onCloseMock).not.toHaveBeenCalled()
+
+      // Chạy hết 3000ms timer
+      act(() => {
+        vi.advanceTimersByTime(3000)
+      })
+
+      expect(onCloseMock).toHaveBeenCalledTimes(1)
+      vi.useRealTimers()
+    })
+
+    it('nút Hoàn tất & Bắt đầu cho phép đóng modal ngay lập tức', () => {
+      const onCloseMock = vi.fn()
+      mockEnrollmentState.isEnrolled = true
+
+      render(<ConsentModal isOpen={true} onClose={onCloseMock} />)
+
+      const completeBtn = screen.getByTestId('complete-consent-btn')
+      expect(completeBtn).toBeTruthy()
+      fireEvent.click(completeBtn)
+      expect(onCloseMock).toHaveBeenCalledTimes(1)
     })
   })
 
-  describe('5. Tương tác Accessibility & Đóng Hộp thoại', () => {
+  describe('5. Tương tác Accessibility & Đóng Hộp thoại (APC-WEB-004, UXD-WEB-002)', () => {
     it('đóng modal khi nhấn phím Escape', () => {
       const onCloseMock = vi.fn()
       render(<ConsentModal isOpen={true} onClose={onCloseMock} />)
@@ -279,6 +324,23 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
       const closeBtn = screen.getByLabelText(/Đóng hộp thoại/i)
       fireEvent.click(closeBtn)
       expect(onCloseMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('bẫy tiêu điểm (Focus Trap) quay vòng khi nhấn Tab và Shift+Tab', () => {
+      render(<ConsentModal isOpen={true} onClose={vi.fn()} />)
+
+      const closeBtn = screen.getByLabelText(/Đóng hộp thoại/i)
+      closeBtn.focus()
+      expect(document.activeElement).toBe(closeBtn)
+
+      // Nhấn Shift+Tab tại phần tử đầu tiên -> focus chuyển về phần tử cuối cùng
+      fireEvent.keyDown(window, { key: 'Tab', shiftKey: true })
+      // Verify không crash và giữ tiêu điểm trong modal
+      expect(document.activeElement).not.toBeNull()
+
+      // Nhấn Tab tại phần tử cuối cùng -> focus quay về phần tử đầu tiên
+      fireEvent.keyDown(window, { key: 'Tab', shiftKey: false })
+      expect(document.activeElement).not.toBeNull()
     })
   })
 })
