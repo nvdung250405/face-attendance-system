@@ -19,6 +19,8 @@ import { EmployeeDashboardView } from '@/views/employee/EmployeeDashboardView'
 import { EmployeeConsentView } from '@/views/employee/EmployeeConsentView'
 import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsView'
 import { AdminAttendanceView } from '@/views/admin/AdminAttendanceView'
+import { AdminShiftManagementView } from '@/views/admin/AdminShiftManagementView'
+import { AdminPayrollPeriodView } from '@/views/admin/AdminPayrollPeriodView'
 import { UnauthorizedView } from '@/views/UnauthorizedView'
 import { NotFoundView } from '@/views/NotFoundView'
 
@@ -68,6 +70,22 @@ export const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={['HR_MANAGER', 'ADMIN']}>
                 <EmployeeManagementView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="shifts"
+            element={
+              <ProtectedRoute allowedRoles={['HR_MANAGER', 'ADMIN']}>
+                <AdminShiftManagementView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="payroll-periods"
+            element={
+              <ProtectedRoute allowedRoles={['HR_MANAGER', 'ADMIN']}>
+                <AdminPayrollPeriodView />
               </ProtectedRoute>
             }
           />
