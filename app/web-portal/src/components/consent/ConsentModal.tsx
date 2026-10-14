@@ -40,6 +40,54 @@ import type { ConsentResult } from '@/types'
 
 export type ConsentModalStep = 'TERMS' | 'OTP_DISPLAY' | 'SUCCESS'
 
+const CONFETTI_COLORS = [
+  '#4f46e5', // indigo
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#ef4444', // rose
+  '#06b6d4', // cyan
+  '#8b5cf6', // purple
+]
+
+export const ConfettiEffect: React.FC = () => {
+  const pieces = useMemo(() => {
+    return Array.from({ length: 36 }).map((_, i) => ({
+      id: i,
+      left: `${(i * 2.8 + (i % 5) * 1.5) % 96}%`,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      delay: `${(i % 6) * 0.15}s`,
+      size:
+        i % 3 === 0
+          ? 'w-2 h-4 rounded-xs'
+          : i % 3 === 1
+            ? 'w-2.5 h-2.5 rounded-full'
+            : 'w-3 h-2 rounded-xs',
+      duration: `${1.8 + (i % 4) * 0.25}s`,
+    }))
+  }, [])
+
+  return (
+    <div
+      data-testid="confetti-effect"
+      aria-hidden="true"
+      className="absolute inset-0 pointer-events-none overflow-hidden z-20"
+    >
+      {pieces.map((p) => (
+        <span
+          key={p.id}
+          className={`absolute top-0 opacity-0 animate-[confettiDrop_2.5s_ease-out_forwards] ${p.size}`}
+          style={{
+            left: p.left,
+            backgroundColor: p.color,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export interface ConsentModalProps {
   isOpen: boolean
   onClose: () => void
@@ -98,6 +146,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
   const [isCopied, setIsCopied] = useState(false)
 
   const termsContainerRef = useRef<HTMLDivElement>(null)
+  const modalCardRef = useRef<HTMLDivElement>(null)
 
   // Lắng nghe WebSocket STOMP kích hoạt khuôn mặt tại Kiosk
   const activeOtp = effectiveOtpData?.otp ?? null
@@ -107,12 +156,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
     updateUser({ status: 'ACTIVE', hasBiometric: true })
     consentService.clearConsentSession()
     onSuccess?.()
-
-    const timer = setTimeout(() => {
-      onClose()
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [updateUser, onSuccess, onClose])
+  }, [updateUser, onSuccess])
 
   const { isEnrolled } = useEnrollmentStatus({
     otp: activeOtp,
@@ -126,20 +170,26 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
       updateUser({ status: 'ACTIVE', hasBiometric: true })
       consentService.clearConsentSession()
       onSuccess?.()
+    }
+  }, [isEnrolled, updateUser, onSuccess])
 
+  // Tự động đóng modal sau 3 giây khi kích hoạt hoàn tất (DD-WEB-011, BLD-WEB-007)
+  useEffect(() => {
+    if (step === 'SUCCESS' || isEnrolled) {
       const timer = setTimeout(() => {
         onClose()
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [isEnrolled, updateUser, onSuccess, onClose])
+  }, [step, isEnrolled, onClose])
 
-  // Hiển thị bước hiện tại (nếu STOMP báo đã kích hoạt thì ưu tiên hiển thị SUCCESS)
-  const currentStep: ConsentModalStep = isEnrolled
-    ? 'SUCCESS'
-    : effectiveOtpData?.otp
-      ? 'OTP_DISPLAY'
-      : step
+  // Hiển thị bước hiện tại (nếu STOMP báo đã kích hoạt hoặc step là SUCCESS thì ưu tiên hiển thị SUCCESS)
+  const currentStep: ConsentModalStep =
+    step === 'SUCCESS' || isEnrolled
+      ? 'SUCCESS'
+      : effectiveOtpData?.otp
+        ? 'OTP_DISPLAY'
+        : step
 
   // Theo dõi sự kiện cuộn văn bản điều khoản (DD-WEB-015)
   const handleTermsScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -197,13 +247,39 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
     }
   }, [effectiveOtpData])
 
-  // Đóng modal khi bấm ESC
+  // Bẫy tiêu điểm (Focus Trap - APC-WEB-004) & Đóng khi bấm ESC
   useEffect(() => {
+    if (!isOpen) return
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isSubmitting) {
+      if (e.key === 'Escape' && !isSubmitting) {
         onClose()
+        return
+      }
+
+      if (e.key === 'Tab' && modalCardRef.current) {
+        const focusables = modalCardRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+        if (focusables.length === 0) return
+
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
       }
     }
+
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, isSubmitting, onClose])
@@ -217,7 +293,11 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
       aria-labelledby="consent-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl bg-surface-card border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div
+        ref={modalCardRef}
+        className="relative w-full max-w-2xl bg-surface-card border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+      >
+        {currentStep === 'SUCCESS' && <ConfettiEffect />}
         {/* Header Modal */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50">
           <div className="flex items-center gap-2.5">
@@ -472,7 +552,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
 
           {/* BƯỚC 3: KÍCH HOẠT THÀNH CÔNG */}
           {currentStep === 'SUCCESS' && (
-            <div className="flex flex-col items-center text-center space-y-4 py-8 animate-fade-in">
+            <div className="flex flex-col items-center text-center space-y-4 py-8 animate-fade-in relative z-10">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-status-success flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
@@ -485,12 +565,16 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
                   Dữ liệu khuôn mặt của bạn đã được quét và nạp thành công tại trạm Kiosk. Bạn đã có
                   thể bắt đầu điểm danh khuôn mặt ngay từ hôm nay.
                 </p>
+                <p className="text-xs text-text-tertiary pt-2">
+                  Hộp thoại sẽ tự động đóng sau 3 giây...
+                </p>
               </div>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 px-6 py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition-all"
+                data-testid="complete-consent-btn"
+                className="mt-4 px-6 py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition-all shadow-brand-500/20"
               >
                 Hoàn tất & Bắt đầu
               </button>
