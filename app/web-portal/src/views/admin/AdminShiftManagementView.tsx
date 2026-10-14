@@ -23,10 +23,13 @@ import {
   RotateCw,
   Sparkles,
   ArrowRight,
+  List,
+  CalendarDays,
 } from 'lucide-react'
 import { shiftAdminService } from '@/services/shiftAdminService'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
+import { WeeklyShiftScheduleView } from '@/components/shift'
 import type {
   ShiftItem,
   CreateShiftRequest,
@@ -41,6 +44,8 @@ import type { NormalizedApiError } from '@/services/errorNormalizer'
 export const AdminShiftManagementView: React.FC = () => {
   // Trạng thái tab hiển thị: 'shifts' (Danh mục ca) | 'assignments' (Lịch phân ca)
   const [activeTab, setActiveTab] = useState<'shifts' | 'assignments'>('shifts')
+  // Chế độ xem lịch phân ca: 'table' (Bảng) | 'weekly' (Lịch tuần) - UI-WEB-007, UXD-WEB-006
+  const [assignmentViewMode, setAssignmentViewMode] = useState<'table' | 'weekly'>('table')
 
   // Cờ khóa kỳ công từ store trung tâm
   const isAdjustmentLocked = usePayrollPeriodStore((state) => state.isAdjustmentLocked)
@@ -297,6 +302,26 @@ export const AdminShiftManagementView: React.FC = () => {
       shiftId: shifts[0]?.id || 0,
       effectiveStartDate: today,
       effectiveEndDate: today,
+    })
+    setAssignFormError(null)
+    setOverlapConflict(null)
+    setIsAssignDrawerOpen(true)
+  }
+
+  // Phân ca nhanh cho nhân viên từ Lịch tuần (TASK-WEB-028, UI-WEB-007)
+  const handleQuickAssign = (employeeId: number, dateStr: string) => {
+    if (isAdjustmentLocked) {
+      setNotification({
+        type: 'warning',
+        message: 'Kỳ công hiện tại đang bị khóa. Không thể thực hiện phân ca mới.',
+      })
+      return
+    }
+    setAssignFormData({
+      employeeId,
+      shiftId: shifts[0]?.id || 0,
+      effectiveStartDate: dateStr,
+      effectiveEndDate: dateStr,
     })
     setAssignFormError(null)
     setOverlapConflict(null)
@@ -612,7 +637,9 @@ export const AdminShiftManagementView: React.FC = () => {
                   <th className="py-3 px-4">Giờ Kết Thúc</th>
                   <th className="py-3 px-4">Ân Hạn (Phút)</th>
                   <th className="py-3 px-4">Trạng Thái</th>
-                  <th className="py-3 px-4 text-right">Thao Tác</th>
+                  <th className="py-3 px-4 text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                    Thao Tác
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
@@ -665,7 +692,7 @@ export const AdminShiftManagementView: React.FC = () => {
                           {shift.isActive ? 'Đang áp dụng' : 'Tạm dừng'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
                           <button
                             type="button"
@@ -704,123 +731,173 @@ export const AdminShiftManagementView: React.FC = () => {
       {/* ── Nội dung Tab 2: Lịch Phân ca Nhân sự ── */}
       {activeTab === 'assignments' && (
         <div className="space-y-4">
-          {/* Thanh lọc tìm kiếm lịch phân ca */}
+          {/* Thanh công cụ lọc & Chuyển đổi chế độ xem (Bảng vs Lịch tuần) - UI-WEB-007, UXD-WEB-006 */}
           <div className="card-surface p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              {/* Tìm kiếm theo tên / mã nhân viên */}
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  value={searchEmployeeKeyword}
-                  onChange={(e) => setSearchEmployeeKeyword(e.target.value)}
-                  data-testid="search-assigned-employee-input"
-                  placeholder="Mã NV hoặc Họ tên..."
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
-                />
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              {/* Toggle Chế độ xem: Bảng vs Lịch tuần */}
+              <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-border-subtle shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setAssignmentViewMode('table')}
+                  data-testid="view-mode-table"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    assignmentViewMode === 'table'
+                      ? 'bg-white text-brand-primary shadow-2xs font-bold'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>Dạng Bảng</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAssignmentViewMode('weekly')}
+                  data-testid="view-mode-weekly"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    assignmentViewMode === 'weekly'
+                      ? 'bg-white text-brand-primary shadow-2xs font-bold'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  <span>Lịch Tuần</span>
+                </button>
               </div>
 
+              {/* Tìm kiếm theo tên / mã nhân viên */}
+              {assignmentViewMode === 'table' && (
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={searchEmployeeKeyword}
+                    onChange={(e) => setSearchEmployeeKeyword(e.target.value)}
+                    data-testid="search-assigned-employee-input"
+                    placeholder="Mã NV hoặc Họ tên..."
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                  />
+                </div>
+              )}
+
               {/* Lọc theo ca làm việc */}
-              <select
-                value={filterShiftId}
-                onChange={(e) => setFilterShiftId(e.target.value)}
-                data-testid="filter-assigned-shift-select"
-                className="px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-text-secondary"
-              >
-                <option value="">Tất cả ca làm việc</option>
-                {shifts.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.shiftCode})
-                  </option>
-                ))}
-              </select>
+              {assignmentViewMode === 'table' && (
+                <select
+                  value={filterShiftId}
+                  onChange={(e) => setFilterShiftId(e.target.value)}
+                  data-testid="filter-assigned-shift-select"
+                  className="px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-text-secondary"
+                >
+                  <option value="">Tất cả ca làm việc</option>
+                  {shifts.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.shiftCode})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
-            <span className="text-2xs text-text-tertiary self-end sm:self-auto font-medium">
-              Hiển thị {filteredAssignments.length} / {assignments.length} lịch phân ca
-            </span>
+            {assignmentViewMode === 'table' && (
+              <span className="text-2xs text-text-tertiary self-end sm:self-auto font-medium">
+                Hiển thị {filteredAssignments.length} / {assignments.length} lịch phân ca
+              </span>
+            )}
           </div>
 
-          {/* Bảng danh sách phân ca */}
-          <div className="card-surface overflow-hidden p-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-border-subtle bg-slate-50/70 text-text-tertiary font-bold uppercase tracking-wider text-2xs">
-                    <th className="py-3 px-4">Nhân Sự</th>
-                    <th className="py-3 px-4">Ca Áp Dụng</th>
-                    <th className="py-3 px-4">Khung Giờ</th>
-                    <th className="py-3 px-4">Ngày Bắt Đầu</th>
-                    <th className="py-3 px-4">Ngày Kết Thúc</th>
-                    <th className="py-3 px-4 text-right">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-subtle">
-                  {isLoadingAssignments ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-text-muted">
-                        Đang tải lịch phân ca...
-                      </td>
+          {/* Nội dung theo chế độ xem (Bảng danh sách vs Lịch tuần) */}
+          {assignmentViewMode === 'weekly' ? (
+            <WeeklyShiftScheduleView
+              shifts={shifts}
+              assignments={assignments}
+              employees={employees}
+              isAdjustmentLocked={isAdjustmentLocked}
+              onQuickAssign={handleQuickAssign}
+              onRemoveAssignment={handleRemoveAssignment}
+            />
+          ) : (
+            /* Bảng danh sách phân ca */
+            <div className="card-surface overflow-hidden p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-border-subtle bg-slate-50/70 text-text-tertiary font-bold uppercase tracking-wider text-2xs">
+                      <th className="py-3 px-4">Nhân Sự</th>
+                      <th className="py-3 px-4">Ca Áp Dụng</th>
+                      <th className="py-3 px-4">Khung Giờ</th>
+                      <th className="py-3 px-4">Ngày Bắt Đầu</th>
+                      <th className="py-3 px-4">Ngày Kết Thúc</th>
+                      <th className="py-3 px-4 text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                        Thao Tác
+                      </th>
                     </tr>
-                  ) : filteredAssignments.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-text-muted">
-                        Không có lịch phân ca nào phù hợp. Bấm "Phân Ca Nhân Sự" để tạo lịch mới.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredAssignments.map((item) => (
-                      <tr
-                        key={item.id}
-                        data-testid={`assignment-row-${item.id}`}
-                        className="hover:bg-slate-50/50 transition-colors"
-                      >
-                        <td className="py-3.5 px-4">
-                          <div>
-                            <span className="font-semibold text-text-primary block">{item.fullName}</span>
-                            <span className="text-2xs font-mono text-text-tertiary">
-                              {item.employeeCode}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-semibold text-text-secondary">{item.shiftName}</span>
-                          <span className="ml-1 text-2xs font-mono text-brand-primary">
-                            ({item.shiftCode})
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-text-secondary">
-                          {shifts.find((s) => s.id === item.shiftId)
-                            ? `${shifts.find((s) => s.id === item.shiftId)?.startTime} - ${
-                                shifts.find((s) => s.id === item.shiftId)?.endTime
-                              }`
-                            : 'Theo ca'}
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-text-secondary">
-                          {item.effectiveStartDate}
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-text-secondary">
-                          {item.effectiveEndDate}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAssignment(item)}
-                            disabled={isAdjustmentLocked}
-                            data-testid={`remove-assignment-btn-${item.id}`}
-                            title="Hủy lịch phân ca"
-                            className="p-1.5 rounded-lg border border-border-subtle text-status-danger hover:bg-rose-50 transition-colors disabled:opacity-40"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                  </thead>
+                  <tbody className="divide-y divide-border-subtle">
+                    {isLoadingAssignments ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-text-muted">
+                          Đang tải lịch phân ca...
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : filteredAssignments.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-text-muted">
+                          Không có lịch phân ca nào phù hợp. Bấm "Phân Ca Nhân Sự" để tạo lịch mới.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredAssignments.map((item) => (
+                        <tr
+                          key={item.id}
+                          data-testid={`assignment-row-${item.id}`}
+                          className="hover:bg-slate-50/50 transition-colors"
+                        >
+                          <td className="py-3.5 px-4">
+                            <div>
+                              <span className="font-semibold text-text-primary block">{item.fullName}</span>
+                              <span className="text-2xs font-mono text-text-tertiary">
+                                {item.employeeCode}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-semibold text-text-secondary">{item.shiftName}</span>
+                            <span className="ml-1 text-2xs font-mono text-brand-primary">
+                              ({item.shiftCode})
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-text-secondary">
+                            {shifts.find((s) => s.id === item.shiftId)
+                              ? `${shifts.find((s) => s.id === item.shiftId)?.startTime} - ${
+                                  shifts.find((s) => s.id === item.shiftId)?.endTime
+                                }`
+                              : 'Theo ca'}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-text-secondary">
+                            {item.effectiveStartDate}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-text-secondary">
+                            {item.effectiveEndDate}
+                          </td>
+                          <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAssignment(item)}
+                              disabled={isAdjustmentLocked}
+                              data-testid={`remove-assignment-btn-${item.id}`}
+                              title="Hủy lịch phân ca"
+                              className="p-1.5 rounded-lg border border-border-subtle text-status-danger hover:bg-rose-50 transition-colors disabled:opacity-40"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

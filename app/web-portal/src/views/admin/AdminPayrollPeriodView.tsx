@@ -349,7 +349,9 @@ export const AdminPayrollPeriodView: React.FC = () => {
                 <th className="py-3 px-4">Trạng Thái</th>
                 <th className="py-3 px-4">Thông Tin Chốt Kỳ</th>
                 <th className="py-3 px-4">Thông Tin Mở Lại (Gần nhất)</th>
-                <th className="py-3 px-4 text-right">Thao Tác Quản Trị</th>
+                <th className="py-3 px-4 text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                  Thao Tác Quản Trị
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -457,7 +459,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                       </td>
 
                       {/* Thao tác */}
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
                           {/* Nút chọn làm kỳ hiện hành */}
                           {!isCurrentSelected && (
@@ -646,7 +648,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmUnlockPeriod}
-                disabled={isUnlocking || !unlockReason.trim()}
+                disabled={isUnlocking}
                 data-testid="confirm-unlock-period-btn"
                 className="px-4 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs disabled:opacity-50 flex items-center gap-1.5"
               >
