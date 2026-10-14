@@ -180,17 +180,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
         width: collapsed ? 'var(--spacing-sidebar-collapsed)' : 'var(--spacing-sidebar)',
         transition: 'width 200ms ease-in-out',
       }}
-      className="fixed left-0 top-0 h-screen z-40 flex flex-col bg-[#102D53] overflow-hidden shrink-0"
+      className="fixed left-0 top-0 h-screen z-40 flex flex-col bg-brand-dark-navy overflow-hidden shrink-0"
     >
       {/* ── Logo ── */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10 shrink-0">
-        <div className="w-9 h-9 rounded-lg bg-[#4F46E5] flex items-center justify-center font-bold text-white text-sm shrink-0">
+        <div className="w-9 h-9 rounded-lg bg-brand-primary flex items-center justify-center font-bold text-white text-sm shrink-0">
           FAS
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
             <div className="text-white font-semibold text-sm leading-tight whitespace-nowrap">FAS Portal</div>
-            <div className="text-[#80B4FF] text-[10px] font-medium whitespace-nowrap">v2.0-Prod</div>
+            <div className="text-brand-light-blue text-[10px] font-medium whitespace-nowrap">v2.0-Prod</div>
           </div>
         )}
       </div>
@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
                 'flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors duration-150',
                 'group relative',
                 isActive
-                  ? 'bg-[#4F46E5] text-white'
+                  ? 'bg-brand-primary text-white'
                   : 'text-[#a8c4e0] hover:bg-white/10 hover:text-white',
               ].join(' ')
             }

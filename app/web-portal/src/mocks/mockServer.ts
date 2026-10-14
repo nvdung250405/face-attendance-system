@@ -25,6 +25,11 @@ import {
   mockCreateEmployeeSuccess,
   mockResetCredentialsSuccess,
   mockChangePasswordSuccess,
+  mockKioskList,
+  mockRegisterKioskSuccess,
+  mockAuditLogsPaginatedResponse,
+  mockDpoConsentList,
+  mockRetentionScheduleList,
 } from './fixtures'
 
 export interface MockServerOptions {
@@ -165,6 +170,35 @@ export function setupDefaultMockHandlers(mock: MockAdapter): MockAdapter {
     }
   })
   mock.onPost(/\/api\/v1\/admin\/employees/).reply(200, mockCreateEmployeeSuccess)
+
+  // 10. Kiosk management (/api/v1/admin/kiosks)
+  mock.onGet(/\/api\/v1\/admin\/kiosks\/\w+\/health/).reply((config) => {
+    const id = config.url?.split('/').slice(-2)[0] || 'KIOSK-HN-01'
+    return [200, { success: true, data: { kioskId: id, status: 'ONLINE', isStale: false } }]
+  })
+  mock.onPatch(/\/api\/v1\/admin\/kiosks\/.+/).reply(200, {
+    success: true,
+    data: { ...mockKioskList[0], secretToken: 'reissued-secret-token-12345' },
+  })
+  mock.onGet(/\/api\/v1\/admin\/kiosks/).reply(200, {
+    success: true,
+    data: mockKioskList,
+  })
+  mock.onPost(/\/api\/v1\/admin\/kiosks/).reply(200, mockRegisterKioskSuccess)
+
+  // 11. Compliance & Audit logs (/api/v1/admin/audit-logs, /api/v1/dpo/**)
+  mock.onGet(/\/api\/v1\/admin\/audit-logs/).reply(200, {
+    success: true,
+    data: mockAuditLogsPaginatedResponse,
+  })
+  mock.onGet(/\/api\/v1\/dpo\/consents/).reply(200, {
+    success: true,
+    data: mockDpoConsentList,
+  })
+  mock.onGet(/\/api\/v1\/dpo\/retention-schedule/).reply(200, {
+    success: true,
+    data: mockRetentionScheduleList,
+  })
 
   return mock
 }

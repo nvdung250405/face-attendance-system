@@ -75,3 +75,95 @@ export const mockCreateDataSubjectRequestSuccess: ApiResponse<DataSubjectRequest
 }
 
 export const mockCreatedDataSubjectRequest: DataSubjectRequestItem = mockCreateDataSubjectRequestSuccess.data
+
+export const mockAuditLogList: import('@/types').AuditLogItem[] = [
+  {
+    id: 1,
+    action: 'KIOSK_REGISTERED',
+    actorId: 2,
+    actorEmail: 'admin@company.com',
+    targetResource: 'KIOSK-HN-01',
+    oldValues: null,
+    newValues: { name: 'Trạm Kiosk Sảnh Chính Tầng 1', location: 'Tòa nhà Hà Nội' },
+    ipAddress: '192.168.1.50',
+    createdAt: '2026-10-14T08:00:00.000+07:00',
+  },
+  {
+    id: 2,
+    action: 'CONSENT_SIGNED',
+    actorId: 1042,
+    actorEmail: 'nguyenvana@example.com',
+    targetResource: 'EMPLOYEE_1042',
+    oldValues: { hasBiometric: false },
+    newValues: { hasBiometric: true, version: '2.0' },
+    ipAddress: '192.168.1.100',
+    createdAt: '2026-10-14T08:15:00.000+07:00',
+  },
+  {
+    id: 3,
+    action: 'CONSENT_WITHDRAWN',
+    actorId: 1045,
+    actorEmail: 'tranthib@example.com',
+    targetResource: 'EMPLOYEE_1045',
+    oldValues: { hasBiometric: true },
+    newValues: { hasBiometric: false, retentionDeadline: '2026-10-21T09:00:00.000+07:00' },
+    ipAddress: '192.168.1.105',
+    createdAt: '2026-10-14T09:00:00.000+07:00',
+  },
+]
+
+export const mockAuditLogsPaginatedResponse: import('@/types').PaginatedResult<import('@/types').AuditLogItem> = {
+  content: mockAuditLogList,
+  page: 0,
+  size: 10,
+  totalElements: 3,
+  totalPages: 1,
+  first: true,
+  last: true,
+}
+
+export const mockDpoConsentList: import('@/types').DpoConsentAuditItem[] = [
+  {
+    id: 1,
+    employeeId: 1042,
+    employeeCode: 'EMP-001',
+    fullName: 'Nguyễn Văn A',
+    agreedAt: '2026-10-14T08:15:00.000+07:00',
+    ipAddress: '192.168.1.100',
+    consentVersion: 'v2.0-Decree13',
+    status: 'ACTIVE',
+  },
+  {
+    id: 2,
+    employeeId: 1045,
+    employeeCode: 'EMP-005',
+    fullName: 'Trần Thị B',
+    agreedAt: '2026-10-10T14:20:00.000+07:00',
+    ipAddress: '192.168.1.105',
+    consentVersion: 'v2.0-Decree13',
+    status: 'WITHDRAWN',
+  },
+]
+
+export const mockRetentionScheduleList: import('@/types').RetentionScheduleItem[] = [
+  {
+    id: 1,
+    employeeId: 1045,
+    employeeCode: 'EMP-005',
+    fullName: 'Trần Thị B',
+    resignedAt: '2026-10-14T09:00:00.000+07:00',
+    scheduledDestructionDate: '2026-10-21T09:00:00.000+07:00', // 7 ngày
+    actualDestructionDate: null,
+    status: 'SCHEDULED',
+  },
+  {
+    id: 2,
+    employeeId: 1020,
+    employeeCode: 'EMP-002',
+    fullName: 'Lê Văn C',
+    resignedAt: '2026-09-30T17:00:00.000+07:00',
+    scheduledDestructionDate: '2026-10-07T17:00:00.000+07:00',
+    actualDestructionDate: '2026-10-07T10:00:00.000+07:00',
+    status: 'COMPLETED',
+  },
+]
