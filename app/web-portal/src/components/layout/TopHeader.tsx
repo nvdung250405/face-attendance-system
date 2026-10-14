@@ -14,6 +14,10 @@ import { useStompConnectionStore } from '@/store/stompConnectionStore'
 import { logoutService } from '@/services/logoutService'
 import { ChangePasswordModal } from '@/components/account'
 
+import { useNotificationStore } from '@/store/notificationStore'
+import { notificationService } from '@/services/notificationService'
+import { NotificationDrawer } from '@/components/notification'
+
 // ── Breadcrumb map ────────────────────────────────────────────────────────────
 
 const BREADCRUMB_MAP: Record<string, string> = {
@@ -32,14 +36,19 @@ const BREADCRUMB_MAP: Record<string, string> = {
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
-const IconBell = ({ hasUnread }: { hasUnread: boolean }) => (
+const IconBell = ({ hasUnread, unreadCount }: { hasUnread: boolean; unreadCount?: number }) => (
   <div className="relative">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
     {hasUnread && (
-      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 border-2 border-white" />
+      <span
+        data-testid="notification-unread-badge"
+        className="absolute -top-1 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border border-white"
+      >
+        {unreadCount && unreadCount > 99 ? '99+' : unreadCount || ''}
+      </span>
     )}
   </div>
 )
@@ -59,6 +68,13 @@ export interface TopHeaderProps {
 export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
   const { user } = useAuthStore()
   const { status: stompStatus } = useStompConnectionStore()
+  const {
+    unreadCount,
+    isOpen: isNotificationOpen,
+    setIsOpen: setIsNotificationOpen,
+    initUser,
+    setNotifications,
+  } = useNotificationStore()
   const location = useLocation()
   const navigate = useNavigate()
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -66,6 +82,30 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const currentPage = BREADCRUMB_MAP[location.pathname] ?? 'Trang không tìm thấy'
+
+  // Đồng bộ thông báo của người dùng đăng nhập
+  useEffect(() => {
+    if (user?.id) {
+      initUser(user.id)
+      notificationService
+        .getNotifications()
+        .then((items) => {
+          const mapped = items.map((res) => ({
+            id: res.id,
+            userId: res.userId,
+            eventType: res.eventType,
+            title: res.title,
+            message: res.body || (res as unknown as { message?: string }).message || '',
+            isRead: Boolean(res.readAt),
+            createdAt: res.createdAt,
+          }))
+          setNotifications(mapped)
+        })
+        .catch(() => {
+          // Bỏ qua lỗi nạp thông báo nếu không có kết nối
+        })
+    }
+  }, [user?.id, initUser, setNotifications])
 
   const handleLogout = async () => {
     setDropdownOpen(false)
@@ -136,10 +176,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
       <button
         type="button"
         id="header-notifications"
+        data-testid="header-notifications"
         aria-label="Thông báo"
-        className="w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:bg-bg-app hover:text-text-primary transition-colors"
+        onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+        className="w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:bg-bg-app hover:text-text-primary transition-colors relative"
       >
-        <IconBell hasUnread={true} />
+        <IconBell hasUnread={unreadCount > 0} unreadCount={unreadCount} />
       </button>
 
       {/* ── Avatar + Dropdown ── */}
@@ -217,6 +259,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
       />
+
+      {/* ── Trung tâm Thông báo Drawer (SOL-WEB-011, TASK-WEB-026) ── */}
+      <NotificationDrawer />
     </header>
   )
 }

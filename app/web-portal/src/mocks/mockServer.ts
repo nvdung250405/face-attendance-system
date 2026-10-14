@@ -17,6 +17,10 @@ import {
   mockEmployeeMonthlyTimesheet,
   mockConsentSubmitSuccess,
   mockWithdrawConsentSuccess,
+  mockDataSubjectRequests,
+  mockCreatedDataSubjectRequest,
+  mockNotificationResponses,
+  mockMarkAsReadResponse,
   mockPaginatedEmployees,
   mockCreateEmployeeSuccess,
   mockResetCredentialsSuccess,
@@ -95,12 +99,35 @@ export function setupDefaultMockHandlers(mock: MockAdapter): MockAdapter {
   // 6. GET /api/v1/employee/attendance
   mock.onGet(/\/api\/v1\/employee\/attendance/).reply(200, mockEmployeeMonthlyTimesheet)
 
-  // 7. GET /api/v1/notifications
+  // 7. Notifications (/api/v1/notifications)
   mock.onGet(/\/api\/v1\/notifications/).reply(200, {
     success: true,
     code: 'OK',
     message: 'Thành công',
-    data: [],
+    data: mockNotificationResponses,
+    timestamp: new Date().toISOString(),
+  })
+  mock.onPatch(/\/api\/v1\/notifications\/read-all/).reply(200, {
+    success: true,
+    code: 'OK',
+    message: 'Đã đánh dấu tất cả thông báo là đã đọc',
+    data: null,
+  })
+  mock.onPatch(/\/api\/v1\/notifications\/\d+\/read/).reply(200, mockMarkAsReadResponse)
+
+  // 8. Data Subject Requests (/api/v1/employee/data-requests)
+  mock.onGet(/\/api\/v1\/employee\/data-requests/).reply(200, {
+    success: true,
+    code: 'OK',
+    message: 'Thành công',
+    data: mockDataSubjectRequests,
+    timestamp: new Date().toISOString(),
+  })
+  mock.onPost(/\/api\/v1\/employee\/data-requests/).reply(200, {
+    success: true,
+    code: 'CREATED',
+    message: 'Đã tiếp nhận yêu cầu dữ liệu cá nhân',
+    data: mockCreatedDataSubjectRequest,
     timestamp: new Date().toISOString(),
   })
 
