@@ -21,6 +21,7 @@ import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsV
 import { AdminAttendanceView } from '@/views/admin/AdminAttendanceView'
 import { AdminShiftManagementView } from '@/views/admin/AdminShiftManagementView'
 import { AdminPayrollPeriodView } from '@/views/admin/AdminPayrollPeriodView'
+import { ForceChangePasswordView } from '@/views/auth/ForceChangePasswordView'
 import { UnauthorizedView } from '@/views/UnauthorizedView'
 import { NotFoundView } from '@/views/NotFoundView'
 
@@ -53,6 +54,16 @@ export const AppRoutes: React.FC = () => {
           <PublicRoute>
             <LoginView />
           </PublicRoute>
+        }
+      />
+
+      {/* Màn hình đổi mật khẩu bắt buộc (TASK-WEB-029, BLD-WEB-024) */}
+      <Route
+        path="/force-change-password"
+        element={
+          <ProtectedRoute>
+            <ForceChangePasswordView />
+          </ProtectedRoute>
         }
       />
 

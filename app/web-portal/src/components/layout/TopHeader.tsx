@@ -12,7 +12,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useStompConnectionStore } from '@/store/stompConnectionStore'
 import { logoutService } from '@/services/logoutService'
-import { ChangePasswordModal } from '@/components/account'
+import { ChangePasswordModal, PinManagementModal } from '@/components/account'
 
 import { useNotificationStore } from '@/store/notificationStore'
 import { notificationService } from '@/services/notificationService'
@@ -79,6 +79,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
   const navigate = useNavigate()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const currentPage = BREADCRUMB_MAP[location.pathname] ?? 'Trang không tìm thấy'
@@ -239,6 +240,22 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
             <button
               type="button"
               role="menuitem"
+              id="header-manage-pin"
+              data-testid="header-manage-pin"
+              onClick={() => {
+                setDropdownOpen(false)
+                setIsPinModalOpen(true)
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-text-primary hover:bg-bg-app transition-colors flex items-center gap-2"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span>{user?.hasPin ? 'Đổi mã PIN dự phòng' : 'Thiết lập mã PIN'}</span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
               id="header-logout"
               onClick={handleLogout}
               className="w-full text-left px-3 py-2 text-sm text-status-danger hover:bg-rose-50 transition-colors flex items-center gap-2"
@@ -258,6 +275,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
+      />
+
+      {/* ── Modal Thiết lập / Đặt lại Mã PIN Dự phòng (UI-WEB-008, TASK-WEB-029) ── */}
+      <PinManagementModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
       />
 
       {/* ── Trung tâm Thông báo Drawer (SOL-WEB-011, TASK-WEB-026) ── */}
