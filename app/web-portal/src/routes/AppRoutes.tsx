@@ -102,6 +102,7 @@ export const AppRoutes: React.FC = () => {
           />
           <Route path="kiosks" element={<AdminKioskManagementView />} />
           <Route path="attendance" element={<AdminAttendanceView />} />
+          <Route path="reports" element={<AdminAttendanceView />} />
           <Route path="audit-logs" element={<AdminAuditLogView />} />
         </Route>
 

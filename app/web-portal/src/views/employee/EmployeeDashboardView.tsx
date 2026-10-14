@@ -17,7 +17,7 @@ export const EmployeeDashboardView: React.FC = () => {
   })
 
   return (
-    <div className="min-h-screen bg-bg-app text-text-primary p-6 md:p-8 space-y-6">
+    <div data-testid="employee-dashboard-view" className="min-h-screen bg-bg-app text-text-primary p-6 md:p-8 space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-card border border-border-subtle rounded-xl p-6 shadow-sm">
         <div>
           <div className="inline-block px-2.5 py-1 bg-emerald-50 text-status-success text-xs font-semibold rounded-md mb-2">
