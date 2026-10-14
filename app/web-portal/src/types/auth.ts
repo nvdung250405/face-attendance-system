@@ -15,6 +15,7 @@ export interface UserProfile {
   readonly department: string
   readonly hasBiometric?: boolean
   readonly hasPin?: boolean
+  readonly mustChangePassword?: boolean
   readonly createdAt?: string
 }
 

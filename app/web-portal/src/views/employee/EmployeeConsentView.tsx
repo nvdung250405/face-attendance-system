@@ -9,11 +9,13 @@
 import React, { useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal, ConsentWithdrawalModal } from '@/components/consent'
+import { PinManagementModal } from '@/components/account'
 
 export const EmployeeConsentView: React.FC = () => {
   const { user } = useAuthStore()
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false)
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false)
 
   return (
     <div className="space-y-6">
@@ -146,7 +148,14 @@ export const EmployeeConsentView: React.FC = () => {
 
           <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-text-muted">
             <span>Dùng tại màn hình PIN Kiosk</span>
-            <span className="font-medium text-text-secondary">6 chữ số bí mật</span>
+            <button
+              type="button"
+              data-testid="open-pin-management-modal-btn"
+              onClick={() => setIsPinModalOpen(true)}
+              className="btn-secondary text-xs font-semibold py-1 px-2.5"
+            >
+              {user?.hasPin ? 'Đổi mã PIN' : 'Thiết lập mã PIN'}
+            </button>
           </div>
         </div>
       </div>
@@ -161,6 +170,12 @@ export const EmployeeConsentView: React.FC = () => {
       <ConsentWithdrawalModal
         isOpen={isWithdrawModalOpen}
         onClose={() => setIsWithdrawModalOpen(false)}
+      />
+
+      {/* ── Modal Thiết lập / Đặt lại Mã PIN Dự phòng (UI-WEB-008, TASK-WEB-029) ── */}
+      <PinManagementModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
       />
     </div>
   )

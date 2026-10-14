@@ -22,7 +22,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, ch
     return <Navigate to="/login" replace state={{ from: location }} />
   }
 
-  // 2. Nếu đã đăng nhập nhưng không có vai trò phù hợp: điều hướng về cổng mặc định của vai trò đó
+  // 2. Chặn điều hướng khi tài khoản bắt buộc phải đổi mật khẩu (TASK-WEB-029, BLD-WEB-024)
+  if (user?.mustChangePassword && location.pathname !== '/force-change-password') {
+    return <Navigate to="/force-change-password" replace />
+  }
+
+  // 3. Nếu đã đăng nhập nhưng không có vai trò phù hợp: điều hướng về cổng mặc định của vai trò đó
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     const targetPath = getDefaultPathForRole(user.role)
     return <Navigate to={targetPath} replace />
