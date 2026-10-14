@@ -10,6 +10,8 @@ import { safeLocalStorage, safeSessionStorage, STORAGE_KEYS } from './storage'
 import { useAuthStore } from '@/store/authStore'
 import type { AuthSession } from '@/types'
 
+import { stompClientService } from './stompClientService'
+
 export class LogoutService {
   /**
    * Đăng xuất khỏi hệ thống:
@@ -40,6 +42,7 @@ export class LogoutService {
     safeLocalStorage.removeItem(AUTH_STORAGE_KEY)
     safeSessionStorage.removeItem(STORAGE_KEYS.CONSENT_SESSION)
     useAuthStore.getState().clearSession()
+    void stompClientService.deactivate().catch(() => {})
   }
 }
 

@@ -111,7 +111,10 @@ function getMondayISO(offsetDays = 0): string {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1) + offsetDays
   const monday = new Date(d.setDate(diff))
-  return monday.toISOString().slice(0, 10)
+  const year = monday.getFullYear()
+  const month = String(monday.getMonth() + 1).padStart(2, '0')
+  const date = String(monday.getDate()).padStart(2, '0')
+  return `${year}-${month}-${date}`
 }
 
 const mockAssignments: EmployeeShiftAssignment[] = [
