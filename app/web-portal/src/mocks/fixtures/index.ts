@@ -5,3 +5,4 @@
 export * from './authFixtures'
 export * from './attendanceFixtures'
 export * from './consentFixtures'
+export * from './employeeFixtures'

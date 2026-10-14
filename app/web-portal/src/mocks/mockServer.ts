@@ -17,6 +17,10 @@ import {
   mockEmployeeMonthlyTimesheet,
   mockConsentSubmitSuccess,
   mockWithdrawConsentSuccess,
+  mockPaginatedEmployees,
+  mockCreateEmployeeSuccess,
+  mockResetCredentialsSuccess,
+  mockChangePasswordSuccess,
 } from './fixtures'
 
 export interface MockServerOptions {
@@ -99,6 +103,41 @@ export function setupDefaultMockHandlers(mock: MockAdapter): MockAdapter {
     data: [],
     timestamp: new Date().toISOString(),
   })
+
+  // 8. POST /api/v1/auth/change-password
+  mock.onPost(/\/api\/v1\/auth\/change-password/).reply(200, mockChangePasswordSuccess)
+
+  // 9. Employee lifecycle (/api/v1/admin/employees)
+  mock.onGet(/\/api\/v1\/admin\/employees\/\d+/).reply((config) => {
+    const idMatch = config.url?.match(/\/api\/v1\/admin\/employees\/(\d+)/)
+    const id = idMatch ? Number(idMatch[1]) : 1
+    const emp = mockPaginatedEmployees.content.find((e) => e.id === id) || mockPaginatedEmployees.content[0]
+    return [200, { success: true, data: emp }]
+  })
+  mock.onGet(/\/api\/v1\/admin\/employees/).reply(200, {
+    success: true,
+    data: mockPaginatedEmployees,
+  })
+  mock.onPost(/\/api\/v1\/admin\/employees\/\d+\/credentials\/reset/).reply(200, mockResetCredentialsSuccess)
+  mock.onPatch(/\/api\/v1\/admin\/employees\/\d+\/status/).reply((config) => {
+    try {
+      const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+      const updated = { ...mockPaginatedEmployees.content[0], status: body?.status || 'ACTIVE' }
+      return [200, { success: true, data: updated }]
+    } catch {
+      return [200, { success: true, data: mockPaginatedEmployees.content[0] }]
+    }
+  })
+  mock.onPatch(/\/api\/v1\/admin\/employees\/\d+/).reply((config) => {
+    try {
+      const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+      const updated = { ...mockPaginatedEmployees.content[0], ...body }
+      return [200, { success: true, data: updated }]
+    } catch {
+      return [200, { success: true, data: mockPaginatedEmployees.content[0] }]
+    }
+  })
+  mock.onPost(/\/api\/v1\/admin\/employees/).reply(200, mockCreateEmployeeSuccess)
 
   return mock
 }

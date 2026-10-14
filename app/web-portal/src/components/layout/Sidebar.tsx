@@ -10,6 +10,7 @@
 import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { logoutService } from '@/services/logoutService'
 import type { UserRole } from '@/types/auth'
 
 // ── Icon SVG nội tuyến (không phụ thuộc thư viện icon) ───────────────────────
@@ -159,15 +160,15 @@ export interface SidebarProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
-  const { user, clearSession } = useAuthStore()
+  const { user } = useAuthStore()
   const navigate = useNavigate()
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => user?.role && item.roles.includes(user.role)
   )
 
-  const handleLogout = () => {
-    clearSession()
+  const handleLogout = async () => {
+    await logoutService.logout()
     navigate('/login', { replace: true })
   }
 
