@@ -18,8 +18,10 @@ import {
   X,
   RotateCw,
   ShieldCheck,
+  Download,
 } from 'lucide-react'
 import { payrollPeriodService } from '@/services/payrollPeriodService'
+import { reportExportService } from '@/services/reportExportService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
 import { useAuthStore } from '@/store/authStore'
 import type { PayrollPeriodResponse } from '@/types'
@@ -177,6 +179,41 @@ export const AdminPayrollPeriodView: React.FC = () => {
       setUnlockError(error.message || 'Không thể mở lại kỳ công. Vui lòng thử lại.')
     } finally {
       setIsUnlocking(false)
+    }
+  }
+
+  // ── Thao tác Xuất Báo Cáo Kỳ Công (TASK-WEB-020) ──────────────────────────
+  const [exportingPeriodId, setExportingPeriodId] = useState<number | null>(null)
+
+  const handleExportPeriodReport = async (period: PayrollPeriodResponse) => {
+    const periodCode = `${period.periodYear}-${String(period.periodMonth).padStart(2, '0')}`
+    try {
+      setExportingPeriodId(period.id)
+      const result = await reportExportService.exportTimesheetReport({
+        period: periodCode,
+        format: 'xlsx',
+      })
+      reportExportService.triggerDownload(result.blob, result.filename)
+      setNotification({
+        type: 'success',
+        message: `Đã xuất thành công bảng công kỳ ${period.periodMonth}/${period.periodYear}.`,
+      })
+    } catch {
+      // Fallback tạo file client-side (DD-WEB-017)
+      const fallbackResult = reportExportService.generateClientExcelReport({
+        companyName: 'CÔNG TY CỔ PHẦN CÔNG NGHỆ FAS',
+        reportTitle: `BẢNG TỔNG HỢP CÔNG KỲ ${period.periodMonth}/${period.periodYear}`,
+        period: periodCode,
+        generatedAt: new Date().toLocaleString('vi-VN'),
+        records: [],
+      })
+      reportExportService.triggerDownload(fallbackResult.blob, fallbackResult.filename)
+      setNotification({
+        type: 'success',
+        message: `Đã xuất bảng công (bản offline) kỳ ${period.periodMonth}/${period.periodYear}.`,
+      })
+    } finally {
+      setExportingPeriodId(null)
     }
   }
 
@@ -463,6 +500,19 @@ export const AdminPayrollPeriodView: React.FC = () => {
                               <span>Mở Lại Kỳ</span>
                             </button>
                           )}
+
+                          {/* Nút Xuất Báo Cáo Kỳ Công (TASK-WEB-020) */}
+                          <button
+                            type="button"
+                            onClick={() => void handleExportPeriodReport(period)}
+                            disabled={exportingPeriodId === period.id}
+                            title="Xuất bảng công kỳ này"
+                            data-testid={`export-period-btn-${period.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-2xs font-semibold border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-brand-primary shadow-2xs transition-colors disabled:opacity-50"
+                          >
+                            <Download className="w-3 h-3" />
+                            <span>{exportingPeriodId === period.id ? 'Đang xuất...' : 'Xuất File'}</span>
+                          </button>
                         </div>
                       </td>
                     </tr>

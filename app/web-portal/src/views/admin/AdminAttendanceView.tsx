@@ -30,6 +30,7 @@ import { attendanceService } from '@/services/attendanceService'
 import { reportExportService } from '@/services/reportExportService'
 import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'
 import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
+import { ExportReportModal } from '@/components/report'
 import type { AttendanceRecord, AttendanceStatus, AttendanceStats } from '@/types'
 
 export const AdminAttendanceView: React.FC = () => {
@@ -38,6 +39,7 @@ export const AdminAttendanceView: React.FC = () => {
   const [stats, setStats] = useState<AttendanceStats | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isExporting, setIsExporting] = useState<boolean>(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Hiệu ứng Green Flash trong 3 giây trên dòng mới nhất (BLD-WEB-015, DD-WEB-014)
@@ -244,44 +246,117 @@ export const AdminAttendanceView: React.FC = () => {
     return records.filter((r) => r.verificationMethod === verificationMethod)
   }, [records, verificationMethod])
 
-  // Xuất báo cáo bảng công Excel/CSV
-  const handleExportReport = async () => {
+  // Xuất báo cáo bảng công Excel/PDF (TASK-WEB-020, BLD-WEB-016, DD-WEB-017)
+  const handleExportReport = async (options?: {
+    format?: 'xlsx' | 'pdf'
+    companyName?: string
+    reportTitle?: string
+    period?: string
+  }) => {
     setIsExporting(true)
+    const exportFormat = options?.format || 'xlsx'
+    const now = new Date()
+    const currentPeriod =
+      options?.period || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const company = options?.companyName || 'CÔNG TY CỔ PHẦN CÔNG NGHỆ FAS'
+    const title = options?.reportTitle || 'BÁO CÁO BẢNG CHẤM CÔNG NHÂN SỰ'
+
     try {
-      const now = new Date()
-      const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
       const result = await reportExportService.exportTimesheetReport({
         period: currentPeriod,
-        format: 'xlsx',
+        format: exportFormat,
+        departmentId: department || undefined,
+        keyword: keyword.trim() || undefined,
+        status: status || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
       })
       reportExportService.triggerDownload(result.blob, result.filename)
     } catch {
-      // Fallback xuất CSV cục bộ nếu API backend chưa có sẵn
-      const fallbackRecords = records.map((r) => ({
-        date: r.punchTimestamp.slice(0, 10),
-        dayOfWeek: '',
-        checkIn: r.punchType === 'CHECK_IN' ? r.punchTimestamp.slice(11, 19) : null,
-        checkOut: r.punchType === 'CHECK_OUT' ? r.punchTimestamp.slice(11, 19) : null,
+      // Fallback xuất client-side nếu backend không trả file (DD-WEB-017)
+      const clientItems = records.map((r) => ({
+        recordId: r.recordId,
+        employeeCode: r.employeeCode,
+        fullName: r.fullName,
+        department: r.department,
+        punchTimestamp: r.punchTimestamp,
+        punchType: r.punchType,
         status: r.status,
         lateMinutes: r.lateMinutes,
-        shiftCode: 'CA_HANH_CHINH',
-        verificationMethod: r.verificationMethod,
         kioskId: r.kioskId,
+        verificationMethod: r.verificationMethod,
       }))
-      const now = new Date()
-      attendanceService.exportPersonalAttendanceCsv(
-        now.getMonth() + 1,
-        now.getFullYear(),
-        fallbackRecords,
-        {
-          fullName: 'Báo Cáo Điểm Danh Toàn Công Ty',
-          employeeCode: 'HR-ALL',
-          department: department || 'Toàn bộ',
-        }
-      )
+
+      const clientOptions = {
+        companyName: company,
+        reportTitle: title,
+        period: currentPeriod,
+        generatedAt: new Date().toLocaleString('vi-VN'),
+        departmentName: department || 'Toàn bộ phòng ban',
+        records: clientItems,
+        stats: stats
+          ? {
+              totalEmployees: stats.totalEmployees,
+              presentCount: stats.presentCount,
+              onTimeCount: stats.onTimeCount,
+              lateCount: stats.lateCount,
+              absentCount: stats.absentCount,
+              faceRecognitionRate:
+                stats.presentCount > 0
+                  ? Math.round((stats.onTimeCount / stats.presentCount) * 100)
+                  : 100,
+            }
+          : undefined,
+      }
+
+      if (exportFormat === 'pdf') {
+        const result = reportExportService.generateClientPdfReport(clientOptions)
+        reportExportService.triggerDownload(result.blob, result.filename)
+      } else {
+        const result = reportExportService.generateClientExcelReport(clientOptions)
+        reportExportService.triggerDownload(result.blob, result.filename)
+      }
     } finally {
       setIsExporting(false)
     }
+  }
+
+  // Xem trước & In ấn báo cáo (TASK-WEB-020)
+  const handlePrintPreview = (opts: {
+    companyName: string
+    reportTitle: string
+    period: string
+  }) => {
+    const clientItems = records.map((r) => ({
+      recordId: r.recordId,
+      employeeCode: r.employeeCode,
+      fullName: r.fullName,
+      department: r.department,
+      punchTimestamp: r.punchTimestamp,
+      punchType: r.punchType,
+      status: r.status,
+      lateMinutes: r.lateMinutes,
+      kioskId: r.kioskId,
+      verificationMethod: r.verificationMethod,
+    }))
+
+    reportExportService.printReport({
+      companyName: opts.companyName,
+      reportTitle: opts.reportTitle,
+      period: opts.period,
+      generatedAt: new Date().toLocaleString('vi-VN'),
+      departmentName: department || 'Toàn bộ phòng ban',
+      records: clientItems,
+      stats: stats
+        ? {
+            totalEmployees: stats.totalEmployees,
+            presentCount: stats.presentCount,
+            onTimeCount: stats.onTimeCount,
+            lateCount: stats.lateCount,
+            absentCount: stats.absentCount,
+          }
+        : undefined,
+    })
   }
 
   // Đặt lại toàn bộ bộ lọc
@@ -385,17 +460,30 @@ export const AdminAttendanceView: React.FC = () => {
             <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
-          {/* Nút xuất báo cáo Excel */}
-          <button
-            type="button"
-            onClick={handleExportReport}
-            disabled={isExporting}
-            data-testid="export-attendance-report-btn"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-semibold rounded-xl shadow-xs transition-all disabled:opacity-50"
-          >
-            <Download className="w-4 h-4" />
-            <span>{isExporting ? 'Đang xuất...' : 'Xuất Báo Cáo'}</span>
-          </button>
+          {/* Nhóm nút xuất báo cáo Excel & PDF (TASK-WEB-020) */}
+          <div className="flex items-center rounded-xl bg-brand-primary p-0.5 shadow-xs">
+            <button
+              type="button"
+              onClick={() => handleExportReport()}
+              disabled={isExporting}
+              data-testid="export-attendance-report-btn"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-white text-xs font-semibold rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              <span>{isExporting ? 'Đang xuất...' : 'Xuất Báo Cáo'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsExportModalOpen(true)}
+              disabled={isExporting}
+              data-testid="open-export-modal-btn"
+              title="Tùy chọn xuất báo cáo Excel / PDF"
+              className="px-2 py-2 text-white hover:bg-brand-hover rounded-lg transition-colors border-l border-white/20"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -640,6 +728,29 @@ export const AdminAttendanceView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Modal Tùy chọn Xuất Báo Cáo Excel/PDF (TASK-WEB-020, BLD-WEB-016) ── */}
+      <ExportReportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        recordsCount={records.length}
+        records={records.map((r) => ({
+          recordId: r.recordId,
+          employeeCode: r.employeeCode,
+          fullName: r.fullName,
+          department: r.department,
+          punchTimestamp: r.punchTimestamp,
+          punchType: r.punchType,
+          status: r.status,
+          lateMinutes: r.lateMinutes,
+          kioskId: r.kioskId,
+          verificationMethod: r.verificationMethod,
+        }))}
+        currentPeriod={fromDate ? fromDate.slice(0, 7) : undefined}
+        currentDepartment={department}
+        onExport={handleExportReport}
+        onPrintPreview={handlePrintPreview}
+      />
     </div>
   )
 }
