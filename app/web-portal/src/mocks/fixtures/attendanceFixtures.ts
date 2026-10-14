@@ -2,7 +2,14 @@
  * Chuẩn Fixtures Phản Hồi Điểm Danh & STOMP Events (TASK-WEB-032, API-WEB-004, API-WEB-005, API-WEB-007).
  */
 
-import type { ApiResponse, PaginatedResult, AttendanceRecord, MonthlyTimesheet, LiveAttendanceMessage } from '@/types'
+import type {
+  ApiResponse,
+  PaginatedResult,
+  AttendanceRecord,
+  MonthlyTimesheet,
+  LiveAttendanceMessage,
+  AttendanceStats,
+} from '@/types'
 
 export const mockAttendanceRecords: AttendanceRecord[] = [
   {
@@ -112,3 +119,12 @@ export const mockLiveAttendancePunchedEvent: LiveAttendanceMessage = {
   lateMinutes: 17,
   kioskId: 'KIOSK-HN-01',
 }
+
+export const mockAttendanceStats: AttendanceStats = {
+  totalEmployees: 128,
+  presentCount: 115,
+  onTimeCount: 108,
+  lateCount: 7,
+  absentCount: 13,
+}
+
