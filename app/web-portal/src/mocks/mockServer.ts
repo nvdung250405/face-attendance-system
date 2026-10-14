@@ -14,6 +14,7 @@ import {
   mockLoginInvalidCredentials,
   mockTokenRefreshSuccess,
   mockAdminAttendancePageResponse,
+  mockAttendanceStats,
   mockEmployeeMonthlyTimesheet,
   mockConsentSubmitSuccess,
   mockWithdrawConsentSuccess,
@@ -98,10 +99,19 @@ export function setupDefaultMockHandlers(mock: MockAdapter): MockAdapter {
     return [200, mockConsentSubmitSuccess]
   })
 
-  // 5. GET /api/v1/admin/attendance
+  // 5. GET /api/v1/admin/attendance/stats
+  mock.onGet(/\/api\/v1\/admin\/attendance\/stats/).reply(200, {
+    success: true,
+    code: 'OK',
+    message: 'Thành công',
+    data: mockAttendanceStats,
+    timestamp: new Date().toISOString(),
+  })
+
+  // 6. GET /api/v1/admin/attendance
   mock.onGet(/\/api\/v1\/admin\/attendance/).reply(200, mockAdminAttendancePageResponse)
 
-  // 6. GET /api/v1/employee/attendance
+  // 7. GET /api/v1/employee/attendance
   mock.onGet(/\/api\/v1\/employee\/attendance/).reply(200, mockEmployeeMonthlyTimesheet)
 
   // 7. Notifications (/api/v1/notifications)

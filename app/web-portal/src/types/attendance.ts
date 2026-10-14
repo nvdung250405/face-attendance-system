@@ -34,6 +34,8 @@ export interface AttendanceStats {
   presentCount: number
   onTimeCount: number
   lateCount: number
+  totalEmployees?: number
+  absentCount?: number
 }
 
 export interface DailyAttendanceItem {
