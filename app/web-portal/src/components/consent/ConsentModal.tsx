@@ -291,6 +291,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="consent-modal-title"
+      data-testid="consent-modal"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
     >
       <div
