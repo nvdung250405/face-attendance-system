@@ -137,6 +137,10 @@ export class StompWebSocketService {
       console.error('[STOMP Error Frame]:', frame.headers['message'], frame.body)
       this.updateStatus('ERROR')
       this.clearActiveStompSubscriptions()
+      if (!this.tokenProvider()) {
+        void this.client.deactivate().catch(() => {})
+        return
+      }
       this.applyExponentialBackoff()
     }
 
@@ -233,6 +237,10 @@ export class StompWebSocketService {
    */
   activate(): void {
     if (this.client.active) return
+    const token = this.tokenProvider()
+    if (!token) {
+      return
+    }
     this.updateStatus('CONNECTING')
     this.client.activate()
   }

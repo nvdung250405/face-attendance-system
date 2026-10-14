@@ -16,6 +16,7 @@ import type { ApiResponse, AuthSession, TokenResponse } from '@/types'
 import { safeLocalStorage } from './storage'
 import { AUTH_STORAGE_KEY } from './apiClient'
 import { useAuthStore } from '@/store/authStore'
+import { stompClientService } from './stompClientService'
 
 interface QueueItem {
   resolve: (token: string) => void
@@ -81,6 +82,7 @@ export function attachTokenRefreshInterceptor(
   const refreshUrl = options.refreshUrl || '/api/v1/auth/refresh'
 
   const handleSessionExpired = () => {
+    void stompClientService.deactivate().catch(() => {})
     if (options.onSessionExpired) {
       options.onSessionExpired()
     } else {
@@ -142,7 +144,13 @@ export function attachTokenRefreshInterceptor(
               timeout: 5000,
             })
 
-          const res = await refreshClient.post<ApiResponse<TokenResponse>>(refreshUrl, {
+          // Chuẩn hóa refreshUrl: Nếu baseURL kết thúc bằng /api/v1 và refreshUrl bắt đầu bằng /api/v1 thì loại bỏ để không bị /api/v1/api/v1
+          const normalizedRefreshUrl =
+            instance.defaults.baseURL?.endsWith('/api/v1') && refreshUrl.startsWith('/api/v1')
+              ? refreshUrl.slice('/api/v1'.length) || '/'
+              : refreshUrl
+
+          const res = await refreshClient.post<ApiResponse<TokenResponse>>(normalizedRefreshUrl, {
             refreshToken: session.refreshToken,
           })
 

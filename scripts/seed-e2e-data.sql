@@ -33,9 +33,9 @@ ON CONFLICT (shift_code) DO UPDATE
 SET is_active = TRUE,
     grace_period_minutes = 15;
 
--- 3. Khởi tạo Nhân viên mẫu kiểm thử E2E (Mã NV-001, PIN 123456)
--- Mật khẩu BCrypt: Admin@123 ($2a$10$w8u/aYw9kE5v0Qh0G9I8E.J4i5D8iVw6tS2nQ8Q8w9x.Q8u/aYw9k)
--- PIN 123456 BCrypt: $2a$10$7EqJtq98hPqEX7fNZaFWoO.N4/R1L1XkF7k.YQ2d6I2rB9d1w1v3.
+-- 3. Khởi tạo Nhân viên mẫu kiểm thử E2E (Mã NV-001, Pass Admin@123, PIN 123456)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 INSERT INTO users (
     employee_code,
     full_name,
@@ -52,7 +52,7 @@ VALUES (
     'NV-001',
     'Nguyễn Văn A',
     'nguyenvana@fas.local',
-    '$2a$10$DUMMY_PASSWORD_HASH_FOR_E2E_TESTING_PURPOSES_ONLY_BCRYPT01',
+    crypt('Admin@123', gen_salt('bf', 10)),
     'EMPLOYEE',
     'ACTIVE',
     'Phòng Kỹ thuật & Tích hợp',
@@ -62,8 +62,14 @@ VALUES (
 )
 ON CONFLICT (employee_code) DO UPDATE
 SET status = 'ACTIVE',
+    password_hash = EXCLUDED.password_hash,
     pin_hash = EXCLUDED.pin_hash,
     full_name = EXCLUDED.full_name;
+
+-- Đảm bảo tài khoản quản trị ban đầu có mật khẩu khớp cấu hình Admin@123456
+UPDATE users 
+SET password_hash = crypt('Admin@123456', gen_salt('bf', 10))
+WHERE email = 'admin@fas.com';
 
 -- 4. Gán ca làm việc CA-HANH-CHINH cho nhân viên NV-001
 DO $$

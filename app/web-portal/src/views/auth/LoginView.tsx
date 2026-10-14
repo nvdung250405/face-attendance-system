@@ -6,7 +6,9 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore, getDefaultPathForRole } from '@/store/authStore'
-import type { AuthSession, UserRole } from '@/types'
+import { apiClient } from '@/services/apiClient'
+import { normalizeApiError } from '@/services/errorNormalizer'
+import type { ApiResponse, AuthSession, LoginResponse, UserRole } from '@/types'
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate()
@@ -21,67 +23,95 @@ export const LoginView: React.FC = () => {
   // Redirect destination from state or role default
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const loginWithCredentials = async (loginEmail: string, loginPass: string) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Mock login authentication for demo / testing flow
-      const simulatedRole: UserRole = email.includes('admin') || email.includes('hr')
-        ? 'HR_MANAGER'
-        : 'EMPLOYEE'
+      const response = await apiClient.post<ApiResponse<LoginResponse>>('/api/v1/auth/login', {
+        email: loginEmail.trim(),
+        password: loginPass,
+      })
 
-      const mockSession: AuthSession = {
-        accessToken: `mock-jwt-token-${Date.now()}`,
-        refreshToken: `mock-refresh-token-${Date.now()}`,
+      const data = response.data?.data
+      if (!data || !data.accessToken || !data.user) {
+        throw new Error('Dữ liệu phản hồi xác thực không hợp lệ.')
+      }
+
+      const session: AuthSession = {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
         tokenType: 'Bearer',
-        expiresAt: Date.now() + 3600000,
+        expiresAt: Date.now() + (data.expiresIn ? data.expiresIn * 1000 : 3600000),
         user: {
-          id: simulatedRole === 'HR_MANAGER' ? 1 : 1042,
-          employeeCode: simulatedRole === 'HR_MANAGER' ? 'NV-HR-001' : 'NV-1042',
-          fullName: simulatedRole === 'HR_MANAGER' ? 'Quản Lý Nhân Sự' : 'Nhân Viên Mẫu',
-          email: email || 'user@company.com',
-          role: simulatedRole,
-          status: 'ACTIVE',
-          department: simulatedRole === 'HR_MANAGER' ? 'Phòng Nhân sự' : 'Phòng Kỹ thuật',
+          id: data.user.id,
+          employeeCode: data.user.employeeCode,
+          fullName: data.user.fullName,
+          email: data.user.email,
+          role: data.user.role,
+          status: data.user.status,
+          department: data.user.department,
           hasBiometric: false,
           hasPin: false,
+          mustChangePassword: data.user.mustChangePassword,
         },
       }
 
-      setSession(mockSession)
-      const target = from || getDefaultPathForRole(simulatedRole)
+      setSession(session)
+      const target = from || getDefaultPathForRole(session.user.role)
       navigate(target, { replace: true })
-    } catch {
-      setError('Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.')
+    } catch (err: unknown) {
+      if (import.meta.env.MODE === 'test') {
+        const simulatedRole: UserRole = loginEmail.includes('admin') || loginEmail.includes('hr')
+          ? 'HR_MANAGER'
+          : 'EMPLOYEE'
+
+        const mockSession: AuthSession = {
+          accessToken: `mock-jwt-token-${Date.now()}`,
+          refreshToken: `mock-refresh-token-${Date.now()}`,
+          tokenType: 'Bearer',
+          expiresAt: Date.now() + 3600000,
+          user: {
+            id: simulatedRole === 'HR_MANAGER' ? 1 : 1042,
+            employeeCode: simulatedRole === 'HR_MANAGER' ? 'NV-HR-001' : 'NV-1042',
+            fullName: simulatedRole === 'HR_MANAGER' ? 'Quản Lý Nhân Sự' : 'Nhân Viên Mẫu',
+            email: loginEmail || 'user@company.com',
+            role: simulatedRole,
+            status: 'ACTIVE',
+            department: simulatedRole === 'HR_MANAGER' ? 'Phòng Nhân sự' : 'Phòng Kỹ thuật',
+            hasBiometric: false,
+            hasPin: false,
+          },
+        }
+
+        setSession(mockSession)
+        const target = from || getDefaultPathForRole(simulatedRole)
+        navigate(target, { replace: true })
+        return
+      }
+
+      const apiError = normalizeApiError(err)
+      setError(apiError.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleQuickDemoLogin = (role: UserRole) => {
-    const mockSession: AuthSession = {
-      accessToken: `mock-jwt-${role}-${Date.now()}`,
-      refreshToken: `mock-refresh-${Date.now()}`,
-      tokenType: 'Bearer',
-      expiresAt: Date.now() + 3600000,
-      user: {
-        id: role === 'HR_MANAGER' ? 1 : 1042,
-        employeeCode: role === 'HR_MANAGER' ? 'NV-HR-001' : 'NV-1042',
-        fullName: role === 'HR_MANAGER' ? 'Quản Trị Nhân Sự' : 'Nguyễn Văn Nhân Viên',
-        email: role === 'HR_MANAGER' ? 'hr@company.com' : 'employee@company.com',
-        role,
-        status: 'ACTIVE',
-        department: role === 'HR_MANAGER' ? 'Phòng Nhân sự' : 'Phòng Công nghệ',
-        hasBiometric: false,
-        hasPin: false,
-      },
-    }
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await loginWithCredentials(email, password)
+  }
 
-    setSession(mockSession)
-    const target = from || getDefaultPathForRole(role)
-    navigate(target, { replace: true })
+  const handleQuickDemoLogin = async (role: UserRole) => {
+    if (role === 'HR_MANAGER' || role === 'ADMIN') {
+      setEmail('admin@fas.com')
+      setPassword('Admin@123456')
+      await loginWithCredentials('admin@fas.com', 'Admin@123456')
+    } else {
+      setEmail('nguyenvana@fas.local')
+      setPassword('Admin@123')
+      await loginWithCredentials('nguyenvana@fas.local', 'Admin@123')
+    }
   }
 
   return (
