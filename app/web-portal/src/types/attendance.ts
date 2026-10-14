@@ -68,3 +68,34 @@ export interface MonthlyTimesheet {
     shiftCode: string
   }>
 }
+
+export type DayAttendanceStatus =
+  | 'ON_TIME'
+  | 'LATE'
+  | 'EARLY_LEAVE'
+  | 'ABSENT'
+  | 'REST_DAY'
+  | 'HOLIDAY'
+  | 'EXCUSE_PENDING'
+
+export interface PersonalAttendanceDayRecord {
+  date: string // YYYY-MM-DD
+  dayOfWeek?: string
+  checkIn?: string | null
+  checkOut?: string | null
+  status: DayAttendanceStatus | AttendanceStatus | string
+  lateMinutes?: number
+  workingHours?: number
+  shiftCode?: string
+  verificationMethod?: VerificationMethod
+  kioskId?: string
+}
+
+export interface PersonalAttendanceResponse {
+  month: number
+  year: number
+  totalWorkDays: number
+  totalOnTimeDays: number
+  totalLateDays: number
+  records: PersonalAttendanceDayRecord[]
+}
