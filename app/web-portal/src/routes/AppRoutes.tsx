@@ -14,6 +14,8 @@ import { LoginView } from '@/views/auth/LoginView'
 import { AdminDashboardView } from '@/views/admin/AdminDashboardView'
 import { EmployeeManagementView } from '@/views/admin/EmployeeManagementView'
 import { EmployeeDashboardView } from '@/views/employee/EmployeeDashboardView'
+import { EmployeeConsentView } from '@/views/employee/EmployeeConsentView'
+import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsView'
 import { UnauthorizedView } from '@/views/UnauthorizedView'
 import { NotFoundView } from '@/views/NotFoundView'
 
@@ -75,6 +77,8 @@ export const AppRoutes: React.FC = () => {
         >
           <Route index element={<Navigate to="/employee/dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboardView />} />
+          <Route path="consent" element={<EmployeeConsentView />} />
+          <Route path="data-requests" element={<EmployeeDataRequestsView />} />
         </Route>
       </Route>
 
