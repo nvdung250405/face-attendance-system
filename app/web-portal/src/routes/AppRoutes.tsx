@@ -18,6 +18,7 @@ import { AdminAuditLogView } from '@/views/admin/AdminAuditLogView'
 import { EmployeeDashboardView } from '@/views/employee/EmployeeDashboardView'
 import { EmployeeConsentView } from '@/views/employee/EmployeeConsentView'
 import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsView'
+import { AdminAttendanceView } from '@/views/admin/AdminAttendanceView'
 import { UnauthorizedView } from '@/views/UnauthorizedView'
 import { NotFoundView } from '@/views/NotFoundView'
 
@@ -71,6 +72,7 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route path="kiosks" element={<AdminKioskManagementView />} />
+          <Route path="attendance" element={<AdminAttendanceView />} />
           <Route path="audit-logs" element={<AdminAuditLogView />} />
         </Route>
 
