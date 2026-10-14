@@ -12,6 +12,7 @@ import { PublicRoute } from '@/components/auth/PublicRoute'
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout'
 import { LoginView } from '@/views/auth/LoginView'
 import { AdminDashboardView } from '@/views/admin/AdminDashboardView'
+import { EmployeeManagementView } from '@/views/admin/EmployeeManagementView'
 import { EmployeeDashboardView } from '@/views/employee/EmployeeDashboardView'
 import { UnauthorizedView } from '@/views/UnauthorizedView'
 import { NotFoundView } from '@/views/NotFoundView'
@@ -57,6 +58,14 @@ export const AppRoutes: React.FC = () => {
         >
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardView />} />
+          <Route
+            path="employees"
+            element={
+              <ProtectedRoute allowedRoles={['HR_MANAGER', 'ADMIN']}>
+                <EmployeeManagementView />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* Không gian Tự phục vụ Nhân viên EMPLOYEE */}

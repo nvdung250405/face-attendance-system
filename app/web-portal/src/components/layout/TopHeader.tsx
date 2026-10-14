@@ -8,9 +8,11 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useStompConnectionStore } from '@/store/stompConnectionStore'
+import { logoutService } from '@/services/logoutService'
+import { ChangePasswordModal } from '@/components/account'
 
 // ── Breadcrumb map ────────────────────────────────────────────────────────────
 
@@ -55,13 +57,21 @@ export interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
-  const { user, clearSession } = useAuthStore()
+  const { user } = useAuthStore()
   const { status: stompStatus } = useStompConnectionStore()
   const location = useLocation()
+  const navigate = useNavigate()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const currentPage = BREADCRUMB_MAP[location.pathname] ?? 'Trang không tìm thấy'
+
+  const handleLogout = async () => {
+    setDropdownOpen(false)
+    await logoutService.logout()
+    navigate('/login', { replace: true })
+  }
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -171,15 +181,42 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
             <button
               type="button"
               role="menuitem"
-              id="header-logout"
-              onClick={clearSession}
-              className="w-full text-left px-3 py-2 text-sm text-status-danger hover:bg-rose-50 transition-colors"
+              id="header-change-password"
+              onClick={() => {
+                setDropdownOpen(false)
+                setIsChangePasswordOpen(true)
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-text-primary hover:bg-bg-app transition-colors flex items-center gap-2"
             >
-              Đăng xuất
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>Đổi mật khẩu</span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              id="header-logout"
+              onClick={handleLogout}
+              className="w-full text-left px-3 py-2 text-sm text-status-danger hover:bg-rose-50 transition-colors flex items-center gap-2"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span>Đăng xuất</span>
             </button>
           </div>
         )}
       </div>
+
+      {/* ── Modal Đổi Mật khẩu Tự nguyện (UXD-WEB-008, DD-WEB-018) ── */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </header>
   )
 }
