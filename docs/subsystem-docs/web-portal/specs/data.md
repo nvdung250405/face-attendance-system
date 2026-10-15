@@ -18,9 +18,9 @@ updated: 2026-10-08
 | `DATA-WEB-002` | Quản lý tùy chọn giao diện `ui_preferences` trong Browser `LocalStorage` bao gồm trạng thái sidebar và kích thước trang. | Storage | Should | `SRS-003` | Trạng thái thu gọn menu và bộ lọc bảng lưu bền vững qua các phiên làm việc của người dùng. | Approved |
 | `DATA-WEB-003` | Quản lý trạng thái ký cam kết tạm `consent_flow` trong Browser `SessionStorage` bao gồm điều khoản, OTP và mã QR. | Storage | Must | `SRS-001`, `ARC-003` | Dữ liệu phiên ký cam kết tự động xóa ngay khi đóng tab hoặc kích hoạt xong tại trạm Kiosk. | Approved |
 | `DATA-WEB-004` | Quản lý bộ nhớ đệm truy vấn `query_cache` qua In-Memory TanStack Query với chính sách staleTime và invalidation linh hoạt. | Cache | Must | `SRS-003`, `ARC-003` | Dữ liệu live staleTime $0\text{ ms}$, cache tự động cập nhật khi có STOMP event chèn vào mảng. | Approved |
-| `DATA-WEB-005` | Quản lý trạng thái thông báo `notification_state` trong bộ nhớ đệm truy vấn: danh sách thông báo theo người dùng, số chưa đọc và trạng thái đã đọc. | Cache | Should | `FR-SYS-027`, `API-SYS-034` | Số chưa đọc cập nhật tức thời khi đánh dấu đã đọc; dữ liệu được phân tách theo người dùng và xoá khi đăng xuất. | Approved |
-| `DATA-WEB-006` | Quản lý trạng thái kỳ công `payroll_period_state` phía client: kỳ đang chọn, trạng thái `OPEN`/`LOCKED` và cờ vô hiệu hoá điều chỉnh. | Cache | Must | `FR-SYS-024`, `API-SYS-031` | Cờ khoá điều chỉnh lan toả tới mọi màn hình nghiệp vụ ngay khi kỳ được chốt; không lưu trạng thái này vào LocalStorage để tránh dữ liệu cũ. | Approved |
-| `DATA-WEB-007` | Quản lý trạng thái danh mục trạm Kiosk `kiosk_registry_state` trong bộ nhớ RAM: danh sách trạm, trạng thái hoạt động, `last_ping_at` và Secret Token hiển thị một lần. | Storage | Must | `FR-SYS-020`, `API-SYS-028` | Secret Token **không** bao giờ được ghi vào LocalStorage/SessionStorage và bị xoá khỏi RAM khi rời màn hình hoặc tải lại trang. | Approved |
+| `DATA-WEB-005` | Quản lý trạng thái thông báo `notification_state` trong bộ nhớ đệm truy vấn: danh sách thông báo theo người dùng, số chưa đọc và trạng thái đã đọc. | Cache | Should | `FR-SYS-027` | Số chưa đọc cập nhật tức thời khi đánh dấu đã đọc; dữ liệu được phân tách theo người dùng và xoá khi đăng xuất. | Approved |
+| `DATA-WEB-006` | Quản lý trạng thái kỳ công `payroll_period_state` phía client: kỳ đang chọn, trạng thái `OPEN`/`LOCKED` và cờ vô hiệu hoá điều chỉnh. | Cache | Must | `FR-SYS-024` | Cờ khoá điều chỉnh lan toả tới mọi màn hình nghiệp vụ ngay khi kỳ được chốt; không lưu trạng thái này vào LocalStorage để tránh dữ liệu cũ. | Approved |
+| `DATA-WEB-007` | Quản lý trạng thái danh mục trạm Kiosk `kiosk_registry_state` trong bộ nhớ RAM: danh sách trạm, trạng thái hoạt động, `last_ping_at` và Secret Token hiển thị một lần. | Storage | Must | `FR-SYS-020` | Secret Token **không** bao giờ được ghi vào LocalStorage/SessionStorage và bị xoá khỏi RAM khi rời màn hình hoặc tải lại trang. | Approved |
 
 ---
 
@@ -170,6 +170,7 @@ graph TD
 | `DTD-WEB-004` | NotificationStateStore | Lưu trạng thái thông báo trong bộ nhớ đệm truy vấn (TanStack Query) phân tách theo `userId`; xoá toàn bộ khi đăng xuất; cập nhật lạc quan số chưa đọc. | `DATA-WEB-005` | `ARC-003` | `DD-WEB-020` | Accepted |
 | `DTD-WEB-005` | PayrollPeriodStore | Lưu kỳ công đang chọn và cờ khoá điều chỉnh trong bộ nhớ đệm truy vấn (không ghi LocalStorage); cung cấp selector dùng chung để vô hiệu hoá nút điều chỉnh. | `DATA-WEB-006` | `ARC-003` | `DD-WEB-006` | Accepted |
 | `DTD-WEB-006` | KioskRegistryMemoryStore | Lưu danh mục trạm Kiosk và Secret Token **chỉ trong RAM** (React state), tự xoá khi unmount hoặc tải lại trang; không đi qua `SafeLocalStorage`/`SafeSessionStorage`. | `DATA-WEB-007` | `ARC-003` | `DD-WEB-019` | Accepted |
+| `DTD-WEB-007` | TanStackQueryCacheAdapter | Quản lý bộ nhớ đệm truy vấn phía client với TanStack Query: cấu hình `QueryClient`, chính sách `staleTime`, tiền tố khoá truy vấn tập trung (`attendanceKeys`, `employeeKeys`) và tích hợp cập nhật thời gian thực khi có sự kiện STOMP. | `DATA-WEB-004` | `ARC-003` | `DD-WEB-007` | Accepted |
 
 ---
 

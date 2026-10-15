@@ -54,6 +54,9 @@ Tài liệu này là **Spec Facet Data của Phân hệ Kiosk** (`kiosk-app`) th
 | `DTD-KSK-003` | Local Edge Cooldown Cache Architecture | Thiết kế bộ đệm RAM `LocalCooldownCache` lưu mốc thời gian chấm công gần nhất, áp dụng cửa sổ 120s và tự động dọn dẹp sau 300s. | `STK-001` | `DATA-KSK-003` | `DD-SYS-006` | Accepted |
 | `DTD-KSK-004` | Zero-Disk Image Memory Pipeline | Cơ chế cô lập khung hình camera và ảnh crop trong bộ nhớ RAM, giải phóng tức thì sau chu kỳ suy luận ($< 350\text{ ms}$). | `STK-002` | `DATA-KSK-005` | `DD-SYS-003` | Accepted |
 | `DTD-KSK-005` | Cấu trúc Cấu hình Vận hành Trạm (`KioskConfig`) | Dataclass nạp từ `.env` gồm `KIOSK_ID`, `BACKEND_URL`, `KIOSK_SECRET_TOKEN`, `CAMERA_DEVICE_INDEX` và các ngưỡng AI (`similarity = 0.50`, `liveness = 0.85`, `stability = 0.60s`); kiểm tra biến bắt buộc khi khởi động và bảo vệ qua Windows DPAPI. | `STK-007` | `DATA-KSK-004` | `DD-KSK-005` | Accepted |
+| `DTD-KSK-006` | Persistent Operational State Storage | Thiết kế bảng SQLite `kiosk_persisted_state` lưu trữ trạng thái khóa trạm (`LOCKED`, `ACTIVE`), mốc `locked_at`, số lần thất bại Circuit Breaker và cấu trúc payload Heartbeat định kỳ. | `STK-005` | `DATA-KSK-008` | `DD-KSK-005` | Accepted |
+| `DTD-KSK-007` | Structured Local Operational Logging | Thiết kế ghi log dòng đơn chuẩn JSON, tự động che giấu PII (họ tên, email, làm tròn mốc sinh trắc) và quy tắc xoay vòng dọn dẹp 3 tầng bảo vệ đĩa. | `STK-005` | `DATA-KSK-009` | `DD-KSK-005` | Accepted |
+| `DTD-KSK-008` | Local DPAPI & Graceful Shutdown Protection | Thiết kế bảo vệ `LOCAL_STORAGE_KEY`, `KIOSK_SECRET_TOKEN` qua Windows DPAPI, băm Argon2id cho Admin PIN và luồng xử lý tín hiệu SIGTERM/SIGINT giải phóng RAM, commit WAL checkpoint an toàn trong $\le 3\text{ giây}$. | `STK-007` | `DATA-KSK-010`, `DATA-KSK-011` | `DD-SYS-028` | Accepted |
 
 ---
 
