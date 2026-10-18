@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Script quản lý tập trung toàn diện các dịch vụ hạ tầng và phân hệ qua Docker Compose.
 .DESCRIPTION
