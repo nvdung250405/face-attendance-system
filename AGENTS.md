@@ -19,6 +19,7 @@ Before implementing:
 
 **Minimum code that solves the problem. Nothing speculative.**
 
+- Prioritize inheriting and curating from what already exists over solving problems from scratch.
 - No features beyond what was asked.
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
