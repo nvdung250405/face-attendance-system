@@ -29,4 +29,15 @@ public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Lo
 
     boolean existsByUserIdAndPunchTimestampAndPunchType(
             Long userId, Instant punchTimestamp, PunchType punchType);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT a.user.id) FROM AttendanceLog a WHERE a.punchTimestamp >= :start AND a.punchTimestamp < :end")
+    long countDistinctUserByPunchTimestampBetween(
+            @org.springframework.data.repository.query.Param("start") Instant start,
+            @org.springframework.data.repository.query.Param("end") Instant end);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(a) FROM AttendanceLog a WHERE a.punchTimestamp >= :start AND a.punchTimestamp < :end AND a.status = :status")
+    long countByPunchTimestampBetweenAndStatus(
+            @org.springframework.data.repository.query.Param("start") Instant start,
+            @org.springframework.data.repository.query.Param("end") Instant end,
+            @org.springframework.data.repository.query.Param("status") com.fas.data.enums.AttendanceStatus status);
 }

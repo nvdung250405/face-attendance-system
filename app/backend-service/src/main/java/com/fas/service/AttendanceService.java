@@ -375,5 +375,36 @@ public class AttendanceService {
             );
         });
     }
+
+    /**
+     * Thống kê KPI điểm danh toàn công ty theo ngày thực tế từ CSDL (GET /api/v1/admin/attendance/stats).
+     *
+     * @param targetDate ngày cần thống kê (mặc định hôm nay theo giờ Việt Nam)
+     * @return các chỉ số KPI thực tế
+     */
+    @Transactional(readOnly = true)
+    public com.fas.api.dto.response.AttendanceStatsResponse getAttendanceStats(LocalDate targetDate) {
+        LocalDate date = targetDate != null ? targetDate : LocalDate.now(ApiResponse.VIETNAM_ZONE);
+        Instant start = date.atStartOfDay(ApiResponse.VIETNAM_ZONE).toInstant();
+        Instant end = date.plusDays(1).atStartOfDay(ApiResponse.VIETNAM_ZONE).toInstant();
+
+        long totalEmployees = userRepository.countByStatus(EmployeeStatus.ACTIVE);
+        if (totalEmployees == 0) {
+            totalEmployees = userRepository.count();
+        }
+
+        long presentCount = attendanceLogRepository.countDistinctUserByPunchTimestampBetween(start, end);
+        long onTimeCount = attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end, AttendanceStatus.ON_TIME);
+        long lateCount = attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end, AttendanceStatus.LATE);
+        long absentCount = Math.max(0, totalEmployees - presentCount);
+
+        return new com.fas.api.dto.response.AttendanceStatsResponse(
+                totalEmployees,
+                presentCount,
+                onTimeCount,
+                lateCount,
+                absentCount
+        );
+    }
 }
 
