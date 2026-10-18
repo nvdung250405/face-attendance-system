@@ -5,7 +5,7 @@ status: Approved
 owner: Web Technical Lead & Frontend Architect
 type: spec
 scope: WEB
-updated: 2026-10-09
+updated: 2026-10-18
 ---
 
 # WEB PORTAL SPEC CORE — Đặc tả Toàn diện Phân hệ Cổng Web Quản trị & Người dùng (`web-portal`)
@@ -22,12 +22,13 @@ Tài liệu này là **Spec Core của Phân hệ Cổng Web** (`web-portal`) th
 
 ## 1. Giới thiệu Phân hệ & Phạm vi Trách nhiệm Kỹ thuật
 
-Phân hệ **Cổng Web Quản trị & Người dùng** (`web-portal`) là ứng dụng web hiện đại (Single Page Application - SPA) được phát triển bằng ngôn ngữ TypeScript trên nền tảng React 19 và bộ đóng gói Vite 8. Phân hệ đóng vai trò là không gian làm việc số tập trung phục vụ hai nhóm đối tượng chính trong doanh nghiệp:
+Phân hệ **Cổng Web Quản trị & Người dùng** (`web-portal`) là ứng dụng web hiện đại (Single Page Application - SPA) được phát triển bằng ngôn ngữ TypeScript trên nền tảng React 19 và bộ đóng gói Vite 8. Phân hệ đóng vai trò là không gian làm việc số tập trung phục vụ các nhóm đối tượng chính trong doanh nghiệp:
 1. **Quản lý Nhân sự (HR Manager) / Quản trị viên (ADMIN)**: Giám sát chấm công trực tiếp theo thời gian thực từ các trạm Kiosk, quản lý hồ sơ nhân viên, phân ca làm việc, chốt kỳ công, tra cứu nhật ký kiểm toán và xuất báo cáo bảng công định kỳ.
 2. **Cán bộ Nhân viên Doanh nghiệp (Employee)**: Tra cứu bảng công cá nhân, theo dõi lịch sử vào/ra, thực hiện quy trình ký cam kết pháp lý Informed Consent (Nghị định 13/2023/NĐ-CP) và nhận mã OTP 6 số kèm mã QR để quét kích hoạt khuôn mặt tại trạm Kiosk.
+3. **Cán bộ Bảo vệ Dữ liệu Cá nhân (Data Protection Officer - DPO)**: Giám sát tuân thủ Nghị định 13/2023/NĐ-CP, tra cứu nhật ký kiểm toán (Audit Logs) bất biến và theo dõi tiến độ xử lý các yêu cầu của chủ thể dữ liệu (Data Subject Requests - DSR) ở chế độ chỉ đọc.
 
 ### Ranh giới Trách nhiệm Kỹ thuật (Technical Scope):
-* **Cổng Thông tin Kép (Dual-Role Portal & Role Guards)**: Phân quyền điều hướng tự động dựa trên JWT Claims (`HR_MANAGER`, `EMPLOYEE`, `ADMIN`, `DPO`), bảo vệ các tuyến đường (Protected Routes) và ngăn chặn truy cập trái phép.
+* **Cổng Thông tin Phân quyền Đa Vai trò (Role Guards & RBAC)**: Phân quyền điều hướng tự động dựa trên JWT Claims (`HR_MANAGER`, `EMPLOYEE`, `ADMIN`, `DPO`), bảo vệ các tuyến đường (Protected Routes) và ngăn chặn truy cập trái phép.
 * **Quản lý Trạng thái & Lưu trữ Client (Data Facet)**: Lưu trữ phiên an toàn qua LocalStorage Safe Adapter (`fas_auth_session`), cô lập luồng ký cam kết tạm trong SessionStorage (`fas_consent_session`), đồng bộ phiên đa tab qua sự kiện `storage` và tối ưu hóa bộ nhớ đệm truy vấn qua TanStack Query.
 * **Giao tiếp Hai chiều (API Facet)**: Kết nối RESTful API qua Axios Client tích hợp bộ chặn tự động làm mới Token (Mutex Refresh Queue) chống Race Condition khi gặp HTTP 401, đồng thời duy trì kết nối WebSocket STOMP nhận thông điệp chấm công trực tiếp và trạng thái nạp khuôn mặt.
 * **Trải nghiệm Người dùng Hiện đại (UI/UX Facet)**: Thiết kế dựa trên hệ thống Design Tokens Tailwind CSS phong cách **Indigo Clean SaaS**, bố cục Admin Shell co giãn linh hoạt (Responsive từ mobile đến desktop 4K), bảng Live Table chớp sáng theo thời gian thực và trải nghiệm ký cam kết pháp lý đạt chuẩn bảo vệ dữ liệu cá nhân.
@@ -44,11 +45,11 @@ Toàn bộ 14 yêu cầu chức năng của Cổng Web Quản trị & Người d
 
 | ID | Phát biểu Yêu cầu Nghiệp vụ (Statement) | Nhóm Phân loại | Mức Ưu tiên | Nguồn Tham chiếu | Tiêu chí Nghiệm thu (Acceptance Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :---: | :--- | :---: |
-| `FR-WEB-001` | Cung cấp giao diện đăng nhập bảo mật hỗ trợ lưu trữ token tự động và chuyển hướng theo vai trò (HR/ADMIN vs Nhân viên). | Auth / Routing | Must | `FR-SYS-007` | Đăng nhập phân quyền chính xác; lưu Access Token trong bộ nhớ và tự động gia hạn token khi hết hạn; điều hướng đúng trang đích. | Approved |
+| `FR-WEB-001` | Cung cấp giao diện đăng nhập bảo mật hỗ trợ lưu trữ token tự động và chuyển hướng theo vai trò (HR/ADMIN vs Nhân viên vs DPO). | Auth / Routing | Must | `FR-SYS-007` | Đăng nhập phân quyền chính xác; lưu Access Token trong bộ nhớ và tự động gia hạn token khi hết hạn; điều hướng đúng trang đích. | Approved |
 | `FR-WEB-002` | Cung cấp luồng ký cam kết Informed Consent điện tử và hiển thị mã kích hoạt OTP 6 số kèm mã QR Code cho nhân viên. | Enrollment / Privacy | Must | `FR-SYS-008` | Hiển thị đầy đủ điều khoản bảo vệ dữ liệu sinh trắc học; nút ký chỉ mở khi cuộn hết $100\%$ văn bản; sinh OTP hạn 48h sau khi ký. | Approved |
 | `FR-WEB-003` | Cung cấp bảng điều khiển theo dõi chấm công thời gian thực cho HR nhận dữ liệu đẩy từ WebSocket STOMP. | Dashboard / Live | Must | `FR-SYS-014` | Cập nhật dòng mới tức thì khi có nhân viên quẹt thẻ tại Kiosk mà không cần F5 tải lại; hiệu ứng chớp sáng nổi bật trong $1.5\text{ s}$. | Approved |
 | `FR-WEB-004` | Cho phép nhân sự tra cứu bảng chấm công cá nhân, xem chi tiết giờ vào/ra và số phút đi trễ theo tháng. | Employee Portal | Must | `FR-SYS-010` | Hiển thị lịch biểu trực quan dạng Calendar Grid; phân biệt ngày đúng giờ, đi muộn, nghỉ phép bằng màu sắc; xem chi tiết qua Drawer. | Approved |
-| `FR-WEB-005` | Cung cấp công cụ quản lý hồ sơ nhân viên, trạng thái kích hoạt khuôn mặt và phân ca làm việc cho HR. | HR Management | Must | `FR-SYS-010` | Thêm, sửa, vô hiệu hóa nhân sự; xem trạng thái kích hoạt khuôn mặt (`ACTIVE` / `PENDING`); tìm kiếm và phân trang linh hoạt. | Approved |
+| `FR-WEB-005` | Cung cấp công cụ tra cứu, quản lý dữ liệu điểm danh và điều chỉnh bản ghi chấm công thủ công có kiểm toán cho HR. | HR Management | Must | `FR-SYS-010` | Tra cứu lịch sử điểm danh đa tiêu chí; xem trạng thái kích hoạt khuôn mặt; cho phép HR/Admin điều chỉnh giờ quẹt/trạng thái chấm công kèm lý do giải trình khi kỳ công chưa chốt (`API-WEB-021`). | Approved |
 | `FR-WEB-006` | Cho phép HR kết xuất báo cáo tổng hợp chấm công toàn công ty ra định dạng tệp Excel (.xlsx) và PDF. | Export / Report | Must | `FR-SYS-016`, `FR-BE-008` | Tải xuống file hoàn chỉnh trong vòng $\le 3\text{ giây}$ cho 1,000 nhân viên; file `.xlsx` nhận từ Backend đã escape ký tự công thức nguy hiểm (`=`, `+`, `-`, `@`). | Approved |
 | `FR-WEB-007` | Cung cấp màn hình quản lý vòng đời hồ sơ nhân sự: tạo hồ sơ kèm mật khẩu tạm hiển thị một lần, cập nhật hồ sơ, vô hiệu hóa nhân sự và cấp lại mật khẩu tạm khi nhân viên quên. | HR Management | Must | `FR-SYS-017`, `FR-SYS-022` | Mật khẩu tạm hiển thị đúng một lần kèm nút sao chép và cảnh báo không xem lại được; sửa hồ sơ và vô hiệu hóa yêu cầu xác nhận hai bước; cấp lại mật khẩu tạm thông báo rõ phiên cũ đã bị thu hồi. | Approved |
 | `FR-WEB-008` | Cung cấp màn hình quản lý danh mục ca làm việc và phân ca cho nhân sự theo khoảng ngày hiệu lực. | HR Management | Must | `FR-SYS-018` | Tạo/sửa/vô hiệu hóa ca; phân ca theo khoảng ngày; khi chồng lấn hiển thị lỗi 409 kèm khoảng trống gần nhất gợi ý cho HR. | Approved |
@@ -149,7 +150,7 @@ graph TD
 | `SOL-WEB-001` | AuthSessionManager | Quản lý trạng thái xác thực qua Zustand Auth Store, bộ điều hướng React Router phân luồng theo Role và lưu trữ an toàn qua `SafeLocalStorage`. | `STK-016` | `FR-WEB-001`, `NFR-WEB-004` | `DD-WEB-001`, `DD-WEB-002` | Accepted |
 | `SOL-WEB-002` | ConsentModule | Hiển thị điều khoản pháp lý, khóa nút ký khi chưa cuộn hết $100\%$ văn bản, gọi API sinh OTP và lắng nghe WebSocket đóng Modal. | `STK-016`, `STK-017` | `FR-WEB-002` | `DD-WEB-015`, `DD-WEB-016` | Accepted |
 | `SOL-WEB-003` | StompEventListener | Tích hợp thư viện `@stomp/stompjs` kết nối WebSocket, đăng ký topic `/topic/live-attendance` và `/topic/enrollment/{otp}` kèm Exponential Backoff. | `STK-015` | `FR-WEB-003`, `NFR-WEB-003` | `DD-WEB-010` | Accepted |
-| `SOL-WEB-004` | LiveDashboardController | Hiển thị bảng dữ liệu nhân sự điểm danh theo thời gian thực với hiệu ứng Green Flash ($1.5\text{ s}$) và cập nhật tức thời 4 thẻ chỉ số KPI. | `STK-016`, `STK-017` | `FR-WEB-003`, `FR-WEB-005` | `DD-WEB-007`, `DD-WEB-014` | Accepted |
+| `SOL-WEB-004` | LiveDashboardController | Hiển thị bảng dữ liệu nhân sự điểm danh theo thời gian thực với hiệu ứng Green Flash ($1.5\text{ s}$), cập nhật tức thời 5 thẻ chỉ số KPI (`totalEmployees`, `presentCount`, `onTimeCount`, `lateCount`, `absentCount`), hỗ trợ thao tác điều chỉnh giờ công thủ công (`API-WEB-021`) và làm mới cache TanStack Query. | `STK-016`, `STK-017` | `FR-WEB-003`, `FR-WEB-005` | `DD-WEB-007`, `DD-WEB-014` | Accepted |
 | `SOL-WEB-005` | ReportExportEngine | Sử dụng thư viện phía máy trạm (`exceljs` / `jspdf`) tạo file báo cáo xuất dữ liệu tức thì từ dữ liệu bảng, escape ký tự formula injection. | `STK-015` | `FR-WEB-004`, `FR-WEB-006`, `UI-WEB-004` | `DD-WEB-017` | Accepted |
 | `SOL-WEB-006` | AccountLifecycleModule | Quản lý form tạo/sửa/vô hiệu hóa hồ sơ nhân sự, hiển thị mật khẩu tạm đúng một lần kèm cảnh báo, luồng cấp lại mật khẩu tạm và thiết lập/đặt lại PIN. | `STK-016`, `STK-017` | `FR-WEB-007`, `FR-WEB-009` | `DD-WEB-018` | Accepted |
 | `SOL-WEB-007` | ShiftAssignmentModule | Màn hình CRUD ca và phân ca theo khoảng ngày, kiểm tra chồng lấn phía client trước khi gọi API và diễn giải lỗi 409 thành gợi ý khoảng trống. | `STK-016` | `FR-WEB-008` | `DD-WEB-001` | Accepted |
@@ -157,7 +158,7 @@ graph TD
 | `SOL-WEB-009` | ConsentWithdrawalModule | Luồng rút Informed Consent có cảnh báo hệ quả (chỉ điểm danh qua PIN, tiêu hủy sau 7 ngày) và xác nhận hai bước, cùng màn hình gửi/theo dõi yêu cầu dữ liệu. | `STK-016` | `FR-WEB-011` | `DD-WEB-015` | Accepted |
 | `SOL-WEB-010` | SessionLifecycleModule | Xử lý đăng xuất (gọi API thu hồi token trước khi xoá storage), đồng bộ đăng xuất đa tab qua sự kiện storage và điều hướng khi refresh token thất bại. | `STK-016` | `FR-WEB-012` | `DD-WEB-004`, `DD-WEB-009` | Accepted |
 | `SOL-WEB-011` | NotificationCenterModule | Trung tâm thông báo trong ứng dụng: badge số chưa đọc, danh sách theo sự kiện vòng đời và đánh dấu đã đọc tức thời (optimistic update). | `STK-016`, `STK-017` | `FR-WEB-013` | `DD-WEB-020` | Accepted |
-| `SOL-WEB-012` | AdminComplianceModule | Màn hình quản lý trạm Kiosk (Secret Token chỉ lưu trong RAM, cảnh báo ping $>5\text{ phút}$) và màn hình tra cứu kiểm toán/tuân thủ chỉ đọc cho `ADMIN`/`DPO`. | `STK-016` | `FR-WEB-014` | `DD-WEB-019` | Accepted |
+| `SOL-WEB-012` | AdminComplianceModule | Cung cấp 2 không gian quản trị độc lập gồm: Màn hình quản lý trạm Kiosk (`/admin/kiosks` - Secret Token chỉ lưu trong RAM, cảnh báo ping $>5\text{ phút}$) và Màn hình nhật ký kiểm toán / tuân thủ DPO (`/admin/audit-logs` - tra cứu chỉ đọc cho `ADMIN` và `DPO`, không có thao tác ghi). | `STK-016` | `FR-WEB-014` | `DD-WEB-019` | Accepted |
 | `SOL-WEB-013` | CodeSplittingOptimizer | Tối ưu hóa hiệu năng tải trang FCP $\le 1.5\text{ s}$ bằng Vite code splitting, lazy loading các route quản trị và prefetching tài nguyên trọng yếu. | `STK-015` | `NFR-WEB-001` | `DD-WEB-001` | Accepted |
 | `SOL-WEB-014` | ResponsiveViewportAdapter | Bố cục co giãn tương thích từ $1024\times 768\text{ px}$ đến 4K qua Tailwind responsive breakpoint utilities, sidebar trượt và viewport scaling. | `STK-015`, `STK-016` | `NFR-WEB-002` | `DD-WEB-013` | Accepted |
 

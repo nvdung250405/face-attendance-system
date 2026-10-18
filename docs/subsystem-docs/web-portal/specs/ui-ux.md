@@ -14,14 +14,14 @@ updated: 2026-10-18
 
 | ID | Phát biểu Yêu cầu Trải nghiệm (Statement) | Nhóm Tác vụ | Mức Ưu tiên | Nguồn Tham chiếu | Tiêu chí Nghiệm thu (Acceptance Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :---: | :--- | :---: |
-| `UI-WEB-001` | Giao diện đăng nhập và điều hướng phân quyền theo Role (`HR_MANAGER`, `EMPLOYEE`, `ADMIN`, `DPO`), bao gồm cả điều hướng bắt buộc đổi mật khẩu lần đầu. | Auth / Routing | Must | `SRS-003`, `ARC-003` | Điều hướng chuẩn xác theo vai trò; hiển thị spinner nạp dữ liệu trên nút đăng nhập; chia đôi màn hình thẩm mỹ cao; tự động chuyển sang `/force-change-password` nếu tài khoản yêu cầu đổi mật khẩu lần đầu. | Approved |
+| `UI-WEB-001` | Giao diện đăng nhập và điều hướng phân quyền theo Role (`HR_MANAGER`, `EMPLOYEE`, `ADMIN`, `DPO`). | Auth / Routing | Must | `SRS-003`, `ARC-003` | Điều hướng chuẩn xác theo vai trò; hiển thị spinner nạp dữ liệu trên nút đăng nhập; chia đôi màn hình thẩm mỹ cao; người dùng vào thẳng không gian làm việc số sau khi đăng nhập thành công mà không bị chặn điều hướng (`DD-WEB-018`). | Approved |
 | `UI-WEB-002` | Quy trình ký cam kết điện tử Informed Consent và hiển thị mã OTP 6 số kích hoạt kèm QR Code. | Consent / OTP | Must | `SRS-001`, `SRS-003` | Khóa backdrop; cuộn hết $100\%$ văn bản mới cho ký; tự đóng modal và nổ Confetti khi quét mặt thành công tại Kiosk qua kênh STOMP. | Approved |
 | `UI-WEB-003` | Bảng điều khiển giám sát chấm công trực tiếp cho HR nhận dữ liệu qua STOMP WebSocket. | Dashboard / Live | Must | `SRS-003`, `ARC-003` | Thẻ KPI tự nhảy số; hàng mới chèn lên đầu bảng có hiệu ứng đổi màu nổi bật (Green Flash) trong $1.5\text{ s}$; công tắc bật/tắt live stream mượt mà. | Approved |
 | `UI-WEB-004` | Tra cứu lịch sử điểm danh đa tiêu chí, hỗ trợ điều chỉnh chấm công thủ công và kết xuất báo cáo Excel (.xlsx) / PDF. | History / Report | Should | `SRS-003`, `API-BE-048` | Bộ lọc đa chiều; phân trang mượt mà; hỗ trợ hộp thoại điều chỉnh giờ công/trạng thái kèm lý do giải trình; xuất file chuẩn định dạng và phòng chống formula injection. | Approved |
 | `UI-WEB-005` | Bảng công và lịch chấm công cá nhân theo tháng cho nhân viên. | Employee Portal | Should | `SRS-003` | Giao diện lịch 7 cột trực quan; tô màu theo trạng thái; nhấp chuột xem Drawer chi tiết ngày tức thời hiển thị đầy đủ mốc giờ, phương thức và trạm quẹt. | Approved |
 | `UI-WEB-006` | Màn hình quản lý hồ sơ nhân sự: danh sách có lọc, form tạo/sửa dạng Drawer, xác nhận vô hiệu hóa và hộp thoại hiển thị mật khẩu tạm một lần. | HR Management | Must | `FR-SYS-017` | Mật khẩu tạm hiển thị trong hộp thoại có nút sao chép và cảnh báo đóng là không xem lại được; trường trùng mã/email báo lỗi ngay tại ô nhập; form trượt Drawer không che khuất ngữ cảnh. | Approved |
 | `UI-WEB-007` | Màn hình quản lý ca làm việc và phân ca theo khoảng ngày, có xem trước lịch phân ca theo tuần. | HR Management | Must | `FR-SYS-018` | Tạo/sửa ca và phân ca ngay trên lịch; khi chồng lấn hiển thị cảnh báo kèm khoảng trống gợi ý; tự động vô hiệu hóa thao tác khi kỳ công bị khóa (`isAdjustmentLocked`). | Approved |
-| `UI-WEB-008` | Màn hình đổi mật khẩu **tự nguyện** (không chặn điều hướng) và màn hình thiết lập/đặt lại mã PIN dự phòng. | Auth / Security | Must | `FR-SYS-017`, `FR-SYS-022` | Người dùng vào được mọi màn hình ngay sau đăng nhập; PIN nhập bằng lưới số ảo, có bước nhập lại khi thiết lập; thanh đo độ mạnh mật khẩu hiển thị trực quan. | Approved |
+| `UI-WEB-008` | Màn hình đổi mật khẩu **tự nguyện** (không chặn điều hướng) và màn hình thiết lập/đặt lại mã PIN dự phòng. | Auth / Security | Must | `FR-SYS-017`, `FR-SYS-022` | Người dùng vào được mọi màn hình ngay sau đăng nhập (`DD-WEB-018`); đổi mật khẩu tự nguyện mở từ menu TopHeader; PIN nhập bằng lưới số ảo, có bước nhập lại khi thiết lập. | Approved |
 | `UI-WEB-009` | Màn hình chốt kỳ công theo tháng kèm nhãn trạng thái và hộp thoại mở lại yêu cầu lý do. | HR Management | Must | `FR-SYS-024` | Kỳ đã chốt hiển thị nhãn "Đã chốt"; các nút duyệt đơn/điều chỉnh công bị vô hiệu hóa kèm tooltip giải thích; hộp thoại mở lại bắt buộc nhập lý do tối thiểu 10 ký tự. | Approved |
 | `UI-WEB-010` | Màn hình rút Informed Consent (cảnh báo hệ quả, xác nhận hai bước) và màn hình yêu cầu dữ liệu cá nhân (tiếp cận và đính chính). | Compliance | Must | `FR-SYS-025` | Tách biệt 2 view độc lập (`/employee/consent` và `/employee/data-requests`); cảnh báo nêu rõ điểm danh chỉ còn PIN và dữ liệu sinh trắc tiêu huỷ trong 7 ngày; danh sách yêu cầu hiển thị trạng thái xử lý rõ ràng. | Approved |
 | `UI-WEB-011` | Trung tâm thông báo trong ứng dụng: biểu tượng chuông kèm badge số chưa đọc và danh sách phân loại theo sự kiện. | Notification | Should | `FR-SYS-027` | Badge cập nhật tức thời; mở dạng ngăn kéo (Drawer) bên phải; đánh dấu đã đọc không cần tải lại trang; thông báo liên kết trực tiếp tới đối tượng liên quan. | Approved |
@@ -31,37 +31,36 @@ updated: 2026-10-18
 
 ## 1.2. Ma trận Phân loại & Toàn bộ Danh mục Màn hình Hệ thống (Screen Inventory & Route/RBAC Matrix)
 
-Nhằm đảm bảo đồng bộ $100\%$ giữa hồ sơ đặc tả và cấu trúc mã nguồn thực tế tại `app/web-portal/src/routes/AppRoutes.tsx`, hệ thống bao gồm **14 Màn hình (Views)** và **9 Thành phần Hộp thoại/Ngăn kéo Bổ trợ (Modals & Drawers)** được phân nhóm chặt chẽ theo vai trò người dùng (RBAC):
+Nhằm đảm bảo đồng bộ $100\%$ theo nguyên lý **Specification-First** với `spec.md` (`DD-WEB-018`, `FR-WEB-009`), hệ thống bao gồm **13 Màn hình (Views)** và **9 Thành phần Hộp thoại/Ngăn kéo Bổ trợ (Modals & Drawers)** được phân nhóm chặt chẽ theo vai trò người dùng (RBAC):
 
 | STT | Mã Màn hình | Tên Màn hình / Thành phần | Đường dẫn Route | Phân quyền RBAC | Yêu cầu Giao diện | Thành phần Source Code | Trách nhiệm Nghiệp vụ Chính |
 | :---: | :--- | :--- | :--- | :--- | :---: | :--- | :--- |
 | **A** | **Nhóm Xác thực & Điều hướng Chung** | | | | | | |
-| 1 | `SCR-WEB-01` | Đăng nhập Hệ thống (Login) | `/login` | Public (Chưa đăng nhập) | `UI-WEB-001` | `LoginView.tsx` | Split-Screen Brand & Form đăng nhập, ghi nhớ phiên, điều hướng theo Role (Figma `3:23918`). |
-| 2 | `SCR-WEB-02` | Đổi Mật khẩu Bắt buộc | `/force-change-password` | Protected (Mọi Role) | `UI-WEB-001`, `UI-WEB-008` | `ForceChangePasswordView.tsx` | Chặn điều hướng; buộc đổi mật khẩu khi đăng nhập lần đầu hoặc khi quản trị viên reset. |
-| 3 | `SCR-WEB-03` | Cảnh báo Không có Quyền (403) | `/unauthorized` | Protected (Mọi Role) | `UI-WEB-001` | `UnauthorizedView.tsx` | Cảnh báo vi phạm truy cập RBAC; nút điều hướng quay về trang chủ theo vai trò. |
-| 4 | `SCR-WEB-04` | Trang Không tồn tại (404) | `*` (Mọi URL không khớp) | Mọi người dùng | `UI-WEB-001` | `NotFoundView.tsx` | Thông báo liên kết hỏng; hướng dẫn người dùng trở lại trang chủ hợp lệ. |
+| 1 | `SCR-WEB-01` | Đăng nhập Hệ thống (Login) | `/login` | Public (Chưa đăng nhập) | `UI-WEB-001` | `LoginView.tsx` | Split-Screen Brand & Form đăng nhập, ghi nhớ phiên, điều hướng thẳng theo Role, không chặn điều hướng (Figma `3:23918`). |
+| 2 | `SCR-WEB-02` | Cảnh báo Không có Quyền (403) | `/unauthorized` | Protected (Mọi Role) | `UI-WEB-001` | `UnauthorizedView.tsx` | Cảnh báo vi phạm truy cập RBAC; nút điều hướng quay về trang chủ theo vai trò. |
+| 3 | `SCR-WEB-03` | Trang Không tồn tại (404) | `*` (Mọi URL không khớp) | Mọi người dùng | `UI-WEB-001` | `NotFoundView.tsx` | Thông báo liên kết hỏng; hướng dẫn người dùng trở lại trang chủ hợp lệ. |
 | **B** | **Phân hệ Quản trị & Nhân sự (Admin & HR Portal)** | | | | | | |
-| 5 | `SCR-WEB-05` | Giám sát Điểm danh Trực tiếp | `/admin/dashboard` | `HR_MANAGER`, `ADMIN`, `DPO` | `UI-WEB-003` | `AdminDashboardView.tsx` | 4 thẻ KPI thời gian thực, bảng LiveTable hiệu ứng Green Flash 1.5s, nhận STOMP (Figma `3:24853`). |
-| 6 | `SCR-WEB-06` | Lịch sử Điểm danh & Báo cáo | `/admin/attendance`, `/admin/reports` | `HR_MANAGER`, `ADMIN`, `DPO` (chỉ đọc) | `UI-WEB-004` | `AdminAttendanceView.tsx` | Tra cứu đa tiêu chí, công tắc Live Stream, điều chỉnh điểm danh (`API-WEB-021`), mở modal xuất báo cáo. |
-| 7 | `SCR-WEB-07` | Quản lý Hồ sơ Nhân sự | `/admin/employees` | `HR_MANAGER`, `ADMIN` | `UI-WEB-006` | `EmployeeManagementView.tsx` | Danh sách nhân viên, lọc phòng ban, kích hoạt/vô hiệu hóa, mở Drawer thêm/sửa, xem mật khẩu tạm. |
-| 8 | `SCR-WEB-08` | Quản lý Ca Làm việc & Phân ca | `/admin/shifts` | `HR_MANAGER`, `ADMIN` | `UI-WEB-007` | `AdminShiftManagementView.tsx` | Tạo/sửa ca, phân ca theo khoảng ngày, xem lịch tuần `WeeklyShiftScheduleView`, tự khóa khi kỳ chốt. |
-| 9 | `SCR-WEB-09` | Quản lý Kỳ công & Khóa Điều chỉnh | `/admin/payroll-periods` | `HR_MANAGER`, `ADMIN` | `UI-WEB-009` | `AdminPayrollPeriodView.tsx` | Chốt kỳ công theo tháng, modal nhập lý do mở lại kỳ công, lan tỏa cờ `isAdjustmentLocked`. |
-| 10 | `SCR-WEB-10` | Giám sát & Quản lý Trạm Kiosk | `/admin/kiosks` | `ADMIN`, `HR_MANAGER` | `UI-WEB-012` | `AdminKioskManagementView.tsx` | Giám sát trạng thái trạm (Online, Warning >5m, Offline), cấp token một lần qua `KioskRegistrationModal`. |
-| 11 | `SCR-WEB-11` | Nhật ký Kiểm toán & Báo cáo Tuân thủ | `/admin/audit-logs` | `ADMIN`, `DPO` | `UI-WEB-012` | `AdminAuditLogView.tsx` | Nhật ký kiểm toán hệ thống và nhật ký đồng thuận NĐ 13/2023; chỉ đọc đối với vai trò `DPO`. |
+| 4 | `SCR-WEB-04` | Giám sát Điểm danh Trực tiếp | `/admin/dashboard` | `HR_MANAGER`, `ADMIN`, `DPO` | `UI-WEB-003` | `AdminDashboardView.tsx` | 4 thẻ KPI thời gian thực, bảng LiveTable hiệu ứng Green Flash 1.5s, nhận STOMP (Figma `3:24853`). |
+| 5 | `SCR-WEB-05` | Lịch sử Điểm danh & Báo cáo | `/admin/attendance`, `/admin/reports` | `HR_MANAGER`, `ADMIN`, `DPO` (chỉ đọc) | `UI-WEB-004` | `AdminAttendanceView.tsx` | Tra cứu đa tiêu chí, công tắc Live Stream, điều chỉnh điểm danh (`API-WEB-021`), mở modal xuất báo cáo. |
+| 6 | `SCR-WEB-06` | Quản lý Hồ sơ Nhân sự | `/admin/employees` | `HR_MANAGER`, `ADMIN` | `UI-WEB-006` | `EmployeeManagementView.tsx` | Danh sách nhân viên, lọc phòng ban, kích hoạt/vô hiệu hóa, mở Drawer thêm/sửa, xem mật khẩu tạm. |
+| 7 | `SCR-WEB-07` | Quản lý Ca Làm việc & Phân ca | `/admin/shifts` | `HR_MANAGER`, `ADMIN` | `UI-WEB-007` | `AdminShiftManagementView.tsx` | Tạo/sửa ca, phân ca theo khoảng ngày, xem lịch tuần `WeeklyShiftScheduleView`, tự khóa khi kỳ chốt. |
+| 8 | `SCR-WEB-08` | Quản lý Kỳ công & Khóa Điều chỉnh | `/admin/payroll-periods` | `HR_MANAGER`, `ADMIN` | `UI-WEB-009` | `AdminPayrollPeriodView.tsx` | Chốt kỳ công theo tháng, modal nhập lý do mở lại kỳ công, lan tỏa cờ `isAdjustmentLocked`. |
+| 9 | `SCR-WEB-09` | Giám sát & Quản lý Trạm Kiosk | `/admin/kiosks` | `ADMIN`, `HR_MANAGER` | `UI-WEB-012` | `AdminKioskManagementView.tsx` | Giám sát trạng thái trạm (Online, Warning >5m, Offline), cấp token một lần qua `KioskRegistrationModal`. |
+| 10 | `SCR-WEB-10` | Nhật ký Kiểm toán & Báo cáo Tuân thủ | `/admin/audit-logs` | `ADMIN`, `DPO` | `UI-WEB-012` | `AdminAuditLogView.tsx` | Nhật ký kiểm toán hệ thống và nhật ký đồng thuận NĐ 13/2023; chỉ đọc đối với vai trò `DPO`. |
 | **C** | **Phân hệ Cá nhân Nhân viên (Employee Self-Service Portal)** | | | | | | |
-| 12 | `SCR-WEB-12` | Bảng công & Lịch Cá nhân Tháng | `/employee/dashboard` | `EMPLOYEE` | `UI-WEB-005` | `EmployeeDashboardView.tsx` | Khung lịch 7 cột `PersonalAttendanceCalendar`, màu theo trạng thái, mở Drawer xem chi tiết ngày. |
-| 13 | `SCR-WEB-13` | Đăng ký Sinh trắc & Kích hoạt Kiosk | `/employee/consent` | `EMPLOYEE` | `UI-WEB-002`, `UI-WEB-010` | `EmployeeConsentView.tsx` | Ký cam kết Informed Consent NĐ 13/2023, OTP 6 số + QR code, STOMP auto-finish, nút rút cam kết. |
-| 14 | `SCR-WEB-14` | Yêu cầu Dữ liệu Cá nhân Chủ thể | `/employee/data-requests` | `EMPLOYEE` | `UI-WEB-010` | `EmployeeDataRequestsView.tsx` | Tạo yêu cầu tiếp cận (ACCESS) hoặc đính chính (CORRECTION) dữ liệu cá nhân theo NĐ 13/2023; theo dõi trạng thái. |
+| 11 | `SCR-WEB-11` | Bảng công & Lịch Cá nhân Tháng | `/employee/dashboard` | `EMPLOYEE` | `UI-WEB-005` | `EmployeeDashboardView.tsx` | Khung lịch 7 cột `PersonalAttendanceCalendar`, màu theo trạng thái, mở Drawer xem chi tiết ngày. |
+| 12 | `SCR-WEB-12` | Đăng ký Sinh trắc & Kích hoạt Kiosk | `/employee/consent` | `EMPLOYEE` | `UI-WEB-002`, `UI-WEB-010` | `EmployeeConsentView.tsx` | Ký cam kết Informed Consent NĐ 13/2023, OTP 6 số + QR code, STOMP auto-finish, nút rút cam kết. |
+| 13 | `SCR-WEB-13` | Yêu cầu Dữ liệu Cá nhân Chủ thể | `/employee/data-requests` | `EMPLOYEE` | `UI-WEB-010` | `EmployeeDataRequestsView.tsx` | Tạo yêu cầu tiếp cận (ACCESS) hoặc đính chính (CORRECTION) dữ liệu cá nhân theo NĐ 13/2023; theo dõi trạng thái. |
 | **D** | **Thành phần Hộp thoại & Ngăn kéo Bổ trợ (Modals & Drawers)** | | | | | | |
-| 15 | `MOD-WEB-01` | Hộp thoại Đổi Mật khẩu Tự nguyện | Popup toàn cục (TopHeader) | Mọi người dùng đã đăng nhập | `UI-WEB-008` | `ChangePasswordModal.tsx` | Đổi mật khẩu chủ động, thanh đo độ mạnh mật khẩu, cảnh báo thu hồi phiên cũ, không chặn điều hướng. |
-| 16 | `MOD-WEB-02` | Hộp thoại Quản lý Mã PIN Dự phòng | Popup toàn cục (TopHeader) | `EMPLOYEE` | `UI-WEB-008` | `PinManagementModal.tsx` | Bàn phím số ảo, thiết lập/đặt lại mã PIN dự phòng 6 chữ số, xác nhận 2 lần. |
-| 17 | `MOD-WEB-03` | Ngăn kéo Trung tâm Thông báo | Drawer trượt phải (TopHeader) | Mọi người dùng đã đăng nhập | `UI-WEB-011` | `NotificationDrawer.tsx` | Chuông badge số chưa đọc, danh sách phân loại sự kiện (điểm danh, phân ca, phê duyệt), đánh dấu đã đọc. |
-| 18 | `MOD-WEB-04` | Hộp thoại Mật khẩu Tạm Một lần | Popup trang Nhân sự | `HR_MANAGER`, `ADMIN` | `UI-WEB-006` | `TemporaryPasswordModal.tsx` | Hiển thị mật khẩu tạm sau khi tạo nhân viên; nút copy; cảnh báo đóng là không xem lại được. |
-| 19 | `MOD-WEB-05` | Hộp thoại Đăng ký Kiosk & Secret Token | Popup trang Kiosk | `ADMIN` | `UI-WEB-012` | `KioskRegistrationModal.tsx` | Đăng ký trạm hoặc rotate secret; secret token chỉ hiển thị 1 lần trong RAM, có cảnh báo bảo mật. |
-| 20 | `MOD-WEB-06` | Hộp thoại Xuất Báo cáo Bảng công | Popup trang Attendance | `HR_MANAGER`, `ADMIN` | `UI-WEB-004` | `ExportReportModal.tsx` | Cấu hình xuất Excel/PDF, phạm vi phòng ban/thời gian, phòng chống Formula Injection. |
-| 21 | `MOD-WEB-07` | Ngăn kéo Chi tiết Ngày Chấm công | Drawer trượt phải trang Bảng công | `EMPLOYEE` | `UI-WEB-005` | `AttendanceDayDetailDrawer.tsx` | Chi tiết các lượt quẹt thẻ trong ngày (giờ vào/ra, kiosk, PIN/mặt, trạng thái). |
-| 22 | `MOD-WEB-08` | Ngăn kéo Form Nhập liệu Hồ sơ Nhân sự | Drawer trượt phải trang Nhân sự | `HR_MANAGER`, `ADMIN` | `UI-WEB-006` | `EmployeeDrawer.tsx` | Form tạo mới / chỉnh sửa nhân viên (mã, họ tên, email, phòng ban, vai trò, chức vụ). |
-| 23 | `MOD-WEB-09` | Hộp thoại Rút Cam kết Informed Consent | Popup trang Consent | `EMPLOYEE` | `UI-WEB-010` | `ConsentWithdrawalModal.tsx` | Cảnh báo hệ quả (chỉ điểm danh bằng PIN, hủy vector trong 7 ngày), xác nhận 2 bước. |
+| 14 | `MOD-WEB-01` | Hộp thoại Đổi Mật khẩu Tự nguyện | Popup toàn cục (TopHeader) | Mọi người dùng đã đăng nhập | `UI-WEB-008` | `ChangePasswordModal.tsx` | Đổi mật khẩu chủ động, thanh đo độ mạnh mật khẩu, cảnh báo thu hồi phiên cũ, không chặn điều hướng (`DD-WEB-018`). |
+| 15 | `MOD-WEB-02` | Hộp thoại Quản lý Mã PIN Dự phòng | Popup toàn cục (TopHeader) | `EMPLOYEE` | `UI-WEB-008` | `PinManagementModal.tsx` | Bàn phím số ảo, thiết lập/đặt lại mã PIN dự phòng 6 chữ số, xác nhận 2 lần. |
+| 16 | `MOD-WEB-03` | Ngăn kéo Trung tâm Thông báo | Drawer trượt phải (TopHeader) | Mọi người dùng đã đăng nhập | `UI-WEB-011` | `NotificationDrawer.tsx` | Chuông badge số chưa đọc, danh sách phân loại sự kiện (điểm danh, phân ca, phê duyệt), đánh dấu đã đọc. |
+| 17 | `MOD-WEB-04` | Hộp thoại Mật khẩu Tạm Một lần | Popup trang Nhân sự | `HR_MANAGER`, `ADMIN` | `UI-WEB-006` | `TemporaryPasswordModal.tsx` | Hiển thị mật khẩu tạm sau khi tạo nhân viên; nút copy; cảnh báo đóng là không xem lại được. |
+| 18 | `MOD-WEB-05` | Hộp thoại Đăng ký Kiosk & Secret Token | Popup trang Kiosk | `ADMIN` | `UI-WEB-012` | `KioskRegistrationModal.tsx` | Đăng ký trạm hoặc rotate secret; secret token chỉ hiển thị 1 lần trong RAM, có cảnh báo bảo mật. |
+| 19 | `MOD-WEB-06` | Hộp thoại Xuất Báo cáo Bảng công | Popup trang Attendance | `HR_MANAGER`, `ADMIN` | `UI-WEB-004` | `ExportReportModal.tsx` | Cấu hình xuất Excel/PDF, phạm vi phòng ban/thời gian, phòng chống Formula Injection. |
+| 20 | `MOD-WEB-07` | Ngăn kéo Chi tiết Ngày Chấm công | Drawer trượt phải trang Bảng công | `EMPLOYEE` | `UI-WEB-005` | `AttendanceDayDetailDrawer.tsx` | Chi tiết các lượt quẹt thẻ trong ngày (giờ vào/ra, kiosk, PIN/mặt, trạng thái). |
+| 21 | `MOD-WEB-08` | Ngăn kéo Form Nhập liệu Hồ sơ Nhân sự | Drawer trượt phải trang Nhân sự | `HR_MANAGER`, `ADMIN` | `UI-WEB-006` | `EmployeeDrawer.tsx` | Form tạo mới / chỉnh sửa nhân viên (mã, họ tên, email, phòng ban, vai trò, chức vụ). |
+| 22 | `MOD-WEB-09` | Hộp thoại Rút Cam kết Informed Consent | Popup trang Consent | `EMPLOYEE` | `UI-WEB-010` | `ConsentWithdrawalModal.tsx` | Cảnh báo hệ quả (chỉ điểm danh bằng PIN, hủy vector trong 7 ngày), xác nhận 2 bước. |
 
 ---
 
@@ -159,15 +158,9 @@ graph TD
     LoginView --> DoLogin[Gửi thông tin xác thực]
     DoLogin --> ValidateCred{Thông tin đúng?}
     ValidateCred -- Sai --> ShowLoginErr[Báo lỗi tại Form]
-    ValidateCred -- Đúng --> CheckForceChange{Yêu cầu đổi mật khẩu lần đầu?}
+    ValidateCred -- Đúng --> RoleRouter{Kiểm tra Vai trò (RBAC)}
     
-    CheckForceChange -- Có --> ForceChangeView["Màn hình Đổi Mật khẩu Bắt buộc (/force-change-password)"]
-    ForceChangeView --> SubmitNewPass[Nhập mật khẩu mới]
-    SubmitNewPass --> CheckForceChange
-    
-    CheckForceChange -- Không --> RoleRouter{Kiểm tra Vai trò (RBAC)}
-    
-    CheckAuth -- Rồi --> CheckForceChange
+    CheckAuth -- Rồi --> RoleRouter
     
     RoleRouter -- "HR_MANAGER / ADMIN" --> AdminDashboard["Bảng điều khiển Quản trị (/admin/dashboard)"]
     RoleRouter -- "EMPLOYEE" --> EmpDashboard["Bảng công Cá nhân (/employee/dashboard)"]
@@ -193,7 +186,7 @@ graph TD
 | `UXD-WEB-005` | Khung Lịch biểu Cá nhân (Calendar Grid) | Lưới 7 cột theo các thứ trong tuần; mỗi ô ngày hiển thị giờ vào/ra và huy hiệu màu tương ứng; nhấp chuột để mở Drawer chi tiết bên phải. | `UI-WEB-004`, `UI-WEB-005` | `ARC-003` | `DD-WEB-002` | Accepted |
 | `UXD-WEB-006` | Bố cục Màn hình Quản trị Danh mục (Nhân sự, Ca, Kỳ công) | Bố cục dạng bảng dữ liệu có cột hành động dính bên phải, Drawer form nhập liệu thay vì modal toàn màn hình, và vùng cảnh báo nghiệp vụ (trùng mã, chồng ca, kỳ đã chốt) hiển thị ngay trên đầu bảng. | `UI-WEB-006`, `UI-WEB-007`, `UI-WEB-009` | `ARC-003` | `DD-WEB-018` | Accepted |
 | `UXD-WEB-007` | Bố cục Trung tâm Thông báo & Màn hình Tuân thủ Chỉ đọc | Panel trượt bên phải cho thông báo (nhóm theo ngày, badge chưa đọc), bố cục tra cứu chỉ đọc có bộ lọc thời gian cùng dấu hiệu "chỉ đọc" rõ ràng cho role `DPO`, và bố cục màn hình rút Consent với khối cảnh báo hệ quả cùng bước xác nhận hai lần. | `UI-WEB-011`, `UI-WEB-012`, `UI-WEB-010` | `ARC-003` | `DD-WEB-019`, `DD-WEB-020` | Accepted |
-| `UXD-WEB-008` | Luồng Đổi Mật khẩu (Tự nguyện & Bắt buộc) | Modal đổi mật khẩu mở từ menu người dùng (tự nguyện) hoặc View toàn màn hình khi đăng nhập lần đầu (bắt buộc), hiển thị chỉ số độ mạnh mật khẩu và cảnh báo các phiên cũ sẽ bị thu hồi sau khi đổi thành công. | `UI-WEB-001`, `UI-WEB-008` | `ARC-003` | `DD-WEB-018` | Accepted |
+| `UXD-WEB-008` | Luồng Đổi Mật khẩu (Tự nguyện) | Hộp thoại modal đổi mật khẩu mở từ menu tài khoản TopHeader, hiển thị chỉ số độ mạnh mật khẩu và thông báo các phiên cũ sẽ bị thu hồi sau khi đổi thành công; không chặn điều hướng người dùng sau khi đăng nhập theo đúng `DD-WEB-018` và `FR-WEB-009`. | `UI-WEB-008` | `ARC-003` | `DD-WEB-018` | Accepted |
 
 ---
 
@@ -340,47 +333,11 @@ stateDiagram-v2
   * Nền: `#FFFFFF`, Container form căn giữa (max-width: $440\text{ px}$).
   * Input: Chiều cao $44\text{ px}$, viền `#E2E8F0`, bo góc $8\text{ px}$, focus outline `#4F46E5`.
   * Nút bấm: Màu thương hiệu `#4F46E5` (hover `#4338CA`), chiều cao $46\text{ px}$, bo góc $8\text{ px}$, chữ trắng bold $15\text{ px}$, tích hợp spinner khi đang gửi yêu cầu xác thực.
+  * Hành vi sau đăng nhập: Chuyển hướng trực tiếp vào không gian làm việc số theo vai trò người dùng (`/admin/dashboard` hoặc `/employee/dashboard`), **không chặn điều hướng** (`DD-WEB-018`).
 
 ---
 
-### 6.2. Màn hình Đổi Mật khẩu Bắt buộc (`ForceChangePasswordView` - `/force-change-password`)
-
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        THIẾT LẬP MẬT KHẨU MỚI                          │
-│        (Yêu cầu bảo mật: Đổi mật khẩu trong lần đăng nhập đầu tiên)    │
-├────────────────────────────────────────────────────────────────────────┤
-│                                                                        │
-│   ┌────────────────────────────────────────────────────────────────┐   │
-│   │ Mật khẩu hiện tại (hoặc mật khẩu tạm):                         │   │
-│   │ [ ••••••••••••••••••••••••••••••••••••••••••••••••••••  (👁) ] │   │
-│   └────────────────────────────────────────────────────────────────┘   │
-│                                                                        │
-│   ┌────────────────────────────────────────────────────────────────┐   │
-│   │ Mật khẩu mới:                                                  │   │
-│   │ [ ••••••••••••••••••••••••••••••••••••••••••••••••••••  (👁) ] │   │
-│   └────────────────────────────────────────────────────────────────┘   │
-│   [████████████████░░░░░░░░] Độ mạnh: Khá (Tối thiểu 8 ký tự, có số)   │
-│                                                                        │
-│   ┌────────────────────────────────────────────────────────────────┐   │
-│   │ Nhập lại mật khẩu mới:                                         │   │
-│   │ [ ••••••••••••••••••••••••••••••••••••••••••••••••••••  (👁) ] │   │
-│   └────────────────────────────────────────────────────────────────┘   │
-│                                                                        │
-│   * Lưu ý: Sau khi đổi thành công, mọi phiên đăng nhập cũ sẽ bị hủy.   │
-│                                                                        │
-│                 [ Đăng xuất ]         [ Cập nhật mật khẩu ]            │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-* **Đặc tính tương tác**:
-  * Chặn hoàn toàn thanh điều hướng Sidebar và Header (không hiển thị AdminShellLayout).
-  * Chỉ cho phép 2 thao tác: Cập nhật mật khẩu mới hoặc Đăng xuất.
-  * Hiển thị chỉ báo độ mạnh mật khẩu (Yếu/Trung bình/Khá/Mạnh).
-
----
-
-### 6.3. Hộp thoại Ký Cam kết & Kích hoạt Sinh trắc (`ConsentModal`)
+### 6.2. Hộp thoại Ký Cam kết & Kích hoạt Sinh trắc (`ConsentModal`)
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -422,7 +379,7 @@ stateDiagram-v2
 
 ---
 
-### 6.4. Bảng Điều khiển Giám sát Trực tiếp (`AdminDashboardView` — Figma `3:24853`)
+### 6.3. Bảng Điều khiển Giám sát Trực tiếp (`AdminDashboardView` — Figma `3:24853`)
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -443,7 +400,7 @@ stateDiagram-v2
 
 ---
 
-### 6.5. Lịch biểu Cá nhân & Drawer Chi tiết (`EmployeeDashboardView` — Figma `3:25513` & `3:25772`)
+### 6.4. Lịch biểu Cá nhân & Drawer Chi tiết (`EmployeeDashboardView` — Figma `3:25513` & `3:25772`)
 
 * **Lưới Tháng Calendar Grid (`3:25513`)**:
   * Bố cục 7 cột (Thứ Hai $\rightarrow$ Chủ Nhật), tiêu đề cột in hoa xám nhạt (`text-xs font-semibold text-slate-500`).
@@ -457,7 +414,7 @@ stateDiagram-v2
 
 ---
 
-### 6.6. Màn hình Quản lý Trạm Kiosk & Hộp thoại Cấp Secret Token (`AdminKioskManagementView` + `KioskRegistrationModal`)
+### 6.5. Màn hình Quản lý Trạm Kiosk & Hộp thoại Cấp Secret Token (`AdminKioskManagementView` + `KioskRegistrationModal`)
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -491,7 +448,7 @@ stateDiagram-v2
 
 ---
 
-### 6.7. Màn hình Chốt Kỳ công & Khóa Điều chỉnh (`AdminPayrollPeriodView`)
+### 6.6. Màn hình Chốt Kỳ công & Khóa Điều chỉnh (`AdminPayrollPeriodView`)
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -523,7 +480,7 @@ stateDiagram-v2
 
 ---
 
-### 6.8. Màn hình Yêu cầu Dữ liệu Cá nhân Chủ thể (`EmployeeDataRequestsView`)
+### 6.7. Màn hình Yêu cầu Dữ liệu Cá nhân Chủ thể (`EmployeeDataRequestsView`)
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -533,12 +490,12 @@ stateDiagram-v2
 ├────────────┼──────────────┼────────────────────────────────┼──────────────┼────────────┤
 │ DSR-0012   │ Tiếp cận     │ Trích xuất toàn bộ dữ liệu log │ 12/10/2026   │ Đã xử lý   │
 │ DSR-0019   │ Đính chính   │ Sửa sai sót mốc giờ ngày 14/10 │ 16/10/2026   │ Chờ duyệt  │
-└────────────┴──────────────┴────────────────────────────────┴──────────────┴────────────┘
+└────────────┴───────────────────────────────────────────────┴──────────────┴────────────┘
 ```
 
 ---
 
-### 6.9. Ngăn kéo Trung tâm Thông báo (`NotificationDrawer`) & Hộp thoại Quản lý Mã PIN (`PinManagementModal`)
+### 6.8. Ngăn kéo Trung tâm Thông báo (`NotificationDrawer`) & Hộp thoại Quản lý Mã PIN (`PinManagementModal`)
 
 ```text
 ┌──────────────────────────────────────┐     ┌────────────────────────────────────────┐
