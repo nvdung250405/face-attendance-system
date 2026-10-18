@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Script quản lý tập trung toàn diện các dịch vụ hạ tầng và phân hệ qua Docker Compose.
 .DESCRIPTION
@@ -31,7 +31,7 @@
 [CmdletBinding()]
 param (
     [Parameter(Position = 0)]
-    [ValidateSet("start", "build", "stop", "restart", "status", "logs", "down", "seed")]
+    [ValidateSet("start", "build", "stop", "restart", "status", "logs", "down", "seed", "clean-data", "demo-data")]
     [string]$Action = "status",
 
     [Parameter(Position = 1)]
@@ -217,7 +217,6 @@ try {
                 return
             }
 
-            # Lấy thông tin user và db từ môi trường hoặc mặc định
             $dbUser = if ($env:DB_USER) { $env:DB_USER } else { "fas_admin" }
             $dbName = if ($env:DB_NAME) { $env:DB_NAME } else { "fas_db" }
 
@@ -225,6 +224,40 @@ try {
             docker exec fas-postgres psql -U $dbUser -d $dbName -f /tmp/seed.sql
             docker exec fas-postgres rm /tmp/seed.sql
             Write-Host ">>> Đã nạp dữ liệu mẫu E2E thành công vào CSDL $dbName!" -ForegroundColor Green
+        }
+
+        "clean-data" {
+            Write-Host ">>> [CHẾ ĐỘ SẠCH] Đang dọn sạch toàn bộ dữ liệu mẫu/rác, chỉ giữ lại tài khoản ADMIN gốc..." -ForegroundColor Yellow
+            $cleanFile = Join-Path $ProjectRoot "scripts\clean-db-data.sql"
+            if (-not (Test-Path $cleanFile)) {
+                Write-Error "Không tìm thấy tệp làm sạch dữ liệu: $cleanFile"
+                return
+            }
+
+            $dbUser = if ($env:DB_USER) { $env:DB_USER } else { "fas_admin" }
+            $dbName = if ($env:DB_NAME) { $env:DB_NAME } else { "fas_db" }
+
+            docker cp "$cleanFile" "fas-postgres:/tmp/clean.sql"
+            docker exec fas-postgres psql -U $dbUser -d $dbName -f /tmp/clean.sql
+            docker exec fas-postgres rm /tmp/clean.sql
+            Write-Host ">>> [HOÀN TẤT] Hệ thống đã được đưa về trạng thái sạch hoàn toàn (Clean Data Mode)!" -ForegroundColor Green
+        }
+
+        "demo-data" {
+            Write-Host ">>> [CHẾ ĐỘ DEMO] Đang nạp bộ dữ liệu mẫu E2E cho môi trường dev/demo..." -ForegroundColor Cyan
+            $seedFile = Join-Path $ProjectRoot "scripts\seed-e2e-data.sql"
+            if (-not (Test-Path $seedFile)) {
+                Write-Error "Không tìm thấy tệp dữ liệu mẫu: $seedFile"
+                return
+            }
+
+            $dbUser = if ($env:DB_USER) { $env:DB_USER } else { "fas_admin" }
+            $dbName = if ($env:DB_NAME) { $env:DB_NAME } else { "fas_db" }
+
+            docker cp "$seedFile" "fas-postgres:/tmp/seed.sql"
+            docker exec fas-postgres psql -U $dbUser -d $dbName -f /tmp/seed.sql
+            docker exec fas-postgres rm /tmp/seed.sql
+            Write-Host ">>> [HOÀN TẤT] Đã nạp dữ liệu Demo cho Dev thành công vào CSDL $dbName!" -ForegroundColor Green
         }
     }
 }

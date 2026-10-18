@@ -24,14 +24,17 @@
   "qml.qmllint.executablePath": "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qmllint.exe",
 
   // Java Configuration for Backend Service
+  "java.jdt.ls.java.home": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.11.10-hotspot",
+  "java.jdt.ls.vmargs": "-javaagent:\"C:/Users/Dung/.m2/repository/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar\" -XX:+EnableDynamicAgentLoading",
   "java.configuration.runtimes": [
     {
       "name": "JavaSE-21",
-      "path": "C:\\Users\\Dung\\.vscode\\extensions\\vscjava.vscode-java-pack",
+      "path": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.11.10-hotspot",
       "default": true
     }
   ],
   "java.compile.nullAnalysis.mode": "automatic",
+  "java.autobuild.enabled": false,
 
   // Web Portal Configuration (TypeScript, React, Tailwind)
   "editor.formatOnSave": true,
@@ -55,5 +58,6 @@
   "tailwindCSS.experimental.classRegex": [
     ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
     ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
+  ],
+  "search.useGlobalIgnoreFiles": false
 }
