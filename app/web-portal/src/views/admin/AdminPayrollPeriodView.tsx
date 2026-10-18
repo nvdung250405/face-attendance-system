@@ -220,44 +220,37 @@ export const AdminPayrollPeriodView: React.FC = () => {
   return (
     <div className="space-y-6" data-testid="admin-payroll-period-view">
       {/* ── Tiêu đề trang & Thanh công cụ ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-brand-50 text-brand-primary">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="page-title text-2xl font-bold text-text-primary flex items-center gap-3">
-                <span>Quản Lý & Chốt Kỳ Công</span>
-                {isAdjustmentLocked ? (
-                  <span
-                    data-testid="payroll-status-badge-locked"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Kỳ đang chọn: ĐÃ KHÓA</span>
-                  </span>
-                ) : (
-                  <span
-                    data-testid="payroll-status-badge-open"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-status-success border border-emerald-200"
-                  >
-                    <Unlock className="w-3.5 h-3.5" />
-                    <span>Kỳ đang chọn: ĐANG MỞ</span>
-                  </span>
-                )}
-              </h1>
-              <p className="page-subtitle text-xs text-text-secondary mt-0.5">
-                Chốt bảng công hàng tháng, lan tỏa cờ khóa điều chỉnh và mở lại kỳ công có kiểm toán
-              </p>
-            </div>
-          </div>
+          <h1 className="page-title flex items-center gap-3">
+            <span>Quản Lý & Chốt Kỳ Công</span>
+            {isAdjustmentLocked ? (
+              <span
+                data-testid="payroll-status-badge-locked"
+                className="badge-warning inline-flex items-center gap-1.5"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Kỳ đang chọn: ĐÃ KHÓA</span>
+              </span>
+            ) : (
+              <span
+                data-testid="payroll-status-badge-open"
+                className="badge-success inline-flex items-center gap-1.5"
+              >
+                <Unlock className="w-3.5 h-3.5" />
+                <span>Kỳ đang chọn: ĐANG MỞ</span>
+              </span>
+            )}
+          </h1>
+          <p className="page-subtitle">
+            Chốt bảng công hàng tháng, lan tỏa cờ khóa điều chỉnh và mở lại kỳ công có kiểm toán
+          </p>
         </div>
 
         {/* Bộ chọn năm & Nút làm mới */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           <div className="flex items-center gap-2">
-            <label htmlFor="year-select" className="text-xs font-semibold text-text-secondary">
+            <label htmlFor="year-select" className="text-xs font-semibold text-text-secondary whitespace-nowrap">
               Năm:
             </label>
             <select
@@ -265,7 +258,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               data-testid="select-payroll-year"
-              className="px-3 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+              className="input-base text-sm w-auto"
             >
               {[2024, 2025, 2026, 2027].map((y) => (
                 <option key={y} value={y}>
@@ -280,9 +273,10 @@ export const AdminPayrollPeriodView: React.FC = () => {
             onClick={loadPayrollPeriods}
             data-testid="refresh-payroll-periods-btn"
             title="Làm mới dữ liệu"
-            className="p-2.5 rounded-xl border border-border-subtle bg-white text-text-secondary hover:text-text-primary hover:bg-slate-50 transition-colors shadow-2xs"
+            className="btn-secondary flex items-center gap-2"
           >
             <RotateCw className="w-4 h-4" />
+            <span>Làm mới</span>
           </button>
         </div>
       </div>
@@ -291,9 +285,9 @@ export const AdminPayrollPeriodView: React.FC = () => {
       {selectedPeriod && selectedPeriod.status === 'LOCKED' && (
         <div
           data-testid="payroll-locked-active-alert"
-          className="p-4 rounded-2xl bg-amber-50/90 border border-amber-300 text-amber-950 flex items-start gap-3 shadow-2xs"
+          className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3"
         >
-          <div className="p-1 rounded-lg bg-amber-200/80 text-amber-800 mt-0.5">
+          <div className="p-1 rounded-lg bg-amber-100 text-amber-700 mt-0.5">
             <Lock className="w-4 h-4" />
           </div>
           <div className="space-y-0.5 text-xs">
@@ -340,16 +334,16 @@ export const AdminPayrollPeriodView: React.FC = () => {
       )}
 
       {/* ── Bảng Danh Sách Kỳ Công Trong Năm ── */}
-      <div className="card-surface overflow-hidden p-4 space-y-4">
+      <div className="card-surface overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border-subtle bg-slate-50/70 text-text-tertiary font-bold uppercase tracking-wider text-2xs">
-                <th className="py-3 px-4">Kỳ Công</th>
-                <th className="py-3 px-4">Trạng Thái</th>
-                <th className="py-3 px-4">Thông Tin Chốt Kỳ</th>
-                <th className="py-3 px-4">Thông Tin Mở Lại (Gần nhất)</th>
-                <th className="py-3 px-4 text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+              <tr className="table-sticky-header">
+                <th className="py-3 px-4 font-semibold">Kỳ Công</th>
+                <th className="py-3 px-4 font-semibold">Trạng Thái</th>
+                <th className="py-3 px-4 font-semibold">Thông Tin Chốt Kỳ</th>
+                <th className="py-3 px-4 font-semibold">Thông Tin Mở Lại (Gần nhất)</th>
+                <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                   Thao Tác Quản Trị
                 </th>
               </tr>
@@ -376,8 +370,8 @@ export const AdminPayrollPeriodView: React.FC = () => {
                     <tr
                       key={period.id}
                       data-testid={`payroll-period-row-${period.id}`}
-                      className={`hover:bg-slate-50/50 transition-colors ${
-                        isCurrentSelected ? 'bg-brand-50/30' : ''
+                      className={`table-row-hover transition-colors ${
+                        isCurrentSelected ? 'bg-brand-50/40' : ''
                       }`}
                     >
                       {/* Kỳ công tháng/năm */}

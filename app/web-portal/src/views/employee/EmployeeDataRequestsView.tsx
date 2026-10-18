@@ -144,16 +144,38 @@ export const EmployeeDataRequestsView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* ── Tiêu đề trang ── */}
-      <div>
-        <h1 className="page-title">Yêu cầu Dữ liệu Cá nhân (Quyền Chủ thể)</h1>
-        <p className="page-subtitle">
-          Thực thi các quyền của chủ thể dữ liệu đối với thông tin cá nhân và dữ liệu sinh trắc học theo Nghị định 13/2023/NĐ-CP
-        </p>
+      {/* ── Tiêu đề trang & Tác vụ hàng đầu ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="page-title">Yêu cầu dữ liệu cá nhân (Quyền chủ thể)</h1>
+          <p className="page-subtitle">
+            Thực thi các quyền của chủ thể dữ liệu đối với thông tin cá nhân và dữ liệu sinh trắc học theo Nghị định 13/2023/NĐ-CP
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={loadRequests}
+          disabled={isLoading}
+          className="btn-secondary self-start sm:self-auto flex items-center gap-2"
+          title="Làm mới danh sách"
+        >
+          <svg
+            className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
+          <span>Làm mới</span>
+        </button>
       </div>
 
       {/* ── Khung Gửi Yêu Cầu Mới ── */}
-      <div className="card-surface p-6 space-y-5">
+      <div className="card-surface p-6 space-y-4">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -203,7 +225,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                 data-testid="request-type-select"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value as DataRequestType)}
-                className="input-base"
+                className="input-base text-sm"
               >
                 <option value="ACCESS">{REQUEST_TYPE_LABELS.ACCESS.label}</option>
                 <option value="RECTIFICATION">{REQUEST_TYPE_LABELS.RECTIFICATION.label}</option>
@@ -226,7 +248,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="Mô tả cụ thể thông tin bạn muốn tiếp cận, đính chính hoặc yêu cầu xử lý..."
-                className="w-full p-2.5 text-sm bg-white border border-border-subtle rounded-lg focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 placeholder:text-text-muted resize-none transition-colors"
+                className="input-base text-sm resize-none"
               />
             </div>
           </div>
@@ -262,26 +284,6 @@ export const EmployeeDataRequestsView: React.FC = () => {
 
       {/* ── Bảng Lịch Sử Yêu Cầu ── */}
       <div className="card-surface overflow-hidden">
-        <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between bg-slate-50/50">
-          <div>
-            <h3 className="text-base font-bold text-text-primary">Lịch sử Yêu cầu Dữ liệu Cá nhân</h3>
-            <p className="text-xs text-text-muted">Theo dõi tiến độ thụ lý và phản hồi chính thức từ cán bộ DPO</p>
-          </div>
-          <button
-            type="button"
-            onClick={loadRequests}
-            className="btn-secondary text-xs flex items-center gap-1.5 h-8 px-2.5"
-            title="Làm mới danh sách"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            <span>Làm mới</span>
-          </button>
-        </div>
-
         {errorMessage && (
           <div className="p-4 bg-rose-50 text-rose-700 text-sm border-b border-rose-200">
             {errorMessage}
@@ -289,15 +291,15 @@ export const EmployeeDataRequestsView: React.FC = () => {
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm" data-testid="data-requests-table">
+          <table className="w-full text-left border-collapse text-sm" data-testid="data-requests-table">
             <thead>
               <tr className="table-sticky-header">
-                <th className="py-3 px-4">Mã YC</th>
-                <th className="py-3 px-4">Loại Yêu Cầu</th>
-                <th className="py-3 px-4">Nội Dung Chi Tiết</th>
-                <th className="py-3 px-4">Thời Điểm Gửi</th>
-                <th className="py-3 px-4">Trạng Thái</th>
-                <th className="py-3 px-4">Phản Hồi DPO</th>
+                <th className="py-3 px-4 font-semibold">Mã YC</th>
+                <th className="py-3 px-4 font-semibold">Loại Yêu Cầu</th>
+                <th className="py-3 px-4 font-semibold">Nội Dung Chi Tiết</th>
+                <th className="py-3 px-4 font-semibold">Thời Điểm Gửi</th>
+                <th className="py-3 px-4 font-semibold">Trạng Thái</th>
+                <th className="py-3 px-4 font-semibold">Phản Hồi DPO</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">

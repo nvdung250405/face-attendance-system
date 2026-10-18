@@ -37,16 +37,17 @@ export const EmployeeDashboardView: React.FC = () => {
   }, [])
 
   return (
-    <div data-testid="employee-dashboard-view" className="min-h-screen bg-bg-app text-text-primary p-6 md:p-8 space-y-6">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-card border border-border-subtle rounded-xl p-6 shadow-sm">
+    <div data-testid="employee-dashboard-view" className="space-y-6">
+      {/* ── Tiêu đề & Tác vụ hàng đầu ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-block px-2.5 py-1 bg-emerald-50 text-status-success text-xs font-semibold rounded-md mb-2">
+          <div className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-status-success border border-emerald-200 mb-1.5">
             Cổng Thông Tin Nhân Viên
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">
-            Xin chào, {user?.fullName || 'Nhân Viên'} ({user?.employeeCode})
+          <h1 className="page-title">
+            Xin chào, {user?.fullName || 'Nhân Viên'} {user?.employeeCode ? `(${user.employeeCode})` : ''}
           </h1>
-          <p className="text-sm text-text-secondary">
+          <p className="page-subtitle">
             Phòng ban: {user?.department || 'Chung'} • Trạng thái:{' '}
             <span
               className={`font-semibold ${
@@ -66,28 +67,28 @@ export const EmployeeDashboardView: React.FC = () => {
           <button
             type="button"
             onClick={clearSession}
-            className="px-4 py-2 border border-border-subtle hover:bg-rose-50 hover:text-status-danger text-sm font-medium rounded-lg transition-colors"
+            className="btn-secondary hover:bg-rose-50 hover:text-status-danger"
           >
             Đăng xuất
           </button>
         </div>
-      </header>
+      </div>
 
       {/* Banner cảnh báo ký cam kết nếu chưa kích hoạt */}
       {!user?.hasBiometric && (
-        <div className="p-6 rounded-2xl bg-linear-to-r from-brand-50 to-indigo-50 border border-brand-200/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-xl bg-brand-600 text-white shrink-0 mt-0.5 shadow-md shadow-brand-500/20">
-              <ShieldCheck className="w-6 h-6" />
+        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-1 rounded-lg bg-blue-100 text-blue-700 mt-0.5 shrink-0">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <h3 className="text-sm font-bold text-blue-950 flex items-center gap-2">
                 <span>Ký Cam kết & Kích hoạt Điểm danh Khuôn mặt</span>
-                <span className="px-2 py-0.5 text-xs bg-brand-100 text-brand-700 font-semibold rounded-full">
+                <span className="badge-info text-2xs">
                   Nghị định 13/2023
                 </span>
               </h3>
-              <p className="text-xs sm:text-sm text-text-secondary mt-1 max-w-xl">
+              <p className="text-xs text-blue-800 mt-1 max-w-xl leading-relaxed">
                 Bạn chưa kích hoạt dữ liệu nhận diện khuôn mặt. Vui lòng ký bản cam kết bảo vệ dữ liệu
                 để nhận mã OTP và mã QR nạp khuôn mặt tại trạm Kiosk.
               </p>
@@ -98,7 +99,7 @@ export const EmployeeDashboardView: React.FC = () => {
             type="button"
             onClick={() => setIsConsentModalOpen(true)}
             data-testid="open-consent-modal-btn"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-500/20 hover:shadow-lg hover:shadow-brand-500/30 transition-all shrink-0"
+            className="btn-primary flex items-center gap-2 shrink-0 self-start md:self-auto text-xs"
           >
             <Sparkles className="w-4 h-4" />
             <span>Ký cam kết ngay</span>
@@ -107,17 +108,17 @@ export const EmployeeDashboardView: React.FC = () => {
       )}
 
       {/* Summary card */}
-      <div className="bg-surface-card border border-border-subtle rounded-xl p-6 shadow-sm space-y-4">
-        <h2 className="text-lg font-bold text-text-primary">Trạng thái Nhận diện & Điểm danh</h2>
+      <div className="card-surface p-6 space-y-4">
+        <h2 className="text-base font-bold text-text-primary">Trạng thái Nhận diện & Điểm danh</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+          <div className="p-4 bg-slate-50 border border-border-subtle rounded-xl space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
                 Dữ liệu khuôn mặt
               </span>
-              <KeyRound className="w-4 h-4 text-brand-600" />
+              <KeyRound className="w-4 h-4 text-brand-primary" />
             </div>
-            <div className="text-sm font-bold text-slate-900">
+            <div className="text-sm font-bold text-text-primary">
               {user?.hasBiometric ? (
                 <span className="text-status-success flex items-center gap-1.5">
                   ✓ Đã kích hoạt trên Kiosk
@@ -130,25 +131,25 @@ export const EmployeeDashboardView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsConsentModalOpen(true)}
-                className="text-xs text-brand-600 hover:text-brand-700 font-medium underline inline-block pt-1"
+                className="text-xs text-brand-primary hover:underline font-medium inline-block pt-1"
               >
                 Mở lại mã OTP kích hoạt
               </button>
             )}
           </div>
 
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+          <div className="p-4 bg-slate-50 border border-border-subtle rounded-xl space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
                 Mã PIN dự phòng
               </span>
-              <KeyRound className="w-4 h-4 text-slate-600" />
+              <KeyRound className="w-4 h-4 text-text-muted" />
             </div>
-            <div className="text-sm font-bold text-slate-900">
+            <div className="text-sm font-bold text-text-primary">
               {user?.hasPin ? (
                 <span className="text-status-success">Đã thiết lập</span>
               ) : (
-                <span className="text-slate-500">Chưa tạo mã PIN</span>
+                <span className="text-text-muted">Chưa tạo mã PIN</span>
               )}
             </div>
             <p className="text-xs text-text-tertiary">

@@ -173,11 +173,8 @@ export const AdminDashboardView: React.FC = () => {
   return (
     <div className="space-y-6" data-testid="admin-dashboard-view">
       {/* ── Tiêu đề trang & Thanh tác vụ ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-light text-brand-primary mb-2">
-            <span>Không gian Quản trị HR &amp; Vận hành</span>
-          </div>
           <h1 className="page-title">
             Chào mừng trở lại, {user?.fullName || 'Quản Trị Viên'}
           </h1>
@@ -192,7 +189,7 @@ export const AdminDashboardView: React.FC = () => {
             data-testid="refresh-dashboard-btn"
             onClick={loadDashboardData}
             disabled={isLoading}
-            className="btn-secondary flex items-center gap-2 text-sm"
+            className="btn-secondary flex items-center gap-2 self-start sm:self-auto text-sm"
           >
             <svg
               className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
@@ -216,14 +213,16 @@ export const AdminDashboardView: React.FC = () => {
       {errorMessage && (
         <div
           role="alert"
-          className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2"
+          className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium flex items-center justify-between"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
           <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={loadDashboardData}
+            className="text-xs underline font-semibold hover:text-rose-900"
+          >
+            Thử lại
+          </button>
         </div>
       )}
 

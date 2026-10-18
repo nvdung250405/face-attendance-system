@@ -470,35 +470,28 @@ export const AdminShiftManagementView: React.FC = () => {
 
   return (
     <div className="space-y-6" data-testid="admin-shift-management-view">
-      {/* ── Tiêu đề trang & Tabs điều hướng ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── Tiêu đề trang & Tác vụ hàng đầu ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-brand-50 text-brand-primary">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="page-title text-2xl font-bold text-text-primary flex items-center gap-3">
-                <span>Quản Lý Ca Làm Việc & Phân Ca</span>
-                {isAdjustmentLocked && (
-                  <span
-                    data-testid="shift-payroll-locked-badge"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Kỳ công đã khóa</span>
-                  </span>
-                )}
-              </h1>
-              <p className="page-subtitle text-xs text-text-secondary mt-0.5">
-                Định nghĩa khung giờ ca kíp và phân bổ lịch làm việc linh hoạt theo từng nhân viên
-              </p>
-            </div>
-          </div>
+          <h1 className="page-title flex items-center gap-3">
+            <span>Quản Lý Ca Làm Việc & Phân Ca</span>
+            {isAdjustmentLocked && (
+              <span
+                data-testid="shift-payroll-locked-badge"
+                className="badge-warning inline-flex items-center gap-1.5"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Kỳ công đã khóa</span>
+              </span>
+            )}
+          </h1>
+          <p className="page-subtitle">
+            Định nghĩa khung giờ ca kíp và phân bổ lịch làm việc linh hoạt theo từng nhân viên
+          </p>
         </div>
 
         {/* Nút hành động chính */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => {
@@ -507,9 +500,10 @@ export const AdminShiftManagementView: React.FC = () => {
             }}
             data-testid="refresh-shifts-btn"
             title="Làm mới dữ liệu"
-            className="p-2.5 rounded-xl border border-border-subtle bg-white text-text-secondary hover:text-text-primary hover:bg-slate-50 transition-colors shadow-2xs"
+            className="btn-secondary flex items-center gap-2"
           >
             <RotateCw className="w-4 h-4" />
+            <span>Làm mới</span>
           </button>
 
           {activeTab === 'shifts' ? (
@@ -518,7 +512,7 @@ export const AdminShiftManagementView: React.FC = () => {
               onClick={handleOpenCreateShiftDrawer}
               disabled={isAdjustmentLocked}
               data-testid="open-create-shift-drawer-btn"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-semibold rounded-xl shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
               <span>Thêm Ca Mới</span>
@@ -529,7 +523,7 @@ export const AdminShiftManagementView: React.FC = () => {
               onClick={handleOpenAssignDrawer}
               disabled={isAdjustmentLocked}
               data-testid="open-assign-shift-drawer-btn"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-semibold rounded-xl shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
               <span>Phân Ca Nhân Sự</span>
@@ -626,18 +620,18 @@ export const AdminShiftManagementView: React.FC = () => {
 
       {/* ── Nội dung Tab 1: Danh mục Ca làm việc ── */}
       {activeTab === 'shifts' && (
-        <div className="card-surface overflow-hidden space-y-4 p-4">
+        <div className="card-surface overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-border-subtle bg-slate-50/70 text-text-tertiary font-bold uppercase tracking-wider text-2xs">
-                  <th className="py-3 px-4">Mã Ca</th>
-                  <th className="py-3 px-4">Tên Ca Làm Việc</th>
-                  <th className="py-3 px-4">Giờ Bắt Đầu</th>
-                  <th className="py-3 px-4">Giờ Kết Thúc</th>
-                  <th className="py-3 px-4">Ân Hạn (Phút)</th>
-                  <th className="py-3 px-4">Trạng Thái</th>
-                  <th className="py-3 px-4 text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                <tr className="table-sticky-header">
+                  <th className="py-3 px-4 font-semibold">Mã Ca</th>
+                  <th className="py-3 px-4 font-semibold">Tên Ca Làm Việc</th>
+                  <th className="py-3 px-4 font-semibold">Giờ Bắt Đầu</th>
+                  <th className="py-3 px-4 font-semibold">Giờ Kết Thúc</th>
+                  <th className="py-3 px-4 font-semibold">Ân Hạn (Phút)</th>
+                  <th className="py-3 px-4 font-semibold">Trạng Thái</th>
+                  <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                     Thao Tác
                   </th>
                 </tr>
@@ -660,7 +654,7 @@ export const AdminShiftManagementView: React.FC = () => {
                     <tr
                       key={shift.id}
                       data-testid={`shift-row-${shift.id}`}
-                      className="hover:bg-slate-50/50 transition-colors"
+                      className="table-row-hover transition-colors"
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-brand-primary">
                         {shift.shiftCode}
@@ -767,14 +761,16 @@ export const AdminShiftManagementView: React.FC = () => {
               {/* Tìm kiếm theo tên / mã nhân viên */}
               {assignmentViewMode === 'table' && (
                 <div className="relative w-full sm:w-64">
-                  <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-2.5" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
+                    <Search className="w-4 h-4" />
+                  </div>
                   <input
                     type="text"
                     value={searchEmployeeKeyword}
                     onChange={(e) => setSearchEmployeeKeyword(e.target.value)}
                     data-testid="search-assigned-employee-input"
                     placeholder="Mã NV hoặc Họ tên..."
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                    className="input-base pl-9.5 text-sm"
                   />
                 </div>
               )}
@@ -785,7 +781,7 @@ export const AdminShiftManagementView: React.FC = () => {
                   value={filterShiftId}
                   onChange={(e) => setFilterShiftId(e.target.value)}
                   data-testid="filter-assigned-shift-select"
-                  className="px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-text-secondary"
+                  className="input-base text-sm w-auto"
                 >
                   <option value="">Tất cả ca làm việc</option>
                   {shifts.map((s) => (
@@ -798,8 +794,8 @@ export const AdminShiftManagementView: React.FC = () => {
             </div>
 
             {assignmentViewMode === 'table' && (
-              <span className="text-2xs text-text-tertiary self-end sm:self-auto font-medium">
-                Hiển thị {filteredAssignments.length} / {assignments.length} lịch phân ca
+              <span className="text-xs text-text-secondary self-end sm:self-auto font-medium">
+                Hiển thị <span className="font-semibold text-text-primary">{filteredAssignments.length}</span> / <span className="font-semibold text-text-primary">{assignments.length}</span> lịch phân ca
               </span>
             )}
           </div>
@@ -816,17 +812,17 @@ export const AdminShiftManagementView: React.FC = () => {
             />
           ) : (
             /* Bảng danh sách phân ca */
-            <div className="card-surface overflow-hidden p-4">
+            <div className="card-surface overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-border-subtle bg-slate-50/70 text-text-tertiary font-bold uppercase tracking-wider text-2xs">
-                      <th className="py-3 px-4">Nhân Sự</th>
-                      <th className="py-3 px-4">Ca Áp Dụng</th>
-                      <th className="py-3 px-4">Khung Giờ</th>
-                      <th className="py-3 px-4">Ngày Bắt Đầu</th>
-                      <th className="py-3 px-4">Ngày Kết Thúc</th>
-                      <th className="py-3 px-4 text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                    <tr className="table-sticky-header">
+                      <th className="py-3 px-4 font-semibold">Nhân Sự</th>
+                      <th className="py-3 px-4 font-semibold">Ca Áp Dụng</th>
+                      <th className="py-3 px-4 font-semibold">Khung Giờ</th>
+                      <th className="py-3 px-4 font-semibold">Ngày Bắt Đầu</th>
+                      <th className="py-3 px-4 font-semibold">Ngày Kết Thúc</th>
+                      <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                         Thao Tác
                       </th>
                     </tr>

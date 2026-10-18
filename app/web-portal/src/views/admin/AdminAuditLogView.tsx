@@ -402,20 +402,23 @@ export const AdminAuditLogView: React.FC = () => {
       {activeTab === 'DPO_CONSENTS' && (
         <div className="card-surface overflow-hidden">
           <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/50">
-            <h3 className="text-base font-bold text-text-primary">Danh Sách Ký Cam Kết Informed Consent</h3>
-            <p className="text-xs text-text-muted">Lưu vết điện tử tuân thủ Điều 9 Nghị định 13/2023/NĐ-CP</p>
+            <h3 className="text-base font-bold text-text-primary">
+              Danh Sách Ký Cam Kết Informed Consent
+            </h3>
+            <p className="text-xs text-text-muted">
+              Lưu trữ bằng chứng đồng thuận theo quy định tại Nghị định 13/2023/NĐ-CP
+            </p>
           </div>
-
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm" data-testid="dpo-consents-table">
               <thead>
                 <tr className="table-sticky-header">
-                  <th className="py-3 px-4">Mã NV</th>
-                  <th className="py-3 px-4">Họ và Tên</th>
-                  <th className="py-3 px-4">Phiên Bản Consent</th>
-                  <th className="py-3 px-4">Thời Điểm Ký Điện Tử</th>
-                  <th className="py-3 px-4">Địa Chỉ IP Ký</th>
-                  <th className="py-3 px-4">Trạng Thái</th>
+                  <th className="py-3 px-4 font-semibold">Mã NV</th>
+                  <th className="py-3 px-4 font-semibold">Họ và Tên</th>
+                  <th className="py-3 px-4 font-semibold">Phiên Bản Consent</th>
+                  <th className="py-3 px-4 font-semibold">Thời Điểm Ký Điện Tử</th>
+                  <th className="py-3 px-4 font-semibold">Địa Chỉ IP Ký</th>
+                  <th className="py-3 px-4 font-semibold">Trạng Thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
@@ -483,20 +486,23 @@ export const AdminAuditLogView: React.FC = () => {
 
           <div className="card-surface overflow-hidden">
             <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/50">
-              <h3 className="text-base font-bold text-text-primary">Lịch Trình Tiêu Hủy Vector Sinh Trắc Học</h3>
-              <p className="text-xs text-text-muted">Theo dõi quy trình xóa vĩnh viễn dữ liệu nhạy cảm của nhân sự</p>
+              <h3 className="text-base font-bold text-text-primary">
+                Lịch Trình Tiêu Hủy Vector Sinh Trắc Học
+              </h3>
+              <p className="text-xs text-text-muted">
+                Theo dõi thời hạn và trạng thái tiêu hủy dữ liệu đặc trưng khuôn mặt theo luật định
+              </p>
             </div>
-
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm" data-testid="retention-schedule-table">
                 <thead>
                   <tr className="table-sticky-header">
-                    <th className="py-3 px-4">Mã NV</th>
-                    <th className="py-3 px-4">Họ và Tên</th>
-                    <th className="py-3 px-4">Thời Điểm Rút / Nghỉ Việc</th>
-                    <th className="py-3 px-4">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
-                    <th className="py-3 px-4">Thời Điểm Tiêu Hủy Thực Tế</th>
-                    <th className="py-3 px-4">Trạng Thái</th>
+                    <th className="py-3 px-4 font-semibold">Mã NV</th>
+                    <th className="py-3 px-4 font-semibold">Họ và Tên</th>
+                    <th className="py-3 px-4 font-semibold">Thời Điểm Rút / Nghỉ Việc</th>
+                    <th className="py-3 px-4 font-semibold">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
+                    <th className="py-3 px-4 font-semibold">Thời Điểm Tiêu Hủy Thực Tế</th>
+                    <th className="py-3 px-4 font-semibold">Trạng Thái</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">

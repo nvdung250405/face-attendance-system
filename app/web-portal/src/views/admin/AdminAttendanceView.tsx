@@ -379,35 +379,30 @@ export const AdminAttendanceView: React.FC = () => {
       {/* ── Tiêu đề trang & Thanh công cụ ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-brand-50 text-brand-primary">
-              <History className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="page-title text-2xl font-bold text-text-primary flex items-center gap-3">
-                <span>Bảng Chấm Công HR Trực Tiếp</span>
-                {/* Badge STOMP Live */}
-                <div
-                  data-testid="hr-stomp-status-badge"
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                    isConnected
-                      ? 'bg-emerald-50 text-status-success border border-emerald-200'
-                      : 'bg-amber-50 text-status-warning border border-amber-200'
+          <div className="flex items-center gap-3">
+            <h1 className="page-title flex items-center gap-3">
+              <span>Bảng Chấm Công HR Trực Tiếp</span>
+              {/* Badge STOMP Live */}
+              <div
+                data-testid="hr-stomp-status-badge"
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                  isConnected
+                    ? 'bg-emerald-50 text-status-success border border-emerald-200'
+                    : 'bg-amber-50 text-status-warning border border-amber-200'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
                   }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                    }`}
-                  />
-                  <span>{isConnected ? 'Kiosk Live' : 'Mất kết nối'}</span>
-                </div>
-              </h1>
-              <p className="page-subtitle text-xs text-text-secondary mt-0.5">
-                Theo dõi sự kiện quét thẻ thời gian thực từ các trạm Kiosk và tra cứu lịch sử chấm công
-              </p>
-            </div>
+                />
+                <span>{isConnected ? 'Kiosk Live' : 'Mất kết nối'}</span>
+              </div>
+            </h1>
           </div>
+          <p className="page-subtitle">
+            Theo dõi sự kiện quét thẻ thời gian thực từ các trạm Kiosk và tra cứu lịch sử chấm công
+          </p>
         </div>
 
         {/* Nút hành động */}
@@ -549,44 +544,27 @@ export const AdminAttendanceView: React.FC = () => {
       </div>
 
       {/* ── Bộ Lọc Nâng Cao ── */}
-      <div className="card-surface p-4 space-y-3.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Bộ Lọc Dữ Liệu Chấm Công</span>
-          </span>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              data-testid="reset-filters-btn"
-              className="text-xs text-status-danger hover:underline font-semibold flex items-center gap-1"
-            >
-              <X className="w-3.5 h-3.5" />
-              <span>Xóa bộ lọc</span>
-            </button>
-          )}
+      <div className="card-surface p-4 flex flex-col md:flex-row gap-3 items-stretch md:items-center flex-wrap">
+        {/* Ô tìm kiếm từ khóa */}
+        <div className="flex-1 min-w-[200px] relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
+            <Search className="w-4.5 h-4.5" />
+          </div>
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => {
+              setKeyword(e.target.value)
+              setPage(0)
+            }}
+            data-testid="filter-keyword-input"
+            placeholder="Tìm theo Mã NV, Họ tên..."
+            className="input-base pl-9.5 text-sm"
+          />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Ô tìm kiếm từ khóa */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-2.5" />
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => {
-                setKeyword(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-keyword-input"
-              placeholder="Mã NV hoặc Họ tên..."
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
-            />
-          </div>
-
-          {/* Lọc theo phòng ban */}
+        {/* Lọc theo phòng ban */}
+        <div className="w-full md:w-44">
           <select
             value={department}
             onChange={(e) => {
@@ -594,7 +572,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-department-select"
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-text-secondary"
+            className="input-base text-sm"
           >
             <option value="">Tất cả phòng ban</option>
             <option value="Phòng Kỹ thuật">Phòng Kỹ thuật</option>
@@ -602,8 +580,10 @@ export const AdminAttendanceView: React.FC = () => {
             <option value="Phòng Nhân sự">Phòng Nhân sự</option>
             <option value="Phòng Tài chính">Phòng Tài chính</option>
           </select>
+        </div>
 
-          {/* Lọc theo trạng thái */}
+        {/* Lọc theo trạng thái */}
+        <div className="w-full md:w-40">
           <select
             value={status}
             onChange={(e) => {
@@ -611,61 +591,77 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-status-select"
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-text-secondary"
+            className="input-base text-sm"
           >
             <option value="">Tất cả trạng thái</option>
             <option value="ON_TIME">Đúng giờ</option>
             <option value="LATE">Đi muộn</option>
             <option value="EARLY_LEAVE">Về sớm</option>
           </select>
+        </div>
 
-          {/* Lọc theo phương thức xác thực */}
+        {/* Lọc theo phương thức xác thực */}
+        <div className="w-full md:w-44">
           <select
             value={verificationMethod}
             onChange={(e) => setVerificationMethod(e.target.value)}
             data-testid="filter-method-select"
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-text-secondary"
+            className="input-base text-sm"
           >
             <option value="">Tất cả phương thức</option>
             <option value="VERIFICATION_FACE">Khuôn mặt (Face)</option>
             <option value="VERIFICATION_PIN">Mã PIN</option>
           </select>
-
-          {/* Lọc theo ngày */}
-          <div className="flex items-center gap-1.5">
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-from-date"
-              className="w-full px-2 py-2 text-xs rounded-xl border border-border-subtle bg-white text-text-secondary"
-            />
-            <span className="text-xs text-text-muted">-</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-to-date"
-              className="w-full px-2 py-2 text-xs rounded-xl border border-border-subtle bg-white text-text-secondary"
-            />
-          </div>
         </div>
+
+        {/* Lọc theo khoảng ngày */}
+        <div className="flex items-center gap-1.5 w-full md:w-auto">
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => {
+              setFromDate(e.target.value)
+              setPage(0)
+            }}
+            data-testid="filter-from-date"
+            className="input-base text-sm px-2.5"
+            title="Từ ngày"
+          />
+          <span className="text-text-muted text-xs">—</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => {
+              setToDate(e.target.value)
+              setPage(0)
+            }}
+            data-testid="filter-to-date"
+            className="input-base text-sm px-2.5"
+            title="Đến ngày"
+          />
+        </div>
+
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            data-testid="reset-filters-btn"
+            className="btn-secondary h-11 px-3 text-xs text-status-danger hover:bg-rose-50 hover:text-rose-700 flex items-center gap-1.5 self-end md:self-auto"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Xóa lọc</span>
+          </button>
+        )}
       </div>
 
       {/* Thông báo lỗi nếu có */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-sm font-medium flex items-center justify-between">
           <span>{errorMessage}</span>
           <button
             type="button"
             onClick={() => setErrorMessage(null)}
-            className="underline font-semibold ml-2"
+            className="text-xs underline font-semibold hover:text-rose-900 ml-2"
           >
             Đóng
           </button>
@@ -681,10 +677,11 @@ export const AdminAttendanceView: React.FC = () => {
           highlightedRecordId={highlightedRecordId}
         />
 
-        {/* ── Thanh Phân Trang ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-text-secondary px-2">
+        {/* ── Thanh Phân Trang (Chuẩn hóa theo EmployeeManagementView) ── */}
+        <div className="card-surface p-4 border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary">
           <div>
-            Hiển thị <strong>{displayRecords.length}</strong> / <strong>{totalElements}</strong> lượt điểm danh
+            Hiển thị <span className="font-semibold text-text-primary">{displayRecords.length}</span> /{' '}
+            <span className="font-semibold text-text-primary">{totalElements}</span> lượt điểm danh
           </div>
 
           <div className="flex items-center gap-2">
@@ -695,7 +692,7 @@ export const AdminAttendanceView: React.FC = () => {
                 setPage(0)
               }}
               data-testid="page-size-select"
-              className="px-2 py-1 rounded-lg border border-border-subtle bg-white text-xs text-text-secondary"
+              className="h-8 px-2.5 rounded-lg border border-border-subtle bg-white text-xs text-text-secondary"
             >
               <option value={20}>20 dòng / trang</option>
               <option value={50}>50 dòng / trang</option>
@@ -707,23 +704,21 @@ export const AdminAttendanceView: React.FC = () => {
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               data-testid="prev-page-btn"
-              className="px-3 py-1.5 rounded-lg border border-border-subtle bg-white text-xs font-semibold text-text-secondary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-secondary h-8 px-3 text-xs disabled:opacity-40"
             >
-              Trang trước
+              Trước
             </button>
 
-            <span className="font-semibold text-text-primary px-1">
-              Trang {page + 1}
-            </span>
+            <span className="px-2 font-medium">Trang {page + 1}</span>
 
             <button
               type="button"
               disabled={(page + 1) * pageSize >= totalElements}
               onClick={() => setPage((p) => p + 1)}
               data-testid="next-page-btn"
-              className="px-3 py-1.5 rounded-lg border border-border-subtle bg-white text-xs font-semibold text-text-secondary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-secondary h-8 px-3 text-xs disabled:opacity-40"
             >
-              Trang sau
+              Sau
             </button>
           </div>
         </div>
