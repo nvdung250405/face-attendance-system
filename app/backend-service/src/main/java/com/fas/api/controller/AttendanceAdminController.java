@@ -56,6 +56,21 @@ public class AttendanceAdminController {
     }
 
     /**
+     * Thống kê KPI điểm danh toàn công ty theo ngày thực tế (GET /api/v1/admin/attendance/stats - API-BE-009).
+     *
+     * @param date ngày cần thống kê định dạng YYYY-MM-DD (tuỳ chọn)
+     * @return các chỉ số KPI thực tế
+     */
+    @GetMapping("/attendance/stats")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<com.fas.api.dto.response.AttendanceStatsResponse> getAttendanceStats(
+            @RequestParam(value = "date", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+
+        com.fas.api.dto.response.AttendanceStatsResponse response = attendanceService.getAttendanceStats(date);
+        return ApiResponse.ok("ATTENDANCE_STATS_FETCHED", "Lấy thống kê điểm danh thành công", response);
+    }
+
+    /**
      * Điều chỉnh thủ công bản ghi điểm danh phục vụ HR/Admin sửa giờ công (PATCH /api/v1/admin/attendance/{id}).
      *
      * @param id      mã định danh bản ghi điểm danh

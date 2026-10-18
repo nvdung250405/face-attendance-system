@@ -20,7 +20,7 @@ export interface KpiCardsGridProps {
 }
 
 export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = false }) => {
-  const totalEmployees = stats.totalEmployees ?? 128
+  const totalEmployees = stats.totalEmployees ?? 0
   const presentCount = stats.presentCount ?? 0
   const lateCount = stats.lateCount ?? 0
   const onTimeCount = stats.onTimeCount ?? (presentCount - lateCount)

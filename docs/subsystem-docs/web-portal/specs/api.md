@@ -5,7 +5,7 @@ status: Approved
 owner: Web Technical Lead & Frontend Architect
 type: spec
 scope: WEB
-updated: 2026-10-08
+updated: 2026-10-18
 ---
 
 # ĐẶC TẢ & THIẾT KẾ GIAO DIỆN TRUYỀN THÔNG PHÂN HỆ CỔNG WEB QUẢN TRỊ & NGƯỜI DÙNG (`web-portal`)
@@ -13,25 +13,28 @@ updated: 2026-10-08
 ## 1. Danh mục Giao diện Truyền thông Phân hệ Web Portal (`API-WEB-`)
 
 | ID | Phát biểu Giao diện (Statement) | Phân loại | Mức Ưu tiên | Nguồn Tham chiếu | Tiêu chí Nghiệm thu (Acceptance Criteria) | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: | :--- | :---: |
-| `API-WEB-001` | Giao diện REST xác thực đăng nhập qua `POST /api/v1/auth/login`. | REST | Must | `SRS-001`, `ARC-003` | Nhận Access/Refresh Token và thông tin user; SLA $\le 500\text{ ms}$. | Approved |
-| `API-WEB-002` | Giao diện REST làm mới access token qua `POST /api/v1/auth/refresh`. | REST | Must | `SRS-001`, `ARC-003` | Đổi Refresh Token lấy Access Token mới trong suốt; SLA $\le 300\text{ ms}$. | Approved |
-| `API-WEB-003` | Giao diện REST ký cam kết sinh trắc qua `POST /api/v1/employee/consent`. | REST | Must | `SRS-001`, `ARC-003` | Nhận mã OTP 6 số và mã QR kích hoạt tại Kiosk; SLA $\le 500\text{ ms}$. | Approved |
-| `API-WEB-004` | Giao diện REST tra cứu điểm danh toàn công ty qua `GET /api/v1/admin/attendance`. | REST | Must | `SRS-003`, `ARC-003` | Phân trang, lọc theo ngày/phòng ban/trạng thái; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-005` | Giao diện REST tra cứu điểm danh cá nhân qua `GET /api/v1/employee/attendance`. | REST | Should | `SRS-003`, `ARC-003` | Trả về tổng kết tháng và chi tiết các lượt quẹt; SLA $\le 500\text{ ms}$. | Approved |
-| `API-WEB-006` | Giao diện REST tra cứu danh mục nhân sự qua `GET /api/v1/admin/employees`. | REST | Must | `SRS-003`, `ARC-003` | Phân trang danh sách nhân sự và trạng thái sinh trắc; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-007` | Kênh WebSocket STOMP nhận điểm danh trực tiếp qua topic `/topic/live-attendance`. | WebSocket | Must | `SRS-003`, `ARC-003` | Nhận event và chèn dòng lên đầu Live Table tức thời. | Approved |
-| `API-WEB-008` | Kênh WebSocket STOMP nhận thông báo kích hoạt qua topic `/topic/enrollment/{otp}`. | WebSocket | Must | `SRS-001`, `ARC-003` | Tự đóng modal OTP và chuyển trạng thái ACTIVE khi quét xong tại Kiosk. | Approved |
-| `API-WEB-009` | Giao diện REST quản lý hồ sơ nhân sự qua `POST /api/v1/admin/employees`, `PATCH /api/v1/admin/employees/{id}` và `PATCH /api/v1/admin/employees/{id}/status`. | REST | Must | `FR-SYS-017` | Tạo hồ sơ nhận HTTP 201 kèm `temporaryPassword` hiển thị một lần; trùng mã/email trả 409; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-010` | Giao diện REST cấp lại mật khẩu tạm qua `POST /api/v1/admin/employees/{id}/credentials/reset`. | REST | Must | `FR-SYS-022` | Nhận mật khẩu tạm mới hiển thị một lần; thông báo phiên cũ đã bị thu hồi; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-011` | Giao diện REST quản lý ca và phân ca qua `/api/v1/admin/shifts` và `/api/v1/admin/employee-shifts`. | REST | Must | `FR-SYS-018` | Tạo/sửa ca và phân ca theo khoảng ngày; lỗi chồng lấn trả 409 kèm khoảng trống gợi ý; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-012` | Giao diện REST đổi mật khẩu và quản lý PIN qua `POST /api/v1/auth/change-password`, `POST /api/v1/employee/pin`, `POST /api/v1/employee/pin/reset`. | REST | Must | `FR-SYS-017`, `FR-SYS-022` | Đổi mật khẩu thành công trả 200 (thông báo thu hồi phiên cũ); thiết lập/đặt lại PIN trả trạng thái `hasPin`; SLA $\le 500\text{ ms}$. | Approved |
-| `API-WEB-013` | Giao diện REST chốt và mở lại kỳ công qua `/api/v1/admin/payroll-periods`. | REST | Must | `FR-SYS-024` | Trả danh sách kỳ kèm trạng thái `OPEN`/`LOCKED`; chốt/mở lại trả 200; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-014` | Giao diện REST rút Consent và yêu cầu dữ liệu cá nhân qua `POST /api/v1/employee/consent/withdraw`, `/api/v1/employee/data-requests` và `/api/v1/dpo/data-requests`. | REST | Must | `FR-SYS-025` | Nhận hạn tiêu huỷ dữ liệu sinh trắc sau khi rút; theo dõi yêu cầu dữ liệu; role DPO xử lý được; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-015` | Giao diện REST đăng xuất và thu hồi phiên qua `POST /api/v1/auth/logout`. | REST | Must | `FR-SYS-023` | Trả 204 và refresh token không dùng lại được; client xoá storage và đồng bộ đa tab. | Approved |
-| `API-WEB-016` | Giao diện REST thông báo trong ứng dụng qua `GET /api/v1/notifications` và `PATCH /api/v1/notifications/{id}/read`. | REST | Should | `FR-SYS-027` | Trả danh sách thông báo kèm số chưa đọc; đánh dấu đã đọc trả 200; SLA $\le 500\text{ ms}$. | Approved |
-| `API-WEB-017` | Giao diện REST tra cứu kiểm toán và quản lý trạm Kiosk qua `/api/v1/admin/audit-logs`, `/api/v1/admin/kiosks/**` và `/api/v1/dpo/**`. | REST | Must | `FR-SYS-019`, `FR-SYS-020` | ADMIN tra cứu audit log và quản lý trạm; Secret Token chỉ hiển thị một lần; role DPO chỉ đọc; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-018` | Giao diện REST kết xuất báo cáo bảng công qua `GET /api/v1/admin/reports/export`. | REST | Must | `FR-WEB-006`, `FR-SYS-016` | Nhận file `.xlsx` an toàn (đã escape công thức) và tải xuống trong $\le 3\text{ giây}$ cho 1,000 nhân sự. | Approved |
+| :--- | :--- | :--- | :--- | :---: | :--- | :---: |
+| `API-WEB-001` | Giao diện REST xác thực đăng nhập qua `POST /api/v1/auth/login`. | REST | Must | `API-BE-001`, `SRS-001`, `ARC-003` | Nhận Access/Refresh Token và thông tin user; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-002` | Giao diện REST làm mới access token qua `POST /api/v1/auth/refresh`. | REST | Must | `API-BE-002`, `SRS-001`, `ARC-003` | Đổi Refresh Token lấy Access Token mới trong suốt; SLA $\le 300\text{ ms}$. | Approved |
+| `API-WEB-003` | Giao diện REST ký cam kết sinh trắc qua `POST /api/v1/employee/consent`. | REST | Must | `API-BE-010`, `SRS-001`, `ARC-003` | Nhận mã OTP 6 số và mã QR kích hoạt tại Kiosk; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-004` | Giao diện REST tra cứu điểm danh toàn công ty qua `GET /api/v1/admin/attendance`. | REST | Must | `API-BE-008`, `SRS-003`, `ARC-003` | Phân trang, lọc theo ngày/phòng ban/trạng thái; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-005` | Giao diện REST tra cứu điểm danh cá nhân qua `GET /api/v1/employee/attendance`. | REST | Should | `API-BE-009`, `SRS-003`, `ARC-003` | Trả về tổng kết tháng và chi tiết các lượt quẹt; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-006` | Giao diện REST tra cứu danh mục nhân sự qua `GET /api/v1/admin/employees`. | REST | Must | `API-BE-011`, `SRS-003`, `ARC-003` | Phân trang danh sách nhân sự và trạng thái sinh trắc; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-007` | Kênh WebSocket STOMP nhận điểm danh trực tiếp qua topic `/topic/live-attendance`. | WebSocket | Must | `Backend-STOMP-4.1`, `SRS-003`, `ARC-003` | Nhận event và chèn dòng lên đầu Live Table tức thời. | Approved |
+| `API-WEB-008` | Kênh WebSocket STOMP nhận thông báo kích hoạt qua topic `/topic/enrollment/{otp}`. | WebSocket | Must | `Backend-STOMP-4.1`, `SRS-001`, `ARC-003` | Tự đóng modal OTP và chuyển trạng thái ACTIVE khi quét xong tại Kiosk. | Approved |
+| `API-WEB-009` | Giao diện REST quản lý hồ sơ nhân sự qua `POST /api/v1/admin/employees`, `PATCH /api/v1/admin/employees/{id}` và `PATCH /api/v1/admin/employees/{id}/status`. | REST | Must | `API-BE-017`, `API-BE-018`, `API-BE-019` | Tạo hồ sơ nhận HTTP 201 kèm `temporaryPassword` hiển thị một lần (response DTO phẳng); trùng mã/email trả 409; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-010` | Giao diện REST cấp lại mật khẩu tạm qua `POST /api/v1/admin/employees/{id}/credentials/reset`. | REST | Must | `API-BE-036`, `FR-SYS-022` | Nhận mật khẩu tạm mới hiển thị một lần; thông báo phiên cũ đã bị thu hồi; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-011` | Giao diện REST quản lý ca và phân ca qua `/api/v1/admin/shifts` và `/api/v1/admin/employee-shifts`. | REST | Must | `API-BE-023`, `API-BE-024`, `API-BE-025` | Tạo/sửa ca và phân ca theo khoảng ngày; lỗi chồng lấn trả 409 kèm khoảng trống gợi ý; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-012` | Giao diện REST đổi mật khẩu và quản lý PIN qua `POST /api/v1/auth/change-password`, `POST /api/v1/employee/pin`, `POST /api/v1/employee/pin/reset`. | REST | Must | `API-BE-020`, `API-BE-021`, `API-BE-037` | Đổi mật khẩu thành công trả 200 (thông báo thu hồi phiên cũ); thiết lập/đặt lại PIN trả trạng thái `hasPin`; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-013` | Giao diện REST chốt và mở lại kỳ công qua `/api/v1/admin/payroll-periods`. | REST | Must | `API-BE-039`, `API-BE-040`, `FR-SYS-024` | Trả danh sách kỳ kèm trạng thái `OPEN`/`LOCKED`; chốt/mở lại trả 200; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-014` | Giao diện REST rút Consent và yêu cầu dữ liệu cá nhân qua `POST /api/v1/employee/consent/withdraw`, `/api/v1/employee/data-requests` và `/api/v1/dpo/data-requests`. | REST | Must | `API-BE-041`, `API-BE-042`, `FR-SYS-025` | Nhận hạn tiêu huỷ dữ liệu sinh trắc sau khi rút; theo dõi yêu cầu dữ liệu; role DPO xử lý được; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-015` | Giao diện REST đăng xuất và thu hồi phiên qua `POST /api/v1/auth/logout`. | REST | Must | `API-BE-038`, `FR-SYS-023` | Trả 204 và refresh token không dùng lại được; client xoá storage và đồng bộ đa tab. | Approved |
+| `API-WEB-016` | Giao diện REST thông báo trong ứng dụng qua `GET /api/v1/notifications` và `PATCH /api/v1/notifications/{id}/read`. | REST | Should | `API-BE-044`, `FR-SYS-027` | Trả danh sách thông báo kèm số chưa đọc; đánh dấu đã đọc trả 200; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-017` | Giao diện REST tra cứu kiểm toán và quản lý trạm Kiosk qua `/api/v1/admin/audit-logs`, `/api/v1/admin/kiosks/**` và `/api/v1/dpo/**`. | REST | Must | `API-BE-030`, `API-BE-032`, `API-BE-033` | ADMIN tra cứu audit log và quản lý trạm; Secret Token chỉ hiển thị một lần; role DPO chỉ đọc; SLA $\le 800\text{ ms}$. | Approved |
+| `API-WEB-018` | Giao diện REST kết xuất báo cáo bảng công qua `GET /api/v1/admin/reports/export`. | REST | Must | `API-BE-035`, `FR-WEB-006` | Nhận file `.xlsx` an toàn (đã escape công thức) và tải xuống trong $\le 3\text{ giây}$ cho 1,000 nhân sự. | Approved |
+| `API-WEB-019` | Giao diện REST tra cứu thông tin người dùng và trạng thái sinh trắc qua `GET /api/v1/auth/me`. | REST | Must | `API-BE-046`, `FR-WEB-001` | Đồng bộ phiên, hiển thị TopHeader và hỗ trợ Consent Guard với các cờ `hasBiometric`, `hasPin`; SLA $\le 300\text{ ms}$. | Approved |
+| `API-WEB-020` | Giao diện REST tra cứu thống kê KPI điểm danh thời gian thực qua `GET /api/v1/admin/attendance/stats`. | REST | Must | `API-BE-047`, `DATA-WEB-004` | Cung cấp 5 chỉ số KPI (`totalEmployees`, `presentCount`, `onTimeCount`, `lateCount`, `absentCount`) cho Admin Dashboard; SLA $\le 400\text{ ms}$. | Approved |
+| `API-WEB-021` | Giao diện REST điều chỉnh bản ghi điểm danh thủ công qua `PATCH /api/v1/admin/attendance/{id}`. | REST | Must | `API-BE-048`, `FR-WEB-002` | HR/Admin điều chỉnh giờ công/trạng thái kèm lý do giải trình; SLA $\le 500\text{ ms}$. | Approved |
 
 ---
 
@@ -94,6 +97,7 @@ graph TD
 | `APD-WEB-010` | NotificationService | Bọc giao diện thông báo (`/notifications`): lấy danh sách, đếm chưa đọc và đánh dấu đã đọc; cập nhật lạc quan (optimistic) khi đánh dấu. | `API-WEB-016` | `ARC-003` | `DD-WEB-020` | Accepted |
 | `APD-WEB-011` | ComplianceAdminService | Bọc giao diện tra cứu audit, quản lý trạm Kiosk và dữ liệu tuân thủ (`/admin/audit-logs`, `/admin/kiosks/**`, `/dpo/**`); chỉ đọc với role `DPO`. | `API-WEB-017` | `ARC-003` | `DD-WEB-019` | Accepted |
 | `APD-WEB-012` | ReportExportService | Bọc giao diện kết xuất báo cáo (`/admin/reports/export`) và trả về blob tải xuống kèm tên tệp theo kỳ được chọn. | `API-WEB-018` | `ARC-003` | `DD-WEB-017` | Accepted |
+| `APD-WEB-013` | AttendanceAdminService | Bọc giao diện thống kê KPI điểm danh (`/admin/attendance/stats`) và điều chỉnh giờ công thủ công (`/admin/attendance/{id}`); tự động làm mới bộ nhớ cache của TanStack Query khi có điều chỉnh. | `API-WEB-020`, `API-WEB-021` | `ARC-003` | `DD-WEB-007` | Accepted |
 
 ---
 
@@ -224,6 +228,93 @@ graph TD
       "last": true
     },
     "timestamp": "2026-10-03T09:00:00.080+07:00"
+  }
+  ```
+
+---
+
+### 4.5. `GET /api/v1/auth/me` — Đồng bộ Trạng thái Hồ sơ & Bảo mật Người dùng
+* **Mục đích**: Tiếp nhận Access Token từ LocalStorage để xác nhận phiên còn hiệu lực và lấy thông tin tài khoản mới nhất (kèm cờ `hasBiometric`, `hasPin`) dùng cho Header và Điều hướng Consent Guard.
+* **Headers**: `Authorization: Bearer <accessToken>`
+* **Response Payload (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "code": "PROFILE_FETCHED",
+    "message": "Lấy thông tin tài khoản thành công",
+    "data": {
+      "id": 1042,
+      "employeeCode": "NV-1042",
+      "fullName": "Ngô Văn Dũng",
+      "email": "dung.nv@company.com",
+      "role": "EMPLOYEE",
+      "status": "ACTIVE",
+      "department": "Phòng Kỹ thuật",
+      "hasBiometric": true,
+      "hasPin": true
+    },
+    "timestamp": "2026-10-18T08:00:00.000+07:00"
+  }
+  ```
+
+---
+
+### 4.6. `GET /api/v1/admin/attendance/stats` — Thống kê KPI Điểm danh Toàn công ty
+* **Mục đích**: Lấy số liệu KPI thực tế (tổng nhân viên, số người có mặt, đúng giờ, đi muộn, vắng mặt) phục vụ 4 thẻ chỉ số trên Admin Dashboard.
+* **Headers**: `Authorization: Bearer <accessToken>`
+* **Query Params**: `date=2026-10-18` (tuỳ chọn)
+* **Response Payload (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "code": "ATTENDANCE_STATS_FETCHED",
+    "message": "Lấy thống kê điểm danh thành công",
+    "data": {
+      "totalEmployees": 128,
+      "presentCount": 115,
+      "onTimeCount": 108,
+      "lateCount": 7,
+      "absentCount": 13
+    },
+    "timestamp": "2026-10-18T08:30:00.000+07:00"
+  }
+  ```
+
+---
+
+### 4.7. `PATCH /api/v1/admin/attendance/{id}` — Điều chỉnh Giờ công Thủ công
+* **Mục đích**: Hỗ trợ HR/Admin chỉnh sửa thời gian hoặc trạng thái của một lượt điểm danh cụ thể (kèm lý do điều chỉnh bắt buộc).
+* **Headers**: `Authorization: Bearer <accessToken>`
+* **Path Params**: `id` (mã bản ghi điểm danh)
+* **Request Schema**:
+  ```json
+  {
+    "punchTimestamp": "2026-10-18T08:15:00.000+07:00",
+    "status": "ON_TIME",
+    "lateMinutes": 0,
+    "reason": "Điều chỉnh do nhân viên giải trình sự cố kẹt xe có xác nhận từ quản lý trực tiếp"
+  }
+  ```
+* **Response Payload (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "code": "ATTENDANCE_ADJUSTED",
+    "message": "Điều chỉnh bản ghi điểm danh thành công",
+    "data": {
+      "recordId": 98231,
+      "employeeId": 1042,
+      "employeeCode": "NV-1042",
+      "fullName": "Ngô Văn Dũng",
+      "department": "Phòng Kỹ thuật",
+      "punchTimestamp": "2026-10-18T08:15:00.000+07:00",
+      "punchType": "CHECK_IN",
+      "verificationMethod": "MANUAL_ADJUSTMENT",
+      "status": "ON_TIME",
+      "lateMinutes": 0,
+      "kioskId": "ADMIN_WEB"
+    },
+    "timestamp": "2026-10-18T09:10:00.000+07:00"
   }
   ```
 

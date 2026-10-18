@@ -14,10 +14,15 @@ export class NotificationService {
    */
   async getNotifications(): Promise<NotificationResponse[]> {
     try {
-      const response = await apiClient.get<ApiResponse<NotificationResponse[]>>(
+      const response = await apiClient.get<ApiResponse<unknown>>(
         '/api/v1/notifications'
       )
-      return response.data.data || []
+      const raw = response.data.data
+      if (Array.isArray(raw)) return raw as NotificationResponse[]
+      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        return (raw as { content: NotificationResponse[] }).content
+      }
+      return []
     } catch (error) {
       throw normalizeApiError(error)
     }

@@ -2,12 +2,14 @@
  * Màn hình Cổng Nhân Viên Tự Phục Vụ (UI-WEB-001, UI-WEB-002, UI-WEB-005, TASK-WEB-017).
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ShieldCheck, Sparkles, KeyRound, QrCode } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal } from '@/components/consent'
 import { PersonalAttendanceCalendar } from '@/components/calendar'
 import { consentService } from '@/services/consentService'
+import { apiClient } from '@/services/apiClient'
+import type { ApiResponse, UserProfile } from '@/types'
 
 export const EmployeeDashboardView: React.FC = () => {
   const { user, clearSession } = useAuthStore()
@@ -15,6 +17,24 @@ export const EmployeeDashboardView: React.FC = () => {
     const session = consentService.getStoredConsentSession()
     return Boolean(session?.otp || user?.status === 'PENDING_CONSENT')
   })
+
+  useEffect(() => {
+    let ignore = false
+    const fetchProfile = async () => {
+      try {
+        const res = await apiClient.get<ApiResponse<UserProfile>>('/api/v1/auth/me')
+        if (!ignore && res.data?.data) {
+          useAuthStore.getState().updateUser(res.data.data)
+        }
+      } catch {
+        // im lặng
+      }
+    }
+    fetchProfile()
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   return (
     <div data-testid="employee-dashboard-view" className="min-h-screen bg-bg-app text-text-primary p-6 md:p-8 space-y-6">

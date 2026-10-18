@@ -123,13 +123,14 @@ export const EmployeeManagementView: React.FC = () => {
   }
 
   // Xử lý sau khi lưu hồ sơ từ Drawer
-  const handleDrawerSuccess = (result: { employee: EmployeeItem; temporaryPassword?: string }) => {
+  const handleDrawerSuccess = (result: { employee?: Partial<EmployeeItem>; temporaryPassword?: string }) => {
     fetchEmployees()
     if (result.temporaryPassword) {
       setTempPassword(result.temporaryPassword)
+      const emp = result.employee
       setTempPasswordTarget({
-        name: result.employee.fullName,
-        code: result.employee.employeeCode,
+        name: emp?.fullName || 'Nhân viên mới',
+        code: emp?.employeeCode || '',
       })
       setIsTempModalOpen(true)
     }

@@ -6,25 +6,82 @@
  * hoặc kích hoạt quy trình rút cam kết 2 bước kèm cảnh báo hệ quả pháp lý & vận hành.
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal, ConsentWithdrawalModal } from '@/components/consent'
 import { PinManagementModal } from '@/components/account'
+import { apiClient } from '@/services/apiClient'
+import type { ApiResponse, UserProfile } from '@/types'
 
 export const EmployeeConsentView: React.FC = () => {
-  const { user } = useAuthStore()
+  const { user, updateUser } = useAuthStore()
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false)
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
   const [isPinModalOpen, setIsPinModalOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const refreshProfile = useCallback(async () => {
+    try {
+      setIsRefreshing(true)
+      const res = await apiClient.get<ApiResponse<UserProfile>>('/api/v1/auth/me')
+      if (res.data?.data) {
+        updateUser(res.data.data)
+      }
+    } catch {
+      // Bỏ qua lỗi nếu mạng tạm thời gián đoạn
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [updateUser])
+
+  useEffect(() => {
+    let ignore = false
+    const fetchOnMount = async () => {
+      try {
+        const res = await apiClient.get<ApiResponse<UserProfile>>('/api/v1/auth/me')
+        if (!ignore && res.data?.data) {
+          useAuthStore.getState().updateUser(res.data.data)
+        }
+      } catch {
+        // im lặng
+      }
+    }
+    fetchOnMount()
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   return (
     <div className="space-y-6">
       {/* ── Tiêu đề trang ── */}
-      <div>
-        <h1 className="page-title">Đăng ký sinh trắc &amp; Informed Consent</h1>
-        <p className="page-subtitle">
-          Quản lý cam kết bảo vệ dữ liệu cá nhân theo Nghị định 13/2023/NĐ-CP &amp; Nghị định 356/2025/NĐ-CP
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title">Đăng ký sinh trắc &amp; Informed Consent</h1>
+          <p className="page-subtitle">
+            Quản lý cam kết bảo vệ dữ liệu cá nhân theo Nghị định 13/2023/NĐ-CP &amp; Nghị định 356/2025/NĐ-CP
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={refreshProfile}
+          disabled={isRefreshing}
+          className="btn-outline self-start sm:self-auto flex items-center gap-2 text-xs py-2 px-3"
+          title="Đồng bộ lại trạng thái sinh trắc từ CSDL hệ thống"
+        >
+          <svg
+            className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
+          <span>{isRefreshing ? 'Đang đồng bộ...' : 'Làm mới trạng thái'}</span>
+        </button>
       </div>
 
       {/* ── Khung Thông tin Pháp lý ── */}

@@ -165,6 +165,14 @@ class KioskViewModel(QObject):
         self._is_standby: bool = True
         self._last_face_time: float = time.time()
         self._standby_timeout: float = 8.0  # 8.0 giây vắng người -> Standby
+        self._enrollment_cooldown_until: float = 0.0  # Grace period sau khi nạp mẫu khuôn mặt
+
+        if self.enrollment_controller is not None and hasattr(self.enrollment_controller, "dialogOpenChanged"):
+            def _on_enrollment_dialog_open_changed(is_open: bool) -> None:
+                if not is_open:
+                    self._enrollment_cooldown_until = time.time() + 5.0
+                    logger.info("Đã đóng hộp thoại đăng ký -> Kích hoạt Grace Period 5.0s không nhận diện điểm danh")
+            self.enrollment_controller.dialogOpenChanged.connect(_on_enrollment_dialog_open_changed)
 
         if self.sync_worker:
             self.sync_worker.network_status_changed.connect(self._on_network_status_changed)
@@ -340,8 +348,12 @@ class KioskViewModel(QObject):
 
         current_time = time.time()
 
-        # Nếu đang ở chế độ Đăng ký mẫu khuôn mặt mới (Bước 2): Tạm dừng nhận diện điểm danh
-        if self.enrollment_controller is not None and getattr(self.enrollment_controller, "isEnrolling", False):
+        # Nếu đang ở chế độ Đăng ký mẫu khuôn mặt mới (Bước 1, 2, 3) hoặc đang trong Grace Period: Tạm dừng nhận diện điểm danh
+        is_dialog_open = False
+        if self.enrollment_controller is not None:
+            is_dialog_open = getattr(self.enrollment_controller, "isDialogOpen", False) or getattr(self.enrollment_controller, "isEnrolling", False)
+
+        if is_dialog_open or (current_time < self._enrollment_cooldown_until):
             self._last_face_time = current_time
             return
 

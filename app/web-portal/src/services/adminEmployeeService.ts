@@ -16,6 +16,7 @@ import type {
   EmployeeSearchCriteria,
   PaginatedResult,
   UserStatus,
+  UserRole,
 } from '@/types'
 
 export interface ResetEmployeeCredentialsResponse {
@@ -57,11 +58,57 @@ export class AdminEmployeeService {
    */
   async createEmployee(data: CreateEmployeeRequest): Promise<CreateEmployeeResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<CreateEmployeeResponse>>(
+      interface RawCreateEmployeeDto {
+        employeeId?: number
+        id?: number
+        employeeCode?: string
+        fullName?: string
+        email?: string
+        role?: UserRole
+        status?: UserStatus
+        department?: string
+        hasBiometric?: boolean
+        hasPin?: boolean
+        temporaryPassword?: string
+        createdAt?: string
+        employee?: EmployeeItem
+      }
+
+      const response = await apiClient.post<ApiResponse<RawCreateEmployeeDto>>(
         '/api/v1/admin/employees',
         data
       )
-      return response.data.data
+      const resData = response.data?.data
+      if (!resData) {
+        throw new Error('Không nhận được dữ liệu phản hồi từ máy chủ')
+      }
+
+      // Nếu đã có cấu trúc lồng { employee, temporaryPassword } (từ mock)
+      if (resData.employee) {
+        return {
+          employee: resData.employee,
+          temporaryPassword: resData.temporaryPassword,
+        }
+      }
+
+      // Chuẩn hóa từ backend REST DTO phẳng: CreateEmployeeResponse
+      const employee: EmployeeItem = {
+        id: Number(resData.employeeId ?? resData.id ?? 0),
+        employeeCode: String(resData.employeeCode || ''),
+        fullName: String(resData.fullName || ''),
+        email: String(resData.email || ''),
+        role: (resData.role as UserRole) || 'EMPLOYEE',
+        status: (resData.status as UserStatus) || 'PENDING_CONSENT',
+        department: String(resData.department || ''),
+        hasBiometric: Boolean(resData.hasBiometric),
+        hasPin: Boolean(resData.hasPin),
+        createdAt: String(resData.createdAt || new Date().toISOString()),
+      }
+
+      return {
+        employee,
+        temporaryPassword: resData.temporaryPassword,
+      }
     } catch (error) {
       throw normalizeApiError(error)
     }

@@ -13,6 +13,8 @@ import com.fas.data.enums.Role;
  * @param role         vai trò hệ thống
  * @param status       trạng thái hồ sơ nhân sự
  * @param department   phòng ban công tác
+ * @param hasBiometric cờ xác nhận đã đăng ký mẫu khuôn mặt kích hoạt
+ * @param hasPin       cờ xác nhận đã thiết lập mã PIN dự phòng
  */
 public record AuthenticatedUser(
         Long id,
@@ -21,5 +23,18 @@ public record AuthenticatedUser(
         String email,
         Role role,
         EmployeeStatus status,
-        String department) {
+        String department,
+        boolean hasBiometric,
+        boolean hasPin) {
+
+    public AuthenticatedUser(
+            Long id,
+            String employeeCode,
+            String fullName,
+            String email,
+            Role role,
+            EmployeeStatus status,
+            String department) {
+        this(id, employeeCode, fullName, email, role, status, department, false, false);
+    }
 }

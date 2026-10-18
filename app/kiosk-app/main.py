@@ -75,6 +75,11 @@ def parse_arguments() -> argparse.Namespace:
         metavar="FLOAT",
         help="Ngưỡng đánh giá thực thể sống Liveness (mặc định: 0.85)",
     )
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="Khởi chạy ở Chế độ Demo phát triển (tắt kiểm tra liveness nghiêm ngặt, cho phép test mô phỏng nhanh)",
+    )
     return parser.parse_args()
 
 
@@ -150,6 +155,11 @@ def main() -> int:
     logger.info("Ngưỡng Liveness: %.2f", settings.liveness_threshold)
     logger.info("Ngưỡng Cosine:   %.2f", settings.cosine_similarity_threshold)
     logger.info("Thời gian chờ:   %d giây (Cooldown)", settings.cooldown_seconds)
+    if args.demo:
+        args.no_liveness = True
+        logger.info("Chế độ vận hành: [DEMO DEV] (Tự động bật --no-liveness để kiểm thử linh hoạt)")
+    else:
+        logger.info("Chế độ vận hành: [PRODUCTION CLEAN] (Dữ liệu thực, kiểm soát sinh trắc chuẩn)")
 
     # 1. Khởi tạo QGuiApplication
     app = QGuiApplication.instance()

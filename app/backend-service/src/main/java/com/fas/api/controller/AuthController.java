@@ -72,6 +72,21 @@ public class AuthController {
     }
 
     /**
+     * Lấy thông tin tài khoản và trạng thái hồ sơ người dùng đang đăng nhập (GET /api/v1/auth/me).
+     *
+     * @param principal thông tin xác thực của người dùng
+     * @return hồ sơ người dùng kèm cờ hasBiometric và hasPin mới nhất
+     */
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<com.fas.api.dto.response.AuthenticatedUser> getCurrentUser(Principal principal) {
+        Long userId = resolveCurrentUserId(principal);
+        com.fas.api.dto.response.AuthenticatedUser user = authService.getUserProfile(userId);
+        return ApiResponse.ok("PROFILE_FETCHED", "Lấy thông tin tài khoản thành công", user);
+    }
+
+    /**
      * Đổi mật khẩu tự nguyện của chính người dùng đang đăng nhập
      * (POST /api/v1/auth/change-password - API-BE-020, APD-BE-010, FR-BE-011).
      *

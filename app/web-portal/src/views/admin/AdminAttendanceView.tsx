@@ -147,7 +147,7 @@ export const AdminAttendanceView: React.FC = () => {
       // 1. Tự động tăng bộ đếm thống kê
       setStats((prev) => {
         if (!prev) return prev
-        const total = prev.totalEmployees ?? 128
+        const total = prev.totalEmployees ?? 0
         const newPresent = prev.presentCount + 1
         const newOnTime =
           newRecord.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount

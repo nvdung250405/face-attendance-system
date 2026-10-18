@@ -6,7 +6,7 @@ owner: Edge Vision Lead & Network Engineer
 type: spec
 scope: KSK
 facet: api
-updated: 2026-10-08
+updated: 2026-10-18
 ---
 
 # API SPECS & DESIGN — Đặc tả Giao diện & Thiết kế Mạng Phân hệ Kiosk
@@ -70,22 +70,22 @@ graph TD
 
 ## 2. Đặc tả Giao diện Tiêu thụ (Consumed Interfaces Specifications)
 
-| ID | Statement | Category | Priority | Basis | Acceptance | Status |
+| ID | Statement | Category | Priority | Basis (Backend Contract) | Acceptance | Status |
 | :--- | :--- | :--- | :---: | :--- | :--- | :---: |
-| `API-KSK-001` | Tiêu thụ giao diện `POST /api/v1/kiosks/{id}/punches`: Gửi sự kiện điểm danh trực tuyến ngay sau khi xác thực thành công. | REST | Must | `FR-SYS-005`, `FR-SYS-013`, `ARC-005`, `FR-KSK-005`, `FR-KSK-006` | Header `X-Kiosk-Id`, timeout 3.0s, Backend phản hồi $\le 300\text{ ms}$; khi lỗi mạng tự động chuyển ghi SQLite WAL. | Approved |
-| `API-KSK-002` | Tiêu thụ giao diện `POST /api/v1/kiosks/{id}/sync-batch`: Đẩy gói lô tối đa 50 bản ghi điểm danh ngoại tuyến khi mạng phục hồi. | REST | Must | `FR-SYS-006`, `NFR-SYS-006`, `ARC-005`, `FR-KSK-006` | Phản hồi $\le 2000\text{ ms}$; nhận danh sách ID đã lưu; cập nhật `is_synced = 1` trong SQLite cục bộ; chống trùng bằng khóa `(kioskId, localId)`. | Approved |
-| `API-KSK-003` | Tiêu thụ giao diện `GET /api/v1/kiosks/{id}/gallery`: Tải toàn bộ danh mục vector 512D của nhân sự `ACTIVE` khi Kiosk khởi động. | REST | Must | `FR-SYS-003`, `FR-SYS-014`, `ARC-005`, `FR-KSK-003` | Phản hồi $\le 3000\text{ ms}$; hỗ trợ nén `gzip` qua TLS 1.3; nạp đủ $N$ vector vào RAM; fallback nạp từ `local_gallery_cache` nếu mất mạng. | Approved |
-| `API-KSK-004` | Tiêu thụ giao diện `POST /api/v1/kiosks/{id}/verify-otp`: Xác thực mã OTP 6 số nhân viên nhập tại Kiosk để mở khóa quét mặt. | REST | Must | `FR-SYS-008`, `FR-SYS-009`, `ARC-005`, `FR-KSK-007` | Phản hồi $\le 1000\text{ ms}$; nhận thông tin nhân viên khi OTP hợp lệ; hiển thị thông báo lỗi khi OTP sai/hết hạn. | Approved |
-| `API-KSK-005` | Tiêu thụ giao diện `POST /api/v1/kiosks/{id}/enroll-face`: Gửi vector đặc trưng 512D mới kèm mã OTP để lưu CSDL và kích hoạt hồ sơ. | REST | Must | `FR-SYS-009`, `FR-SYS-010`, `ARC-005`, `FR-KSK-007` | Phản hồi $\le 1500\text{ ms}$; nhận xác nhận HTTP 200; tự hủy OTP (burn-after-use); cập nhật tức thì vector mới vào Gallery RAM Kiosk. | Approved |
-| `API-KSK-006` | Lắng nghe kênh STOMP Topic `/topic/kiosk-gallery`: Đón nhận thông điệp nạp nóng vector mới hoặc xóa nhân sự thôi việc. | WebSocket | Must | `FR-SYS-014`, `ARC-006`, `FR-KSK-008` | Cập nhật ma trận RAM tức thời qua Atomic Swap mà không làm giật khung hình camera; tự kết nối lại khi đứt mạng. | Approved |
-| `API-KSK-007` | Tiêu thụ giao diện `POST /api/v1/kiosks/{id}/verify-pin`: Xác thực mã PIN 6 số của nhân viên qua Backend trước khi ghi nhận điểm danh. | REST | Must | `FR-SYS-004`, `FR-SYS-017`, `ARC-001`, `ARC-002`, `FR-KSK-004` | Phản hồi $\le 1000\text{ ms}$; trả HTTP 200 kèm danh tính nếu PIN đúng; trả 401 nếu sai kèm lượt thử; trả 423 kèm `lockedUntil` nếu sai quá 5 lần. | Approved |
-| `API-KSK-008` | Tiêu thụ giao diện `POST /api/v1/kiosks/{id}/heartbeat`: Gửi nhịp tim định kỳ 30s báo cáo trạng thái hoạt động và camera. | REST | Must | `FR-SYS-020`, `ARC-012`, `ARC-001` | Phản hồi $\le 500\text{ ms}$; Backend cập nhật `last_ping_at` giám sát trạm Kiosk tại Admin Dashboard; cảnh báo nếu quá 90s không có nhịp tim. | Approved |
+| `API-KSK-001` | Tiêu thụ giao diện `POST /api/v1/kiosk/punch`: Gửi sự kiện điểm danh trực tuyến ngay sau khi xác thực thành công. | REST | Must | `API-BE-003`, `FR-SYS-005`, `ARC-005` | Header `X-Kiosk-Id`, timeout 3.0s, Backend phản hồi $\le 100\text{ ms}$; khi lỗi mạng tự động chuyển ghi SQLite WAL. | Approved |
+| `API-KSK-002` | Tiêu thụ giao diện `POST /api/v1/kiosk/sync-batch`: Đẩy gói lô tối đa 50 bản ghi điểm danh ngoại tuyến khi mạng phục hồi. | REST | Must | `API-BE-004`, `FR-SYS-006`, `ARC-005` | Phản hồi $\le 2000\text{ ms}$; nhận danh sách ID đã lưu; cập nhật `is_synced = 1` trong SQLite cục bộ; chống trùng bằng khóa `(kioskId, localId)`. | Approved |
+| `API-KSK-003` | Tiêu thụ giao diện `GET /api/v1/kiosk/gallery`: Tải toàn bộ danh mục vector 512D của nhân sự `ACTIVE` khi Kiosk khởi động. | REST | Must | `API-BE-005`, `FR-SYS-003`, `ARC-005` | Phản hồi $\le 3000\text{ ms}$; hỗ trợ nén `gzip` qua TLS 1.3; nạp đủ $N$ vector vào RAM; fallback nạp từ `local_gallery_cache` nếu mất mạng. | Approved |
+| `API-KSK-004` | Tiêu thụ giao diện `POST /api/v1/kiosk/verify-otp`: Xác thực mã OTP 6 số nhân viên nhập tại Kiosk để mở khóa quét mặt và nhận `sessionToken`. | REST | Must | `API-BE-006`, `FR-SYS-008`, `ARC-005` | Phản hồi $\le 1000\text{ ms}$; nhận `sessionToken` và thông tin nhân viên khi OTP hợp lệ; hiển thị thông báo lỗi khi OTP sai/hết hạn. | Approved |
+| `API-KSK-005` | Tiêu thụ giao diện `POST /api/v1/kiosk/enroll-face`: Gửi vector đặc trưng 512D chuẩn hóa L2 kèm `sessionToken` và mã OTP để lưu CSDL và kích hoạt hồ sơ. | REST | Must | `API-BE-007`, `FR-SYS-009`, `ARC-005` | Phản hồi $\le 1500\text{ ms}$; nhận xác nhận HTTP 200; tự hủy OTP (burn-after-use); cập nhật tức thì vector mới vào Gallery RAM Kiosk. | Approved |
+| `API-KSK-006` | Lắng nghe kênh STOMP Topic `/topic/kiosk-gallery`: Đón nhận thông điệp nạp nóng vector mới hoặc xóa nhân sự thôi việc. | WebSocket | Must | `Backend-STOMP-4.2`, `FR-SYS-014`, `ARC-006` | Cập nhật ma trận RAM tức thời qua Atomic Swap mà không làm giật khung hình camera; tự kết nối lại khi đứt mạng. | Approved |
+| `API-KSK-007` | Tiêu thụ giao diện `POST /api/v1/kiosk/verify-pin`: Xác thực mã PIN 6 số của nhân viên qua Backend trước khi ghi nhận điểm danh. | REST | Must | `API-BE-022`, `FR-SYS-004`, `ARC-001` | Phản hồi $\le 1000\text{ ms}$; trả HTTP 200 kèm danh tính nếu PIN đúng; trả 401 nếu sai kèm lượt thử; trả 423 kèm `lockedUntil` nếu sai quá 5 lần. | Approved |
+| `API-KSK-008` | Tiêu thụ giao diện `GET /api/v1/kiosk/health`: Kiểm tra kết nối mạng và sẵn sàng phục vụ của Backend (Public / permitAll). | REST | Must | `API-BE-045`, `FR-SYS-020`, `ARC-012` | Phản hồi $\le 200\text{ ms}$; trả về `{"status": "UP"}` xác nhận kết nối máy chủ sẵn sàng; chuyển chế độ ngoại tuyến nếu mất kết nối. | Approved |
 
 ---
 
 ## 3. Hợp đồng Chi tiết Từng Endpoint REST (Field-by-Field Contracts)
 
-### 3.1. `API-KSK-001` — `POST /api/v1/kiosks/{id}/punches`
+### 3.1. `API-KSK-001` — `POST /api/v1/kiosk/punch`
 
 * **Mục đích**: Gửi giao dịch chấm công trực tuyến tức thời từ Kiosk lên Backend.
 * **Client Handler**: `KioskHttpClient.send_punch(employee_id, method, score=None) -> PunchResultDto`
@@ -143,7 +143,7 @@ graph TD
 
 ---
 
-### 3.2. `API-KSK-002` — `POST /api/v1/kiosks/{id}/sync-batch`
+### 3.2. `API-KSK-002` — `POST /api/v1/kiosk/sync-batch`
 
 * **Mục đích**: Đẩy gói lô tối đa 50 bản ghi điểm danh ngoại tuyến khi kết nối mạng phục hồi.
 * **Client Handler**: `OfflineSyncWorker.sync_batch(records) -> SyncBatchResultDto`
@@ -158,7 +158,7 @@ graph TD
   *Cấu trúc từng phần tử trong `records`:*
   | Trường con | Kiểu | Mô tả |
   | :--- | :--- | :--- |
-  | `localId` | `int64` | Khóa chính tự tăng `local_id` trong bảng SQLite `offline_punches`. |
+  | `localId` | `int64` | Khóa chính tự tăng `local_id` trong bảng SQLite `offline_punches` (hoặc `localQueueId`). |
   | `employeeId` | `int64` | ID nhân viên đã chấm công lúc ngoại tuyến. |
   | `punchTimestamp` | `string` | Chuỗi ISO-8601 thời điểm quẹt ngoại tuyến thực tế. |
   | `verificationMethod` | `string` | `VERIFICATION_FACE` hoặc `VERIFICATION_PIN`. |
@@ -214,7 +214,7 @@ graph TD
 
 ---
 
-### 3.3. `API-KSK-003` — `GET /api/v1/kiosks/{id}/gallery`
+### 3.3. `API-KSK-003` — `GET /api/v1/kiosk/gallery`
 
 * **Mục đích**: Tải toàn bộ danh mục vector 512D của nhân sự `ACTIVE` khi Kiosk khởi động.
 * **Client Handler**: `KioskHttpClient.fetch_gallery() -> GalleryPayloadDto`
@@ -248,30 +248,37 @@ graph TD
 
 ---
 
-### 3.4. `API-KSK-004` — `POST /api/v1/kiosks/{id}/verify-otp`
+### 3.4. `API-KSK-004` — `POST /api/v1/kiosk/verify-otp`
 
-* **Mục đích**: Xác thực mã Onboarding OTP 6 số nhân viên nhập tại màn hình đăng ký khuôn mặt.
+* **Mục đích**: Xác thực mã Onboarding OTP 6 số nhân viên nhập tại màn hình đăng ký khuôn mặt để nhận `sessionToken` mở khóa phiên quét mặt.
 * **Client Handler**: `KioskHttpClient.verify_otp(otp: str) -> OtpVerificationResultDto`
+* **Request Headers**:
+  ```http
+  Content-Type: application/json; charset=UTF-8
+  X-Kiosk-Id: KIOSK-HN-01
+  Authorization: Bearer {kiosk_token}
+  ```
 * **Request Payload**:
   ```json
   {
-    "otpCode": "123456"
+    "otp": "123456",
+    "kioskId": "KIOSK-HN-01"
   }
   ```
 * **Phản hồi 200 OK (Chuẩn hóa Envelope `DD-SYS-012`)**:
   ```json
   {
     "success": true,
-    "code": "OK",
-    "message": "OTP verified successfully",
+    "code": "OTP_VERIFIED",
+    "message": "Xác thực mã OTP thành công",
     "data": {
-      "valid": true,
+      "sessionToken": "7baea8fe110b4a53a010be94f392b424",
       "employeeId": 1042,
       "employeeCode": "NV-1042",
       "fullName": "Ngô Văn Dũng",
       "department": "Phòng Kỹ thuật"
     },
-    "timestamp": "2026-10-06T08:30:15.123Z"
+    "timestamp": "2026-10-18T08:30:15.123+07:00"
   }
   ```
 * **Phản hồi Lỗi (RFC 7807 Envelope)**:
@@ -279,39 +286,47 @@ graph TD
   {
     "success": false,
     "code": "OTP_INVALID",
-    "message": "OTP code is invalid or has expired",
+    "message": "Mã OTP không đúng hoặc không tồn tại",
     "data": null,
-    "timestamp": "2026-10-06T08:30:15.123Z"
+    "timestamp": "2026-10-18T08:30:15.123+07:00"
   }
   ```
 
 ---
 
-### 3.5. `API-KSK-005` — `POST /api/v1/kiosks/{id}/enroll-face`
+### 3.5. `API-KSK-005` — `POST /api/v1/kiosk/enroll-face`
 
-* **Mục đích**: Gửi vector khuôn mặt 512D mới trích xuất từ 3 ảnh chụp camera chính kèm mã OTP để lưu trữ CSDL.
-* **Client Handler**: `KioskHttpClient.enroll_face(employee_id, otp_code, idempotency_key, vector512) -> EnrollResultDto`
-* **Cơ chế Hủy OTP & Chống Trùng lặp (Idempotency)**: Mã OTP chỉ được sử dụng đúng 1 lần; ngay sau khi Backend lưu vector thành công, OTP tự động bị hủy (burn-after-use). Để chống trùng lặp dữ liệu do gửi lại khi timeout mạng, Kiosk sinh mã `idempotencyKey` (UUIDv4) gắn kèm request.
+* **Mục đích**: Gửi vector khuôn mặt 512D mới trích xuất từ 3 ảnh chụp camera chính kèm mã OTP và `sessionToken` để mã hóa lưu trữ CSDL và kích hoạt tài khoản `ACTIVE`.
+* **Client Handler**: `KioskHttpClient.enroll_face(otp, session_token, vector512) -> EnrollResultDto`
+* **Cơ chế Hủy OTP & Xác thực Phiên**: Mã OTP chỉ được sử dụng đúng 1 lần; `sessionToken` được thẩm định hiệu lực trong vòng 15 phút. Vector 512D bắt buộc phải được chuẩn hóa độ dài Euclid $L_2 = 1.0 \pm 10^{-4}$ (kiểm định qua annotation `@L2Normalized`).
+* **Request Headers**:
+  ```http
+  Content-Type: application/json; charset=UTF-8
+  X-Kiosk-Id: KIOSK-HN-01
+  Authorization: Bearer {kiosk_token}
+  ```
 * **Request Payload**:
   ```json
   {
-    "employeeId": 1042,
-    "otpCode": "123456",
-    "idempotencyKey": "a8f3b210-9b43-4f9e-a841-11d8c1c5e231",
-    "featureVector": [0.0234, -0.0152, 0.0891, "... /* Mảng 512 số thực float32 */"]
+    "otp": "123456",
+    "sessionToken": "7baea8fe110b4a53a010be94f392b424",
+    "vector512": [0.0234, -0.0152, 0.0891, "... /* Mảng đủ 512 số thực float32 chuẩn hóa L2 */"],
+    "kioskId": "KIOSK-HN-01"
   }
   ```
 * **Phản hồi 200 OK (Chuẩn hóa Envelope `DD-SYS-012`)**:
   ```json
   {
     "success": true,
-    "code": "OK",
-    "message": "Face enrolled successfully",
+    "code": "FACE_ENROLLED",
+    "message": "Đăng ký khuôn mặt thành công",
     "data": {
-      "status": "ENROLLED",
-      "enrolledAt": "2026-10-06T08:32:00.000Z"
+      "employeeId": 1042,
+      "templateId": 2,
+      "status": "ACTIVE",
+      "activatedAt": "2026-10-18T08:32:00.000+07:00"
     },
-    "timestamp": "2026-10-06T08:32:00.123Z"
+    "timestamp": "2026-10-18T08:32:00.123+07:00"
   }
   ```
 * **Xử lý Kiosk**: Nạp tức thì vector mới vào `GalleryMatrix` và cập nhật `local_gallery_cache`.
@@ -379,7 +394,7 @@ stateDiagram-v2
 
 ---
 
-### 3.7. `API-KSK-007` — `POST /api/v1/kiosks/{id}/verify-pin`
+### 3.7. `API-KSK-007` — `POST /api/v1/kiosk/verify-pin`
 
 * **Mục đích**: Xác thực mã PIN 6 số của nhân viên qua Backend khi điểm danh bằng bàn phím số ảo (hoặc nhân sự đã rút Consent).
 * **Client Handler**: `KioskHttpClient.verify_pin(employee_code, pin) -> PinVerificationResultDto`
@@ -400,16 +415,15 @@ stateDiagram-v2
   ```json
   {
     "success": true,
-    "code": "OK",
-    "message": "PIN verified successfully",
+    "code": "PIN_VERIFIED",
+    "message": "Mã PIN chính xác",
     "data": {
-      "valid": true,
       "employeeId": 1042,
       "employeeCode": "NV-1042",
       "fullName": "Ngô Văn Dũng",
       "department": "Phòng Kỹ thuật"
     },
-    "timestamp": "2026-10-06T08:30:15.123Z"
+    "timestamp": "2026-10-18T08:30:15.123+07:00"
   }
   ```
   $\rightarrow$ Kiosk ghi nhận giao dịch điểm danh với `verificationMethod = "VERIFICATION_PIN"`.
@@ -422,7 +436,7 @@ stateDiagram-v2
     "data": {
       "remainingAttempts": 2
     },
-    "timestamp": "2026-10-06T08:30:15.123Z"
+    "timestamp": "2026-10-18T08:30:15.123+07:00"
   }
   ```
   $\rightarrow$ Kiosk hiển thị thông báo "Mã PIN không chính xác, còn 2 lần thử" và rung nhẹ bàn phím số.
@@ -433,46 +447,33 @@ stateDiagram-v2
     "code": "PIN_LOCKED",
     "message": "Tài khoản tạm thời bị khóa do nhập sai PIN quá 5 lần",
     "data": {
-      "lockedUntil": "2026-10-06T08:45:15.123Z"
+      "lockedUntil": "2026-10-18T08:45:15.123+07:00"
     },
-    "timestamp": "2026-10-06T08:30:15.123Z"
+    "timestamp": "2026-10-18T08:30:15.123+07:00"
   }
   ```
   $\rightarrow$ Kiosk khóa bàn phím số, đếm ngược thời gian mở khóa theo `lockedUntil`.
 
 ---
 
-### 3.8. `API-KSK-008` — `POST /api/v1/kiosks/{id}/heartbeat`
+### 3.8. `API-KSK-008` — `GET /api/v1/kiosk/health`
 
-* **Mục đích**: Báo cáo định kỳ trạng thái sức khỏe vận hành của Kiosk (kết nối camera, mức tiêu thụ RAM, số bản ghi ngoại tuyến chờ đẩy) về Backend để cập nhật `last_ping_at` phục vụ giám sát trạm (`FR-SYS-020`, `ARC-012`).
-* **Chu kỳ gửi**: Mỗi 30 giây một lần (heartbeat timer).
-* **Client Handler**: `KioskHttpClient.send_heartbeat(...) -> HeartbeatResultDto`
-* **Request Payload**:
-  ```json
-  {
-    "kioskId": "KIOSK-HN-01",
-    "status": "ONLINE",
-    "cameraConnected": true,
-    "ramUsageMb": 580.5,
-    "pendingOfflinePunches": 0,
-    "timestamp": "2026-10-06T08:30:00.000+07:00"
-  }
-  ```
+* **Mục đích**: Kiểm tra tình trạng kết nối mạng và tính sẵn sàng phục vụ của Backend cho trạm Kiosk (Public / permitAll).
+* **Headers**: Không yêu cầu (công khai).
 * **Response 200 OK (Envelope `DD-SYS-012`)**:
   ```json
   {
     "success": true,
-    "code": "OK",
-    "message": "Heartbeat acknowledged",
+    "code": "HEALTHY",
+    "message": "Kiosk attendance service is operational",
     "data": {
-      "serverTime": "2026-10-06T08:30:00.045Z",
-      "galleryVersion": 12,
-      "command": "NONE"
+      "status": "UP",
+      "service": "backend-service"
     },
-    "timestamp": "2026-10-06T08:30:00.045Z"
+    "timestamp": "2026-10-18T08:30:00.000+07:00"
   }
   ```
-* **Xử lý Biên**: Backend phản hồi $\le 500\text{ ms}$. Nếu Kiosk mất kết nối mạng liên tiếp 3 nhịp (90 giây không nhận được 200 OK), Kiosk ghi nhận trạng thái chuyển sang ngoại tuyến, chuyển đổi giao diện sang chế độ vận hành độc lập (Offline Degraded Mode).
+* **Xử lý Biên**: Phản hồi $\le 200\text{ ms}$. Nếu Kiosk không thể kết nối tới Backend, Kiosk ghi nhận trạng thái chuyển sang ngoại tuyến, kích hoạt cơ chế lưu trữ điểm danh cục bộ vào SQLite WAL (`offline_punches`).
 
 ---
 
@@ -494,7 +495,7 @@ sequenceDiagram
             Worker->>Worker: Ngủ 10 giây
         else Có từ 1 đến 50 bản ghi
             Worker->>Client: sync_batch(records)
-            Client->>Backend: POST /api/v1/kiosks/{id}/sync-batch
+            Client->>Backend: POST /api/v1/kiosk/sync-batch
             alt Kết nối Thành công (HTTP 200 OK)
                 Backend-->>Client: 200 OK (syncedLocalIds=[101, 102])
                 Client-->>Worker: SyncBatchResultDto

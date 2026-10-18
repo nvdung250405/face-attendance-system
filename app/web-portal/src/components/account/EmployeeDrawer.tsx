@@ -83,19 +83,38 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
           department,
           role,
         })
-        onSuccess({
-          employee: res.employee,
-          temporaryPassword: res.temporaryPassword,
-        })
+        const createdEmployee: EmployeeItem = res.employee || {
+          id: 0,
+          employeeCode: employeeCode.trim(),
+          fullName: fullName.trim(),
+          email: email.trim(),
+          department,
+          role,
+          status: 'PENDING_CONSENT',
+          hasBiometric: false,
+          hasPin: false,
+          createdAt: new Date().toISOString(),
+        }
+        onClose()
+        try {
+          onSuccess({
+            employee: createdEmployee,
+            temporaryPassword: res.temporaryPassword,
+          })
+        } catch (cbErr) {
+          console.error('Lỗi callback hiển thị mật khẩu tạm:', cbErr)
+        }
+        return
       } else if (initialData) {
         const updated = await adminEmployeeService.updateEmployee(initialData.id, {
           fullName: fullName.trim(),
           department,
           role,
         })
+        onClose()
         onSuccess({ employee: updated })
+        return
       }
-      onClose()
     } catch (err: unknown) {
       const apiErr = err as NormalizedApiError
       if (apiErr?.fieldErrors && Object.keys(apiErr.fieldErrors).length > 0) {

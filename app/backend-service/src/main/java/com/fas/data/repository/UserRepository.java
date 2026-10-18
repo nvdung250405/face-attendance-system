@@ -48,9 +48,14 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     Page<User> findByStatusOrderByTerminatedDateDesc(EmployeeStatus status, Pageable pageable);
 
     /**
+     * Đếm số lượng tài khoản theo trạng thái công tác (DD-BE-026, FR-BE-023).
+     */
+     long countByStatus(EmployeeStatus status);
+
+    /**
      * Đếm số lượng tài khoản theo vai trò và trạng thái công tác (DD-BE-026, FR-BE-023).
      */
-    long countByRoleAndStatus(Role role, EmployeeStatus status);
+     long countByRoleAndStatus(Role role, EmployeeStatus status);
 
     /**
      * Khóa bi quan danh sách người dùng theo vai trò và trạng thái (chống race condition hạ cấp ADMIN cuối).

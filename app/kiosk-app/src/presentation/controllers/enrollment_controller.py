@@ -29,6 +29,7 @@ class EnrollmentController(QObject):
     otpChanged = Signal(str)
     enrollmentCompleted = Signal(dict)
     enrollmentCancelled = Signal()
+    dialogOpenChanged = Signal(bool)
 
     def __init__(
         self,
@@ -53,6 +54,7 @@ class EnrollmentController(QObject):
         self._client = client or httpx.Client(timeout=10.0)
         self._capture_interval: float = capture_interval
 
+        self._is_dialog_open: bool = False
         self._current_step: int = 1  # 1: OTP, 2: Chụp ảnh, 3: Hoàn tất
         self._progress_percent: float = 0.0
         self._status_message: str = "Vui lòng nhập mã OTP 6 chữ số để kích hoạt"
@@ -99,10 +101,22 @@ class EnrollmentController(QObject):
         }
         self.enrollmentCompleted.emit(payload)
 
+    @Property(bool, notify=dialogOpenChanged)
+    def isDialogOpen(self) -> bool:
+        """Kiểm tra hộp thoại đăng ký mẫu khuôn mặt có đang mở hay không."""
+        return self._is_dialog_open
+
+    @Slot(bool)
+    def setDialogOpen(self, open_state: bool) -> None:
+        """Cập nhật trạng thái mở/đóng của hộp thoại đăng ký."""
+        if self._is_dialog_open != open_state:
+            self._is_dialog_open = open_state
+            self.dialogOpenChanged.emit(open_state)
+
     @Property(bool, notify=currentStepChanged)
     def isEnrolling(self) -> bool:
-        """Kiểm tra có đang ở Bước 2 thu thập mẫu khuôn mặt trên màn hình chính hay không."""
-        return self._current_step == 2
+        """Kiểm tra có đang mở hộp thoại đăng ký mẫu khuôn mặt hay không."""
+        return self._is_dialog_open
 
     @Property(str, notify=currentStepChanged)
     def employeeName(self) -> str:

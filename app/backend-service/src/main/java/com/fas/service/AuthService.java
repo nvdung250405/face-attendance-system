@@ -51,14 +51,16 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
+    private final com.fas.data.repository.BiometricTemplateRepository biometricTemplateRepository;
 
     @Autowired
     public AuthService(
             UserRepository userRepository,
             RefreshTokenRepository refreshTokenRepository,
             JwtTokenProvider jwtTokenProvider,
-            PasswordEncoder passwordEncoder) {
-        this(userRepository, refreshTokenRepository, jwtTokenProvider, passwordEncoder, Clock.systemDefaultZone());
+            PasswordEncoder passwordEncoder,
+            com.fas.data.repository.BiometricTemplateRepository biometricTemplateRepository) {
+        this(userRepository, refreshTokenRepository, jwtTokenProvider, passwordEncoder, Clock.systemDefaultZone(), biometricTemplateRepository);
     }
 
     public AuthService(
@@ -67,11 +69,22 @@ public class AuthService {
             JwtTokenProvider jwtTokenProvider,
             PasswordEncoder passwordEncoder,
             Clock clock) {
+        this(userRepository, refreshTokenRepository, jwtTokenProvider, passwordEncoder, clock, null);
+    }
+
+    public AuthService(
+            UserRepository userRepository,
+            RefreshTokenRepository refreshTokenRepository,
+            JwtTokenProvider jwtTokenProvider,
+            PasswordEncoder passwordEncoder,
+            Clock clock,
+            com.fas.data.repository.BiometricTemplateRepository biometricTemplateRepository) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
+        this.biometricTemplateRepository = biometricTemplateRepository;
     }
 
     /**
@@ -122,6 +135,10 @@ public class AuthService {
 
         log.info("Người dùng '{}' (ID={}, Role={}) đăng nhập thành công", user.getEmail(), user.getId(), user.getRole());
 
+        boolean hasBiometric = biometricTemplateRepository != null &&
+                biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId()).isPresent();
+        boolean hasPin = org.springframework.util.StringUtils.hasText(user.getPinHash());
+
         AuthenticatedUser authenticatedUser = new AuthenticatedUser(
                 user.getId(),
                 user.getEmployeeCode(),
@@ -129,7 +146,9 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole(),
                 user.getStatus(),
-                user.getDepartment()
+                user.getDepartment(),
+                hasBiometric,
+                hasPin
         );
 
         return new LoginResponse(
@@ -138,6 +157,34 @@ public class AuthService {
                 TOKEN_TYPE_BEARER,
                 ACCESS_TOKEN_EXPIRATION_SECONDS,
                 authenticatedUser
+        );
+    }
+
+    /**
+     * Lấy thông tin tài khoản và trạng thái hồ sơ người dùng hiện tại (API-BE-001/PROFILE).
+     *
+     * @param userId mã định danh người dùng
+     * @return hồ sơ người dùng đầy đủ trạng thái sinh trắc
+     */
+    @Transactional(readOnly = true)
+    public AuthenticatedUser getUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản"));
+
+        boolean hasBiometric = biometricTemplateRepository != null &&
+                biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId()).isPresent();
+        boolean hasPin = org.springframework.util.StringUtils.hasText(user.getPinHash());
+
+        return new AuthenticatedUser(
+                user.getId(),
+                user.getEmployeeCode(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getStatus(),
+                user.getDepartment(),
+                hasBiometric,
+                hasPin
         );
     }
 
