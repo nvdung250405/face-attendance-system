@@ -55,7 +55,7 @@ export const EmployeeConsentView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* ── Tiêu đề trang ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="page-title">Đăng ký sinh trắc &amp; Informed Consent</h1>
           <p className="page-subtitle">
@@ -66,7 +66,7 @@ export const EmployeeConsentView: React.FC = () => {
           type="button"
           onClick={refreshProfile}
           disabled={isRefreshing}
-          className="btn-outline self-start sm:self-auto flex items-center gap-2 text-xs py-2 px-3"
+          className="btn-secondary self-start sm:self-auto flex items-center gap-2"
           title="Đồng bộ lại trạng thái sinh trắc từ CSDL hệ thống"
         >
           <svg
@@ -80,25 +80,25 @@ export const EmployeeConsentView: React.FC = () => {
           >
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
           </svg>
-          <span>{isRefreshing ? 'Đang đồng bộ...' : 'Làm mới trạng thái'}</span>
+          <span>{isRefreshing ? 'Đang đồng bộ...' : 'Làm mới'}</span>
         </button>
       </div>
 
       {/* ── Khung Thông tin Pháp lý ── */}
-      <div className="p-6 rounded-2xl bg-linear-to-r from-brand-50 to-indigo-50 border border-brand-200/80 shadow-xs flex flex-col md:flex-row items-start gap-4">
-        <div className="w-10 h-10 rounded-xl bg-brand-primary text-white flex items-center justify-center shrink-0 shadow-sm">
+      <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex flex-col md:flex-row items-start gap-3">
+        <div className="p-1 rounded-lg bg-blue-100 text-blue-700 mt-0.5 shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
         </div>
         <div className="space-y-1">
-          <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+          <h2 className="text-sm font-bold text-blue-950 flex items-center gap-2">
             <span>Nguyên tắc Bảo vệ Quyền Riêng tư &amp; Dữ liệu Sinh trắc</span>
-            <span className="px-2 py-0.5 text-xs bg-brand-light text-brand-primary font-semibold rounded-full">
+            <span className="badge-info text-2xs">
               Nghị định 13/2023/NĐ-CP
             </span>
           </h2>
-          <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+          <p className="text-xs text-blue-800 leading-relaxed">
             Hệ thống FAS chỉ lưu trữ biểu diễn vector đặc trưng một chiều (Embedding) và không lưu trữ hình ảnh khuôn mặt thô.
             Bạn luôn có toàn quyền rút lại cam kết Informed Consent bất cứ lúc nào. Khi rút cam kết, dữ liệu vector sẽ được tiêu hủy trong vòng 7 ngày làm việc và bạn sẽ chuyển sang chấm công bằng mã PIN.
           </p>

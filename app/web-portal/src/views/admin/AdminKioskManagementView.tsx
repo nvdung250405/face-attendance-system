@@ -268,41 +268,45 @@ export const AdminKioskManagementView: React.FC = () => {
         </div>
       </div>
 
+      {/* ── Thông báo lỗi nếu có ── */}
+      {errorMessage && (
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium flex items-center justify-between">
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={loadKiosks}
+            className="text-xs underline font-semibold hover:text-rose-900"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
       {/* ── Bảng Danh mục Trạm Kiosk ── */}
       <div className="card-surface overflow-hidden">
-        <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between bg-slate-50/50">
-          <h3 className="text-base font-bold text-text-primary">Danh mục Thiết bị Kiosk Biên</h3>
-          <span className="text-xs text-text-muted">Đồng bộ tự động qua giao thức HTTP Heartbeat</span>
-        </div>
-
-        {errorMessage && (
-          <div className="p-4 bg-rose-50 text-rose-700 text-sm border-b border-rose-200">
-            {errorMessage}
-          </div>
-        )}
-
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm" data-testid="kiosk-management-table">
             <thead>
               <tr className="table-sticky-header">
-                <th className="py-3 px-4">Mã Trạm</th>
-                <th className="py-3 px-4">Tên Trạm Kiosk</th>
-                <th className="py-3 px-4">Vị Trí Lắp Đặt</th>
-                <th className="py-3 px-4">Địa Chỉ IP / Phiên Bản</th>
-                <th className="py-3 px-4">Ping Gần Nhất</th>
-                <th className="py-3 px-4">Trạng Thái Kết Nối</th>
-                {!isReadOnly && <th className="py-3 px-4 text-right">Thao Tác</th>}
+                <th className="py-3 px-4 font-semibold">Mã Trạm</th>
+                <th className="py-3 px-4 font-semibold">Tên Trạm Kiosk</th>
+                <th className="py-3 px-4 font-semibold">Vị Trí Lắp Đặt</th>
+                <th className="py-3 px-4 font-semibold">Địa Chỉ IP / Phiên Bản</th>
+                <th className="py-3 px-4 font-semibold">Ping Gần Nhất</th>
+                <th className="py-3 px-4 font-semibold">Trạng Thái Kết Nối</th>
+                {!isReadOnly && (
+                  <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                    Thao Tác
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
                 <tr>
                   <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-muted">
-                    <div className="inline-flex items-center gap-2">
-                      <svg className="animate-spin w-5 h-5 text-brand-primary" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                       <span>Đang nạp danh sách trạm Kiosk...</span>
                     </div>
                   </td>

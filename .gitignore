@@ -66,6 +66,8 @@ app/kiosk-app/**/models/*.onnx
 node_modules/
 app/web-portal/node_modules/
 app/web-portal/dist/
+app/web-portal/.vitest/
+.vitest/
 dist/
 dist-ssr/
 *.local
