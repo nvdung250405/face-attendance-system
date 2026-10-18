@@ -99,3 +99,11 @@ export interface PersonalAttendanceResponse {
   totalLateDays: number
   records: PersonalAttendanceDayRecord[]
 }
+
+export interface AdjustAttendanceRequest {
+  punchTimestamp?: string
+  status?: AttendanceStatus
+  lateMinutes?: number
+  reason: string
+}
+

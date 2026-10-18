@@ -53,10 +53,15 @@ export class DataSubjectService {
    */
   async getEmployeeDataRequests(): Promise<DataSubjectRequestItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<DataSubjectRequestItem[]>>(
+      const response = await apiClient.get<ApiResponse<unknown>>(
         '/api/v1/employee/data-requests'
       )
-      return response.data.data
+      const raw = response.data.data
+      if (Array.isArray(raw)) return raw as DataSubjectRequestItem[]
+      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        return (raw as { content: DataSubjectRequestItem[] }).content
+      }
+      return []
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -67,10 +72,15 @@ export class DataSubjectService {
    */
   async getDpoDataRequests(): Promise<DataSubjectRequestItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<DataSubjectRequestItem[]>>(
+      const response = await apiClient.get<ApiResponse<unknown>>(
         '/api/v1/dpo/data-requests'
       )
-      return response.data.data
+      const raw = response.data.data
+      if (Array.isArray(raw)) return raw as DataSubjectRequestItem[]
+      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        return (raw as { content: DataSubjectRequestItem[] }).content
+      }
+      return []
     } catch (error) {
       throw normalizeApiError(error)
     }

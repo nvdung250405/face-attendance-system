@@ -51,8 +51,8 @@ export const LoginView: React.FC = () => {
           role: data.user.role,
           status: data.user.status,
           department: data.user.department,
-          hasBiometric: false,
-          hasPin: false,
+          hasBiometric: Boolean(data.user.hasBiometric),
+          hasPin: Boolean(data.user.hasPin),
           mustChangePassword: data.user.mustChangePassword,
         },
       }
@@ -102,18 +102,6 @@ export const LoginView: React.FC = () => {
     await loginWithCredentials(email, password)
   }
 
-  const handleQuickDemoLogin = async (role: UserRole) => {
-    if (role === 'HR_MANAGER' || role === 'ADMIN') {
-      setEmail('admin@fas.com')
-      setPassword('Admin@123456')
-      await loginWithCredentials('admin@fas.com', 'Admin@123456')
-    } else {
-      setEmail('nguyenvana@fas.local')
-      setPassword('Admin@123')
-      await loginWithCredentials('nguyenvana@fas.local', 'Admin@123')
-    }
-  }
-
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-bg-app">
       {/* Cột Trái: Brand Dark Navy Workspace (Figma Frame 3:23919) */}
@@ -135,13 +123,13 @@ export const LoginView: React.FC = () => {
         </div>
       </div>
 
-      {/* Cột Phải: Form Đăng nhập & Lựa chọn vai trò */}
+      {/* Cột Phải: Form Đăng nhập */}
       <div className="md:w-1/2 flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md bg-surface-card border border-border-subtle rounded-xl shadow-sm p-8 space-y-6">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold text-text-primary">Đăng nhập Cổng Web</h2>
             <p className="text-sm text-text-secondary">
-              Nhập email doanh nghiệp hoặc chọn tài khoản demo để tiếp tục
+              Nhập email doanh nghiệp và mật khẩu để tiếp tục
             </p>
           </div>
 
@@ -190,27 +178,6 @@ export const LoginView: React.FC = () => {
               {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
             </button>
           </form>
-
-          {/* Quick Demo Access Buttons */}
-          <div className="pt-4 border-t border-border-subtle space-y-2">
-            <div className="text-xs text-text-secondary text-center">Hoặc đăng nhập nhanh chế độ Thử nghiệm:</div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('HR_MANAGER')}
-                className="py-2 px-3 border border-border-subtle hover:bg-slate-50 text-brand-primary text-xs font-semibold rounded-lg transition-colors text-center"
-              >
-                Vai trò HR / Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('EMPLOYEE')}
-                className="py-2 px-3 border border-border-subtle hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-colors text-center"
-              >
-                Vai trò Nhân viên
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

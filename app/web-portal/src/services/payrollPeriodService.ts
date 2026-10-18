@@ -22,11 +22,16 @@ export class PayrollPeriodService {
    */
   async getPayrollPeriods(criteria?: PayrollPeriodQueryCriteria): Promise<PayrollPeriodResponse[]> {
     try {
-      const response = await apiClient.get<ApiResponse<PayrollPeriodResponse[]>>(
+      const response = await apiClient.get<ApiResponse<unknown>>(
         '/api/v1/admin/payroll-periods',
         { params: criteria }
       )
-      return response.data.data
+      const raw = response.data.data
+      if (Array.isArray(raw)) return raw as PayrollPeriodResponse[]
+      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        return (raw as { content: PayrollPeriodResponse[] }).content
+      }
+      return []
     } catch (error) {
       throw normalizeApiError(error)
     }

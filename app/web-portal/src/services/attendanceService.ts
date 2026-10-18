@@ -13,6 +13,7 @@ import type {
   AttendanceStats,
   PersonalAttendanceResponse,
   PersonalAttendanceDayRecord,
+  AdjustAttendanceRequest,
 } from '@/types'
 
 /**
@@ -54,6 +55,24 @@ export class AttendanceService {
       const response = await apiClient.get<ApiResponse<AttendanceStats>>(
         '/api/v1/admin/attendance/stats',
         { params: { date } }
+      )
+      return response.data.data
+    } catch (error) {
+      throw normalizeApiError(error)
+    }
+  }
+
+  /**
+   * Điều chỉnh giờ công hoặc trạng thái điểm danh thủ công (PATCH /api/v1/admin/attendance/{id} - API-WEB-021)
+   */
+  async adjustAttendance(
+    id: number,
+    data: AdjustAttendanceRequest
+  ): Promise<AttendanceRecord> {
+    try {
+      const response = await apiClient.patch<ApiResponse<AttendanceRecord>>(
+        `/api/v1/admin/attendance/${id}`,
+        data
       )
       return response.data.data
     } catch (error) {

@@ -18,11 +18,11 @@ import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
 import type { AttendanceRecord, AttendanceStats } from '@/types'
 
 const DEFAULT_STATS: AttendanceStats = {
-  totalEmployees: 128,
+  totalEmployees: 0,
   presentCount: 0,
   onTimeCount: 0,
   lateCount: 0,
-  absentCount: 128,
+  absentCount: 0,
 }
 
 export const AdminDashboardView: React.FC = () => {
@@ -54,7 +54,7 @@ export const AdminDashboardView: React.FC = () => {
 
     // 3. Tự động tăng bộ đếm KPI thời gian thực
     setStats((prev) => {
-      const total = prev.totalEmployees ?? 128
+      const total = prev.totalEmployees ?? 0
       const newPresent = prev.presentCount + 1
       const newOnTime =
         record.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount

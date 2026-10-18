@@ -54,8 +54,13 @@ export class ComplianceAdminService {
    */
   async getKiosks(): Promise<KioskItemResponse[]> {
     try {
-      const response = await apiClient.get<ApiResponse<KioskItemResponse[]>>('/api/v1/admin/kiosks')
-      return response.data.data || []
+      const response = await apiClient.get<ApiResponse<unknown>>('/api/v1/admin/kiosks')
+      const raw = response.data.data
+      if (Array.isArray(raw)) return raw as KioskItemResponse[]
+      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        return (raw as { content: KioskItemResponse[] }).content
+      }
+      return []
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -114,8 +119,13 @@ export class ComplianceAdminService {
    */
   async getDpoConsents(): Promise<DpoConsentAuditItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<DpoConsentAuditItem[]>>('/api/v1/dpo/consents')
-      return response.data.data || []
+      const response = await apiClient.get<ApiResponse<unknown>>('/api/v1/dpo/consents')
+      const raw = response.data.data
+      if (Array.isArray(raw)) return raw as DpoConsentAuditItem[]
+      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        return (raw as { content: DpoConsentAuditItem[] }).content
+      }
+      return []
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -126,10 +136,15 @@ export class ComplianceAdminService {
    */
   async getDpoRetentionSchedule(): Promise<RetentionScheduleItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<RetentionScheduleItem[]>>(
+      const response = await apiClient.get<ApiResponse<unknown>>(
         '/api/v1/dpo/retention-schedule'
       )
-      return response.data.data || []
+      const raw = response.data.data
+      if (Array.isArray(raw)) return raw as RetentionScheduleItem[]
+      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        return (raw as { content: RetentionScheduleItem[] }).content
+      }
+      return []
     } catch (error) {
       throw normalizeApiError(error)
     }
