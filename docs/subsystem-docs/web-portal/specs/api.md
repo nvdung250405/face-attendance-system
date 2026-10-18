@@ -34,8 +34,7 @@ updated: 2026-10-18
 | `API-WEB-018` | Giao diện REST kết xuất báo cáo bảng công qua `GET /api/v1/admin/reports/export`. | REST | Must | `API-BE-035`, `FR-WEB-006` | Nhận file `.xlsx` an toàn (đã escape công thức) và tải xuống trong $\le 3\text{ giây}$ cho 1,000 nhân sự. | Approved |
 | `API-WEB-019` | Giao diện REST tra cứu thông tin người dùng và trạng thái sinh trắc qua `GET /api/v1/auth/me`. | REST | Must | `API-BE-046`, `FR-WEB-001` | Đồng bộ phiên, hiển thị TopHeader và hỗ trợ Consent Guard với các cờ `hasBiometric`, `hasPin`; SLA $\le 300\text{ ms}$. | Approved |
 | `API-WEB-020` | Giao diện REST tra cứu thống kê KPI điểm danh thời gian thực qua `GET /api/v1/admin/attendance/stats`. | REST | Must | `API-BE-047`, `DATA-WEB-004` | Cung cấp 5 chỉ số KPI (`totalEmployees`, `presentCount`, `onTimeCount`, `lateCount`, `absentCount`) cho Admin Dashboard; SLA $\le 400\text{ ms}$. | Approved |
-| `API-WEB-021` | Giao diện REST điều chỉnh bản ghi điểm danh thủ công qua `PATCH /api/v1/admin/attendance/{id}`. | REST | Must | `API-BE-048`, `FR-WEB-002` | HR/Admin điều chỉnh giờ công/trạng thái kèm lý do giải trình; SLA $\le 500\text{ ms}$. | Approved |1/admin/audit-logs`, `/api/v1/admin/kiosks/**` và `/api/v1/dpo/**`. | REST | Must | `FR-SYS-019`, `FR-SYS-020` | ADMIN tra cứu audit log và quản lý trạm; Secret Token chỉ hiển thị một lần; role DPO chỉ đọc; SLA $\le 800\text{ ms}$. | Approved |
-| `API-WEB-018` | Giao diện REST kết xuất báo cáo bảng công qua `GET /api/v1/admin/reports/export`. | REST | Must | `FR-WEB-006`, `FR-SYS-016` | Nhận file `.xlsx` an toàn (đã escape công thức) và tải xuống trong $\le 3\text{ giây}$ cho 1,000 nhân sự. | Approved |
+| `API-WEB-021` | Giao diện REST điều chỉnh bản ghi điểm danh thủ công qua `PATCH /api/v1/admin/attendance/{id}`. | REST | Must | `API-BE-048`, `FR-WEB-002` | HR/Admin điều chỉnh giờ công/trạng thái kèm lý do giải trình; SLA $\le 500\text{ ms}$. | Approved |
 
 ---
 

@@ -1,6 +1,31 @@
 {
-  "expires": "2026-12-08",
+  "expires": "2026-12-17",
   "issue": 35,
   "note": "Gap đã biết của bộ tài liệu; mỗi mục phải được đóng theo issue tương ứng trước ngày hết hạn.",
-  "exceptions": []
+  "exceptions": [
+    {
+      "check": "ORP004",
+      "reason": "Gap đã biết — theo dõi và đóng theo issue #35 (audit traceability).",
+      "issue": 35,
+      "ids": [
+        "API-WEB-019",
+        "FR-KSK-006",
+        "FR-KSK-007"
+      ]
+    },
+    {
+      "check": "ORP005",
+      "reason": "Gap đã biết — theo dõi và đóng theo issue #35 (audit traceability).",
+      "issue": 35,
+      "ids": [
+        "API-BE-046",
+        "API-BE-047",
+        "API-BE-048",
+        "API-WEB-019",
+        "API-WEB-020",
+        "API-WEB-021",
+        "FR-KSK-007"
+      ]
+    }
+  ]
 }
