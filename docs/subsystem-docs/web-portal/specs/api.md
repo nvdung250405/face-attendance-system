@@ -16,7 +16,7 @@ updated: 2026-10-18
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
 | `API-WEB-001` | Giao diện REST xác thực đăng nhập qua `POST /api/v1/auth/login`. | REST | Must | `API-BE-001`, `SRS-001`, `ARC-003` | Nhận Access/Refresh Token và thông tin user (hỗ trợ các vai trò HR_MANAGER, EMPLOYEE, ADMIN, DPO); SLA $\le 500\text{ ms}$. | Approved |
 | `API-WEB-002` | Giao diện REST làm mới access token qua `POST /api/v1/auth/refresh`. | REST | Must | `API-BE-002`, `SRS-001`, `ARC-003` | Đổi Refresh Token lấy Access Token mới trong suốt; SLA $\le 300\text{ ms}$. | Approved |
-| `API-WEB-003` | Giao diện REST ký cam kết sinh trắc qua `POST /api/v1/employee/consent`. | REST | Must | `API-BE-010`, `SRS-001`, `ARC-003` | Nhận mã OTP 6 số và mã QR kích hoạt tại Kiosk; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-003` | Giao diện REST ký cam kết sinh trắc qua `POST /api/v1/employee/consent`. | REST | Must | `API-BE-010`, `SRS-001`, `ARC-003` | Nhận mã OTP 6 số kích hoạt tại Kiosk; SLA $\le 500\text{ ms}$. | Approved |
 | `API-WEB-004` | Giao diện REST tra cứu điểm danh toàn công ty qua `GET /api/v1/admin/attendance`. | REST | Must | `API-BE-008`, `SRS-003`, `ARC-003` | Phân trang, lọc theo ngày/phòng ban/trạng thái; SLA $\le 800\text{ ms}$. | Approved |
 | `API-WEB-005` | Giao diện REST tra cứu điểm danh cá nhân qua `GET /api/v1/employee/attendance`. | REST | Should | `API-BE-009`, `SRS-003`, `ARC-003` | Trả về tổng kết tháng và chi tiết các lượt quẹt; SLA $\le 500\text{ ms}$. | Approved |
 | `API-WEB-006` | Giao diện REST tra cứu danh mục nhân sự qua `GET /api/v1/admin/employees`. | REST | Must | `API-BE-011`, `SRS-003`, `ARC-003` | Phân trang danh sách nhân sự và trạng thái sinh trắc; SLA $\le 800\text{ ms}$. | Approved |
@@ -183,7 +183,6 @@ graph TD
     "message": "Tiếp nhận cam kết thành công. Vui lòng đến trạm Kiosk để quét mặt.",
     "data": {
       "otp": "839201",
-      "qrCodeData": "otp:839201;emp:NV-1042;exp:2026-10-05T08:32:15.000+07:00",
       "expiresAt": "2026-10-05T08:32:15.000+07:00",
       "kioskLocations": [
         "Sảnh Lễ tân Tầng 1 - KIOSK-HN-01",

@@ -15,7 +15,7 @@ updated: 2026-10-18
 | ID | Phát biểu Yêu cầu Trải nghiệm (Statement) | Nhóm Tác vụ | Mức Ưu tiên | Nguồn Tham chiếu | Tiêu chí Nghiệm thu (Acceptance Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :---: | :--- | :---: |
 | `UI-WEB-001` | Giao diện đăng nhập và điều hướng phân quyền theo Role (`HR_MANAGER`, `EMPLOYEE`, `ADMIN`, `DPO`). | Auth / Routing | Must | `SRS-003`, `ARC-003` | Điều hướng chuẩn xác theo vai trò; hiển thị spinner nạp dữ liệu trên nút đăng nhập; chia đôi màn hình thẩm mỹ cao; người dùng vào thẳng không gian làm việc số sau khi đăng nhập thành công mà không bị chặn điều hướng (`DD-WEB-018`). | Approved |
-| `UI-WEB-002` | Quy trình ký cam kết điện tử Informed Consent và hiển thị mã OTP 6 số kích hoạt kèm QR Code. | Consent / OTP | Must | `SRS-001`, `SRS-003` | Khóa backdrop; cuộn hết $100\%$ văn bản mới cho ký; tự đóng modal và nổ Confetti khi quét mặt thành công tại Kiosk qua kênh STOMP. | Approved |
+| `UI-WEB-002` | Quy trình ký cam kết điện tử Informed Consent và hiển thị mã OTP 6 số kích hoạt tại Kiosk. | Consent / OTP | Must | `SRS-001`, `SRS-003` | Khóa backdrop; cuộn hết $100\%$ văn bản mới cho ký; hiển thị mã OTP 6 số kích thước lớn kèm nút sao chép và hạn 48h; tự đóng modal và nổ Confetti khi quét mặt thành công tại Kiosk qua kênh STOMP. | Approved |
 | `UI-WEB-003` | Bảng điều khiển giám sát chấm công trực tiếp cho HR nhận dữ liệu qua STOMP WebSocket. | Dashboard / Live | Must | `SRS-003`, `ARC-003` | Thẻ KPI tự nhảy số; hàng mới chèn lên đầu bảng có hiệu ứng đổi màu nổi bật (Green Flash) trong $1.5\text{ s}$; công tắc bật/tắt live stream mượt mà. | Approved |
 | `UI-WEB-004` | Tra cứu lịch sử điểm danh đa tiêu chí, hỗ trợ điều chỉnh chấm công thủ công và kết xuất báo cáo Excel (.xlsx) / PDF. | History / Report | Should | `SRS-003`, `API-BE-048` | Bộ lọc đa chiều; phân trang mượt mà; hỗ trợ hộp thoại điều chỉnh giờ công/trạng thái kèm lý do giải trình; xuất file chuẩn định dạng và phòng chống formula injection. | Approved |
 | `UI-WEB-005` | Bảng công và lịch chấm công cá nhân theo tháng cho nhân viên. | Employee Portal | Should | `SRS-003` | Giao diện lịch 7 cột trực quan; tô màu theo trạng thái; nhấp chuột xem Drawer chi tiết ngày tức thời hiển thị đầy đủ mốc giờ, phương thức và trạm quẹt. | Approved |
@@ -49,7 +49,7 @@ Nhằm đảm bảo đồng bộ $100\%$ theo nguyên lý **Specification-First*
 | 10 | `SCR-WEB-10` | Nhật ký Kiểm toán & Báo cáo Tuân thủ | `/admin/audit-logs` | `ADMIN`, `DPO` | `UI-WEB-012` | `AdminAuditLogView.tsx` | Nhật ký kiểm toán hệ thống và nhật ký đồng thuận NĐ 13/2023; chỉ đọc đối với vai trò `DPO`. |
 | **C** | **Phân hệ Cá nhân Nhân viên (Employee Self-Service Portal)** | | | | | | |
 | 11 | `SCR-WEB-11` | Bảng công & Lịch Cá nhân Tháng | `/employee/dashboard` | `EMPLOYEE` | `UI-WEB-005` | `EmployeeDashboardView.tsx` | Khung lịch 7 cột `PersonalAttendanceCalendar`, màu theo trạng thái, mở Drawer xem chi tiết ngày. |
-| 12 | `SCR-WEB-12` | Đăng ký Sinh trắc & Kích hoạt Kiosk | `/employee/consent` | `EMPLOYEE` | `UI-WEB-002`, `UI-WEB-010` | `EmployeeConsentView.tsx` | Ký cam kết Informed Consent NĐ 13/2023, OTP 6 số + QR code, STOMP auto-finish, nút rút cam kết. |
+| 12 | `SCR-WEB-12` | Đăng ký Sinh trắc & Kích hoạt Kiosk | `/employee/consent` | `EMPLOYEE` | `UI-WEB-002`, `UI-WEB-010` | `EmployeeConsentView.tsx` | Ký cam kết Informed Consent NĐ 13/2023, OTP kích hoạt 6 số, STOMP auto-finish, nút rút cam kết. |
 | 13 | `SCR-WEB-13` | Yêu cầu Dữ liệu Cá nhân Chủ thể | `/employee/data-requests` | `EMPLOYEE` | `UI-WEB-010` | `EmployeeDataRequestsView.tsx` | Tạo yêu cầu tiếp cận (ACCESS) hoặc đính chính (CORRECTION) dữ liệu cá nhân theo NĐ 13/2023; theo dõi trạng thái. |
 | **D** | **Thành phần Hộp thoại & Ngăn kéo Bổ trợ (Modals & Drawers)** | | | | | | |
 | 14 | `MOD-WEB-01` | Hộp thoại Đổi Mật khẩu Tự nguyện | Popup toàn cục (TopHeader) | Mọi người dùng đã đăng nhập | `UI-WEB-008` | `ChangePasswordModal.tsx` | Đổi mật khẩu chủ động, thanh đo độ mạnh mật khẩu, cảnh báo thu hồi phiên cũ, không chặn điều hướng (`DD-WEB-018`). |
@@ -104,7 +104,7 @@ Toàn bộ giao diện thi công bám sát các Frame chuẩn từ file thiết 
 | `3:23918` | `FAS · Đăng nhập` | $1440\times 1000$ | `UI-WEB-001`, `UXD-WEB-001` | Split-Screen: Cột trái Brand Space $650\text{ px}$ (`#102D53`), Cột phải Form Đăng nhập $790\text{ px}$ (`#FFFFFF`). |
 | `3:23971` | `FAS · Cam kết chưa đọc hết` | $1440\times 1000$ | `UI-WEB-002`, `UXD-WEB-002` | Modal Cam kết Informed Consent: Khóa nút ký khi chưa cuộn đến đáy văn bản ($100\%$). |
 | `3:24074` | `FAS · Cam kết sẵn sàng ký` | $1440\times 1000$ | `UI-WEB-002`, `UXD-WEB-002` | Mở khóa nút "Xác nhận & Ký cam kết điện tử" sau khi cuộn hết văn bản điều khoản pháp lý. |
-| `3:24178` | `FAS · Chờ kích hoạt tại Kiosk` | $1440\times 1000$ | `UI-WEB-002`, `UXD-WEB-002` | Hộp OTP 6 số kích thước lớn ($44\text{ px}$ bold), QR Code $200\times 200\text{ px}$ và đếm ngược 48h. |
+| `3:24178` | `FAS · Chờ kích hoạt tại Kiosk` | $1440\times 1000$ | `UI-WEB-002`, `UXD-WEB-002` | Hộp OTP 6 số kích thước lớn ($48\text{ px}$ bold), nút sao chép nhanh, đếm ngược 48h và 3 bước hướng dẫn kích hoạt tại Kiosk. |
 | `3:24578` | `FAS · Kích hoạt thành công` | $1440\times 1200$ | `UI-WEB-002`, `UXD-WEB-002` | Tự động chuyển cảnh thành công khi nhận thông điệp STOMP quét mặt xong tại Kiosk. |
 | `3:24853` | `FAS · Giám sát chấm công trực tiếp` | $1440\times 1160$ | `UI-WEB-003`, `UXD-WEB-003`, `UXD-WEB-004` | Dashboard HR: 4 Thẻ KPI thời gian thực + Bảng Live Table có hiệu ứng Green Flash $1.5\text{ s}$. |
 | `3:25062` | `FAS · Lịch sử và báo cáo` | $1440\times 1240$ | `UI-WEB-004` | Bộ lọc đa chiều, phân trang bảng công và thanh tác vụ xuất báo cáo. |
@@ -180,7 +180,7 @@ graph TD
 | ID | Tên Thành phần Giao diện | Định nghĩa Trách nhiệm Kỹ thuật | Hiện thực hóa (`Realizes`) | Sử dụng (`Uses`) | Quyết định (`Decisions`) | Trạng thái |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | `UXD-WEB-001` | Admin Shell Layout | Cấu trúc Sidebar 260px (thu gọn 72px) + TopHeader 64px + Content responsive; hỗ trợ thu gọn sidebar mượt mà với chuyển động CSS 200ms. | `UI-WEB-001`, `NFR-WEB-002` | `ARC-003` | `DD-WEB-013` | Accepted |
-| `UXD-WEB-002` | Hộp thoại Cam kết & Hiển thị OTP | Modal chia 2 giai đoạn: Giai đoạn 1 khóa nút Submit đến khi cuộn hết văn bản; Giai đoạn 2 hiển thị mã OTP 6 số font 48px + mã QR 200x200px + tự động đóng khi nhận STOMP event. | `UI-WEB-002` | `ARC-003` | `DD-WEB-015`, `DD-WEB-016` | Accepted |
+| `UXD-WEB-002` | Hộp thoại Cam kết & Hiển thị OTP | Modal chia 2 giai đoạn: Giai đoạn 1 khóa nút Submit đến khi cuộn hết văn bản; Giai đoạn 2 hiển thị mã OTP 6 số font 48px kèm nút sao chép và 3 bước hướng dẫn kích hoạt tại Kiosk + tự động đóng khi nhận STOMP event. | `UI-WEB-002` | `ARC-003` | `DD-WEB-015`, `DD-WEB-016` | Accepted |
 | `UXD-WEB-003` | Lưới 4 Thẻ Chỉ số KPI | Hàng 4 thẻ card bo góc 12px, chứa icon chuyên biệt, con số font 32px bold và tỷ lệ phần trăm thay đổi so với hôm trước. | `UI-WEB-003` | `ARC-003` | `DD-WEB-014` | Accepted |
 | `UXD-WEB-004` | Bảng Dữ liệu Trực tiếp (Live Table) | Bảng chấm công thời gian thực với tiêu đề dính (Sticky Header). Dòng mới chèn vào đầu bảng tự động kích hoạt hiệu ứng chớp sáng nền xanh ngọc (`emerald-50`) trong 1.5s; hỗ trợ điều chỉnh chấm công thủ công (`API-WEB-021`). | `UI-WEB-003`, `UI-WEB-004` | `ARC-003` | `DD-WEB-014`, `DD-WEB-007` | Accepted |
 | `UXD-WEB-005` | Khung Lịch biểu Cá nhân (Calendar Grid) | Lưới 7 cột theo các thứ trong tuần; mỗi ô ngày hiển thị giờ vào/ra và huy hiệu màu tương ứng; nhấp chuột để mở Drawer chi tiết bên phải. | `UI-WEB-004`, `UI-WEB-005` | `ARC-003` | `DD-WEB-002` | Accepted |
@@ -192,7 +192,7 @@ graph TD
 
 ## 5. Máy trạng thái Giao diện & Trải nghiệm Người dùng (UI/UX State Machines)
 
-### 5.1. Máy trạng thái Vòng đời Cam kết Informed Consent & Hiển thị OTP/QR (`stateDiagram-v2`)
+### 5.1. Máy trạng thái Vòng đời Cam kết Informed Consent & Hiển thị OTP (`stateDiagram-v2`)
 
 ```mermaid
 stateDiagram-v2
@@ -210,12 +210,12 @@ stateDiagram-v2
     MODAL_DOC_DIEU_KHOAN --> CHUA_DONG_Y: Nhấp nút "Hủy bỏ" / Đóng Modal
     
     SAN_SANG_KY --> DANG_XU_LY_KY: Nhấp nút Ký cam kết
-    DANG_XU_LY_KY --> CHO_KICH_HOAT_KIOSK: Ký thành công (Backend sinh OTP & QR)
+    DANG_XU_LY_KY --> CHO_KICH_HOAT_KIOSK: Ký thành công (Backend sinh OTP)
     
     state CHO_KICH_HOAT_KIOSK {
-        [*] --> HIEN_THI_OTP_QR: Hiển thị OTP 6 số + QR 200px + Đếm ngược 48h
-        HIEN_THI_OTP_QR --> KIOSK_QUET_MAT: Nhân viên đến trạm Kiosk nhập OTP/quét QR
-        HIEN_THI_OTP_QR --> HET_HAN_48H: Quá 48h chưa đến Kiosk
+        [*] --> HIEN_THI_OTP: Hiển thị OTP 6 số + Đếm ngược 48h + Hướng dẫn
+        HIEN_THI_OTP --> KIOSK_QUET_MAT: Nhân viên đến trạm Kiosk nhập OTP bằng phím số
+        HIEN_THI_OTP --> HET_HAN_48H: Quá 48h chưa đến Kiosk
     }
     
     HET_HAN_48H --> CHUA_DONG_Y: OTP hết hạn (Cần đăng ký lại)
@@ -359,21 +359,24 @@ stateDiagram-v2
 ┌────────────────────────────────────────────────────────────────────────┐
 │  Mã OTP Kích hoạt tại Trạm Kiosk                                     [X]│
 ├────────────────────────────────────────────────────────────────────────┤
-│                        Mã OTP Kích hoạt của bạn:                       │
+│                       Mã OTP Kích hoạt Sinh trắc học                   │
 │                                                                        │
-│                          ┌─────────────────┐                           │
-│                          │  8 3 9   2 0 1  │  [ Sao chép ]             │
-│                          └─────────────────┘                           │
+│                ┌──────────────────────────────────────┐                │
+│                │            8 3 9   2 0 1             │                │
+│                │          [ 📋 Sao chép mã ]          │                │
+│                └──────────────────────────────────────┘                │
 │                                                                        │
-│                     ┌───────────────────────────┐                      │
-│                     │                           │                      │
-│                     │      [ QR Code 200px ]    │                      │
-│                     │                           │                      │
-│                     └───────────────────────────┘                      │
+│   [⏱ Thời hạn hiệu lực: 48 giờ (Hết hạn lúc: 08:32 ngày 05/10/2026)]   │
 │                                                                        │
-│  * Thời hạn hiệu lực: 48 giờ (Hết hạn lúc: 08:32 ngày 05/10/2026)      │
-│  * Hướng dẫn: Đến trạm Kiosk tại sảnh lễ tân, bấm F3 và nhập mã này.   │
-│  * Kênh trực tuyến: Đang đợi tín hiệu quét mặt từ Kiosk...             │
+│   ┌────────────────────────────────────────────────────────────────┐   │
+│   │ Hướng dẫn kích hoạt khuôn mặt tại trạm Kiosk:                 │   │
+│   │ 1. Di chuyển tới trạm Kiosk bất kỳ tại sảnh công ty.           │   │
+│   │ 2. Bấm phím F3 hoặc nhấn nút "Đăng ký khuôn mặt".              │   │
+│   │ 3. Nhập mã OTP 6 chữ số trên và căn chỉnh khuôn mặt vào Oval.  │   │
+│   └────────────────────────────────────────────────────────────────┘   │
+│                                                                        │
+│   ● Trạng thái kết nối: Đang chờ tín hiệu kích hoạt từ trạm Kiosk...   │
+│     (Màn hình sẽ tự động cập nhật ngay khi bạn hoàn tất tại Kiosk)     │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 

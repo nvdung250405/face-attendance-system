@@ -32,7 +32,6 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react'
-import { QrCodeDisplay } from './QrCodeDisplay'
 import { consentService } from '@/services/consentService'
 import { useEnrollmentStatus } from '@/services/hooks/useEnrollmentStatus'
 import { useAuthStore } from '@/store/authStore'
@@ -463,78 +462,83 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
             </div>
           )}
 
-          {/* BƯỚC 2: HIỂN THỊ MÃ OTP VÀ MÃ QR */}
+          {/* BƯỚC 2: HIỂN THỊ MÃ OTP KÍCH HOẠT */}
           {currentStep === 'OTP_DISPLAY' && effectiveOtpData && (
             <div className="flex flex-col items-center text-center space-y-5 py-2">
               <p className="text-xs uppercase font-bold tracking-wider text-text-tertiary">
                 Mã OTP Kích hoạt tại Trạm Kiosk
               </p>
 
-              {/* Hộp OTP to rõ 44px/48px */}
-              <div className="flex items-center justify-center gap-3">
-                <div
-                  data-testid="otp-display-box"
-                  className="px-6 py-3 rounded-2xl bg-brand-50/60 border-2 border-brand-200 text-brand-600 font-mono text-3xl sm:text-4xl font-extrabold tracking-[0.25em] shadow-sm select-all"
-                >
-                  {effectiveOtpData.otp.length === 6
-                    ? `${effectiveOtpData.otp.slice(0, 3)} ${effectiveOtpData.otp.slice(3)}`
-                    : effectiveOtpData.otp}
+              {/* Hộp OTP to rõ 48px kèm nút sao chép */}
+              <div className="w-full flex flex-col items-center gap-3.5 py-5 px-6 rounded-2xl bg-gradient-to-b from-brand-50/60 to-indigo-50/30 border border-brand-200 shadow-xs">
+                <span className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
+                  Mã xác thực gồm 6 chữ số
+                </span>
+
+                <div className="flex items-center justify-center gap-3">
+                  <div
+                    data-testid="otp-display-box"
+                    className="px-8 py-3.5 rounded-2xl bg-white border-2 border-dashed border-brand-300 text-brand-700 font-mono text-4xl sm:text-5xl font-extrabold tracking-[0.25em] shadow-sm select-all"
+                  >
+                    {effectiveOtpData.otp.length === 6
+                      ? `${effectiveOtpData.otp.slice(0, 3)} ${effectiveOtpData.otp.slice(3)}`
+                      : effectiveOtpData.otp}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyOtp}
+                    data-testid="copy-otp-btn"
+                    title="Sao chép mã OTP"
+                    className="p-3.5 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-brand-600 transition-colors shadow-sm"
+                  >
+                    {isCopied ? (
+                      <Check className="w-5 h-5 text-status-success" />
+                    ) : (
+                      <Copy className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleCopyOtp}
-                  data-testid="copy-otp-btn"
-                  title="Sao chép mã OTP"
-                  className="p-3 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-brand-600 transition-colors shadow-sm"
-                >
-                  {isCopied ? (
-                    <Check className="w-5 h-5 text-status-success" />
-                  ) : (
-                    <Copy className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-
-              {/* Mã QR 200x200px */}
-              <div className="flex flex-col items-center gap-2">
-                <QrCodeDisplay
-                  value={effectiveOtpData.qrCodeDataUrl || effectiveOtpData.qrCodeData}
-                  size={200}
-                />
-                <span className="text-xs text-text-tertiary">Quét mã QR tại camera trạm Kiosk</span>
-              </div>
-
-              {/* Thông tin hạn dùng và hướng dẫn */}
-              <div className="w-full space-y-2.5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs text-slate-700">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-brand-600 shrink-0" />
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <Clock className="w-3.5 h-3.5 text-brand-600 shrink-0" />
                   <span>
-                    <strong>Thời hạn hiệu lực:</strong> 48 giờ (
+                    Thời hạn: <strong>48 giờ</strong> (
                     {effectiveOtpData.expiresAt
                       ? new Date(effectiveOtpData.expiresAt).toLocaleString('vi-VN')
                       : 'Hết hạn sau 48h'}
                     )
                   </span>
                 </div>
+              </div>
 
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
-                  <div>
-                    <strong>Hướng dẫn:</strong> Đến trạm Kiosk tại sảnh lễ tân, bấm <strong>F3</strong>{' '}
-                    và nhập mã này (hoặc đưa mã QR trước camera Kiosk).
-                    {effectiveOtpData.kioskLocations && effectiveOtpData.kioskLocations.length > 0 && (
-                      <div className="mt-1 text-slate-600">
-                        Các trạm khả dụng: {effectiveOtpData.kioskLocations.join(', ')}
-                      </div>
-                    )}
-                  </div>
+              {/* 3 Bước hướng dẫn kích hoạt tại Kiosk */}
+              <div className="w-full space-y-2.5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs text-slate-700">
+                <div className="font-bold text-slate-800 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span>3 bước hoàn tất kích hoạt tại máy trạm Kiosk:</span>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1 border-t border-slate-200 text-brand-700">
+                <ol className="list-decimal list-inside space-y-1.5 pl-1 text-slate-600 leading-relaxed">
+                  <li>Di chuyển tới trạm Kiosk bất kỳ tại sảnh công ty.</li>
+                  <li>
+                    Bấm phím <strong>F3</strong> (hoặc chạm nút <em>"Đăng ký khuôn mặt"</em> trên màn hình).
+                  </li>
+                  <li>
+                    Nhập <strong>mã OTP gồm 6 chữ số</strong> ở trên vào bàn phím số cảm ứng và căn chỉnh khuôn mặt vào khung Oval.
+                  </li>
+                </ol>
+
+                {effectiveOtpData.kioskLocations && effectiveOtpData.kioskLocations.length > 0 && (
+                  <div className="mt-1 text-slate-600 border-t border-slate-200 pt-1.5">
+                    Các trạm khả dụng: {effectiveOtpData.kioskLocations.join(', ')}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-200 text-brand-700">
                   <Radio className="w-4 h-4 animate-pulse shrink-0 text-brand-600" />
                   <span className="font-medium">
-                    Kênh trực tuyến: Đang đợi tín hiệu quét mặt từ Kiosk...
+                    Kênh trực tuyến: Đang đợi tín hiệu quét mặt từ Kiosk... (Màn hình tự động cập nhật ngay)
                   </span>
                 </div>
               </div>

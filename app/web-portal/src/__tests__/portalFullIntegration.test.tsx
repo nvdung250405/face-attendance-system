@@ -302,15 +302,14 @@ describe('TASK-WEB-021: Tích Hợp Toàn Trình Giao Diện Cổng Web (BLD-WEB
       })
     })
 
-    it('chặn điều hướng khi tài khoản có cờ mustChangePassword và bắt buộc vào /force-change-password', async () => {
+    it('cho phép người dùng vào thẳng /employee/dashboard mà không bị chặn điều hướng (DD-WEB-018)', async () => {
       setupUserSession(mockForcedUser)
 
-      // Người dùng cố vào /employee/dashboard
+      // Người dùng vào /employee/dashboard
       renderAppAt('/employee/dashboard')
 
       await waitFor(() => {
-        expect(screen.getByTestId('force-change-password-view')).toBeTruthy()
-        expect(screen.getByText('Yêu Cầu Đổi Mật Khẩu Bắt Buộc')).toBeTruthy()
+        expect(screen.getByTestId('employee-dashboard-view')).toBeTruthy()
       })
     })
 
@@ -464,11 +463,10 @@ describe('TASK-WEB-021: Tích Hợp Toàn Trình Giao Diện Cổng Web (BLD-WEB
       expect(signBtn.hasAttribute('disabled')).toBe(false)
       fireEvent.click(signBtn)
 
-      // Bước 2: Hiển thị OTP 6 số và mã QR kích thước chuẩn
+      // Bước 2: Hiển thị OTP 6 số kích thước chuẩn kèm hướng dẫn Kiosk
       await waitFor(() => {
         expect(screen.getByTestId('otp-display-box')).toBeTruthy()
         expect(screen.getByText(/849\s*201/)).toBeTruthy()
-        expect(screen.getByTestId('qr-code-container')).toBeTruthy()
       })
 
       // Mô phỏng sự kiện STOMP Kiosk quét mặt thành công (ENROLLMENT_SUCCESS)
