@@ -13,6 +13,7 @@ import type {
   AuditLogItem,
   AuditLogQueryCriteria,
   KioskItemResponse,
+  KioskStatus,
   RegisterKioskRequest,
   RegisterKioskResponse,
   DpoConsentAuditItem,
@@ -31,6 +32,76 @@ export interface UpdateKioskRequest {
   location?: string
   isActive?: boolean
   resetSecretToken?: boolean
+}
+
+export function adaptKioskItem(raw: unknown, index = 0): KioskItemResponse {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: index + 1,
+      kioskId: `KIOSK-${index + 1}`,
+      name: `Trạm Kiosk ${index + 1}`,
+      location: '—',
+      status: 'OFFLINE',
+    }
+  }
+
+  const item = raw as Record<string, unknown>
+  const kioskId = String(item.kioskId || item.id || `KIOSK-${index + 1}`)
+
+  const rawLoc = String(item.locationName || item.location || item.name || '')
+  let name = String(item.name || '')
+  let location = String(item.location || '')
+
+  if (!name && !location && rawLoc) {
+    if (rawLoc.includes(' - ')) {
+      const parts = rawLoc.split(' - ')
+      name = parts[0].trim()
+      location = parts.slice(1).join(' - ').trim()
+    } else {
+      name = rawLoc
+      location = rawLoc
+    }
+  } else if (!name && rawLoc) {
+    name = rawLoc
+  } else if (!location && rawLoc) {
+    location = rawLoc
+  }
+
+  if (!name) name = `Trạm ${kioskId}`
+  if (!location) location = 'Khu vực chưa cấu hình'
+
+  const status: KioskStatus = (() => {
+    if (typeof item.status === 'string' && ['ONLINE', 'OFFLINE', 'WARNING'].includes(item.status)) {
+      return item.status as KioskStatus
+    }
+    const isActive = item.isActive !== false
+    const isOnline = Boolean(item.isOnline)
+    const lastPing = item.lastPingAt ? new Date(String(item.lastPingAt)).getTime() : 0
+    const now = Date.now()
+    const isStale = !lastPing || (now - lastPing > 5 * 60 * 1000)
+
+    if (!isActive) {
+      return 'OFFLINE'
+    }
+    if (isOnline && !isStale) {
+      return 'ONLINE'
+    }
+    return 'WARNING'
+  })()
+
+  return {
+    id: (item.id as number | string) || kioskId,
+    kioskId,
+    name,
+    location,
+    status,
+    lastPingAt: item.lastPingAt ? String(item.lastPingAt) : undefined,
+    ipAddress: item.ipAddress ? String(item.ipAddress) : undefined,
+    appVersion: item.appVersion ? String(item.appVersion) : undefined,
+    isActive: item.isActive !== false,
+    isOnline: Boolean(item.isOnline),
+    locationName: rawLoc || undefined,
+  }
 }
 
 export class ComplianceAdminService {
@@ -56,11 +127,13 @@ export class ComplianceAdminService {
     try {
       const response = await apiClient.get<ApiResponse<unknown>>('/api/v1/admin/kiosks')
       const raw = response.data.data
-      if (Array.isArray(raw)) return raw as KioskItemResponse[]
-      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        return (raw as { content: KioskItemResponse[] }).content
+      let list: unknown[] = []
+      if (Array.isArray(raw)) {
+        list = raw
+      } else if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
+        list = (raw as { content: unknown[] }).content
       }
-      return []
+      return list.map((item, idx) => adaptKioskItem(item, idx))
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -72,11 +145,21 @@ export class ComplianceAdminService {
    */
   async registerKiosk(data: RegisterKioskRequest): Promise<RegisterKioskResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<RegisterKioskResponse>>(
+      const untyped = data as unknown as Record<string, unknown>
+      const payload = {
+        id: data.kioskId || untyped.id,
+        locationName: data.name && data.location ? `${data.name} - ${data.location}` : (data.location || data.name),
+      }
+      const response = await apiClient.post<ApiResponse<Record<string, unknown>>>(
         '/api/v1/admin/kiosks',
-        data
+        payload
       )
-      return response.data.data
+      const resData = response.data.data
+      const secretToken = String(resData.secretToken || '')
+      return {
+        secretToken,
+        kiosk: adaptKioskItem(resData.kiosk || resData, 0),
+      }
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -90,11 +173,30 @@ export class ComplianceAdminService {
     data: UpdateKioskRequest
   ): Promise<KioskItemResponse & { secretToken?: string }> {
     try {
-      const response = await apiClient.patch<ApiResponse<KioskItemResponse & { secretToken?: string }>>(
+      if (data.resetSecretToken) {
+        const rotateRes = await apiClient.post<ApiResponse<Record<string, unknown>>>(
+          `/api/v1/admin/kiosks/${id}/rotate-secret`
+        )
+        const rotData = rotateRes.data.data
+        return {
+          ...adaptKioskItem(rotData),
+          secretToken: String(rotData.secretToken || ''),
+        }
+      }
+
+      const payload: Record<string, unknown> = {}
+      if (data.location || data.name) {
+        payload.locationName = data.name && data.location ? `${data.name} - ${data.location}` : (data.location || data.name)
+      }
+      if (data.isActive !== undefined) {
+        payload.isActive = data.isActive
+      }
+
+      const response = await apiClient.patch<ApiResponse<unknown>>(
         `/api/v1/admin/kiosks/${id}`,
-        data
+        payload
       )
-      return response.data.data
+      return adaptKioskItem(response.data.data)
     } catch (error) {
       throw normalizeApiError(error)
     }

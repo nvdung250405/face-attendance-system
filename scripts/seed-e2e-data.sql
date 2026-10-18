@@ -21,7 +21,7 @@ VALUES
         'Sảnh Chính Tòa Nhà A - Cửa Vào 01',
         crypt('kiosk-secret-lobby-01', gen_salt('bf', 10)),
         TRUE,
-        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP - INTERVAL '30 seconds',
         CURRENT_TIMESTAMP - INTERVAL '60 days'
     ),
     (
@@ -29,7 +29,7 @@ VALUES
         'Cổng Phụ Tòa Nhà B - Cửa Vào 02',
         crypt('kiosk-secret-lobby-02', gen_salt('bf', 10)),
         TRUE,
-        CURRENT_TIMESTAMP - INTERVAL '3 minutes',
+        CURRENT_TIMESTAMP - INTERVAL '7 minutes',
         CURRENT_TIMESTAMP - INTERVAL '45 days'
     ),
     (
