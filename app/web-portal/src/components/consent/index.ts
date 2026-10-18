@@ -4,4 +4,3 @@
 
 export * from './ConsentModal'
 export * from './ConsentWithdrawalModal'
-export * from './QrCodeDisplay'

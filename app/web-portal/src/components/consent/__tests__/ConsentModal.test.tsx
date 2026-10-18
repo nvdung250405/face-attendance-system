@@ -6,7 +6,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { ConsentModal } from '../ConsentModal'
-import { QrCodeDisplay } from '../QrCodeDisplay'
 import { consentService } from '@/services/consentService'
 import { safeSessionStorage, STORAGE_KEYS } from '@/services/storage'
 import { useAuthStore } from '@/store/authStore'
@@ -83,17 +82,7 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
     safeSessionStorage.clear()
   })
 
-  describe('1. Render cơ bản & QrCodeDisplay', () => {
-    it('QrCodeDisplay hiển thị SVG ma trận 200x200px chuẩn xác', () => {
-      render(<QrCodeDisplay value="otp:839201" size={200} />)
-      const container = screen.getByTestId('qr-code-container')
-      expect(container).toBeTruthy()
-      const svg = container.querySelector('svg')
-      expect(svg).toBeTruthy()
-      expect(svg?.getAttribute('width')).toBe('200')
-      expect(svg?.getAttribute('height')).toBe('200')
-    })
-
+  describe('1. Render cơ bản', () => {
     it('không hiển thị khi isOpen = false', () => {
       render(<ConsentModal isOpen={false} onClose={vi.fn()} />)
       expect(screen.queryByRole('dialog')).toBeNull()
@@ -177,7 +166,7 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
     })
   })
 
-  describe('3. Bước 2: Hiển thị OTP, Mã QR & Sao chép Clipboard (DD-WEB-016, TST-WEB-014)', () => {
+  describe('3. Bước 2: Hiển thị OTP 48px & Sao chép Clipboard (DD-WEB-016, TST-WEB-014)', () => {
     it('tự động vào thẳng bước OTP nếu đã có phiên fas_consent_session hợp lệ trong SessionStorage', () => {
       consentService.storeConsentSession({
         consentSigned: true,
@@ -191,7 +180,8 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
 
       // Không hiển thị bước điều khoản nữa, nhảy thẳng vào OTP
       expect(screen.getByTestId('otp-display-box').textContent).toContain('654 321')
-      expect(screen.getByTestId('qr-code-container')).toBeTruthy()
+      expect(screen.getByTestId('copy-otp-btn')).toBeTruthy()
+      expect(screen.getByText(/3 bước hoàn tất kích hoạt tại máy trạm Kiosk/i)).toBeTruthy()
       expect(screen.getByText(/Kiosk Tầng 1/i)).toBeTruthy()
     })
 

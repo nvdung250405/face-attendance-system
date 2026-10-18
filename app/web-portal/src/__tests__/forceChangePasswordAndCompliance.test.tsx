@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { ForceChangePasswordView } from '@/views/auth/ForceChangePasswordView'
+import { ChangePasswordModal } from '@/components/account/ChangePasswordModal'
 import { PinManagementModal } from '@/components/account/PinManagementModal'
 import { TopHeader } from '@/components/layout/TopHeader'
 import { EmployeeConsentView } from '@/views/employee/EmployeeConsentView'
@@ -23,7 +23,6 @@ import { AdminAuditLogView } from '@/views/admin/AdminAuditLogView'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { credentialService } from '@/services/credentialService'
-import { logoutService } from '@/services/logoutService'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import type { UserProfile, KioskItemResponse } from '@/types'
 
@@ -56,10 +55,11 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
   })
 
   // ────────────────────────────────────────────────────────────────────────────
-  // PHẦN 1: ROUTE GUARD BLOCKING VỚI CỜ mustChangePassword === true (BLD-WEB-024)
   // ────────────────────────────────────────────────────────────────────────────
-  describe('1. Blocking Route Guard với mustChangePassword (BLD-WEB-024, TASK-WEB-029)', () => {
-    it('Chuyển hướng bắt buộc sang /force-change-password khi user.mustChangePassword === true', () => {
+  // PHẦN 1: ROUTE GUARD THEO DD-WEB-018 & FR-WEB-009 (KHÔNG CHẶN ĐIỀU HƯỚNG)
+  // ────────────────────────────────────────────────────────────────────────────
+  describe('1. Không chặn điều hướng với mustChangePassword (DD-WEB-018, FR-WEB-009)', () => {
+    it('Cho phép truy cập bình thường vào dashboard nhân viên ngay cả khi user.mustChangePassword === true', () => {
       const mockUser: UserProfile = {
         id: 10,
         employeeCode: 'NV-NEW-001',
@@ -87,17 +87,11 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/force-change-password"
-              element={<div data-testid="force-change-password-target">Trang Đổi Mật Khẩu Bắt Buộc</div>}
-            />
           </Routes>
         </MemoryRouter>
       )
 
-      // Không vào được dashboard nhân viên, bị giữ tại trang đổi mật khẩu
-      expect(screen.queryByTestId('employee-dashboard-content')).toBeNull()
-      expect(screen.getByTestId('force-change-password-target')).toBeTruthy()
+      expect(screen.getByTestId('employee-dashboard-content')).toBeTruthy()
     })
 
     it('Cho phép truy cập bình thường khi user.mustChangePassword không bật hoặc false', () => {
@@ -128,163 +122,97 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/force-change-password"
-              element={<div data-testid="force-change-password-target">Trang Đổi Mật Khẩu Bắt Buộc</div>}
-            />
           </Routes>
         </MemoryRouter>
       )
 
       expect(screen.getByTestId('employee-dashboard-content')).toBeTruthy()
-      expect(screen.queryByTestId('force-change-password-target')).toBeNull()
     })
   })
 
   // ────────────────────────────────────────────────────────────────────────────
-  // PHẦN 2: MÀN HÌNH FORCE CHANGE PASSWORD (ForceChangePasswordView.tsx)
+  // PHẦN 2: HỘP THOẠI ĐỔI MẬT KHẨU TỰ NGUYỆN (MOD-WEB-01, ChangePasswordModal.tsx)
   // ────────────────────────────────────────────────────────────────────────────
-  describe('2. Màn hình ForceChangePasswordView (UXD-WEB-008, BLD-WEB-024)', () => {
-    it('Render giao diện blocking, không có nút Hủy/Đóng modal, hiển thị thông tin cảnh báo', () => {
-      const mockUser: UserProfile = {
-        id: 12,
-        employeeCode: 'NV-RESET-003',
-        fullName: 'Lê Thị Tạm',
-        email: 'tam.le@company.com',
-        role: 'EMPLOYEE',
-        status: 'ACTIVE',
-        department: 'Khối Vận hành',
-        mustChangePassword: true,
-      }
+  describe('2. Hộp thoại Đổi mật khẩu tự nguyện ChangePasswordModal (UXD-WEB-008, MOD-WEB-01)', () => {
+    it('Render giao diện dialog, có nút Đóng (X), hiển thị cảnh báo thu hồi phiên', () => {
+      render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} />)
 
-      useAuthStore.setState({
-        isAuthenticated: true,
-        user: mockUser,
-      })
-
-      render(
-        <MemoryRouter initialEntries={['/force-change-password']}>
-          <ForceChangePasswordView />
-        </MemoryRouter>
-      )
-
-      expect(screen.getByTestId('force-change-password-view')).toBeTruthy()
-      expect(screen.getByText('Yêu Cầu Đổi Mật Khẩu Bắt Buộc')).toBeTruthy()
-      expect(screen.getByText(/Lê Thị Tạm/)).toBeTruthy()
-      expect(screen.getByText(/NV-RESET-003/)).toBeTruthy()
-
-      // Không có bất kỳ nút đóng (X) hoặc Hủy bỏ nào
-      expect(screen.queryByRole('button', { name: /hủy|đóng/i })).toBeNull()
-      // Có nút Đăng xuất và nút Cập nhật
-      expect(screen.getByTestId('force-change-password-submit-btn')).toBeTruthy()
-      expect(screen.getByTestId('force-change-password-logout-btn')).toBeTruthy()
+      expect(screen.getByTestId('change-password-modal')).toBeTruthy()
+      expect(screen.getByText('Đổi mật khẩu tài khoản')).toBeTruthy()
+      expect(screen.getByText(/Lưu ý thu hồi phiên/i)).toBeTruthy()
+      expect(screen.getByRole('button', { name: /đóng/i })).toBeTruthy()
+      expect(screen.getByTestId('btn-submit-change-password')).toBeTruthy()
     })
 
     it('Xác thực validation lỗi: mật khẩu cũ trống, độ dài ngắn, trùng mật khẩu cũ, xác nhận không khớp', async () => {
-      useAuthStore.setState({
-        isAuthenticated: true,
-        user: {
-          id: 12,
-          employeeCode: 'NV-001',
-          fullName: 'Test User',
-          email: 'test@company.com',
-          role: 'EMPLOYEE',
-          status: 'ACTIVE',
-          department: 'Phòng Kỹ thuật',
-          mustChangePassword: true,
-        },
-      })
-
-      render(
-        <MemoryRouter>
-          <ForceChangePasswordView />
-        </MemoryRouter>
-      )
-
-      const submitBtn = screen.getByTestId('force-change-password-submit-btn')
+      const { container } = render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} />)
+      const form = container.querySelector('form')!
 
       // 1. Trống mật khẩu cũ
-      fireEvent.click(submitBtn)
-      expect(screen.getByTestId('force-change-password-error').textContent).toContain(
-        'Vui lòng nhập mật khẩu hiện tại hoặc mật khẩu tạm.'
+      fireEvent.submit(form)
+      expect(screen.getByTestId('change-password-error').textContent).toContain(
+        'Vui lòng nhập mật khẩu hiện tại.'
       )
 
       // 2. Mật khẩu mới quá ngắn (< 8 ký tự)
-      fireEvent.change(screen.getByTestId('force-old-password-input'), {
+      fireEvent.change(screen.getByTestId('input-old-password'), {
         target: { value: 'Temp123456!' },
       })
-      fireEvent.change(screen.getByTestId('force-new-password-input'), {
+      fireEvent.change(screen.getByTestId('input-new-password'), {
         target: { value: '123' },
       })
-      fireEvent.click(submitBtn)
-      expect(screen.getByTestId('force-change-password-error').textContent).toContain(
+      fireEvent.submit(form)
+      expect(screen.getByTestId('change-password-error').textContent).toContain(
         'Mật khẩu mới phải có tối thiểu 8 ký tự.'
       )
 
       // 3. Trùng mật khẩu cũ
-      fireEvent.change(screen.getByTestId('force-new-password-input'), {
+      fireEvent.change(screen.getByTestId('input-new-password'), {
         target: { value: 'Temp123456!' },
       })
-      fireEvent.change(screen.getByTestId('force-confirm-password-input'), {
+      fireEvent.change(screen.getByTestId('input-confirm-password'), {
         target: { value: 'Temp123456!' },
       })
-      fireEvent.click(submitBtn)
-      expect(screen.getByTestId('force-change-password-error').textContent).toContain(
+      fireEvent.submit(form)
+      expect(screen.getByTestId('change-password-error').textContent).toContain(
         'Mật khẩu mới không được trùng với mật khẩu hiện tại.'
       )
 
       // 4. Mật khẩu xác nhận không khớp
-      fireEvent.change(screen.getByTestId('force-new-password-input'), {
+      fireEvent.change(screen.getByTestId('input-new-password'), {
         target: { value: 'NewSecurePass@2026' },
       })
-      fireEvent.change(screen.getByTestId('force-confirm-password-input'), {
+      fireEvent.change(screen.getByTestId('input-confirm-password'), {
         target: { value: 'DifferentPass@2026' },
       })
-      fireEvent.click(submitBtn)
-      expect(screen.getByTestId('force-change-password-error').textContent).toContain(
+      fireEvent.submit(form)
+      expect(screen.getByTestId('change-password-error').textContent).toContain(
         'Xác nhận mật khẩu mới không khớp.'
       )
     })
 
-    it('Đổi mật khẩu thành công: gọi credentialService.changePassword và xóa cờ mustChangePassword trong authStore', async () => {
+    it('Đổi mật khẩu thành công: gọi credentialService.changePassword và hiển thị thông báo thành công', async () => {
       const mockChangePassword = vi
         .spyOn(credentialService, 'changePassword')
         .mockResolvedValueOnce({
-          message: 'Đổi mật khẩu thành công.',
+          message: 'Đổi mật khẩu thành công! Các phiên đăng nhập trên thiết bị khác đã được thu hồi.',
           sessionsRevoked: true,
         })
+      const onSuccessMock = vi.fn()
 
-      useAuthStore.setState({
-        isAuthenticated: true,
-        user: {
-          id: 12,
-          employeeCode: 'NV-001',
-          fullName: 'Test User',
-          email: 'test@company.com',
-          role: 'EMPLOYEE',
-          status: 'ACTIVE',
-          department: 'Phòng Kỹ thuật',
-          mustChangePassword: true,
-        },
-      })
+      render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSuccess={onSuccessMock} />)
 
-      render(
-        <MemoryRouter>
-          <ForceChangePasswordView />
-        </MemoryRouter>
-      )
-
-      fireEvent.change(screen.getByTestId('force-old-password-input'), {
+      fireEvent.change(screen.getByTestId('input-old-password'), {
         target: { value: 'TempOldSecret#123' },
       })
-      fireEvent.change(screen.getByTestId('force-new-password-input'), {
+      fireEvent.change(screen.getByTestId('input-new-password'), {
         target: { value: 'NewSuperPass#2026' },
       })
-      fireEvent.change(screen.getByTestId('force-confirm-password-input'), {
+      fireEvent.change(screen.getByTestId('input-confirm-password'), {
         target: { value: 'NewSuperPass#2026' },
       })
 
-      fireEvent.click(screen.getByTestId('force-change-password-submit-btn'))
+      fireEvent.click(screen.getByTestId('btn-submit-change-password'))
 
       await waitFor(() => {
         expect(mockChangePassword).toHaveBeenCalledWith({
@@ -293,40 +221,8 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
         })
       })
 
-      expect(screen.getByTestId('force-change-password-success')).toBeTruthy()
-
-      // Kiểm tra store đã cập nhật mustChangePassword thành false
-      expect(useAuthStore.getState().user?.mustChangePassword).toBe(false)
-    })
-
-    it('Nút đăng xuất gọi logoutService.logout', async () => {
-      const mockLogout = vi.spyOn(logoutService, 'logout').mockResolvedValueOnce()
-
-      useAuthStore.setState({
-        isAuthenticated: true,
-        user: {
-          id: 12,
-          employeeCode: 'NV-001',
-          fullName: 'Test User',
-          email: 'test@company.com',
-          role: 'EMPLOYEE',
-          status: 'ACTIVE',
-          department: 'Phòng Kỹ thuật',
-          mustChangePassword: true,
-        },
-      })
-
-      render(
-        <MemoryRouter>
-          <ForceChangePasswordView />
-        </MemoryRouter>
-      )
-
-      fireEvent.click(screen.getByTestId('force-change-password-logout-btn'))
-
-      await waitFor(() => {
-        expect(mockLogout).toHaveBeenCalledTimes(1)
-      })
+      expect(screen.getByTestId('change-password-success')).toBeTruthy()
+      expect(onSuccessMock).toHaveBeenCalledTimes(1)
     })
   })
 

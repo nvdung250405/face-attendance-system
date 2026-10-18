@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { ShieldCheck, Sparkles, KeyRound, QrCode } from 'lucide-react'
+import { ShieldCheck, Sparkles, KeyRound } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal } from '@/components/consent'
 import { PersonalAttendanceCalendar } from '@/components/calendar'
@@ -115,7 +115,7 @@ export const EmployeeDashboardView: React.FC = () => {
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Dữ liệu khuôn mặt
               </span>
-              <QrCode className="w-4 h-4 text-brand-600" />
+              <KeyRound className="w-4 h-4 text-brand-600" />
             </div>
             <div className="text-sm font-bold text-slate-900">
               {user?.hasBiometric ? (
@@ -132,7 +132,7 @@ export const EmployeeDashboardView: React.FC = () => {
                 onClick={() => setIsConsentModalOpen(true)}
                 className="text-xs text-brand-600 hover:text-brand-700 font-medium underline inline-block pt-1"
               >
-                Mở lại mã OTP / QR kích hoạt
+                Mở lại mã OTP kích hoạt
               </button>
             )}
           </div>
