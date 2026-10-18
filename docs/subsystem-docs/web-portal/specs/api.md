@@ -1,6 +1,6 @@
 ---
 title: Web Portal API Specifications & Design
-version: 2.0
+version: 2.1
 status: Approved
 owner: Web Technical Lead & Frontend Architect
 type: spec
@@ -14,7 +14,7 @@ updated: 2026-10-18
 
 | ID | Phát biểu Giao diện (Statement) | Phân loại | Mức Ưu tiên | Nguồn Tham chiếu | Tiêu chí Nghiệm thu (Acceptance Criteria) | Trạng thái |
 | :--- | :--- | :--- | :--- | :---: | :--- | :---: |
-| `API-WEB-001` | Giao diện REST xác thực đăng nhập qua `POST /api/v1/auth/login`. | REST | Must | `API-BE-001`, `SRS-001`, `ARC-003` | Nhận Access/Refresh Token và thông tin user; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-001` | Giao diện REST xác thực đăng nhập qua `POST /api/v1/auth/login`. | REST | Must | `API-BE-001`, `SRS-001`, `ARC-003` | Nhận Access/Refresh Token và thông tin user (hỗ trợ các vai trò HR_MANAGER, EMPLOYEE, ADMIN, DPO); SLA $\le 500\text{ ms}$. | Approved |
 | `API-WEB-002` | Giao diện REST làm mới access token qua `POST /api/v1/auth/refresh`. | REST | Must | `API-BE-002`, `SRS-001`, `ARC-003` | Đổi Refresh Token lấy Access Token mới trong suốt; SLA $\le 300\text{ ms}$. | Approved |
 | `API-WEB-003` | Giao diện REST ký cam kết sinh trắc qua `POST /api/v1/employee/consent`. | REST | Must | `API-BE-010`, `SRS-001`, `ARC-003` | Nhận mã OTP 6 số và mã QR kích hoạt tại Kiosk; SLA $\le 500\text{ ms}$. | Approved |
 | `API-WEB-004` | Giao diện REST tra cứu điểm danh toàn công ty qua `GET /api/v1/admin/attendance`. | REST | Must | `API-BE-008`, `SRS-003`, `ARC-003` | Phân trang, lọc theo ngày/phòng ban/trạng thái; SLA $\le 800\text{ ms}$. | Approved |
@@ -34,7 +34,7 @@ updated: 2026-10-18
 | `API-WEB-018` | Giao diện REST kết xuất báo cáo bảng công qua `GET /api/v1/admin/reports/export`. | REST | Must | `API-BE-035`, `FR-WEB-006` | Nhận file `.xlsx` an toàn (đã escape công thức) và tải xuống trong $\le 3\text{ giây}$ cho 1,000 nhân sự. | Approved |
 | `API-WEB-019` | Giao diện REST tra cứu thông tin người dùng và trạng thái sinh trắc qua `GET /api/v1/auth/me`. | REST | Must | `API-BE-046`, `FR-WEB-001` | Đồng bộ phiên, hiển thị TopHeader và hỗ trợ Consent Guard với các cờ `hasBiometric`, `hasPin`; SLA $\le 300\text{ ms}$. | Approved |
 | `API-WEB-020` | Giao diện REST tra cứu thống kê KPI điểm danh thời gian thực qua `GET /api/v1/admin/attendance/stats`. | REST | Must | `API-BE-047`, `DATA-WEB-004` | Cung cấp 5 chỉ số KPI (`totalEmployees`, `presentCount`, `onTimeCount`, `lateCount`, `absentCount`) cho Admin Dashboard; SLA $\le 400\text{ ms}$. | Approved |
-| `API-WEB-021` | Giao diện REST điều chỉnh bản ghi điểm danh thủ công qua `PATCH /api/v1/admin/attendance/{id}`. | REST | Must | `API-BE-048`, `FR-WEB-002` | HR/Admin điều chỉnh giờ công/trạng thái kèm lý do giải trình; SLA $\le 500\text{ ms}$. | Approved |
+| `API-WEB-021` | Giao diện REST điều chỉnh bản ghi điểm danh thủ công qua `PATCH /api/v1/admin/attendance/{id}`. | REST | Must | `API-BE-048`, `FR-SYS-010` | HR/Admin điều chỉnh giờ công/trạng thái kèm lý do giải trình; SLA $\le 500\text{ ms}$. | Approved |
 
 ---
 

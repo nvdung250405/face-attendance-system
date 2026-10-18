@@ -1,11 +1,11 @@
 ---
 title: Web Portal Client Data Specifications & Design
-version: 2.0
+version: 2.1
 status: Approved
 owner: Web Technical Lead & Frontend Architect
 type: spec
 scope: WEB
-updated: 2026-10-08
+updated: 2026-10-18
 ---
 
 # ĐẶC TẢ & THIẾT KẾ DỮ LIỆU CỤC BỘ PHÂN HỆ CỔNG WEB QUẢN TRỊ & NGƯỜI DÙNG (`web-portal`)
@@ -14,7 +14,7 @@ updated: 2026-10-08
 
 | ID | Phát biểu Thực thể Lưu trữ (Statement) | Phân loại | Mức Ưu tiên | Nguồn Tham chiếu | Tiêu chí Nghiệm thu (Acceptance Criteria) | Trạng thái |
 | :--- | :--- | :--- | :---: | :---: | :--- | :---: |
-| `DATA-WEB-001` | Quản lý phiên xác thực `auth_session` trong Browser `LocalStorage` bao gồm cặp token, mốc hết hạn và hồ sơ người dùng. | Storage | Must | `SRS-001`, `ARC-003` | Token & user info lưu an toàn, tự xóa khi logout hoặc vô hiệu hóa; fallback RAM khi lỗi Quota. | Approved |
+| `DATA-WEB-001` | Quản lý phiên xác thực `auth_session` trong Browser `LocalStorage` bao gồm cặp token, mốc hết hạn và hồ sơ người dùng. | Storage | Must | `SRS-001`, `ARC-003` | Token & user info lưu an toàn, tự xóa khi logout hoặc vô hiệu hóa; fallback RAM khi lỗi Quota; hỗ trợ vai trò `DPO`. | Approved |
 | `DATA-WEB-002` | Quản lý tùy chọn giao diện `ui_preferences` trong Browser `LocalStorage` bao gồm trạng thái sidebar và kích thước trang. | Storage | Should | `SRS-003` | Trạng thái thu gọn menu và bộ lọc bảng lưu bền vững qua các phiên làm việc của người dùng. | Approved |
 | `DATA-WEB-003` | Quản lý trạng thái ký cam kết tạm `consent_flow` trong Browser `SessionStorage` bao gồm điều khoản, OTP và mã QR. | Storage | Must | `SRS-001`, `ARC-003` | Dữ liệu phiên ký cam kết tự động xóa ngay khi đóng tab hoặc kích hoạt xong tại trạm Kiosk. | Approved |
 | `DATA-WEB-004` | Quản lý bộ nhớ đệm truy vấn `query_cache` qua In-Memory TanStack Query với chính sách staleTime và invalidation linh hoạt. | Cache | Must | `SRS-003`, `ARC-003` | Dữ liệu live staleTime $0\text{ ms}$, cache tự động cập nhật khi có STOMP event chèn vào mảng. | Approved |
@@ -36,7 +36,7 @@ updated: 2026-10-08
   | `refreshToken` | `string` | Có | Chuỗi UUID Refresh Token (`d8f4c2e1-9b7a-4c3d-8e5f-1a2b3c4d5e6f`). |
   | `tokenType` | `string` | Có | Cố định là `Bearer`. |
   | `expiresAt` | `number` | Có | Mốc Unix Timestamp (milliseconds) thời điểm hết hạn access token. |
-  | `user` | `object` | Có | Thông tin định danh: `id` (`int64`), `employeeCode` (`string`), `fullName` (`string`), `email` (`string`), `role` (`HR_MANAGER` \| `EMPLOYEE` \| `ADMIN`), `status` (`PENDING_CONSENT` \| `ACTIVE` \| `INACTIVE`), `department` (`string`). |
+  | `user` | `object` | Có | Thông tin định danh: `id` (`int64`), `employeeCode` (`string`), `fullName` (`string`), `email` (`string`), `role` (`HR_MANAGER` \| `EMPLOYEE` \| `ADMIN` \| `DPO`), `status` (`PENDING_CONSENT` \| `ACTIVE` \| `INACTIVE`), `department` (`string`), `hasBiometric` (`boolean`), `hasPin` (`boolean`). |
 
 ---
 
@@ -77,7 +77,7 @@ export interface UserProfile {
   readonly department: string;
   readonly hasBiometric: boolean;
   readonly hasPin: boolean;
-  readonly createdAt: string;
+  readonly createdAt?: string;
 }
 
 export interface AuthSession {
@@ -88,7 +88,7 @@ export interface AuthSession {
   user: UserProfile;
 }
 
-// 2. Điểm danh và Truy vấn
+// 2. Điểm danh và Thống kê
 export type VerificationMethod = 'VERIFICATION_FACE' | 'VERIFICATION_PIN';
 export type PunchType = 'CHECK_IN' | 'CHECK_OUT';
 export type AttendanceStatus = 'ON_TIME' | 'LATE' | 'EARLY_LEAVE';
@@ -117,6 +117,52 @@ export interface AttendanceQueryParams {
   keyword?: string;
 }
 
+export interface AttendanceStats {
+  presentCount: number;
+  onTimeCount: number;
+  lateCount: number;
+  totalEmployees?: number;
+  absentCount?: number;
+}
+
+export interface AdjustAttendanceRequest {
+  punchTimestamp?: string;
+  status?: AttendanceStatus;
+  lateMinutes?: number;
+  reason: string;
+}
+
+export type DayAttendanceStatus =
+  | 'ON_TIME'
+  | 'LATE'
+  | 'EARLY_LEAVE'
+  | 'ABSENT'
+  | 'REST_DAY'
+  | 'HOLIDAY'
+  | 'EXCUSE_PENDING';
+
+export interface PersonalAttendanceDayRecord {
+  date: string; // YYYY-MM-DD
+  dayOfWeek?: string;
+  checkIn?: string | null;
+  checkOut?: string | null;
+  status: DayAttendanceStatus | AttendanceStatus | string;
+  lateMinutes?: number;
+  workingHours?: number;
+  shiftCode?: string;
+  verificationMethod?: VerificationMethod;
+  kioskId?: string;
+}
+
+export interface PersonalAttendanceResponse {
+  month: number;
+  year: number;
+  totalWorkDays: number;
+  totalOnTimeDays: number;
+  totalLateDays: number;
+  records: PersonalAttendanceDayRecord[];
+}
+
 export interface PaginatedResult<T> {
   content: T[];
   page: number;
@@ -127,7 +173,115 @@ export interface PaginatedResult<T> {
   last: boolean;
 }
 
-// 3. Thông báo và Kỳ công
+// 3. Quản lý Trạm Kiosk
+export type KioskStatus = 'ONLINE' | 'OFFLINE' | 'WARNING';
+
+export interface KioskItemResponse {
+  readonly id: number | string;
+  readonly kioskId: string;
+  readonly name: string;
+  readonly location: string;
+  readonly status: KioskStatus;
+  readonly lastPingAt?: string;
+  readonly ipAddress?: string;
+  readonly appVersion?: string;
+  readonly isActive?: boolean;
+}
+
+export interface RegisterKioskRequest {
+  kioskId: string;
+  name: string;
+  location: string;
+}
+
+export interface RegisterKioskResponse {
+  kiosk: KioskItemResponse;
+  secretToken: string; // Chỉ hiển thị một lần trong RAM
+}
+
+// 4. Ca làm việc & Phân ca
+export interface ShiftItem {
+  readonly id: number;
+  readonly shiftCode: string;
+  readonly name: string;
+  readonly startTime: string; // HH:mm
+  readonly endTime: string;   // HH:mm
+  readonly gracePeriodMinutes: number;
+  readonly isActive: boolean;
+}
+
+export interface CreateShiftRequest {
+  shiftCode: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  gracePeriodMinutes?: number;
+}
+
+export interface EmployeeShiftAssignment {
+  readonly id: number;
+  readonly employeeId: number;
+  readonly employeeCode: string;
+  readonly fullName: string;
+  readonly shiftId: number;
+  readonly shiftCode: string;
+  readonly shiftName: string;
+  readonly effectiveStartDate: string; // YYYY-MM-DD
+  readonly effectiveEndDate: string;   // YYYY-MM-DD;
+}
+
+export interface OverlapConflictInfo {
+  readonly conflictingAssignmentId?: number;
+  readonly suggestedStartDate?: string;
+  readonly suggestedEndDate?: string;
+  readonly message?: string;
+}
+
+// 5. Kỳ công Chốt & Mở lại
+export type PayrollPeriodStatus = 'OPEN' | 'LOCKED';
+
+export interface PayrollPeriod {
+  readonly id: number;
+  readonly periodCode: string; // YYYY-MM
+  readonly status: PayrollPeriodStatus;
+  readonly lockedAt?: string;
+  readonly lockedBy?: string;
+}
+
+export interface PayrollPeriodResponse {
+  readonly id: number;
+  readonly periodYear: number;
+  readonly periodMonth: number;
+  readonly status: PayrollPeriodStatus;
+  readonly lockedAt?: string | null;
+  readonly unlockReason?: string | null;
+}
+
+// 6. Quyền Chủ thể Dữ liệu (DSR) & Tuân thủ NĐ 13/2023
+export type DataRequestType = 'ACCESS' | 'RECTIFICATION' | 'ERASURE' | 'EXPORT';
+export type DataRequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
+
+export interface DataSubjectRequestItem {
+  readonly id: number;
+  readonly employeeId: number;
+  readonly employeeCode?: string;
+  readonly fullName?: string;
+  readonly requestType: DataRequestType;
+  readonly details: string;
+  readonly status: DataRequestStatus;
+  readonly submittedAt: string;
+}
+
+export interface AuditLogItem {
+  readonly id: number;
+  readonly action: string;
+  readonly actorId: number;
+  readonly actorEmail: string;
+  readonly targetResource: string;
+  readonly createdAt: string;
+}
+
+// 7. Thông báo trong Ứng dụng
 export interface NotificationItem {
   readonly id: number;
   readonly eventType: string;
@@ -135,14 +289,6 @@ export interface NotificationItem {
   readonly message: string;
   readonly isRead: boolean;
   readonly createdAt: string;
-}
-
-export interface PayrollPeriod {
-  readonly id: number;
-  readonly periodCode: string; // YYYY-MM
-  readonly status: 'OPEN' | 'LOCKED';
-  readonly lockedAt?: string;
-  readonly lockedBy?: string;
 }
 ```
 
