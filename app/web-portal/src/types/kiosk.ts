@@ -5,7 +5,7 @@
 export type KioskStatus = 'ONLINE' | 'OFFLINE' | 'WARNING'
 
 export interface KioskItemResponse {
-  readonly id: number
+  readonly id: number | string
   readonly kioskId: string
   readonly name: string
   readonly location: string
@@ -13,6 +13,9 @@ export interface KioskItemResponse {
   readonly lastPingAt?: string
   readonly ipAddress?: string
   readonly appVersion?: string
+  readonly isActive?: boolean
+  readonly isOnline?: boolean
+  readonly locationName?: string
 }
 
 export interface RegisterKioskRequest {
