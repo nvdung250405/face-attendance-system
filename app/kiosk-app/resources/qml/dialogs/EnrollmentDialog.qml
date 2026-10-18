@@ -18,6 +18,7 @@ Item {
 
     function open() {
         if (typeof enrollmentController !== "undefined" && enrollmentController) {
+            enrollmentController.setDialogOpen(true)
             if (enrollmentController.currentStep === 3 || enrollmentController.currentStep === 2) {
                 enrollmentController.reset()
             }
@@ -32,6 +33,7 @@ Item {
         isOpen = false
         opacity = 0.0
         if (typeof enrollmentController !== "undefined" && enrollmentController) {
+            enrollmentController.setDialogOpen(false)
             enrollmentController.reset()
         }
     }
@@ -55,9 +57,7 @@ Item {
         target: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController : null
 
         function onCurrentStepChanged(step) {
-            if (step === 2) {
-                root.hideForCapture()
-            } else if (step === 3) {
+            if (step === 2 || step === 3) {
                 root.showForCompletion()
             }
         }

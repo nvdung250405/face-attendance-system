@@ -20,6 +20,7 @@ from network.http_client import (
     KioskHttpClient,
     KioskNetworkError,
     KioskOtpError,
+    KioskPinError,
 )
 from network.stomp_worker import KioskStompWorker
 
@@ -262,3 +263,64 @@ def test_fetch_gallery_and_enrollment_api():
         vector512=[1.0] + [0.0] * 511,
     )
     assert enroll_res["data"]["status"] == "ACTIVE"
+
+
+def test_verify_pin_api():
+    """Kiểm tra gọi API POST /kiosk/verify-pin thành công, sai mã và bị khóa (API-KSK-007)."""
+    def mock_handler(request: httpx.Request):
+        if request.url.path.endswith("/kiosk/verify-pin"):
+            body = json.loads(request.content)
+            if body["pin"] == "123456":
+                return httpx.Response(
+                    200,
+                    json={
+                        "success": True,
+                        "code": "PIN_VERIFIED",
+                        "data": {
+                            "employeeId": 1042,
+                            "employeeCode": body["employeeCode"],
+                            "fullName": "Nguyen Van A",
+                            "department": "Engineering",
+                        },
+                    },
+                )
+            elif body["pin"] == "999999":
+                return httpx.Response(
+                    423,
+                    json={
+                        "success": False,
+                        "code": "PIN_LOCKED",
+                        "message": "PIN đang bị khóa",
+                        "data": {"lockedUntil": "2026-10-18T14:30:00Z"},
+                    },
+                )
+            else:
+                return httpx.Response(
+                    401,
+                    json={
+                        "success": False,
+                        "code": "PIN_INVALID",
+                        "message": "Sai mã PIN",
+                    },
+                )
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    http_client = KioskHttpClient(client=client)
+
+    # 1. Thành công
+    res = http_client.verify_pin("NV-1042", "123456")
+    assert res["success"] is True
+    assert res["data"]["employeeId"] == 1042
+
+    # 2. Sai PIN (401)
+    with pytest.raises(KioskPinError) as exc_info:
+        http_client.verify_pin("NV-1042", "000000")
+    assert exc_info.value.code == "PIN_INVALID"
+
+    # 3. Bị khóa PIN (423)
+    with pytest.raises(KioskPinError) as exc_locked:
+        http_client.verify_pin("NV-1042", "999999")
+    assert exc_locked.value.code == "PIN_LOCKED"
+    assert exc_locked.value.locked_until == "2026-10-18T14:30:00Z"
+

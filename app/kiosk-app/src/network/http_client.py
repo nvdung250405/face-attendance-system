@@ -32,6 +32,15 @@ class KioskOtpError(Exception):
         self.code = code
 
 
+class KioskPinError(Exception):
+    """Lỗi xác thực mã PIN dự phòng (sai mã PIN, mã PIN bị khóa)."""
+
+    def __init__(self, message: str, code: str = "PIN_INVALID", locked_until: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.locked_until = locked_until
+
+
 class KioskCooldownConflict(Exception):
     """Lỗi trùng lặp quẹt thẻ trong khoảng Cooldown (409 Conflict)."""
 
@@ -300,3 +309,44 @@ class KioskHttpClient:
                 raise KioskNetworkError(f"HTTP {resp.status_code}: {resp.text}")
         except (httpx.RequestError, httpx.TimeoutException) as exc:
             raise KioskNetworkError(str(exc)) from exc
+
+    def verify_pin(self, employee_code: str, pin: str) -> dict[str, Any]:
+        """Xác thực mã PIN 6 số qua Backend trước khi ghi nhận điểm danh (API-KSK-007).
+
+        Args:
+            employee_code: Mã nhân viên (ví dụ: 'NV-1042').
+            pin: Chuỗi mã PIN 6 số.
+
+        Returns:
+            dict[str, Any]: Dữ liệu thẩm định (employeeId, employeeCode, fullName, department).
+
+        Raises:
+            KioskPinError: Khi mã PIN sai (401) hoặc đang bị khóa (423).
+            KioskNetworkError: Khi gặp sự cố mạng hoặc timeout.
+        """
+        url = f"{self.base_url}/kiosk/verify-pin"
+        payload = {
+            "employeeCode": employee_code,
+            "pin": pin,
+        }
+        client = self._get_client()
+        try:
+            resp = client.post(url, json=payload, headers=self._get_headers(), timeout=self.timeout)
+            if resp.status_code == 200:
+                data = resp.json()
+                logger.info("verify_pin thành công cho mã NV: %s", employee_code)
+                return data
+            elif resp.status_code == 401:
+                err = resp.json() if resp.text else {}
+                msg = err.get("message", "Mã PIN không chính xác")
+                raise KioskPinError(msg, code=err.get("code", "PIN_INVALID"))
+            elif resp.status_code == 423:
+                err = resp.json() if resp.text else {}
+                msg = err.get("message", "Mã PIN đang bị khóa do nhập sai nhiều lần")
+                locked_until = err.get("data", {}).get("lockedUntil") if isinstance(err.get("data"), dict) else None
+                raise KioskPinError(msg, code=err.get("code", "PIN_LOCKED"), locked_until=locked_until)
+            else:
+                raise KioskNetworkError(f"HTTP {resp.status_code}: {resp.text}")
+        except (httpx.RequestError, httpx.TimeoutException) as exc:
+            raise KioskNetworkError(str(exc)) from exc
+
