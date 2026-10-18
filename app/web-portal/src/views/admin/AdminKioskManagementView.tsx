@@ -10,6 +10,19 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
+import {
+  RefreshCw,
+  Plus,
+  Info,
+  AlertTriangle,
+  Monitor,
+  Wifi,
+  WifiOff,
+  Server,
+  Copy,
+  Check,
+} from 'lucide-react'
+import { Button } from '@/components/common'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { complianceAdminService } from '@/services/complianceAdminService'
@@ -70,6 +83,7 @@ export const AdminKioskManagementView: React.FC = () => {
     token: string
   } | null>(null)
   const [isReissuing, setIsReissuing] = useState<string | null>(null)
+  const [copiedToken, setCopiedToken] = useState(false)
 
   const isReadOnly = user?.role === 'DPO'
 
@@ -154,38 +168,33 @@ export const AdminKioskManagementView: React.FC = () => {
         <div>
           <h1 className="page-title">Quản lý Trạm Kiosk</h1>
           <p className="page-subtitle">
-            Giám sát tình trạng kết nối, nhịp tim ping và cấu hình bảo mật máy trạm biên (DD-WEB-019)
+            Giám sát tình trạng kết nối, nhịp tim ping và cấu hình bảo mật máy trạm biên
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={loadKiosks}
-            className="btn-secondary flex items-center gap-2 text-sm"
+            leftIcon={<RefreshCw size={15} />}
             title="Làm mới"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            <span>Làm mới</span>
-          </button>
+            Làm mới
+          </Button>
 
           {!isReadOnly && (
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               data-testid="open-register-kiosk-btn"
               onClick={() => setIsRegisterModalOpen(true)}
-              className="btn-primary flex items-center gap-2 text-sm"
+              leftIcon={<Plus size={16} />}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              <span>Đăng ký Kiosk Mới</span>
-            </button>
+              Đăng ký Kiosk Mới
+            </Button>
           )}
         </div>
       </div>
@@ -195,39 +204,31 @@ export const AdminKioskManagementView: React.FC = () => {
         <div
           role="status"
           data-testid="dpo-readonly-banner"
-          className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-sm flex items-start gap-3"
+          className="p-4 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 text-sm flex items-start gap-3 shadow-xs"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5 text-blue-600">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
+          <Info size={18} className="shrink-0 mt-0.5 text-blue-600" />
           <div>
             <span className="font-bold">Chế độ Tra cứu Chỉ Đọc (DPO Compliance Role)</span>
-            <p className="text-xs text-blue-800 mt-0.5">
+            <p className="text-xs text-blue-800 mt-0.5 leading-relaxed">
               Bạn đang xem danh mục trạm Kiosk với quyền giám sát tuân thủ. Các thao tác đăng ký mới, cập nhật hoặc cấp lại Secret Token bị vô hiệu hóa.
             </p>
           </div>
         </div>
       )}
 
-      {/* ── Cảnh báo Trạm Kiosk Mất Ping > 5 Phút (DD-WEB-019) ── */}
+      {/* ── Cảnh báo Trạm Kiosk Mất Ping > 5 Phút ── */}
       {staleKiosks.length > 0 && (
         <div
           role="alert"
           data-testid="stale-ping-warning-banner"
-          className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-sm flex items-start gap-3 shadow-xs animate-in fade-in duration-200"
+          className="p-4 rounded-xl bg-amber-50/90 border border-amber-300 text-amber-950 text-sm flex items-start gap-3 shadow-xs animate-in fade-in duration-200"
         >
           <div className="w-8 h-8 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center shrink-0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+            <AlertTriangle size={18} />
           </div>
           <div className="space-y-1">
             <h3 className="font-bold text-amber-900">
-              Cảnh báo: Có {staleKiosks.length} trạm Kiosk mất tín hiệu Ping quá 5 phút (DD-WEB-019)
+              Cảnh báo: Có {staleKiosks.length} trạm Kiosk mất tín hiệu Ping quá 5 phút
             </h3>
             <p className="text-xs text-amber-800 leading-relaxed">
               Các trạm Kiosk sau không gửi nhịp tim ping định kỳ trong hơn 5 phút: {' '}
@@ -240,30 +241,79 @@ export const AdminKioskManagementView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Thống kê tổng quan KPI ── */}
+      {/* ── Thống kê tổng quan KPI Đồng bộ ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card-surface p-4 space-y-1">
-          <div className="text-xs font-semibold text-text-muted uppercase tracking-wider">Tổng số trạm</div>
-          <div className="text-2xl font-bold text-text-primary" data-testid="kpi-total-kiosks">
-            {kiosks.length}
+        {/* Tổng số trạm */}
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/80" />
+          <div className="flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl ring-1 ring-indigo-500/20 bg-indigo-50/70 text-indigo-600 flex items-center justify-center shadow-xs">
+              <Server size={18} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tất cả</span>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-slate-500">Tổng số trạm</div>
+            <div className="text-2xl font-extrabold font-mono text-slate-800 tracking-tight" data-testid="kpi-total-kiosks">
+              {kiosks.length}
+            </div>
           </div>
         </div>
-        <div className="card-surface p-4 space-y-1">
-          <div className="text-xs font-semibold text-status-success uppercase tracking-wider">Trực tuyến</div>
-          <div className="text-2xl font-bold text-status-success" data-testid="kpi-online-kiosks">
-            {onlineCount}
+
+        {/* Trực tuyến */}
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80" />
+          <div className="flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl ring-1 ring-emerald-500/20 bg-emerald-50/70 text-emerald-600 flex items-center justify-center shadow-xs">
+              <Wifi size={18} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
+              Hoạt động
+            </span>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-emerald-700">Trực tuyến</div>
+            <div className="text-2xl font-extrabold font-mono text-emerald-700 tracking-tight" data-testid="kpi-online-kiosks">
+              {onlineCount}
+            </div>
           </div>
         </div>
-        <div className="card-surface p-4 space-y-1">
-          <div className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Mất Ping &gt; 5p</div>
-          <div className="text-2xl font-bold text-amber-600" data-testid="kpi-stale-kiosks">
-            {warningCount}
+
+        {/* Mất Ping > 5p */}
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500/80" />
+          <div className="flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl ring-1 ring-amber-500/20 bg-amber-50/70 text-amber-600 flex items-center justify-center shadow-xs">
+              <AlertTriangle size={18} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/50">
+              Mất tín hiệu
+            </span>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-amber-700">Mất Ping &gt; 5p</div>
+            <div className="text-2xl font-extrabold font-mono text-amber-700 tracking-tight" data-testid="kpi-stale-kiosks">
+              {warningCount}
+            </div>
           </div>
         </div>
-        <div className="card-surface p-4 space-y-1">
-          <div className="text-xs font-semibold text-status-danger uppercase tracking-wider">Ngoại tuyến</div>
-          <div className="text-2xl font-bold text-status-danger" data-testid="kpi-offline-kiosks">
-            {offlineCount}
+
+        {/* Ngoại tuyến */}
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500/80" />
+          <div className="flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl ring-1 ring-rose-500/20 bg-rose-50/70 text-rose-600 flex items-center justify-center shadow-xs">
+              <WifiOff size={18} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/50">
+              Gián đoạn
+            </span>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-rose-700">Ngoại tuyến</div>
+            <div className="text-2xl font-extrabold font-mono text-rose-700 tracking-tight" data-testid="kpi-offline-kiosks">
+              {offlineCount}
+            </div>
           </div>
         </div>
       </div>
@@ -287,15 +337,15 @@ export const AdminKioskManagementView: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm" data-testid="kiosk-management-table">
             <thead>
-              <tr className="table-sticky-header">
-                <th className="py-3 px-4 font-semibold">Mã Trạm</th>
-                <th className="py-3 px-4 font-semibold">Tên Trạm Kiosk</th>
-                <th className="py-3 px-4 font-semibold">Vị Trí Lắp Đặt</th>
-                <th className="py-3 px-4 font-semibold">Địa Chỉ IP / Phiên Bản</th>
-                <th className="py-3 px-4 font-semibold">Ping Gần Nhất</th>
-                <th className="py-3 px-4 font-semibold">Trạng Thái Kết Nối</th>
+              <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="py-3 px-4">Mã Trạm</th>
+                <th className="py-3 px-4">Tên Trạm Kiosk</th>
+                <th className="py-3 px-4">Vị Trí Lắp Đặt</th>
+                <th className="py-3 px-4">Địa Chỉ IP / Phiên Bản</th>
+                <th className="py-3 px-4">Ping Gần Nhất</th>
+                <th className="py-3 px-4">Trạng Thái Kết Nối</th>
                 {!isReadOnly && (
-                  <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                  <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                     Thao Tác
                   </th>
                 )}
@@ -314,8 +364,13 @@ export const AdminKioskManagementView: React.FC = () => {
               ) : kiosks.length === 0 ? (
                 <tr>
                   <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-muted">
-                    <p className="font-semibold text-text-secondary">Chưa có trạm Kiosk nào được đăng ký</p>
-                    <p className="text-xs mt-1">Bấm &quot;Đăng ký Kiosk Mới&quot; để thiết lập trạm đầu tiên.</p>
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <Monitor size={24} />
+                      </div>
+                      <p className="font-semibold text-text-secondary">Chưa có trạm Kiosk nào được đăng ký</p>
+                      <p className="text-xs text-slate-400">Bấm &quot;Đăng ký Kiosk Mới&quot; để thiết lập trạm đầu tiên.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -330,7 +385,7 @@ export const AdminKioskManagementView: React.FC = () => {
                     <tr
                       key={kiosk.kioskId}
                       data-testid={`kiosk-row-${kiosk.kioskId}`}
-                      className="table-row-hover transition-colors"
+                      className="hover:bg-slate-50/80 transition-colors"
                     >
                       <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary">
                         {kiosk.kioskId}
@@ -349,7 +404,7 @@ export const AdminKioskManagementView: React.FC = () => {
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`w-2 h-2 rounded-full ${
-                              stale ? 'bg-amber-500' : 'bg-emerald-500'
+                              stale ? 'bg-amber-500 ring-2 ring-amber-200' : 'bg-emerald-500 ring-2 ring-emerald-200'
                             }`}
                           />
                           <span>{formatRelativeTime(kiosk.lastPingAt)}</span>
@@ -370,12 +425,13 @@ export const AdminKioskManagementView: React.FC = () => {
                       </td>
                       {!isReadOnly && (
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <button
+                          <Button
                             type="button"
+                            variant="secondary"
+                            size="sm"
                             data-testid={`reissue-token-btn-${kiosk.kioskId}`}
                             onClick={() => handleReissueToken(kiosk)}
                             disabled={isReissuing === kiosk.kioskId}
-                            className="btn-secondary text-xs h-8 px-2.5 hover:text-brand-primary"
                             title="Cấp lại Secret Token"
                           >
                             {isReissuing === kiosk.kioskId ? (
@@ -383,7 +439,7 @@ export const AdminKioskManagementView: React.FC = () => {
                             ) : (
                               <span>Cấp lại Token</span>
                             )}
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -411,8 +467,8 @@ export const AdminKioskManagementView: React.FC = () => {
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="relative w-full max-w-md bg-surface-card rounded-2xl shadow-2xl border border-border-subtle p-6 space-y-4">
-            <h3 className="text-base font-bold text-text-primary">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4">
+            <h3 className="text-base font-bold text-slate-900">
               Cấp Lại Secret Token Thành Công
             </h3>
 
@@ -420,37 +476,43 @@ export const AdminKioskManagementView: React.FC = () => {
               Secret Token mới của trạm <strong>{reissuedTokenKiosk.kioskId}</strong> chỉ hiển thị duy nhất 1 lần trong RAM. Khi đóng hộp thoại này, token sẽ bị hủy khỏi bộ nhớ trình duyệt.
             </div>
 
-            <div className="p-3 bg-slate-100 rounded-xl border border-border-subtle flex items-center justify-between gap-3">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
               <code
                 data-testid="reissued-token-value"
-                className="font-mono text-sm font-bold text-brand-primary break-all select-all"
+                className="font-mono text-xs font-bold text-indigo-600 break-all select-all"
               >
                 {reissuedTokenKiosk.token}
               </code>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   navigator.clipboard.writeText(reissuedTokenKiosk.token)
-                  alert('Đã sao chép Secret Token mới!')
+                  setCopiedToken(true)
+                  setTimeout(() => setCopiedToken(false), 2000)
                 }}
-                className="btn-secondary text-xs h-8 px-2.5 shrink-0"
+                leftIcon={copiedToken ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                className="shrink-0"
               >
-                Sao chép
-              </button>
+                {copiedToken ? 'Đã chép' : 'Sao chép'}
+              </Button>
             </div>
 
             <div className="flex justify-end pt-2">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 data-testid="close-reissued-token-modal-btn"
                 onClick={() => {
                   clearSecretToken(reissuedTokenKiosk.kioskId)
                   setReissuedTokenKiosk(null)
+                  setCopiedToken(false)
                 }}
-                className="btn-primary text-sm"
               >
                 Tôi đã lưu Token an toàn
-              </button>
+              </Button>
             </div>
           </div>
         </div>

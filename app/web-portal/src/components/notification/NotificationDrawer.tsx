@@ -11,6 +11,16 @@
  */
 
 import React, { useEffect } from 'react'
+import {
+  Check,
+  FileText,
+  UserCheck,
+  Calendar,
+  Lock,
+  AlertTriangle,
+  Bell,
+  X,
+} from 'lucide-react'
 import { useNotificationStore } from '@/store/notificationStore'
 import { notificationService } from '@/services/notificationService'
 import type { NotificationEventType } from '@/types'
@@ -22,70 +32,43 @@ const NotificationEventIcon: React.FC<{ type: NotificationEventType | string }> 
     case 'ATTENDANCE_PUNCH':
       return (
         <div className="w-8 h-8 rounded-lg bg-emerald-100 text-status-success flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+          <Check size={16} strokeWidth={2.5} />
         </div>
       )
     case 'CONSENT_SIGNED':
       return (
         <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
+          <FileText size={16} strokeWidth={2} />
         </div>
       )
     case 'ENROLLMENT_COMPLETED':
       return (
         <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="8.5" cy="7" r="4" />
-            <polyline points="17 11 19 13 23 9" />
-          </svg>
+          <UserCheck size={16} strokeWidth={2} />
         </div>
       )
     case 'SHIFT_ASSIGNED':
       return (
         <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+          <Calendar size={16} strokeWidth={2} />
         </div>
       )
     case 'PAYROLL_LOCKED':
       return (
         <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
+          <Lock size={16} strokeWidth={2} />
         </div>
       )
     case 'SECURITY_ALERT':
       return (
         <div className="w-8 h-8 rounded-lg bg-rose-100 text-status-danger flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
+          <AlertTriangle size={16} strokeWidth={2} />
         </div>
       )
     default:
       return (
         <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
+          <Bell size={16} strokeWidth={2} />
         </div>
       )
   }
@@ -200,10 +183,7 @@ export const NotificationDrawer: React.FC = () => {
                 aria-label="Đóng bảng thông báo"
                 className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X size={18} strokeWidth={2} />
               </button>
             </div>
           </div>
@@ -213,10 +193,7 @@ export const NotificationDrawer: React.FC = () => {
             {notifications.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-8 text-center text-text-muted space-y-3">
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
+                  <Bell size={24} strokeWidth={1.75} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-text-secondary">Chưa có thông báo nào</p>

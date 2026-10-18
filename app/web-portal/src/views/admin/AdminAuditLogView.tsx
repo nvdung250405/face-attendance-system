@@ -10,6 +10,17 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
+import {
+  ShieldCheck,
+  FileText,
+  Trash2,
+  Search,
+  RotateCcw,
+  Eye,
+  X,
+  History,
+} from 'lucide-react'
+import { Button } from '@/components/common'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import type {
   AuditLogItem,
@@ -172,59 +183,81 @@ export const AdminAuditLogView: React.FC = () => {
       <div
         role="status"
         data-testid="read-only-compliance-banner"
-        className="p-4 rounded-xl bg-slate-100 border border-border-subtle flex items-center justify-between gap-4 text-xs sm:text-sm text-text-secondary"
+        className="p-4 rounded-xl bg-slate-100 border border-border-subtle flex items-center justify-between gap-4 text-xs sm:text-sm text-text-secondary shadow-2xs"
       >
         <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-          <span className="font-semibold text-text-primary">
-            Chế độ Tra cứu Chỉ Đọc (Read-Only Compliance &amp; Audit Trail)
-          </span>
-          <span className="hidden md:inline text-text-muted">
-            — Toàn bộ nhật ký kiểm toán mang tính bất biến và được bảo vệ toàn vẹn.
-          </span>
+          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+          <div>
+            <span className="font-semibold text-text-primary">
+              Chế độ Tra cứu Chỉ Đọc (Read-Only Compliance &amp; Audit Trail)
+            </span>
+            <span className="hidden md:inline text-text-muted text-xs ml-2">
+              — Toàn bộ nhật ký kiểm toán mang tính bất biến và được bảo vệ toàn vẹn theo quy chuẩn.
+            </span>
+          </div>
         </div>
-        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-white text-text-primary border border-border-subtle shrink-0">
+        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-white text-slate-700 border border-border-subtle shrink-0 shadow-2xs">
           CHỈ ĐỌC
         </span>
       </div>
 
-      {/* ── Tab Navigation ── */}
-      <div className="flex border-b border-border-subtle gap-2">
+      {/* ── Tab Navigation Đồng bộ ── */}
+      <div className="flex border-b border-border-subtle gap-6">
         <button
           type="button"
           data-testid="tab-audit-logs"
           onClick={() => handleTabChange('AUDIT_LOGS')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
             activeTab === 'AUDIT_LOGS'
-              ? 'border-brand-primary text-brand-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Nhật ký Kiểm toán ({auditTotal})
+          <History className="w-4 h-4" />
+          <span>Nhật ký Kiểm toán</span>
+          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+            activeTab === 'AUDIT_LOGS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+          }`}>
+            {auditTotal}
+          </span>
         </button>
+
         <button
           type="button"
           data-testid="tab-dpo-consents"
           onClick={() => handleTabChange('DPO_CONSENTS')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
             activeTab === 'DPO_CONSENTS'
-              ? 'border-brand-primary text-brand-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Hồ sơ Cam kết DPO ({dpoConsents.length})
+          <FileText className="w-4 h-4" />
+          <span>Hồ sơ Cam kết DPO</span>
+          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+            activeTab === 'DPO_CONSENTS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+          }`}>
+            {dpoConsents.length}
+          </span>
         </button>
+
         <button
           type="button"
           data-testid="tab-retention-schedule"
           onClick={() => handleTabChange('RETENTION_SCHEDULE')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
             activeTab === 'RETENTION_SCHEDULE'
-              ? 'border-brand-primary text-brand-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Lịch Tiêu hủy 7 Ngày ({retentionItems.length})
+          <Trash2 className="w-4 h-4" />
+          <span>Lịch Tiêu hủy 7 Ngày</span>
+          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+            activeTab === 'RETENTION_SCHEDULE' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+          }`}>
+            {retentionItems.length}
+          </span>
         </button>
       </div>
 
@@ -244,7 +277,7 @@ export const AdminAuditLogView: React.FC = () => {
             className="card-surface p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end"
           >
             <div>
-              <label htmlFor="filter-action" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">
+              <label htmlFor="filter-action" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Hành động
               </label>
               <input
@@ -254,12 +287,12 @@ export const AdminAuditLogView: React.FC = () => {
                 placeholder="VD: KIOSK_REGISTERED..."
                 value={filterAction}
                 onChange={(e) => setFilterAction(e.target.value)}
-                className="input-base text-xs h-9"
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label htmlFor="filter-email" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">
+              <label htmlFor="filter-email" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Người thực hiện
               </label>
               <input
@@ -269,12 +302,12 @@ export const AdminAuditLogView: React.FC = () => {
                 placeholder="VD: admin@company.com"
                 value={filterEmail}
                 onChange={(e) => setFilterEmail(e.target.value)}
-                className="input-base text-xs h-9"
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label htmlFor="filter-start-date" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">
+              <label htmlFor="filter-start-date" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Từ ngày
               </label>
               <input
@@ -283,12 +316,12 @@ export const AdminAuditLogView: React.FC = () => {
                 data-testid="filter-start-date-input"
                 value={filterStartDate}
                 onChange={(e) => setFilterStartDate(e.target.value)}
-                className="input-base text-xs h-9"
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label htmlFor="filter-end-date" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">
+              <label htmlFor="filter-end-date" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Đến ngày
               </label>
               <input
@@ -297,26 +330,31 @@ export const AdminAuditLogView: React.FC = () => {
                 data-testid="filter-end-date-input"
                 value={filterEndDate}
                 onChange={(e) => setFilterEndDate(e.target.value)}
-                className="input-base text-xs h-9"
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             <div className="flex gap-2">
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                size="sm"
                 data-testid="audit-search-btn"
-                className="btn-primary text-xs h-9 flex-1"
+                leftIcon={<Search className="w-3.5 h-3.5" />}
+                className="flex-1"
               >
                 Tìm kiếm
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 data-testid="audit-reset-btn"
                 onClick={handleResetFilter}
-                className="btn-secondary text-xs h-9 px-3"
+                leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
               >
                 Đặt lại
-              </button>
+              </Button>
             </div>
           </form>
 
@@ -325,7 +363,7 @@ export const AdminAuditLogView: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm" data-testid="audit-logs-table">
                 <thead>
-                  <tr className="table-sticky-header">
+                  <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     <th className="py-3 px-4">Mã #</th>
                     <th className="py-3 px-4">Thời Điểm</th>
                     <th className="py-3 px-4">Hành Động</th>
@@ -339,7 +377,10 @@ export const AdminAuditLogView: React.FC = () => {
                   {isAuditLoading ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-text-muted">
-                        Đang nạp dữ liệu kiểm toán...
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
+                          <span>Đang nạp dữ liệu kiểm toán...</span>
+                        </div>
                       </td>
                     </tr>
                   ) : auditLogs.length === 0 ? (
@@ -353,7 +394,7 @@ export const AdminAuditLogView: React.FC = () => {
                       <tr
                         key={log.id}
                         data-testid={`audit-row-${log.id}`}
-                        className="table-row-hover transition-colors"
+                        className="hover:bg-slate-50/80 transition-colors"
                       >
                         <td className="py-3 px-4 font-mono font-semibold text-xs text-text-secondary">
                           #{log.id}
@@ -380,9 +421,10 @@ export const AdminAuditLogView: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setSelectedLogDetail(log)}
-                              className="text-xs text-brand-primary hover:underline font-medium"
+                              className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
                             >
-                              Xem diff
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Xem diff</span>
                             </button>
                           ) : (
                             <span className="text-xs text-text-muted">—</span>
@@ -401,31 +443,34 @@ export const AdminAuditLogView: React.FC = () => {
       {/* ── TAB 2: HỒ SƠ CAM KẾT DPO ── */}
       {activeTab === 'DPO_CONSENTS' && (
         <div className="card-surface overflow-hidden">
-          <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/50">
-            <h3 className="text-base font-bold text-text-primary">
+          <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/70">
+            <h3 className="text-sm font-bold text-slate-900">
               Danh Sách Ký Cam Kết Informed Consent
             </h3>
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-slate-500">
               Lưu trữ bằng chứng đồng thuận theo quy định tại Nghị định 13/2023/NĐ-CP
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm" data-testid="dpo-consents-table">
               <thead>
-                <tr className="table-sticky-header">
-                  <th className="py-3 px-4 font-semibold">Mã NV</th>
-                  <th className="py-3 px-4 font-semibold">Họ và Tên</th>
-                  <th className="py-3 px-4 font-semibold">Phiên Bản Consent</th>
-                  <th className="py-3 px-4 font-semibold">Thời Điểm Ký Điện Tử</th>
-                  <th className="py-3 px-4 font-semibold">Địa Chỉ IP Ký</th>
-                  <th className="py-3 px-4 font-semibold">Trạng Thái</th>
+                <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Mã NV</th>
+                  <th className="py-3 px-4">Họ và Tên</th>
+                  <th className="py-3 px-4">Phiên Bản Consent</th>
+                  <th className="py-3 px-4">Thời Điểm Ký Điện Tử</th>
+                  <th className="py-3 px-4">Địa Chỉ IP Ký</th>
+                  <th className="py-3 px-4">Trạng Thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
                 {isConsentsLoading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-text-muted">
-                      Đang nạp hồ sơ cam kết...
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
+                        <span>Đang nạp hồ sơ cam kết...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : dpoConsents.length === 0 ? (
@@ -439,7 +484,7 @@ export const AdminAuditLogView: React.FC = () => {
                     <tr
                       key={item.id}
                       data-testid={`dpo-consent-row-${item.id}`}
-                      className="table-row-hover transition-colors"
+                      className="hover:bg-slate-50/80 transition-colors"
                     >
                       <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary">
                         {item.employeeCode}
@@ -450,7 +495,7 @@ export const AdminAuditLogView: React.FC = () => {
                       <td className="py-3 px-4 font-mono text-xs text-text-secondary">
                         {item.consentVersion}
                       </td>
-                      <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
+                      <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap font-mono">
                         {formatDateTime(item.agreedAt)}
                       </td>
                       <td className="py-3 px-4 font-mono text-xs text-text-muted">
@@ -479,37 +524,40 @@ export const AdminAuditLogView: React.FC = () => {
       {/* ── TAB 3: LỊCH TIÊU HỦY DỮ LIỆU SINH TRẮC 7 NGÀY ── */}
       {activeTab === 'RETENTION_SCHEDULE' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs sm:text-sm leading-relaxed">
+          <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs sm:text-sm leading-relaxed shadow-xs">
             <strong className="font-bold">Quy định Tiêu hủy Dữ liệu (Decree 13/2023 &amp; Decree 356/2025):</strong>{' '}
             Toàn bộ bản mã vector đặc trưng khuôn mặt của nhân viên nghỉ việc hoặc đã rút Informed Consent phải được xóa sạch hoàn toàn khỏi hệ thống trong thời hạn tối đa 7 ngày làm việc kể từ thời điểm có hiệu lực.
           </div>
 
           <div className="card-surface overflow-hidden">
-            <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/50">
-              <h3 className="text-base font-bold text-text-primary">
+            <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/70">
+              <h3 className="text-sm font-bold text-slate-900">
                 Lịch Trình Tiêu Hủy Vector Sinh Trắc Học
               </h3>
-              <p className="text-xs text-text-muted">
+              <p className="text-xs text-slate-500">
                 Theo dõi thời hạn và trạng thái tiêu hủy dữ liệu đặc trưng khuôn mặt theo luật định
               </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm" data-testid="retention-schedule-table">
                 <thead>
-                  <tr className="table-sticky-header">
-                    <th className="py-3 px-4 font-semibold">Mã NV</th>
-                    <th className="py-3 px-4 font-semibold">Họ và Tên</th>
-                    <th className="py-3 px-4 font-semibold">Thời Điểm Rút / Nghỉ Việc</th>
-                    <th className="py-3 px-4 font-semibold">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
-                    <th className="py-3 px-4 font-semibold">Thời Điểm Tiêu Hủy Thực Tế</th>
-                    <th className="py-3 px-4 font-semibold">Trạng Thái</th>
+                  <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Mã NV</th>
+                    <th className="py-3 px-4">Họ và Tên</th>
+                    <th className="py-3 px-4">Thời Điểm Rút / Nghỉ Việc</th>
+                    <th className="py-3 px-4">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
+                    <th className="py-3 px-4">Thời Điểm Tiêu Hủy Thực Tế</th>
+                    <th className="py-3 px-4">Trạng Thái</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
                   {isRetentionLoading ? (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-text-muted">
-                        Đang nạp lịch trình tiêu hủy...
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
+                          <span>Đang nạp lịch trình tiêu hủy...</span>
+                        </div>
                       </td>
                     </tr>
                   ) : retentionItems.length === 0 ? (
@@ -523,7 +571,7 @@ export const AdminAuditLogView: React.FC = () => {
                       <tr
                         key={item.id}
                         data-testid={`retention-row-${item.id}`}
-                        className="table-row-hover transition-colors"
+                        className="hover:bg-slate-50/80 transition-colors"
                       >
                         <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary">
                           {item.employeeCode}
@@ -531,13 +579,13 @@ export const AdminAuditLogView: React.FC = () => {
                         <td className="py-3 px-4 font-semibold text-xs text-text-primary">
                           {item.fullName}
                         </td>
-                        <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
+                        <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap font-mono">
                           {formatDateTime(item.resignedAt)}
                         </td>
-                        <td className="py-3 px-4 text-xs font-bold text-amber-700 whitespace-nowrap">
+                        <td className="py-3 px-4 text-xs font-bold text-amber-700 whitespace-nowrap font-mono">
                           {formatDateTime(item.scheduledDestructionDate)}
                         </td>
-                        <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
+                        <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap font-mono">
                           {formatDateTime(item.actualDestructionDate)}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
@@ -574,38 +622,38 @@ export const AdminAuditLogView: React.FC = () => {
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-              <h3 className="text-base font-bold text-text-primary">
+              <h3 className="text-base font-bold text-slate-900">
                 Chi tiết Kiểm toán #{selectedLogDetail.id} ({selectedLogDetail.action})
               </h3>
               <button
                 type="button"
                 onClick={() => setSelectedLogDetail(null)}
-                className="p-1 rounded text-text-muted hover:text-text-primary"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
-                <span className="font-semibold text-text-secondary">Thời điểm:</span>{' '}
-                {formatDateTime(selectedLogDetail.createdAt)}
+                <span className="font-semibold text-slate-500">Thời điểm:</span>{' '}
+                <span className="font-mono text-slate-800">{formatDateTime(selectedLogDetail.createdAt)}</span>
               </div>
               <div>
-                <span className="font-semibold text-text-secondary">Người thực hiện:</span>{' '}
-                {selectedLogDetail.actorEmail}
+                <span className="font-semibold text-slate-500">Người thực hiện:</span>{' '}
+                <span className="font-semibold text-slate-800">{selectedLogDetail.actorEmail}</span>
               </div>
               <div>
-                <span className="font-semibold text-text-secondary">Tài nguyên:</span>{' '}
-                {selectedLogDetail.targetResource}
+                <span className="font-semibold text-slate-500">Tài nguyên:</span>{' '}
+                <span className="font-mono text-slate-800">{selectedLogDetail.targetResource}</span>
               </div>
 
               {selectedLogDetail.oldValues && (
                 <div className="space-y-1">
-                  <span className="font-semibold text-text-secondary">Giá trị trước thay đổi:</span>
-                  <pre className="p-2.5 bg-slate-100 rounded-lg text-xs overflow-x-auto font-mono">
+                  <span className="font-semibold text-slate-500">Giá trị trước thay đổi:</span>
+                  <pre className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs overflow-x-auto font-mono text-slate-700">
                     {JSON.stringify(selectedLogDetail.oldValues, null, 2)}
                   </pre>
                 </div>
@@ -613,7 +661,7 @@ export const AdminAuditLogView: React.FC = () => {
 
               {selectedLogDetail.newValues && (
                 <div className="space-y-1">
-                  <span className="font-semibold text-text-secondary">Giá trị mới cập nhật:</span>
+                  <span className="font-semibold text-slate-500">Giá trị mới cập nhật:</span>
                   <pre className="p-2.5 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs overflow-x-auto font-mono">
                     {JSON.stringify(selectedLogDetail.newValues, null, 2)}
                   </pre>
@@ -622,13 +670,14 @@ export const AdminAuditLogView: React.FC = () => {
             </div>
 
             <div className="flex justify-end pt-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setSelectedLogDetail(null)}
-                className="btn-secondary text-sm"
               >
                 Đóng
-              </button>
+              </Button>
             </div>
           </div>
         </div>

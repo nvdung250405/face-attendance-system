@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useId } from 'react'
+import { Lock, X, Info, Check, Eye, EyeOff } from 'lucide-react'
 import { credentialService } from '@/services/credentialService'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
 
@@ -111,17 +112,14 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       aria-modal="true"
       aria-labelledby={titleId}
       data-testid="change-password-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto"
     >
-      <div className="card-surface w-full max-w-md p-6 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div className="card-surface relative w-full max-w-md p-6 bg-white shadow-2xl rounded-2xl border border-border-subtle my-auto animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 border-b border-border-subtle">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-indigo-50 text-brand-primary flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+              <Lock size={20} strokeWidth={2} />
             </div>
             <div>
               <h3 id={titleId} className="text-base font-bold text-text-primary">
@@ -136,20 +134,13 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             aria-label="Đóng"
             className="w-8 h-8 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 flex items-center justify-center transition-colors"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 
         {/* Khối cảnh báo thu hồi phiên (UXD-WEB-008) */}
         <div className="my-3.5 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs leading-relaxed flex items-start gap-2">
-          <svg className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
+          <Info size={16} className="text-blue-600 shrink-0 mt-0.5" />
           <div>
             <span className="font-semibold">Lưu ý thu hồi phiên:</span> Sau khi đổi mật khẩu thành công, toàn bộ các phiên đăng nhập khác của bạn sẽ tự động bị thu hồi để đảm bảo an toàn.
           </div>
@@ -170,9 +161,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             data-testid="change-password-success"
             className="mb-3.5 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center gap-2"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <Check size={16} strokeWidth={2.5} />
             <span>{successMessage}</span>
           </div>
         )}
@@ -206,17 +195,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
                 aria-label={showOld ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
-                {showOld ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
+                {showOld ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
@@ -248,17 +227,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
                 aria-label={showNew ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
-                {showNew ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
+                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
@@ -310,17 +279,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
                 aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
-                {showConfirm ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
+                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>

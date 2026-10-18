@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { RefreshCw, MessageSquare, Check, AlertCircle, Send } from 'lucide-react'
 import { dataSubjectService } from '@/services/dataSubjectService'
 import type { DataRequestType, DataSubjectRequestItem, DataRequestStatus } from '@/types'
 
@@ -159,17 +160,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
           className="btn-secondary self-start sm:self-auto flex items-center gap-2"
           title="Làm mới danh sách"
         >
-          <svg
-            className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-          </svg>
+          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           <span>Làm mới</span>
         </button>
       </div>
@@ -178,9 +169,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
       <div className="card-surface p-6 space-y-4">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
+            <MessageSquare size={18} strokeWidth={2} />
           </div>
           <div>
             <h2 className="text-base font-bold text-text-primary">Gửi Yêu Cầu Mới tới DPO</h2>
@@ -193,9 +182,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
             role="status"
             className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-status-success text-sm flex items-center gap-2"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <Check size={18} strokeWidth={2} />
             <span>{formSuccessMessage}</span>
           </div>
         )}
@@ -205,11 +192,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
             role="alert"
             className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            <AlertCircle size={18} strokeWidth={2} />
             <span>{formErrorMessage}</span>
           </div>
         )}
@@ -270,10 +253,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
+                  <Send size={16} strokeWidth={2} />
                   <span>Gửi yêu cầu đến DPO</span>
                 </>
               )}

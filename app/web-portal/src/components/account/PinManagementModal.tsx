@@ -156,9 +156,9 @@ const PinManagementDialog: React.FC<{
       role="dialog"
       aria-modal="true"
       data-testid="pin-management-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto"
     >
-      <div className="card-surface w-full max-w-sm p-6 bg-white shadow-2xl rounded-3xl animate-in zoom-in-95 duration-150 space-y-5">
+      <div className="card-surface relative w-full max-w-sm p-6 bg-white shadow-2xl rounded-2xl border border-border-subtle my-auto animate-in zoom-in-95 duration-150 space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
           <div className="flex items-center gap-2.5">

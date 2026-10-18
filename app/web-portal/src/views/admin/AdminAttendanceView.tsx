@@ -26,6 +26,7 @@ import {
   Play,
   Pause,
 } from 'lucide-react'
+import { Button } from '@/components/common'
 import { attendanceService } from '@/services/attendanceService'
 import { reportExportService } from '@/services/reportExportService'
 import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'
@@ -385,10 +386,10 @@ export const AdminAttendanceView: React.FC = () => {
               {/* Badge STOMP Live */}
               <div
                 data-testid="hr-stomp-status-badge"
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
                   isConnected
-                    ? 'bg-emerald-50 text-status-success border border-emerald-200'
-                    : 'bg-amber-50 text-status-warning border border-amber-200'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70'
+                    : 'bg-amber-50 text-amber-700 border-amber-200/70'
                 }`}
               >
                 <span
@@ -408,28 +409,22 @@ export const AdminAttendanceView: React.FC = () => {
         {/* Nút hành động */}
         <div className="flex items-center flex-wrap gap-2.5">
           {/* Nút bật/tắt Live Mode */}
-          <button
+          <Button
             type="button"
             onClick={handleToggleLiveMode}
             data-testid="toggle-live-mode-btn"
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
-              isLiveEnabled
-                ? 'bg-emerald-50 text-status-success border-emerald-200 hover:bg-emerald-100/70'
-                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-            }`}
-          >
-            {isLiveEnabled ? (
-              <>
-                <Radio className="w-3.5 h-3.5 animate-pulse text-status-success" />
-                <span>Trực tiếp: BẬT</span>
-              </>
-            ) : (
-              <>
+            variant={isLiveEnabled ? 'secondary' : 'ghost'}
+            size="sm"
+            leftIcon={
+              isLiveEnabled ? (
+                <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-600" />
+              ) : (
                 <Pause className="w-3.5 h-3.5 text-slate-500" />
-                <span>Tạm dừng Live</span>
-              </>
-            )}
-          </button>
+              )
+            }
+          >
+            {isLiveEnabled ? 'Trực tiếp: BẬT' : 'Tạm dừng Live'}
+          </Button>
 
           {/* Badge thông báo bản ghi chờ khi tạm dừng live */}
           {!isLiveEnabled && pendingLiveCount > 0 && (
@@ -437,7 +432,7 @@ export const AdminAttendanceView: React.FC = () => {
               type="button"
               onClick={flushPendingRecords}
               data-testid="flush-pending-btn"
-              className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-semibold bg-brand-50 text-brand-primary border border-brand-200 hover:bg-brand-100 animate-bounce"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 animate-bounce"
             >
               <Play className="w-3.5 h-3.5" />
               <span>+{pendingLiveCount} bản ghi mới</span>
@@ -445,26 +440,27 @@ export const AdminAttendanceView: React.FC = () => {
           )}
 
           {/* Làm mới dữ liệu */}
-          <button
+          <Button
             type="button"
             onClick={fetchAttendanceData}
             data-testid="refresh-attendance-btn"
-            title="Làm mới dữ liệu"
-            className="p-2.5 rounded-xl border border-border-subtle bg-white text-text-secondary hover:text-text-primary hover:bg-slate-50 transition-colors shadow-2xs"
+            variant="secondary"
+            size="sm"
+            leftIcon={<RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
           >
-            <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
+            Làm mới
+          </Button>
 
-          {/* Nhóm nút xuất báo cáo Excel & PDF (TASK-WEB-020) */}
-          <div className="flex items-center rounded-xl bg-brand-primary p-0.5 shadow-xs">
+          {/* Nút xuất báo cáo Excel & PDF (TASK-WEB-020) */}
+          <div className="flex items-center rounded-lg bg-indigo-600 shadow-xs overflow-hidden">
             <button
               type="button"
               onClick={() => handleExportReport()}
               disabled={isExporting}
               data-testid="export-attendance-report-btn"
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-white text-xs font-semibold rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               <span>{isExporting ? 'Đang xuất...' : 'Xuất Báo Cáo'}</span>
             </button>
 
@@ -474,7 +470,7 @@ export const AdminAttendanceView: React.FC = () => {
               disabled={isExporting}
               data-testid="open-export-modal-btn"
               title="Tùy chọn xuất báo cáo Excel / PDF"
-              className="px-2 py-2 text-white hover:bg-brand-hover rounded-lg transition-colors border-l border-white/20"
+              className="px-2 py-2 text-white hover:bg-indigo-700 transition-colors border-l border-white/20"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
             </button>
@@ -485,52 +481,75 @@ export const AdminAttendanceView: React.FC = () => {
       {/* ── Thanh 4 Thẻ Chỉ Số KPI Nhanh ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Thẻ 1: Lượt điểm danh */}
-        <div className="card-surface p-4 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-brand-50 text-brand-primary">
-            <History className="w-5 h-5" />
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/80" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Lượt quẹt hôm nay
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <History className="w-4.5 h-4.5" />
+            </div>
           </div>
           <div>
-            <span className="text-xs text-text-secondary font-medium">Lượt quẹt hôm nay</span>
-            <div data-testid="kpi-today-punches" className="text-xl font-bold text-text-primary mt-0.5">
+            <div data-testid="kpi-today-punches" className="text-2xl font-extrabold font-mono text-slate-900 tracking-tight">
               {stats?.presentCount ?? totalElements}
             </div>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">Ghi nhận từ các máy trạm biên</p>
           </div>
         </div>
 
         {/* Thẻ 2: Đúng giờ */}
-        <div className="card-surface p-4 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-emerald-50 text-status-success">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+              Đúng giờ
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <CheckCircle2 className="w-4.5 h-4.5" />
+            </div>
           </div>
           <div>
-            <span className="text-xs text-text-secondary font-medium">Đúng giờ</span>
-            <div data-testid="kpi-today-ontime" className="text-xl font-bold text-status-success mt-0.5">
+            <div data-testid="kpi-today-ontime" className="text-2xl font-extrabold font-mono text-emerald-600 tracking-tight">
               {stats?.onTimeCount ?? '—'}
             </div>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">Đúng khung giờ ca làm việc</p>
           </div>
         </div>
 
         {/* Thẻ 3: Đi muộn */}
-        <div className="card-surface p-4 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-700">
-            <AlertTriangle className="w-5 h-5" />
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500/80" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+              Đi muộn
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <AlertTriangle className="w-4.5 h-4.5" />
+            </div>
           </div>
           <div>
-            <span className="text-xs text-text-secondary font-medium">Đi muộn</span>
-            <div data-testid="kpi-today-late" className="text-xl font-bold text-amber-700 mt-0.5">
+            <div data-testid="kpi-today-late" className="text-2xl font-extrabold font-mono text-amber-600 tracking-tight">
               {stats?.lateCount ?? 0}
             </div>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">Lượt quẹt sau mốc bắt đầu ca</p>
           </div>
         </div>
 
         {/* Thẻ 4: Nhận diện khuôn mặt */}
-        <div className="card-surface p-4 flex items-center gap-3.5">
-          <div className="p-3 rounded-xl bg-indigo-50 text-indigo-700">
-            <ScanFace className="w-5 h-5" />
+        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/80" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+              Xác thực khuôn mặt
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <ScanFace className="w-4.5 h-4.5" />
+            </div>
           </div>
           <div>
-            <span className="text-xs text-text-secondary font-medium">Xác thực khuôn mặt</span>
-            <div data-testid="kpi-face-ratio" className="text-xl font-bold text-indigo-700 mt-0.5">
+            <div data-testid="kpi-face-ratio" className="text-2xl font-extrabold font-mono text-indigo-600 tracking-tight">
               {records.length > 0
                 ? `${Math.round(
                     (records.filter((r) => r.verificationMethod === 'VERIFICATION_FACE').length /
@@ -539,6 +558,7 @@ export const AdminAttendanceView: React.FC = () => {
                   )}%`
                 : '100%'}
             </div>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">Tỷ lệ xác thực sinh trắc ArcFace</p>
           </div>
         </div>
       </div>
@@ -546,9 +566,9 @@ export const AdminAttendanceView: React.FC = () => {
       {/* ── Bộ Lọc Nâng Cao ── */}
       <div className="card-surface p-4 flex flex-col md:flex-row gap-3 items-stretch md:items-center flex-wrap">
         {/* Ô tìm kiếm từ khóa */}
-        <div className="flex-1 min-w-[200px] relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-            <Search className="w-4.5 h-4.5" />
+        <div className="flex-1 min-w-50 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <Search className="w-4 h-4" />
           </div>
           <input
             type="text"
@@ -559,7 +579,7 @@ export const AdminAttendanceView: React.FC = () => {
             }}
             data-testid="filter-keyword-input"
             placeholder="Tìm theo Mã NV, Họ tên..."
-            className="input-base pl-9.5 text-sm"
+            className="bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
           />
         </div>
 
@@ -572,7 +592,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-department-select"
-            className="input-base text-sm"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
           >
             <option value="">Tất cả phòng ban</option>
             <option value="Phòng Kỹ thuật">Phòng Kỹ thuật</option>
@@ -591,7 +611,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-status-select"
-            className="input-base text-sm"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
           >
             <option value="">Tất cả trạng thái</option>
             <option value="ON_TIME">Đúng giờ</option>
@@ -678,10 +698,10 @@ export const AdminAttendanceView: React.FC = () => {
         />
 
         {/* ── Thanh Phân Trang (Chuẩn hóa theo EmployeeManagementView) ── */}
-        <div className="card-surface p-4 border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary">
+        <div className="card-surface p-4 border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div>
-            Hiển thị <span className="font-semibold text-text-primary">{displayRecords.length}</span> /{' '}
-            <span className="font-semibold text-text-primary">{totalElements}</span> lượt điểm danh
+            Hiển thị <span className="font-semibold text-slate-900">{displayRecords.length}</span> /{' '}
+            <span className="font-semibold text-slate-900">{totalElements}</span> lượt điểm danh
           </div>
 
           <div className="flex items-center gap-2">
@@ -692,34 +712,36 @@ export const AdminAttendanceView: React.FC = () => {
                 setPage(0)
               }}
               data-testid="page-size-select"
-              className="h-8 px-2.5 rounded-lg border border-border-subtle bg-white text-xs text-text-secondary"
+              className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             >
               <option value={20}>20 dòng / trang</option>
               <option value={50}>50 dòng / trang</option>
               <option value={100}>100 dòng / trang</option>
             </select>
 
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               data-testid="prev-page-btn"
-              className="btn-secondary h-8 px-3 text-xs disabled:opacity-40"
             >
               Trước
-            </button>
+            </Button>
 
-            <span className="px-2 font-medium">Trang {page + 1}</span>
+            <span className="px-2 font-semibold text-slate-700">Trang {page + 1}</span>
 
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               disabled={(page + 1) * pageSize >= totalElements}
               onClick={() => setPage((p) => p + 1)}
               data-testid="next-page-btn"
-              className="btn-secondary h-8 px-3 text-xs disabled:opacity-40"
             >
               Sau
-            </button>
+            </Button>
           </div>
         </div>
       </div>

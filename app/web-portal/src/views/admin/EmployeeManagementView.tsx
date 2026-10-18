@@ -11,10 +11,27 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { Plus, Search, ScanFace, Lock, Edit2, KeyRound, CheckCircle2, Ban, X } from 'lucide-react'
+import { Button } from '@/components/common'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { EmployeeDrawer, TemporaryPasswordModal } from '@/components/account'
 import type { EmployeeItem, UserRole, UserStatus } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
+
+const DEFAULT_DEPARTMENTS = [
+  'Phòng Kỹ thuật & Tích hợp',
+  'Phòng Nhân sự & Đào tạo',
+  'Phòng Kinh doanh & Khách hàng',
+  'Phòng Kế toán - Tài chính',
+  'Phòng Kho vận & Logistics',
+  'Ban Quản Trị Hệ Thống',
+  'Ban Pháp chế & Bảo mật',
+  'Phòng Kỹ thuật',
+  'Phòng Nhân sự',
+  'Phòng Kế toán',
+  'Phòng Kinh doanh',
+  'Ban Giám đốc',
+]
 
 export const EmployeeManagementView: React.FC = () => {
   // Danh sách & Phân trang
@@ -102,6 +119,29 @@ export const EmployeeManagementView: React.FC = () => {
     }
   }, [page, keyword, departmentFilter, statusFilter])
 
+  // Danh sách phòng ban tổng hợp (chuẩn hóa cùng dữ liệu thực tế)
+  const availableDepartments = useMemo(() => {
+    const set = new Set(DEFAULT_DEPARTMENTS)
+    employees.forEach((emp) => {
+      if (emp.department && emp.department !== '—') {
+        set.add(emp.department)
+      }
+    })
+    return Array.from(set)
+  }, [employees])
+
+  const hasActiveFilters = Boolean(
+    keyword.trim() || departmentFilter !== 'ALL' || statusFilter !== 'ALL' || roleFilter !== 'ALL'
+  )
+
+  const handleResetFilters = () => {
+    setKeyword('')
+    setDepartmentFilter('ALL')
+    setStatusFilter('ALL')
+    setRoleFilter('ALL')
+    setPage(0)
+  }
+
   // Lọc thêm theo role ở client nếu backend chưa hỗ trợ query role
   const displayedEmployees = useMemo(() => {
     if (roleFilter === 'ALL') return employees
@@ -169,7 +209,7 @@ export const EmployeeManagementView: React.FC = () => {
 
   // Đổi trạng thái nhân sự (Vô hiệu hóa / Kích hoạt)
   const handleToggleStatus = async (emp: EmployeeItem) => {
-    const isActivating = emp.status === 'INACTIVE'
+    const isActivating = emp.status === 'INACTIVE' || emp.status === 'TERMINATED' || emp.status === 'SUSPENDED'
     const newStatus: UserStatus = isActivating ? 'ACTIVE' : 'INACTIVE'
 
     const message = isActivating
@@ -210,12 +250,15 @@ export const EmployeeManagementView: React.FC = () => {
   }
 
   // Badge trạng thái
-  const renderStatusBadge = (status: UserStatus) => {
+  const renderStatusBadge = (status: UserStatus | string) => {
     switch (status) {
       case 'ACTIVE':
         return <span className="badge-success">Đang hoạt động</span>
       case 'PENDING_CONSENT':
         return <span className="badge-warning">Chờ cam kết</span>
+      case 'SUSPENDED':
+        return <span className="badge-warning">Tạm đình chỉ</span>
+      case 'TERMINATED':
       case 'INACTIVE':
       default:
         return <span className="badge-danger">Đã vô hiệu hóa</span>
@@ -232,19 +275,16 @@ export const EmployeeManagementView: React.FC = () => {
             Quản lý danh sách nhân viên, thông tin tài khoản và phân quyền hệ thống
           </p>
         </div>
-        <button
-          type="button"
+        <Button
           id="btn-add-employee"
           data-testid="btn-add-employee"
+          variant="primary"
+          size="md"
           onClick={handleOpenCreate}
-          className="btn-primary flex items-center gap-2 self-start sm:self-auto"
+          leftIcon={<Plus size={16} strokeWidth={2.2} />}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span>Thêm nhân viên</span>
-        </button>
+          Thêm nhân viên
+        </Button>
       </div>
 
       {/* ── Vùng Cảnh báo Lỗi nếu có ── */}
@@ -268,11 +308,8 @@ export const EmployeeManagementView: React.FC = () => {
       <div className="card-surface p-4 flex flex-col md:flex-row gap-3 items-stretch md:items-center">
         {/* Tìm kiếm từ khóa */}
         <div className="flex-1 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <Search size={16} strokeWidth={2} />
           </div>
           <input
             id="search-input"
@@ -284,12 +321,26 @@ export const EmployeeManagementView: React.FC = () => {
               setPage(0)
             }}
             placeholder="Tìm theo Mã NV, Họ tên, Email..."
-            className="input-base pl-9.5 text-sm"
+            className="bg-white border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
           />
+          {keyword && (
+            <button
+              type="button"
+              data-testid="search-clear-btn"
+              onClick={() => {
+                setKeyword('')
+                setPage(0)
+              }}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+              title="Xóa tìm kiếm"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         {/* Lọc phòng ban */}
-        <div className="w-full md:w-44">
+        <div className="w-full md:w-56">
           <select
             id="filter-department"
             data-testid="filter-department"
@@ -298,14 +349,14 @@ export const EmployeeManagementView: React.FC = () => {
               setDepartmentFilter(e.target.value)
               setPage(0)
             }}
-            className="input-base text-sm"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
           >
             <option value="ALL">Mọi phòng ban</option>
-            <option value="Phòng Kỹ thuật">Phòng Kỹ thuật</option>
-            <option value="Phòng Nhân sự">Phòng Nhân sự</option>
-            <option value="Phòng Kế toán">Phòng Kế toán</option>
-            <option value="Phòng Kinh doanh">Phòng Kinh doanh</option>
-            <option value="Ban Giám đốc">Ban Giám đốc</option>
+            {availableDepartments.map((dept) => (
+              <option key={dept} value={dept}>
+                {dept}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -319,12 +370,13 @@ export const EmployeeManagementView: React.FC = () => {
               setStatusFilter(e.target.value)
               setPage(0)
             }}
-            className="input-base text-sm"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
           >
             <option value="ALL">Mọi trạng thái</option>
             <option value="ACTIVE">Đang hoạt động</option>
             <option value="PENDING_CONSENT">Chờ cam kết</option>
             <option value="INACTIVE">Đã vô hiệu hóa</option>
+            <option value="SUSPENDED">Tạm đình chỉ</option>
           </select>
         </div>
 
@@ -337,7 +389,7 @@ export const EmployeeManagementView: React.FC = () => {
             onChange={(e) => {
               setRoleFilter(e.target.value)
             }}
-            className="input-base text-sm"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
           >
             <option value="ALL">Mọi vai trò</option>
             <option value="EMPLOYEE">EMPLOYEE</option>
@@ -346,6 +398,18 @@ export const EmployeeManagementView: React.FC = () => {
             <option value="DPO">DPO</option>
           </select>
         </div>
+
+        {/* Nút đặt lại bộ lọc */}
+        {hasActiveFilters && (
+          <button
+            type="button"
+            data-testid="employee-clear-filters-btn"
+            onClick={handleResetFilters}
+            className="text-xs font-semibold text-brand-primary hover:text-brand-hover hover:underline self-center shrink-0 px-2 py-1"
+          >
+            Đặt lại
+          </button>
+        )}
       </div>
 
       {/* ── Bảng Dữ liệu Nhân sự (UXD-WEB-006: Cột hành động dính bên phải) ── */}
@@ -356,15 +420,15 @@ export const EmployeeManagementView: React.FC = () => {
             className="w-full text-left border-collapse text-sm"
           >
             <thead>
-              <tr className="table-sticky-header">
-                <th className="py-3 px-4 font-semibold">Mã NV</th>
-                <th className="py-3 px-4 font-semibold">Họ và tên</th>
-                <th className="py-3 px-4 font-semibold">Email</th>
-                <th className="py-3 px-4 font-semibold">Phòng ban</th>
-                <th className="py-3 px-4 font-semibold">Vai trò</th>
-                <th className="py-3 px-4 font-semibold">Trạng thái</th>
-                <th className="py-3 px-4 font-semibold text-center">Sinh trắc / PIN</th>
-                <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+              <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="py-3 px-4">Mã NV</th>
+                <th className="py-3 px-4">Họ và tên</th>
+                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Phòng ban</th>
+                <th className="py-3 px-4">Vai trò</th>
+                <th className="py-3 px-4">Trạng thái</th>
+                <th className="py-3 px-4 text-center">Sinh trắc / PIN</th>
+                <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                   Hành động
                 </th>
               </tr>
@@ -434,10 +498,7 @@ export const EmployeeManagementView: React.FC = () => {
                               emp.hasBiometric ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
                             }`}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="8" r="4" />
-                              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                            </svg>
+                            <ScanFace size={14} strokeWidth={2} />
                           </span>
                           <span
                             title={emp.hasPin ? 'Đã cài đặt PIN dự phòng' : 'Chưa có PIN'}
@@ -445,16 +506,13 @@ export const EmployeeManagementView: React.FC = () => {
                               emp.hasPin ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'
                             }`}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg>
+                            <Lock size={14} strokeWidth={2} />
                           </span>
                         </div>
                       </td>
 
                       {/* Cột Hành động Dính bên phải (UXD-WEB-006) */}
-                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
                         <div className="inline-flex items-center gap-1.5">
                           {/* Nút sửa */}
                           <button
@@ -463,12 +521,9 @@ export const EmployeeManagementView: React.FC = () => {
                             aria-label={`Sửa hồ sơ ${emp.fullName}`}
                             onClick={() => handleOpenEdit(emp)}
                             disabled={isBusy}
-                            className="p-1.5 rounded-lg text-text-secondary hover:text-brand-primary hover:bg-indigo-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
+                            <Edit2 size={16} strokeWidth={2} />
                           </button>
 
                           {/* Nút cấp lại mật khẩu tạm */}
@@ -478,40 +533,35 @@ export const EmployeeManagementView: React.FC = () => {
                             aria-label={`Cấp lại mật khẩu cho ${emp.fullName}`}
                             onClick={() => handleResetCredentials(emp)}
                             disabled={isBusy}
-                            className="p-1.5 rounded-lg text-text-secondary hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 2l-2 2m-2-2l2 2" />
-                              <circle cx="7.5" cy="15.5" r="4.5" />
-                              <path d="M10.5 12.5L20 3l1 1-2 2 2 2-3 3-2-2" />
-                            </svg>
+                            <KeyRound size={16} strokeWidth={2} />
                           </button>
 
                           {/* Nút đổi trạng thái */}
-                          <button
-                            type="button"
-                            title={emp.status === 'INACTIVE' ? 'Kích hoạt lại' : 'Vô hiệu hóa'}
-                            aria-label={`${emp.status === 'INACTIVE' ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
-                            onClick={() => handleToggleStatus(emp)}
-                            disabled={isBusy}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              emp.status === 'INACTIVE'
-                                ? 'text-text-secondary hover:text-emerald-600 hover:bg-emerald-50'
-                                : 'text-text-secondary hover:text-rose-600 hover:bg-rose-50'
-                            }`}
-                          >
-                            {emp.status === 'INACTIVE' ? (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 8 12 12 14 14" />
-                              </svg>
-                            ) : (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                              </svg>
-                            )}
-                          </button>
+                          {(() => {
+                            const isDeactivated = emp.status === 'INACTIVE' || emp.status === 'TERMINATED' || emp.status === 'SUSPENDED'
+                            return (
+                              <button
+                                type="button"
+                                title={isDeactivated ? 'Kích hoạt lại' : 'Vô hiệu hóa'}
+                                aria-label={`${isDeactivated ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
+                                onClick={() => handleToggleStatus(emp)}
+                                disabled={isBusy}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  isDeactivated
+                                    ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
+                                    : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+                                }`}
+                              >
+                                {isDeactivated ? (
+                                  <CheckCircle2 size={16} strokeWidth={2} />
+                                ) : (
+                                  <Ban size={16} strokeWidth={2} />
+                                )}
+                              </button>
+                            )
+                          })()}
                         </div>
                       </td>
                     </tr>
@@ -523,29 +573,31 @@ export const EmployeeManagementView: React.FC = () => {
         </div>
 
         {/* ── Thanh Phân trang ── */}
-        <div className="p-4 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary">
+        <div className="p-4 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div>
-            Hiển thị <span className="font-semibold text-text-primary">{displayedEmployees.length}</span> /{' '}
-            <span className="font-semibold text-text-primary">{totalElements}</span> nhân sự
+            Hiển thị <span className="font-semibold text-slate-900">{displayedEmployees.length}</span> /{' '}
+            <span className="font-semibold text-slate-900">{totalElements}</span> nhân sự
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               disabled={page === 0 || isLoading}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="btn-secondary h-8 px-3 text-xs disabled:opacity-40"
             >
               Trước
-            </button>
-            <span className="px-2 font-medium">Trang {page + 1}</span>
-            <button
+            </Button>
+            <span className="px-2 font-semibold text-slate-700">Trang {page + 1}</span>
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               disabled={displayedEmployees.length < pageSize || (page + 1) * pageSize >= totalElements || isLoading}
               onClick={() => setPage((p) => p + 1)}
-              className="btn-secondary h-8 px-3 text-xs disabled:opacity-40"
             >
               Sau
-            </button>
+            </Button>
           </div>
         </div>
       </div>
