@@ -2,9 +2,15 @@
  * Hợp đồng dữ liệu Điểm danh & Thống kê Chấm công (DATA-WEB-004, API-WEB-004, API-WEB-005, API-WEB-007).
  */
 
-export type VerificationMethod = 'VERIFICATION_FACE' | 'VERIFICATION_PIN'
+export type VerificationMethod =
+  | 'VERIFICATION_FACE'
+  | 'VERIFICATION_PIN'
+  | 'FACE_MATCH'
+  | 'FALLBACK_PIN'
+  | 'MANUAL_HR'
+  | 'HR_OVERRIDE'
 export type PunchType = 'CHECK_IN' | 'CHECK_OUT'
-export type AttendanceStatus = 'ON_TIME' | 'LATE' | 'EARLY_LEAVE'
+export type AttendanceStatus = 'ON_TIME' | 'LATE' | 'EARLY_LEAVE' | 'OVERTIME' | 'ANOMALOUS'
 
 export interface AttendanceRecord {
   readonly recordId: number

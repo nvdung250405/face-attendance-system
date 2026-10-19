@@ -8,6 +8,7 @@
  */
 
 import React, { useState } from 'react'
+import { KeyRound, AlertTriangle, Check, Copy } from 'lucide-react'
 
 export interface TemporaryPasswordModalProps {
   isOpen: boolean
@@ -56,10 +57,7 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
         {/* Tiêu đề & Icon */}
         <div className="flex items-center gap-3 pb-4 border-b border-border-subtle">
           <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
+            <KeyRound size={22} strokeWidth={2} />
           </div>
           <div>
             <h3 id="temp-pwd-title" className="text-lg font-bold text-text-primary leading-snug">
@@ -75,9 +73,7 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
 
         {/* Khối cảnh báo bảo mật */}
         <div className="my-4 p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-2.5">
-          <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+          <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold">Cảnh báo hiển thị một lần:</p>
             <p className="mt-0.5">
@@ -111,17 +107,12 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
             >
               {copied ? (
                 <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <Check size={16} strokeWidth={2.5} />
                   <span>Đã chép</span>
                 </>
               ) : (
                 <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
+                  <Copy size={16} strokeWidth={2} />
                   <span>Sao chép</span>
                 </>
               )}

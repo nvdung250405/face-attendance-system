@@ -10,6 +10,8 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { Button } from '@/components/common'
 import { useAuthStore } from '@/store/authStore'
 import { attendanceService } from '@/services/attendanceService'
 import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'
@@ -179,33 +181,22 @@ export const AdminDashboardView: React.FC = () => {
             Chào mừng trở lại, {user?.fullName || 'Quản Trị Viên'}
           </h1>
           <p className="page-subtitle">
-            Giám sát thời gian thực các trạm điểm danh biên, nhịp tim Kiosk và chỉ số chấm công toàn công ty (DD-WEB-014)
+            Giám sát thời gian thực các trạm điểm danh biên, nhịp tim Kiosk và chỉ số chấm công toàn công ty
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
             data-testid="refresh-dashboard-btn"
+            variant="secondary"
+            size="sm"
             onClick={loadDashboardData}
-            disabled={isLoading}
-            className="btn-secondary flex items-center gap-2 self-start sm:self-auto text-sm"
+            isLoading={isLoading}
+            leftIcon={<RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />}
           >
-            <svg
-              className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            <span>Làm mới</span>
-          </button>
+            Làm mới
+          </Button>
         </div>
       </div>
 

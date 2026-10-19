@@ -9,6 +9,7 @@
  */
 
 import React, { useState } from 'react'
+import { X, AlertCircle } from 'lucide-react'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import type { EmployeeItem, UserRole } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
@@ -22,6 +23,13 @@ export interface EmployeeDrawerProps {
 }
 
 const DEPARTMENTS = [
+  'Phòng Kỹ thuật & Tích hợp',
+  'Phòng Nhân sự & Đào tạo',
+  'Phòng Kinh doanh & Khách hàng',
+  'Phòng Kế toán - Tài chính',
+  'Phòng Kho vận & Logistics',
+  'Ban Quản Trị Hệ Thống',
+  'Ban Pháp chế & Bảo mật',
   'Phòng Kỹ thuật',
   'Phòng Nhân sự',
   'Phòng Kế toán',
@@ -127,11 +135,11 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
   }
 
   return (
-    <div className="w-full max-w-drawer bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-250">
-      {/* Header Drawer */}
-      <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+    <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150">
+      {/* Header Modal */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
         <div>
-          <h2 className="text-lg font-bold text-text-primary">
+          <h2 className="text-base font-bold text-text-primary">
             {mode === 'create' ? 'Tạo mới hồ sơ nhân sự' : 'Chỉnh sửa hồ sơ nhân sự'}
           </h2>
           <p className="text-xs text-text-secondary mt-0.5">
@@ -144,12 +152,9 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
           type="button"
           onClick={onClose}
           aria-label="Đóng Drawer"
-          className="w-8 h-8 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 flex items-center justify-center transition-colors"
+          className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <X size={18} strokeWidth={2} />
         </button>
       </div>
 
@@ -159,11 +164,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
           data-testid="employee-form-error"
           className="mx-6 mt-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-start gap-2"
         >
-          <svg className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
+          <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
           <span>{generalError}</span>
         </div>
       )}
@@ -301,7 +302,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
       </form>
 
       {/* Footer Actions */}
-      <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50">
+      <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
         <button
           type="button"
           id="drawer-btn-cancel"
@@ -350,7 +351,7 @@ export const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({
       role="dialog"
       aria-modal="true"
       data-testid="employee-drawer"
-      className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
     >
       <DrawerForm
         key={`${mode}-${initialData?.id ?? 'new'}`}

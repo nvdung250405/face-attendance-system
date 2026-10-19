@@ -30,9 +30,18 @@ export class AdminEmployeeService {
    */
   async getEmployees(criteria?: EmployeeSearchCriteria): Promise<PaginatedResult<EmployeeItem>> {
     try {
+      let backendCriteria = criteria
+      if (criteria?.status) {
+        // Backend Spring Boot enum uses TERMINATED thay vì INACTIVE
+        const mappedStatus: UserStatus = criteria.status === 'INACTIVE' ? 'TERMINATED' : criteria.status
+        backendCriteria = {
+          ...criteria,
+          status: mappedStatus,
+        }
+      }
       const response = await apiClient.get<ApiResponse<PaginatedResult<EmployeeItem>>>(
         '/api/v1/admin/employees',
-        { params: criteria }
+        { params: backendCriteria }
       )
       return response.data.data
     } catch (error) {
@@ -129,14 +138,15 @@ export class AdminEmployeeService {
     }
   }
 
-  /**
-   * Cập nhật trạng thái hoạt động của nhân sự (PATCH /api/v1/admin/employees/{id}/status)
-   */
-  async updateEmployeeStatus(id: number, status: UserStatus): Promise<EmployeeItem> {
+  async updateEmployeeStatus(id: number, status: UserStatus, reason?: string): Promise<EmployeeItem> {
     try {
+      const backendStatus = status === 'INACTIVE' ? 'TERMINATED' : status
       const response = await apiClient.patch<ApiResponse<EmployeeItem>>(
         `/api/v1/admin/employees/${id}/status`,
-        { status }
+        {
+          status: backendStatus,
+          reason: reason || (backendStatus === 'TERMINATED' ? 'Vô hiệu hóa qua Cổng Quản trị' : 'Kích hoạt lại qua Cổng Quản trị'),
+        }
       )
       return response.data.data
     } catch (error) {

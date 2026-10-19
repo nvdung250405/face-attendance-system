@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { RefreshCw, Shield, ScanFace, AlertTriangle, Plus, Lock } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal, ConsentWithdrawalModal } from '@/components/consent'
 import { PinManagementModal } from '@/components/account'
@@ -69,17 +70,7 @@ export const EmployeeConsentView: React.FC = () => {
           className="btn-secondary self-start sm:self-auto flex items-center gap-2"
           title="Đồng bộ lại trạng thái sinh trắc từ CSDL hệ thống"
         >
-          <svg
-            className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-          </svg>
+          <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
           <span>{isRefreshing ? 'Đang đồng bộ...' : 'Làm mới'}</span>
         </button>
       </div>
@@ -87,9 +78,7 @@ export const EmployeeConsentView: React.FC = () => {
       {/* ── Khung Thông tin Pháp lý ── */}
       <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex flex-col md:flex-row items-start gap-3">
         <div className="p-1 rounded-lg bg-blue-100 text-blue-700 mt-0.5 shrink-0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
+          <Shield size={20} strokeWidth={2} />
         </div>
         <div className="space-y-1">
           <h2 className="text-sm font-bold text-blue-950 flex items-center gap-2">
@@ -113,11 +102,7 @@ export const EmployeeConsentView: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                    <path d="M9 11.5c0 .8.9 1.5 3 1.5s3-.7 3-1.5" />
-                  </svg>
+                  <ScanFace size={20} strokeWidth={1.75} />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary">Dữ liệu khuôn mặt Kiosk</h3>
@@ -151,11 +136,7 @@ export const EmployeeConsentView: React.FC = () => {
                 onClick={() => setIsWithdrawModalOpen(true)}
                 className="px-4 py-2 border border-rose-300 text-status-danger hover:bg-rose-50 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
+                <AlertTriangle size={16} strokeWidth={2} />
                 <span>Rút lại cam kết sinh trắc</span>
               </button>
             ) : (
@@ -165,9 +146,7 @@ export const EmployeeConsentView: React.FC = () => {
                 onClick={() => setIsConsentModalOpen(true)}
                 className="btn-primary flex items-center gap-2 text-sm"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
+                <Plus size={16} strokeWidth={2} />
                 <span>Ký cam kết ngay</span>
               </button>
             )}
@@ -180,10 +159,7 @@ export const EmployeeConsentView: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
+                  <Lock size={20} strokeWidth={1.75} />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary">Mã PIN dự phòng</h3>

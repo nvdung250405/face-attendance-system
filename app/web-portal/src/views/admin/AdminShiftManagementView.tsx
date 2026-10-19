@@ -30,6 +30,7 @@ import { shiftAdminService } from '@/services/shiftAdminService'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
 import { WeeklyShiftScheduleView } from '@/components/shift'
+import { Button } from '@/components/common'
 import type {
   ShiftItem,
   CreateShiftRequest,
@@ -492,42 +493,45 @@ export const AdminShiftManagementView: React.FC = () => {
 
         {/* Nút hành động chính */}
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => {
               void loadShifts()
               void loadAssignments()
             }}
             data-testid="refresh-shifts-btn"
             title="Làm mới dữ liệu"
-            className="btn-secondary flex items-center gap-2"
+            leftIcon={<RotateCw className="w-4 h-4" />}
           >
-            <RotateCw className="w-4 h-4" />
-            <span>Làm mới</span>
-          </button>
+            Làm mới
+          </Button>
 
           {activeTab === 'shifts' ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               onClick={handleOpenCreateShiftDrawer}
               disabled={isAdjustmentLocked}
               data-testid="open-create-shift-drawer-btn"
-              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              leftIcon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>Thêm Ca Mới</span>
-            </button>
+              Thêm Ca Mới
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               onClick={handleOpenAssignDrawer}
               disabled={isAdjustmentLocked}
               data-testid="open-assign-shift-drawer-btn"
-              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              leftIcon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>Phân Ca Nhân Sự</span>
-            </button>
+              Phân Ca Nhân Sự
+            </Button>
           )}
         </div>
       </div>
@@ -536,16 +540,16 @@ export const AdminShiftManagementView: React.FC = () => {
       {isAdjustmentLocked && (
         <div
           data-testid="payroll-locked-warning-banner"
-          className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-2xs"
+          className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs"
         >
-          <div className="p-1 rounded-lg bg-amber-100 text-amber-700 mt-0.5">
+          <div className="p-1.5 rounded-lg bg-amber-200 text-amber-800 mt-0.5 shrink-0">
             <Lock className="w-4 h-4" />
           </div>
           <div className="space-y-0.5 text-xs">
             <p className="font-bold">
               Kỳ công đang bị KHÓA điều chỉnh {selectedPeriod ? `(Kỳ ${selectedPeriod.periodMonth}/${selectedPeriod.periodYear})` : ''}
             </p>
-            <p className="text-amber-800/90 leading-relaxed">
+            <p className="text-amber-800 leading-relaxed">
               Mọi hoạt động tạo ca, sửa ca và phân ca nhân sự tạm thời bị vô hiệu hóa để bảo toàn dữ liệu bảng công. Vui lòng liên hệ Quản trị viên (ADMIN) mở lại kỳ công nếu cần điều chỉnh.
             </p>
           </div>
@@ -555,47 +559,49 @@ export const AdminShiftManagementView: React.FC = () => {
       {/* Thông báo thao tác */}
       {notification && (
         <div
-          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-medium ${
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-medium shadow-xs ${
             notification.type === 'success'
-              ? 'bg-emerald-50 text-status-success border-emerald-200'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : notification.type === 'warning'
               ? 'bg-amber-50 text-amber-800 border-amber-200'
-              : 'bg-rose-50 text-status-danger border-rose-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200'
           }`}
         >
           <div className="flex items-center gap-2">
             {notification.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-status-success" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : (
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4 shrink-0" />
             )}
             <span>{notification.message}</span>
           </div>
           <button
             type="button"
             onClick={() => setNotification(null)}
-            className="text-text-muted hover:text-text-primary"
+            className="text-slate-400 hover:text-slate-600"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* ── Tabs Chuyển đổi ── */}
+      {/* ── Tabs Chuyển đổi Đồng bộ ── */}
       <div className="border-b border-border-subtle flex items-center gap-6">
         <button
           type="button"
           onClick={() => setActiveTab('shifts')}
           data-testid="tab-shifts-btn"
-          className={`pb-3.5 text-xs font-bold transition-all relative flex items-center gap-2 ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
             activeTab === 'shifts'
-              ? 'text-brand-primary border-b-2 border-brand-primary font-semibold'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'text-indigo-600 border-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <Clock className="w-4 h-4" />
           <span>Danh Mục Ca Làm Việc</span>
-          <span className="px-2 py-0.5 rounded-full text-2xs bg-slate-100 text-text-secondary">
+          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+            activeTab === 'shifts' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+          }`}>
             {shifts.length}
           </span>
         </button>
@@ -604,15 +610,17 @@ export const AdminShiftManagementView: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('assignments')}
           data-testid="tab-assignments-btn"
-          className={`pb-3.5 text-xs font-bold transition-all relative flex items-center gap-2 ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
             activeTab === 'assignments'
-              ? 'text-brand-primary border-b-2 border-brand-primary font-semibold'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'text-indigo-600 border-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <Calendar className="w-4 h-4" />
           <span>Lịch Phân Ca Nhân Sự</span>
-          <span className="px-2 py-0.5 rounded-full text-2xs bg-slate-100 text-text-secondary">
+          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+            activeTab === 'assignments' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+          }`}>
             {assignments.length}
           </span>
         </button>
@@ -624,14 +632,14 @@ export const AdminShiftManagementView: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="table-sticky-header">
-                  <th className="py-3 px-4 font-semibold">Mã Ca</th>
-                  <th className="py-3 px-4 font-semibold">Tên Ca Làm Việc</th>
-                  <th className="py-3 px-4 font-semibold">Giờ Bắt Đầu</th>
-                  <th className="py-3 px-4 font-semibold">Giờ Kết Thúc</th>
-                  <th className="py-3 px-4 font-semibold">Ân Hạn (Phút)</th>
-                  <th className="py-3 px-4 font-semibold">Trạng Thái</th>
-                  <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Mã Ca</th>
+                  <th className="py-3 px-4">Tên Ca Làm Việc</th>
+                  <th className="py-3 px-4">Giờ Bắt Đầu</th>
+                  <th className="py-3 px-4">Giờ Kết Thúc</th>
+                  <th className="py-3 px-4">Ân Hạn (Phút)</th>
+                  <th className="py-3 px-4">Trạng Thái</th>
+                  <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                     Thao Tác
                   </th>
                 </tr>
@@ -640,7 +648,10 @@ export const AdminShiftManagementView: React.FC = () => {
                 {isLoadingShifts ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-text-muted">
-                      Đang tải danh mục ca...
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
+                        <span>Đang tải danh mục ca...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : shifts.length === 0 ? (
@@ -654,32 +665,32 @@ export const AdminShiftManagementView: React.FC = () => {
                     <tr
                       key={shift.id}
                       data-testid={`shift-row-${shift.id}`}
-                      className="table-row-hover transition-colors"
+                      className="hover:bg-slate-50/80 transition-colors"
                     >
-                      <td className="py-3.5 px-4 font-mono font-bold text-brand-primary">
+                      <td className="py-3.5 px-4 font-mono font-bold text-brand-primary text-xs">
                         {shift.shiftCode}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-text-primary">{shift.name}</td>
-                      <td className="py-3.5 px-4 text-text-secondary">
-                        <span className="inline-flex items-center gap-1">
+                      <td className="py-3.5 px-4 font-semibold text-text-primary text-xs">{shift.name}</td>
+                      <td className="py-3.5 px-4 text-text-secondary text-xs">
+                        <span className="inline-flex items-center gap-1 font-mono">
                           <Clock className="w-3.5 h-3.5 text-text-tertiary" />
                           <span>{shift.startTime}</span>
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-text-secondary">
-                        <span className="inline-flex items-center gap-1">
+                      <td className="py-3.5 px-4 text-text-secondary text-xs">
+                        <span className="inline-flex items-center gap-1 font-mono">
                           <Clock className="w-3.5 h-3.5 text-text-tertiary" />
                           <span>{shift.endTime}</span>
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-text-secondary font-medium">
+                      <td className="py-3.5 px-4 text-text-secondary font-medium text-xs">
                         {shift.gracePeriodMinutes} phút
                       </td>
                       <td className="py-3.5 px-4">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold ${
                             shift.isActive
-                              ? 'bg-emerald-50 text-status-success'
+                              ? 'bg-emerald-50 text-status-success border border-emerald-200/60'
                               : 'bg-slate-100 text-slate-500'
                           }`}
                         >
@@ -694,7 +705,7 @@ export const AdminShiftManagementView: React.FC = () => {
                             disabled={isAdjustmentLocked}
                             data-testid={`edit-shift-btn-${shift.id}`}
                             title="Sửa thông tin ca"
-                            className="p-1.5 rounded-lg border border-border-subtle hover:bg-slate-100 text-text-secondary hover:text-text-primary disabled:opacity-40"
+                            className="p-1.5 rounded-lg border border-slate-200 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors disabled:opacity-40"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -725,7 +736,7 @@ export const AdminShiftManagementView: React.FC = () => {
       {/* ── Nội dung Tab 2: Lịch Phân ca Nhân sự ── */}
       {activeTab === 'assignments' && (
         <div className="space-y-4">
-          {/* Thanh công cụ lọc & Chuyển đổi chế độ xem (Bảng vs Lịch tuần) - UI-WEB-007, UXD-WEB-006 */}
+          {/* Thanh công cụ lọc & Chuyển đổi chế độ xem */}
           <div className="card-surface p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               {/* Toggle Chế độ xem: Bảng vs Lịch tuần */}
@@ -761,7 +772,7 @@ export const AdminShiftManagementView: React.FC = () => {
               {/* Tìm kiếm theo tên / mã nhân viên */}
               {assignmentViewMode === 'table' && (
                 <div className="relative w-full sm:w-64">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Search className="w-4 h-4" />
                   </div>
                   <input
@@ -770,7 +781,7 @@ export const AdminShiftManagementView: React.FC = () => {
                     onChange={(e) => setSearchEmployeeKeyword(e.target.value)}
                     data-testid="search-assigned-employee-input"
                     placeholder="Mã NV hoặc Họ tên..."
-                    className="input-base pl-9.5 text-sm"
+                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
               )}
@@ -781,7 +792,7 @@ export const AdminShiftManagementView: React.FC = () => {
                   value={filterShiftId}
                   onChange={(e) => setFilterShiftId(e.target.value)}
                   data-testid="filter-assigned-shift-select"
-                  className="input-base text-sm w-auto"
+                  className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-auto"
                 >
                   <option value="">Tất cả ca làm việc</option>
                   {shifts.map((s) => (
@@ -816,13 +827,13 @@ export const AdminShiftManagementView: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="table-sticky-header">
-                      <th className="py-3 px-4 font-semibold">Nhân Sự</th>
-                      <th className="py-3 px-4 font-semibold">Ca Áp Dụng</th>
-                      <th className="py-3 px-4 font-semibold">Khung Giờ</th>
-                      <th className="py-3 px-4 font-semibold">Ngày Bắt Đầu</th>
-                      <th className="py-3 px-4 font-semibold">Ngày Kết Thúc</th>
-                      <th className="py-3 px-4 font-semibold text-right sticky right-0 bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                    <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3 px-4">Nhân Sự</th>
+                      <th className="py-3 px-4">Ca Áp Dụng</th>
+                      <th className="py-3 px-4">Khung Giờ</th>
+                      <th className="py-3 px-4">Ngày Bắt Đầu</th>
+                      <th className="py-3 px-4">Ngày Kết Thúc</th>
+                      <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                         Thao Tác
                       </th>
                     </tr>
@@ -831,7 +842,10 @@ export const AdminShiftManagementView: React.FC = () => {
                     {isLoadingAssignments ? (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-text-muted">
-                          Đang tải lịch phân ca...
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
+                            <span>Đang tải lịch phân ca...</span>
+                          </div>
                         </td>
                       </tr>
                     ) : filteredAssignments.length === 0 ? (
@@ -845,33 +859,33 @@ export const AdminShiftManagementView: React.FC = () => {
                         <tr
                           key={item.id}
                           data-testid={`assignment-row-${item.id}`}
-                          className="hover:bg-slate-50/50 transition-colors"
+                          className="hover:bg-slate-50/80 transition-colors"
                         >
                           <td className="py-3.5 px-4">
                             <div>
-                              <span className="font-semibold text-text-primary block">{item.fullName}</span>
-                              <span className="text-2xs font-mono text-text-tertiary">
+                              <span className="font-semibold text-text-primary block text-xs">{item.fullName}</span>
+                              <span className="text-2xs font-mono text-slate-400">
                                 {item.employeeCode}
                               </span>
                             </div>
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 text-xs">
                             <span className="font-semibold text-text-secondary">{item.shiftName}</span>
-                            <span className="ml-1 text-2xs font-mono text-brand-primary">
+                            <span className="ml-1 text-2xs font-mono text-indigo-600 font-bold">
                               ({item.shiftCode})
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-text-secondary">
+                          <td className="py-3.5 px-4 text-text-secondary text-xs font-mono">
                             {shifts.find((s) => s.id === item.shiftId)
                               ? `${shifts.find((s) => s.id === item.shiftId)?.startTime} - ${
                                   shifts.find((s) => s.id === item.shiftId)?.endTime
                                 }`
                               : 'Theo ca'}
                           </td>
-                          <td className="py-3.5 px-4 font-mono text-text-secondary">
+                          <td className="py-3.5 px-4 font-mono text-text-secondary text-xs">
                             {item.effectiveStartDate}
                           </td>
-                          <td className="py-3.5 px-4 font-mono text-text-secondary">
+                          <td className="py-3.5 px-4 font-mono text-text-secondary text-xs">
                             {item.effectiveEndDate}
                           </td>
                           <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
@@ -881,7 +895,7 @@ export const AdminShiftManagementView: React.FC = () => {
                               disabled={isAdjustmentLocked}
                               data-testid={`remove-assignment-btn-${item.id}`}
                               title="Hủy lịch phân ca"
-                              className="p-1.5 rounded-lg border border-border-subtle text-status-danger hover:bg-rose-50 transition-colors disabled:opacity-40"
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -897,32 +911,44 @@ export const AdminShiftManagementView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Drawer Tạo mới / Chỉnh sửa Ca làm việc (UXD-WEB-006) ── */}
+      {/* ── Modal Tạo mới / Chỉnh sửa Ca làm việc (UXD-WEB-006) ── */}
       {isShiftDrawerOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+        >
           <div
             data-testid="shift-drawer"
-            className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200"
+            className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
           >
-            {/* Header Drawer */}
-            <div className="p-4 border-b border-border-subtle flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-brand-primary" />
-                <h3 className="font-bold text-sm text-text-primary">
-                  {editingShift ? 'Chỉnh Sửa Ca Làm Việc' : 'Tạo Mới Ca Làm Việc'}
-                </h3>
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-text-primary">
+                    {editingShift ? 'Chỉnh Sửa Ca Làm Việc' : 'Tạo Mới Ca Làm Việc'}
+                  </h3>
+                  <p className="text-xs text-text-muted">
+                    {editingShift ? 'Cập nhật khung giờ & thời gian ân hạn' : 'Thiết lập khung giờ làm việc chuẩn cho tổ chức'}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsShiftDrawerOpen(false)}
-                className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-slate-100"
+                aria-label="Đóng"
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Form Drawer */}
-            <form onSubmit={handleSaveShift} className="p-5 space-y-4 flex-1 overflow-y-auto">
+            {/* Form Modal */}
+            <form onSubmit={handleSaveShift} className="p-6 space-y-4 flex-1 overflow-y-auto">
               {shiftFormError && (
                 <div
                   data-testid="shift-form-error"
@@ -1035,12 +1061,12 @@ export const AdminShiftManagementView: React.FC = () => {
               )}
             </form>
 
-            {/* Footer Drawer */}
-            <div className="p-4 border-t border-border-subtle flex items-center justify-end gap-2 bg-slate-50/50">
+            {/* Footer Modal */}
+            <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsShiftDrawerOpen(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white hover:bg-slate-100"
+                className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white text-text-secondary hover:bg-slate-100 transition-colors shadow-xs"
               >
                 Hủy bỏ
               </button>
@@ -1049,7 +1075,7 @@ export const AdminShiftManagementView: React.FC = () => {
                 onClick={handleSaveShift}
                 disabled={isSubmittingShift}
                 data-testid="submit-shift-btn"
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50"
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50 transition-colors"
               >
                 {isSubmittingShift ? 'Đang lưu...' : editingShift ? 'Lưu Thay Đổi' : 'Tạo Ca'}
               </button>
@@ -1058,30 +1084,40 @@ export const AdminShiftManagementView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Drawer Phân ca Nhân sự & Gợi ý Chồng lấn (SOL-WEB-007, UXD-WEB-006) ── */}
+      {/* ── Modal Phân ca Nhân sự & Gợi ý Chồng lấn (SOL-WEB-007, UXD-WEB-006) ── */}
       {isAssignDrawerOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+        >
           <div
             data-testid="assign-shift-drawer"
-            className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200"
+            className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
           >
-            {/* Header Drawer */}
-            <div className="p-4 border-b border-border-subtle flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-brand-primary" />
-                <h3 className="font-bold text-sm text-text-primary">Phân Ca Nhân Sự Theo Khoảng Ngày</h3>
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-text-primary">Phân Ca Nhân Sự Theo Khoảng Ngày</h3>
+                  <p className="text-xs text-text-muted">Gán ca làm việc cho nhân viên & kiểm tra xung đột ca</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAssignDrawerOpen(false)}
-                className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-slate-100"
+                aria-label="Đóng"
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Form Drawer */}
-            <form onSubmit={handleSaveAssign} className="p-5 space-y-4 flex-1 overflow-y-auto">
+            {/* Form Modal */}
+            <form onSubmit={handleSaveAssign} className="p-6 space-y-4 flex-1 overflow-y-auto">
               {/* Cảnh báo lỗi thông thường */}
               {assignFormError && (
                 <div
@@ -1204,12 +1240,12 @@ export const AdminShiftManagementView: React.FC = () => {
               </div>
             </form>
 
-            {/* Footer Drawer */}
-            <div className="p-4 border-t border-border-subtle flex items-center justify-end gap-2 bg-slate-50/50">
+            {/* Footer Modal */}
+            <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsAssignDrawerOpen(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white hover:bg-slate-100"
+                className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white text-text-secondary hover:bg-slate-100 transition-colors shadow-xs"
               >
                 Hủy bỏ
               </button>
@@ -1218,7 +1254,7 @@ export const AdminShiftManagementView: React.FC = () => {
                 onClick={handleSaveAssign}
                 disabled={isSubmittingAssign}
                 data-testid="submit-assign-shift-btn"
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50"
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50 transition-colors"
               >
                 {isSubmittingAssign ? 'Đang phân ca...' : 'Xác Nhận Phân Ca'}
               </button>

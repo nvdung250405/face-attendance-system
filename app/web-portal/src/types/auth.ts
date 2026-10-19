@@ -3,7 +3,7 @@
  */
 
 export type UserRole = 'HR_MANAGER' | 'EMPLOYEE' | 'ADMIN' | 'DPO'
-export type UserStatus = 'PENDING_CONSENT' | 'ACTIVE' | 'INACTIVE'
+export type UserStatus = 'PENDING_CONSENT' | 'ACTIVE' | 'INACTIVE' | 'TERMINATED' | 'SUSPENDED'
 
 export interface UserProfile {
   readonly id: number
