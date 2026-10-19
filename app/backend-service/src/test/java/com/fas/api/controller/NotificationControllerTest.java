@@ -2,6 +2,7 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.response.NotificationResponse;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.enums.NotificationEventType;
 import com.fas.data.repository.UserRepository;
 import com.fas.service.NotificationService;
@@ -68,8 +69,11 @@ class NotificationControllerTest {
         when(notificationService.getUserNotifications(eq(1042L), any()))
                 .thenReturn(new PageImpl<>(List.of(sampleNotification), PageRequest.of(0, 20), 1));
 
+        User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+
         mockMvc.perform(get("/api/v1/notifications")
-                        .header("X-User-Id", 1042L))
+                        .principal(() -> "dung@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("NOTIFICATIONS_FETCHED"))
@@ -83,8 +87,11 @@ class NotificationControllerTest {
     void getUnreadCount_Success() throws Exception {
         when(notificationService.getUnreadCount(1042L)).thenReturn(5L);
 
+        User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+
         mockMvc.perform(get("/api/v1/notifications/unread-count")
-                        .header("X-User-Id", 1042L))
+                        .principal(() -> "dung@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("UNREAD_COUNT_FETCHED"))
@@ -103,8 +110,11 @@ class NotificationControllerTest {
         );
         when(notificationService.markAsRead(1L, 1042L)).thenReturn(readNotification);
 
+        User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+
         mockMvc.perform(patch("/api/v1/notifications/1/read")
-                        .header("X-User-Id", 1042L))
+                        .principal(() -> "dung@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("NOTIFICATION_READ"))
@@ -116,8 +126,11 @@ class NotificationControllerTest {
     @Test
     @DisplayName("Đánh dấu tất cả thông báo đã đọc -> trả về 200 OK")
     void markAllAsRead_Success() throws Exception {
+        User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+
         mockMvc.perform(post("/api/v1/notifications/read-all")
-                        .header("X-User-Id", 1042L))
+                        .principal(() -> "dung@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("NOTIFICATIONS_READ_ALL"));

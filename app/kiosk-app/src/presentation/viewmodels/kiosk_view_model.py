@@ -415,7 +415,10 @@ class KioskViewModel(QObject):
         # 4. Pipeline Bước 2: Kiểm tra thực thể sống Liveness chống giả mạo (MiniFASNet)
         if self.liveness_gate is not None:
             liveness_score = float(self.liveness_gate.predict(frame, detection.bbox))
-            if liveness_score < settings.liveness_threshold:
+            gate_threshold = getattr(self.liveness_gate, "threshold", None)
+            if not isinstance(gate_threshold, (int, float)):
+                gate_threshold = settings.liveness_threshold
+            if liveness_score < gate_threshold:
                 self.set_state(
                     OvalState.ERROR,
                     "CẢNH BÁO: PHÁT HIỆN KHUÔN MẶT KHÔNG HỢP LỆ!",
@@ -454,7 +457,6 @@ class KioskViewModel(QObject):
                 )
                 self._trigger_hold(duration_sec=2.5)
                 return
-            self.cooldown_tracker.record_punch(emp_id)
 
         # 8. Điểm danh thành công! Lưu vào SQLite WAL ngoại tuyến
         punch_time = datetime.now().strftime("%H:%M:%S")
@@ -470,6 +472,9 @@ class KioskViewModel(QObject):
                 kiosk_id=settings.kiosk_id,
             )
             self._update_pending_sync_count()
+
+        if self.cooldown_tracker:
+            self.cooldown_tracker.record_punch(emp_id)
 
         self._last_emp_id = emp_id
         self._last_punch_time = punch_time
@@ -503,13 +508,14 @@ class KioskViewModel(QObject):
         self.set_state(OvalState.ALIGNING, "Vui lòng nhập mã OTP để tiếp tục đăng ký...")
         self.openEnrollmentDialogRequested.emit()
 
-    @Slot(str)
-    def submitPin(self, pin_code: str) -> None:
-        """Xử lý điểm danh bằng mã PIN từ giao diện QML."""
-        try:
-            emp_id = int(pin_code)
-        except ValueError:
-            emp_id = 9999
+    @Slot(int)
+    def recordVerifiedPinPunch(self, employee_id: int) -> None:
+        """Ghi nhận điểm danh PIN cho nhân viên ĐÃ được backend xác thực thành công.
+
+        Chỉ được gọi sau khi `verify_pin` trả về 200 OK. Không tự ý coi mã PIN
+        là mã nhân viên (không parse PIN thành employee_id).
+        """
+        emp_id = int(employee_id)
 
         if self.cooldown_tracker:
             status = self.cooldown_tracker.check_cooldown(emp_id)
@@ -520,7 +526,6 @@ class KioskViewModel(QObject):
                 )
                 self._trigger_hold(duration_sec=2.5)
                 return
-            self.cooldown_tracker.record_punch(emp_id)
 
         punch_time = datetime.now().strftime("%H:%M:%S")
         last_punch = self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
@@ -536,6 +541,9 @@ class KioskViewModel(QObject):
             )
             self._update_pending_sync_count()
 
+        if self.cooldown_tracker:
+            self.cooldown_tracker.record_punch(emp_id)
+
         self._last_emp_id = emp_id
         self._last_punch_time = punch_time
         self._last_score = 1.0
@@ -547,5 +555,5 @@ class KioskViewModel(QObject):
             f"Điểm danh {punch_label} ({punch_type}) mã PIN thành công lúc {punch_time}!\nMã NV: {emp_id}",
         )
         self._trigger_hold(duration_sec=3.0)
-        logger.info("Điểm danh mã PIN %s THÀNH CÔNG cho mã: %s", punch_type, pin_code)
+        logger.info("Điểm danh mã PIN %s THÀNH CÔNG cho emp_id=%d", punch_type, emp_id)
 

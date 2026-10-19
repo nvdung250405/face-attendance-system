@@ -1,6 +1,13 @@
-import React, { useEffect, useCallback } from 'react'
-import { X } from 'lucide-react'
-import { cn } from '../../utils/cn'
+import React from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { cn } from '@/utils/cn'
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full'
 
@@ -27,6 +34,10 @@ const sizeStyles: Record<ModalSize, string> = {
   full: 'max-w-4xl',
 }
 
+/**
+ * Modal Component chuẩn hóa kế thừa từ shadcn Dialog và Radix UI Primitive.
+ * Tự động quản lý Focus trap, phím ESC, Portal và Scroll lock.
+ */
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
@@ -41,85 +52,45 @@ export const Modal: React.FC<ModalProps> = ({
   dataTestId,
   className,
 }) => {
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    },
-    [onClose]
-  )
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = 'hidden'
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen, handleKeyDown])
-
-  if (!isOpen) return null
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      data-testid={dataTestId}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto"
-      onClick={closeOnOverlayClick ? onClose : undefined}
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose()
+        }
+      }}
     >
-      <div
-        className={cn(
-          'card-surface w-full bg-white shadow-2xl overflow-hidden my-auto',
-          'animate-in fade-in zoom-in-95 duration-150',
-          sizeStyles[size],
-          className
-        )}
-        onClick={(e) => e.stopPropagation()}
+      <DialogContent
+        data-testid={dataTestId}
+        hideCloseButton={!showCloseButton}
+        className={cn(sizeStyles[size], className)}
+        onPointerDownOutside={(e) => {
+          if (!closeOnOverlayClick) {
+            e.preventDefault()
+          }
+        }}
       >
-        {/* Header */}
-        {(title || showCloseButton) && (
-          <div className="flex items-start justify-between p-5 border-b border-border-subtle bg-slate-50/50">
+        {(title || icon || description) && (
+          <DialogHeader>
             <div className="flex items-center gap-3">
               {icon && <div className="shrink-0">{icon}</div>}
               <div>
-                {title && (
-                  <h3 className="text-base font-bold text-text-primary leading-tight">
-                    {title}
-                  </h3>
-                )}
+                {title && <DialogTitle>{title}</DialogTitle>}
                 {description && (
-                  <p className="text-xs text-text-secondary mt-1">{description}</p>
+                  <DialogDescription className="mt-1">
+                    {description}
+                  </DialogDescription>
                 )}
               </div>
             </div>
-
-            {showCloseButton && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
-                aria-label="Đóng"
-              >
-                <X size={18} strokeWidth={2} />
-              </button>
-            )}
-          </div>
+          </DialogHeader>
         )}
 
-        {/* Content Body */}
-        <div className="p-5">{children}</div>
+        <div className="py-1 text-slate-700">{children}</div>
 
-        {/* Footer */}
-        {footer && (
-          <div className="flex items-center justify-end gap-3 p-4 border-t border-border-subtle bg-slate-50/80">
-            {footer}
-          </div>
-        )}
-      </div>
-    </div>
+        {footer && <DialogFooter>{footer}</DialogFooter>}
+      </DialogContent>
+    </Dialog>
   )
 }

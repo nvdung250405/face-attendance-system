@@ -76,7 +76,7 @@ class OfflineSyncWorker(QThread):
             self._internal_client = httpx.Client(
                 timeout=10.0,
                 headers={
-                    "Authorization": f"Bearer {self.secret_token}",
+                    "X-Kiosk-Secret": self.secret_token,
                     "X-Kiosk-Id": self.kiosk_id,
                     "Content-Type": "application/json",
                 },
@@ -170,6 +170,7 @@ class OfflineSyncWorker(QThread):
                 "localId": p.get("id"),
                 "employeeId": int(p.get("employee_id")),
                 "punchTimestamp": iso_time,
+                "punchType": p.get("punch_type"),
                 "verificationMethod": method,
                 "confidenceScore": score,
             }
@@ -188,7 +189,7 @@ class OfflineSyncWorker(QThread):
                 url,
                 json=payload,
                 headers={
-                    "Authorization": f"Bearer {self.secret_token}",
+                    "X-Kiosk-Secret": self.secret_token,
                     "X-Kiosk-Id": self.kiosk_id,
                     "Content-Type": "application/json",
                 },
@@ -196,8 +197,35 @@ class OfflineSyncWorker(QThread):
             )
 
             if response.status_code == 200:
-                local_ids = [p["id"] for p in punches if "id" in p]
-                self.queue_manager.mark_as_synced(local_ids)
+                all_ids = [p["id"] for p in punches if "id" in p]
+                try:
+                    body = response.json()
+                except Exception:
+                    body = {}
+                data = body.get("data") if isinstance(body, dict) else None
+                data = data or {}
+                synced_ids = data.get("syncedLocalIds") or []
+                failed_ids = data.get("failedLocalIds") or []
+
+                if synced_ids or failed_ids:
+                    # Backend trả kết quả theo từng bản ghi: chỉ tin 2 danh sách này.
+                    clean_synced = [int(i) for i in synced_ids]
+                    clean_failed = [int(i) for i in failed_ids]
+                    if clean_synced:
+                        self.queue_manager.mark_as_synced(clean_synced)
+                    if clean_failed:
+                        logger.warning(
+                            "Backend từ chối vĩnh viễn %d bản ghi (failedLocalIds=%s); "
+                            "đánh dấu đã đồng bộ để không chặn hàng đợi",
+                            len(clean_failed),
+                            clean_failed,
+                        )
+                        self.queue_manager.mark_as_synced(clean_failed)
+                    # Các id không xuất hiện trong cả 2 danh sách vẫn giữ is_synced=0 để retry.
+                else:
+                    # Phản hồi 200 không kèm chi tiết từng bản ghi: toàn lô được chấp nhận.
+                    self.queue_manager.mark_as_synced(all_ids)
+
                 self._update_network_status(True, "Đồng bộ lô ngoại tuyến thành công")
                 logger.info(
                     "Đồng bộ thành công lô %d bản ghi lên backend %s",

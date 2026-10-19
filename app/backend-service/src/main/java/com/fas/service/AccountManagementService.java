@@ -193,7 +193,12 @@ public class AccountManagementService {
             }
 
             if (request.role() != null) {
-                user.setRole(request.role());
+                Role oldRole = user.getRole();
+                Role newRole = request.role();
+                if (oldRole == Role.ADMIN && newRole != Role.ADMIN && user.getStatus() == EmployeeStatus.ACTIVE) {
+                    ensureNotLastActiveAdmin(employeeId);
+                }
+                user.setRole(newRole);
             }
         }
 
@@ -228,6 +233,9 @@ public class AccountManagementService {
         AuditContextHolder.setBeforeState(mapToAuditState(user));
 
         EmployeeStatus newStatus = request.status();
+        if (user.getRole() == Role.ADMIN && user.getStatus() == EmployeeStatus.ACTIVE && newStatus != EmployeeStatus.ACTIVE) {
+            ensureNotLastActiveAdmin(employeeId);
+        }
         user.setStatus(newStatus);
 
         if (newStatus == EmployeeStatus.TERMINATED) {
@@ -416,5 +424,19 @@ public class AccountManagementService {
 
         Page<User> page = userRepository.findAll(spec, pageable);
         return PageResponse.map(page, this::toEmployeeItem);
+    }
+
+    /**
+     * Khóa bi quan và kiểm tra xem tài khoản có phải ADMIN đang hoạt động cuối cùng hay không (DD-BE-026, FR-BE-023).
+     */
+    private void ensureNotLastActiveAdmin(Long targetUserId) {
+        List<User> activeAdmins = userRepository.findByRoleAndStatusForUpdate(Role.ADMIN, EmployeeStatus.ACTIVE);
+        long activeAdminCount = activeAdmins.size();
+
+        if (activeAdminCount <= 1) {
+            log.warn("Từ chối thao tác hạ cấp/thu hồi role hoặc vô hiệu hóa: Người dùng ID={} là ADMIN đang hoạt động cuối cùng", targetUserId);
+            throw new ApiException(ApiErrorCode.LAST_ADMIN_CANNOT_BE_DEMOTED,
+                    "Không thể thu hồi hoặc hạ cấp tài khoản Quản trị viên (ADMIN) đang hoạt động cuối cùng");
+        }
     }
 }

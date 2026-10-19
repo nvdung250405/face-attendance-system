@@ -11,6 +11,13 @@
 import React, { useState, useId } from 'react'
 import { Lock, X, Info, Check, Eye, EyeOff } from 'lucide-react'
 import { credentialService } from '@/services/credentialService'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
 
 import { calculatePasswordStrength } from './passwordStrength'
@@ -107,36 +114,40 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      data-testid="change-password-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose()
+      }}
     >
-      <div className="card-surface relative w-full max-w-md p-6 bg-white shadow-2xl rounded-2xl border border-border-subtle my-auto animate-in zoom-in-95 duration-150">
+      <DialogContent
+        data-testid="change-password-modal"
+        hideCloseButton
+        usePortal={false}
+        className="max-w-md p-6"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-border-subtle">
+        <DialogHeader className="flex flex-row items-center justify-between pb-3.5 border-b border-border-subtle">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-brand-primary flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-brand-primary flex items-center justify-center shrink-0">
               <Lock size={20} strokeWidth={2} />
             </div>
             <div>
-              <h3 id={titleId} className="text-base font-bold text-text-primary">
+              <DialogTitle id={titleId} className="text-base font-bold text-slate-900">
                 Đổi mật khẩu tài khoản
-              </h3>
-              <p className="text-xs text-text-secondary">Thiết lập mật khẩu bảo mật mới</p>
+              </DialogTitle>
+              <p className="text-xs text-slate-500">Thiết lập mật khẩu bảo mật mới</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
             aria-label="Đóng"
-            className="w-8 h-8 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
           >
             <X size={18} strokeWidth={2} />
           </button>
-        </div>
+        </DialogHeader>
 
         {/* Khối cảnh báo thu hồi phiên (UXD-WEB-008) */}
         <div className="my-3.5 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs leading-relaxed flex items-start gap-2">
@@ -286,35 +297,27 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
           {/* Action buttons */}
           <div className="pt-3 border-t border-border-subtle flex items-center justify-end gap-2.5">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               id="btn-cancel-change-password"
               data-testid="btn-cancel-change-password"
               onClick={handleClose}
               disabled={isLoading}
-              className="btn-secondary"
             >
               Hủy bỏ
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               id="btn-submit-change-password"
               data-testid="btn-submit-change-password"
-              disabled={isLoading}
-              className="btn-primary"
+              isLoading={isLoading}
             >
-              {isLoading ? (
-                <span className="inline-flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Đang xử lý...
-                </span>
-              ) : (
-                'Cập nhật mật khẩu'
-              )}
-            </button>
+              Cập nhật mật khẩu
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

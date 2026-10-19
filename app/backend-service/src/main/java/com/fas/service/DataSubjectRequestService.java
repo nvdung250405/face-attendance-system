@@ -129,6 +129,24 @@ public class DataSubjectRequestService {
     }
 
     /**
+     * Tra cứu chi tiết một yêu cầu của chính nhân viên (chống truy cập chéo - IDOR).
+     * Trả HTTP 404 {@code RESOURCE_NOT_FOUND} khi yêu cầu không thuộc người gọi.
+     */
+    @Transactional(readOnly = true)
+    public DataSubjectRequestResponse getRequestByIdForUser(Long requestId, Long userId) {
+        DataSubjectRequest request = dataSubjectRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ApiException(ApiErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy yêu cầu ID=" + requestId));
+
+        if (request.getUser() == null || !request.getUser().getId().equals(userId)) {
+            log.warn("Nhân viên ID={} cố gắng xem yêu cầu dữ liệu ID={} của người khác (User ID={})",
+                    userId, requestId, request.getUser() != null ? request.getUser().getId() : null);
+            throw new ApiException(ApiErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy yêu cầu ID=" + requestId);
+        }
+
+        return DataSubjectRequestResponse.fromEntity(request);
+    }
+
+    /**
      * DPO cập nhật trạng thái xử lý và gửi phản hồi cho yêu cầu.
      */
     @Transactional

@@ -291,6 +291,67 @@ class AccountManagementServiceTest {
                         assertThat(apiEx.getErrorCode()).isEqualTo(ApiErrorCode.EMPLOYEE_NOT_FOUND);
                     });
         }
+
+        @Test
+        @DisplayName("Hạ cấp ADMIN thất bại khi là ADMIN đang hoạt động cuối cùng -> 409 Conflict")
+        void updateEmployeeProfile_DemoteLastAdmin_ThrowsConflict() {
+            User lastAdmin = User.builder()
+                    .id(1L)
+                    .role(Role.ADMIN)
+                    .status(EmployeeStatus.ACTIVE)
+                    .build();
+            when(userRepository.findById(1L)).thenReturn(Optional.of(lastAdmin));
+            when(userRepository.findByRoleAndStatusForUpdate(Role.ADMIN, EmployeeStatus.ACTIVE))
+                    .thenReturn(List.of(lastAdmin));
+
+            UpdateEmployeeRequest request = new UpdateEmployeeRequest(
+                    "Admin Name",
+                    null,
+                    null,
+                    Role.EMPLOYEE
+            );
+
+            assertThatThrownBy(() -> accountManagementService.updateEmployeeProfile(1L, request))
+                    .isInstanceOf(ApiException.class)
+                    .satisfies(ex -> {
+                        ApiException apiEx = (ApiException) ex;
+                        assertThat(apiEx.getErrorCode()).isEqualTo(ApiErrorCode.LAST_ADMIN_CANNOT_BE_DEMOTED);
+                    });
+        }
+
+        @Test
+        @DisplayName("Hạ cấp ADMIN thành công khi hệ thống còn ADMIN đang hoạt động khác")
+        void updateEmployeeProfile_DemoteAdminWhenMultipleAdminsExist_Success() {
+            User adminToDemote = User.builder()
+                    .id(1L)
+                    .role(Role.ADMIN)
+                    .status(EmployeeStatus.ACTIVE)
+                    .fullName("Admin One")
+                    .email("admin1@company.com")
+                    .createdAt(NOW)
+                    .build();
+            User secondAdmin = User.builder()
+                    .id(2L)
+                    .role(Role.ADMIN)
+                    .status(EmployeeStatus.ACTIVE)
+                    .build();
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(adminToDemote));
+            when(userRepository.findByRoleAndStatusForUpdate(Role.ADMIN, EmployeeStatus.ACTIVE))
+                    .thenReturn(List.of(adminToDemote, secondAdmin));
+            when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+            when(biometricTemplateRepository.findByUserIdAndIsActiveTrue(1L)).thenReturn(Optional.empty());
+
+            UpdateEmployeeRequest request = new UpdateEmployeeRequest(
+                    "Admin One",
+                    null,
+                    null,
+                    Role.EMPLOYEE
+            );
+
+            EmployeeItem result = accountManagementService.updateEmployeeProfile(1L, request);
+            assertThat(result.role()).isEqualTo(Role.EMPLOYEE);
+        }
     }
 
     @Nested
@@ -316,6 +377,9 @@ class AccountManagementServiceTest {
         @DisplayName("Vô hiệu hóa TERMINATED: gán ngày thôi việc, hạ role xuống EMPLOYEE, thu hồi Refresh Token")
         void updateEmployeeStatus_Terminated_Success() {
             when(userRepository.findById(3L)).thenReturn(Optional.of(adminUser));
+            User secondAdmin = User.builder().id(99L).role(Role.ADMIN).status(EmployeeStatus.ACTIVE).build();
+            when(userRepository.findByRoleAndStatusForUpdate(Role.ADMIN, EmployeeStatus.ACTIVE))
+                    .thenReturn(List.of(adminUser, secondAdmin));
             when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
             RefreshToken token1 = RefreshToken.builder().id(101L).user(adminUser).tokenHash("hash1").build();
@@ -345,6 +409,26 @@ class AccountManagementServiceTest {
         }
 
         @Test
+        @DisplayName("Vô hiệu hóa ADMIN thất bại khi là ADMIN đang hoạt động cuối cùng -> 409 Conflict")
+        void updateEmployeeStatus_LastAdmin_ThrowsConflict() {
+            when(userRepository.findById(3L)).thenReturn(Optional.of(adminUser));
+            when(userRepository.findByRoleAndStatusForUpdate(Role.ADMIN, EmployeeStatus.ACTIVE))
+                    .thenReturn(List.of(adminUser));
+
+            UpdateEmployeeStatusRequest request = new UpdateEmployeeStatusRequest(
+                    EmployeeStatus.TERMINATED,
+                    "Vô hiệu hóa admin cuối cùng"
+            );
+
+            assertThatThrownBy(() -> accountManagementService.updateEmployeeStatus(3L, request))
+                    .isInstanceOf(ApiException.class)
+                    .satisfies(ex -> {
+                        ApiException apiEx = (ApiException) ex;
+                        assertThat(apiEx.getErrorCode()).isEqualTo(ApiErrorCode.LAST_ADMIN_CANNOT_BE_DEMOTED);
+                    });
+        }
+
+        @Test
         @DisplayName("Kích hoạt lại ACTIVE: xóa ngày thôi việc")
         void updateEmployeeStatus_Reactivate_ClearsTerminatedDate() {
             adminUser.setStatus(EmployeeStatus.TERMINATED);
@@ -368,6 +452,9 @@ class AccountManagementServiceTest {
         @DisplayName("Tạm đình chỉ SUSPENDED: thu hồi toàn bộ Refresh Token")
         void updateEmployeeStatus_Suspended_RevokesTokens() {
             when(userRepository.findById(3L)).thenReturn(Optional.of(adminUser));
+            User secondAdmin = User.builder().id(99L).role(Role.ADMIN).status(EmployeeStatus.ACTIVE).build();
+            when(userRepository.findByRoleAndStatusForUpdate(Role.ADMIN, EmployeeStatus.ACTIVE))
+                    .thenReturn(List.of(adminUser, secondAdmin));
             when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
             RefreshToken token = RefreshToken.builder().id(101L).user(adminUser).tokenHash("hash1").build();

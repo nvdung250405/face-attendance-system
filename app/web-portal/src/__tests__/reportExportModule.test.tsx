@@ -21,6 +21,7 @@ import {
   reportExportService,
   sanitizeFormula,
   stripVietnameseDiacritics,
+  escapeHtml,
 } from '@/services/reportExportService'
 import { apiClient } from '@/services/apiClient'
 import { ExportReportModal } from '@/components/report/ExportReportModal'
@@ -173,6 +174,45 @@ describe('TASK-WEB-020: Report Export Module (Excel & PDF)', () => {
         'CONG TY CO PHAN CONG NGHE'
       )
       expect(stripVietnameseDiacritics('Đúng giờ')).toBe('Dung gio')
+    })
+
+    it('escapeHtml trung hòa các ký tự HTML nguy hiểm', () => {
+      expect(escapeHtml('<script>alert(1)</script>')).toBe(
+        '&lt;script&gt;alert(1)&lt;/script&gt;'
+      )
+      expect(escapeHtml(`"quoted" & 'single'`)).toBe(
+        '&quot;quoted&quot; &amp; &#39;single&#39;'
+      )
+      expect(escapeHtml(null)).toBe('')
+      expect(escapeHtml(undefined)).toBe('')
+    })
+
+    it('generatePrintableHtml không để lộ HTML thô từ fullName/reportTitle', () => {
+      const html = reportExportService.generatePrintableHtml({
+        companyName: '<img src=x onerror=alert(1)>',
+        reportTitle: '<script>alert(1)</script>',
+        period: '2026-10',
+        records: [
+          {
+            recordId: 1,
+            employeeCode: '<b>NV</b>',
+            fullName: '<script>alert(1)</script>',
+            department: '<i>IT</i>',
+            punchTimestamp: '2026-10-14T08:00:00+07:00',
+            punchType: 'CHECK_IN',
+            status: 'ON_TIME',
+            lateMinutes: 0,
+            kioskId: '<svg onload=alert(1)>',
+            verificationMethod: 'VERIFICATION_FACE',
+          },
+        ],
+      })
+
+      expect(html).not.toContain('<script>alert(1)</script>')
+      expect(html).not.toContain('<img src=x onerror=alert(1)>')
+      expect(html).not.toContain('<svg onload=alert(1)>')
+      expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+      expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
     })
   })
 

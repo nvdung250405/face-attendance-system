@@ -27,9 +27,17 @@ public class JwtTokenProvider {
     private final long expirationMillis;
 
     public JwtTokenProvider(
-            @Value("${fas.security.jwt-secret:4a8f9c2d1e0b5a7c3e6d8f1a2b4c6e8d0f2a4b6c8e0d2f4a6b8c0d2e4f6a8b0c}") String jwtSecret,
-            @Value("${fas.security.jwt-expiration-hours:8}") long expirationHours) {
-        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+            @Value("${fas.security.jwt-secret}") String jwtSecret,
+            @Value("${fas.security.jwt-expiration-hours:1}") long expirationHours) {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("Thiếu cấu hình fas.security.jwt-secret (JWT_SECRET)");
+        }
+        byte[] secretBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length < 32) {
+            throw new IllegalStateException(
+                    "fas.security.jwt-secret phải có độ dài tối thiểu 32 byte để đủ mạnh cho HMAC-SHA256");
+        }
+        this.key = Keys.hmacShaKeyFor(secretBytes);
         this.expirationMillis = expirationHours * 3600 * 1000;
     }
 

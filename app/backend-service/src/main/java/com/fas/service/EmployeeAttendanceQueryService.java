@@ -93,13 +93,17 @@ public class EmployeeAttendanceQueryService {
 
             LocalTime checkInTime = null;
             LocalTime checkOutTime = null;
+            Long checkInLogId = null;
+            Long checkOutLogId = null;
             int totalLateMinutes = 0;
 
             for (AttendanceLog l : dayLogs) {
                 if (l.getPunchType() == PunchType.CHECK_IN && checkInTime == null) {
                     checkInTime = l.getPunchTimestamp().atZone(ApiResponse.VIETNAM_ZONE).toLocalTime();
+                    checkInLogId = l.getId();
                 } else if (l.getPunchType() == PunchType.CHECK_OUT) {
                     checkOutTime = l.getPunchTimestamp().atZone(ApiResponse.VIETNAM_ZONE).toLocalTime();
+                    checkOutLogId = l.getId();
                 }
                 if (l.getLateMinutes() != null) {
                     totalLateMinutes += l.getLateMinutes();
@@ -109,6 +113,7 @@ public class EmployeeAttendanceQueryService {
             // Nếu chỉ có một lượt quẹt mà không phải CHECK_OUT thì tạm coi là checkInTime
             if (checkInTime == null && !dayLogs.isEmpty()) {
                 checkInTime = dayLogs.get(0).getPunchTimestamp().atZone(ApiResponse.VIETNAM_ZONE).toLocalTime();
+                checkInLogId = dayLogs.get(0).getId();
             }
 
             // Xác định trạng thái trong ngày
@@ -124,7 +129,9 @@ public class EmployeeAttendanceQueryService {
                     checkInTime,
                     checkOutTime,
                     dayStatus,
-                    totalLateMinutes
+                    totalLateMinutes,
+                    checkInLogId,
+                    checkOutLogId
             ));
         }
 

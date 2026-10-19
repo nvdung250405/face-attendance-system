@@ -332,6 +332,7 @@ describe('TASK-WEB-028: Màn Hình Quản Trị Danh Mục & Kỳ Công (UXD-WEB
       })
 
       fireEvent.click(screen.getByLabelText('Cấp lại mật khẩu cho Đỗ Hoàng Nam'))
+      fireEvent.click(screen.getByTestId('btn-confirm-action'))
 
       await waitFor(() => {
         expect(resetSpy).toHaveBeenCalledWith(101)
@@ -361,6 +362,7 @@ describe('TASK-WEB-028: Màn Hình Quản Trị Danh Mục & Kỳ Công (UXD-WEB
       })
 
       fireEvent.click(screen.getByLabelText('Vô hiệu hóa Đỗ Hoàng Nam'))
+      fireEvent.click(screen.getByTestId('btn-confirm-action'))
 
       await waitFor(() => {
         expect(statusSpy).toHaveBeenCalledWith(101, 'INACTIVE')

@@ -24,6 +24,7 @@ public class StompEventBroadcaster {
 
     public static final String TOPIC_LIVE_ATTENDANCE = "/topic/live-attendance";
     public static final String TOPIC_KIOSK_GALLERY = "/topic/kiosk-gallery";
+    public static final String TOPIC_ENROLLMENT_PREFIX = "/topic/enrollment/";
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -53,5 +54,26 @@ public class StompEventBroadcaster {
         messagingTemplate.convertAndSend(
                 TOPIC_KIOSK_GALLERY,
                 GalleryUpdateEvent.deleted(employeeId, reason, updatedAt));
+    }
+
+    /**
+     * Phát sóng sự kiện hoàn tất đăng ký khuôn mặt tới topic {@code /topic/enrollment/{otp}}
+     * để Cổng Web của nhân viên tự động cập nhật trạng thái kích hoạt (API-BE-014).
+     */
+    public void broadcastEnrollmentSuccess(String otp, Long employeeId, String message, OffsetDateTime activatedAt) {
+        messagingTemplate.convertAndSend(
+                TOPIC_ENROLLMENT_PREFIX + otp,
+                new EnrollmentSuccessEvent("ENROLLMENT_SUCCESS", otp, employeeId, message, activatedAt));
+    }
+
+    /**
+     * Payload sự kiện kích hoạt tài khoản thành công trên topic {@code /topic/enrollment/{otp}}.
+     */
+    public record EnrollmentSuccessEvent(
+            String status,
+            String otp,
+            Long employeeId,
+            String message,
+            OffsetDateTime activatedAt) {
     }
 }

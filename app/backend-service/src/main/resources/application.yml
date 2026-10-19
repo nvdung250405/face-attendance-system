@@ -14,7 +14,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fas_db}}
     username: ${DB_USER:fas_admin}
-    password: ${DB_PASSWORD:SecurePassword_FAS_2026!}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -46,9 +46,10 @@ spring:
 # ==============================================================================
 fas:
   security:
-    jwt-secret: ${JWT_SECRET:4a8f9c2d1e0b5a7c3e6d8f1a2b4c6e8d0f2a4b6c8e0d2f4a6b8c0d2e4f6a8b0c}
-    jwt-expiration-hours: 8
-    encryption-master-key: ${ENCRYPTION_MASTER_KEY:9f8e7d6c5b4a3a2b1c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b}
+    # BẮT BUỘC cấp qua biến môi trường (không có giá trị mặc định trong mã nguồn để tránh lộ khóa)
+    jwt-secret: ${JWT_SECRET}
+    jwt-expiration-hours: 1
+    encryption-master-key: ${ENCRYPTION_MASTER_KEY}
 
   kiosk:
     secret-token: ${KIOSK_SECRET_TOKEN:Kiosk_Internal_Secret_Token_2026}

@@ -96,16 +96,18 @@ public class BootstrapInitializer implements ApplicationRunner {
             return Optional.empty();
         }
 
-        // Idempotency: Kiểm tra nếu đã có ADMIN trong hệ thống
-        if (userRepository.countByRoleAndStatus(Role.ADMIN, EmployeeStatus.ACTIVE) > 0
-                || userRepository.existsByRole(Role.ADMIN)) {
-            log.info("Hệ thống đã có tài khoản Quản trị viên (ADMIN). Bỏ qua bước bootstrap khởi tạo.");
-            return Optional.empty();
-        }
-
         String email = StringUtils.hasText(configuredAdminEmail) ? configuredAdminEmail.trim() : DEFAULT_ADMIN_EMAIL;
         String employeeCode = StringUtils.hasText(configuredAdminCode) ? configuredAdminCode.trim() : DEFAULT_ADMIN_CODE;
         String fullName = StringUtils.hasText(configuredAdminName) ? configuredAdminName.trim() : DEFAULT_ADMIN_NAME;
+
+        // Idempotency: Kiểm tra nếu đã có ADMIN trong hệ thống hoặc đã có tài khoản trùng email/mã nhân viên
+        if (userRepository.countByRoleAndStatus(Role.ADMIN, EmployeeStatus.ACTIVE) > 0
+                || userRepository.existsByRole(Role.ADMIN)
+                || userRepository.existsByEmployeeCode(employeeCode)
+                || userRepository.existsByEmail(email)) {
+            log.info("Hệ thống đã có tài khoản Quản trị viên (ADMIN) hoặc đã tồn tại tài khoản bootstrap (email={}, code={}). Bỏ qua bước bootstrap.", email, employeeCode);
+            return Optional.empty();
+        }
 
         // Xử lý mật khẩu: nếu cấu hình có giá trị thì kiểm tra độ dài >= 12, nếu không thì tự sinh ngẫu nhiên
         String rawPassword;
@@ -135,7 +137,8 @@ public class BootstrapInitializer implements ApplicationRunner {
 
         log.info("Khởi tạo thành công tài khoản Quản trị viên đầu tiên: email={}, code={}",
                 admin.getEmail(), admin.getEmployeeCode());
-        log.warn("Mật khẩu tạm khởi tạo cho Quản trị viên (hiển thị 1 lần): {}", rawPassword);
+        log.warn("Tài khoản Quản trị viên đã được khởi tạo. Mật khẩu tạm đã được sinh an toàn và KHÔNG được ghi vào nhật ký; "
+                + "hãy bàn giao qua kênh bảo mật riêng.");
 
         return Optional.of(rawPassword);
     }

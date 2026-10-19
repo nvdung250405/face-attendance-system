@@ -6,7 +6,7 @@ import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.Kiosk;
-import com.fas.data.repository.KioskRepository;
+import com.fas.security.kiosk.KioskAuthService;
 import com.fas.service.PinService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,8 +21,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Optional;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class KioskPinControllerTest {
 
+    private static final String KIOSK_SECRET = "test-secret";
+
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -44,7 +44,7 @@ class KioskPinControllerTest {
     private PinService pinService;
 
     @Mock
-    private KioskRepository kioskRepository;
+    private KioskAuthService kioskAuthService;
 
     @InjectMocks
     private KioskPinController kioskPinController;
@@ -75,11 +75,12 @@ class KioskPinControllerTest {
             KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-1042", "123456");
             PinVerificationResult result = new PinVerificationResult(1042L, "NV-1042", "Ngô Văn Dũng", "Phòng Kỹ thuật");
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(pinService.verifyPin(any(KioskVerifyPinRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/verify-pin")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -109,14 +110,56 @@ class KioskPinControllerTest {
         }
 
         @Test
+        @DisplayName("Thiếu header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
+        void verifyPin_MissingSecretHeader_Returns401() throws Exception {
+            KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-1042", "123456");
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", null))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Mã bí mật của trạm Kiosk không chính xác: KIOSK-HN-01"));
+
+            mockMvc.perform(post("/api/v1/kiosk/verify-pin")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
+
+            verifyNoInteractions(pinService);
+        }
+
+        @Test
+        @DisplayName("Sai header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
+        void verifyPin_WrongSecretHeader_Returns401() throws Exception {
+            KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-1042", "123456");
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", "wrong-secret"))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Mã bí mật của trạm Kiosk không chính xác: KIOSK-HN-01"));
+
+            mockMvc.perform(post("/api/v1/kiosk/verify-pin")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", "wrong-secret")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
+
+            verifyNoInteractions(pinService);
+        }
+
+        @Test
         @DisplayName("Trạm Kiosk không tồn tại hoặc inactive -> trả về 401 KIOSK_UNAUTHORIZED")
         void verifyPin_KioskInactiveOrNotFound_Returns401() throws Exception {
             KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-1042", "123456");
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-DISABLED")).thenReturn(Optional.empty());
+            when(kioskAuthService.authenticate("KIOSK-DISABLED", KIOSK_SECRET))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Trạm Kiosk không tồn tại hoặc đã bị vô hiệu hóa: KIOSK-DISABLED"));
 
             mockMvc.perform(post("/api/v1/kiosk/verify-pin")
                             .header("X-Kiosk-Id", "KIOSK-DISABLED")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized())
@@ -130,12 +173,13 @@ class KioskPinControllerTest {
         void verifyPin_WrongPin_Returns401() throws Exception {
             KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-1042", "000000");
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(pinService.verifyPin(any(KioskVerifyPinRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.PIN_INVALID, "Mã PIN không chính xác. Bạn còn 4 lần thử."));
 
             mockMvc.perform(post("/api/v1/kiosk/verify-pin")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized())
@@ -147,12 +191,13 @@ class KioskPinControllerTest {
         void verifyPin_Locked_Returns423() throws Exception {
             KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-1042", "123456");
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(pinService.verifyPin(any(KioskVerifyPinRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.PIN_LOCKED, "Mã PIN đã bị khóa 15 phút do nhập sai 5 lần liên tiếp."));
 
             mockMvc.perform(post("/api/v1/kiosk/verify-pin")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isLocked())
@@ -164,12 +209,13 @@ class KioskPinControllerTest {
         void verifyPin_EmployeeNotFound_Returns404() throws Exception {
             KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-9999", "123456");
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(pinService.verifyPin(any(KioskVerifyPinRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy nhân sự với mã: NV-9999"));
 
             mockMvc.perform(post("/api/v1/kiosk/verify-pin")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
@@ -181,12 +227,13 @@ class KioskPinControllerTest {
         void verifyPin_TerminatedEmployee_Returns403() throws Exception {
             KioskVerifyPinRequest request = new KioskVerifyPinRequest("NV-1042", "123456");
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(pinService.verifyPin(any(KioskVerifyPinRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.ACCESS_DENIED, "Tài khoản nhân viên không ở trạng thái hoạt động."));
 
             mockMvc.perform(post("/api/v1/kiosk/verify-pin")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden())
@@ -200,6 +247,7 @@ class KioskPinControllerTest {
 
             mockMvc.perform(post("/api/v1/kiosk/verify-pin")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())

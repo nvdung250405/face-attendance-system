@@ -68,7 +68,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(tokenProvider.validateToken(token)).thenReturn(true);
         when(tokenProvider.getUsernameFromToken(token)).thenReturn(email);
-        when(tokenProvider.getRoleFromToken(token)).thenReturn("EMPLOYEE");
+        lenient().when(tokenProvider.getRoleFromToken(token)).thenReturn("EMPLOYEE");
 
         User activeUser = User.builder().id(100L).email(email).status(EmployeeStatus.ACTIVE).role(Role.EMPLOYEE).build();
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(activeUser));

@@ -132,12 +132,12 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class)))
-                    .thenReturn(false);
+            when(cooldownManager.tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class), any(PunchType.class), eq(sampleKiosk.getId())))
+                    .thenReturn(true);
 
             // Chưa có log nào trong ngày -> CHECK_IN
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(eq(sampleEmployee.getId()), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(sampleEmployee.getId()), any(), any()))
+                    .thenReturn(Optional.empty());
 
             // Ca kíp đánh giá: đúng giờ
             when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
@@ -169,7 +169,7 @@ class AttendanceServiceTest {
             assertThat(saved.getVerificationMethod()).isEqualTo(VerificationMethod.VERIFICATION_FACE);
 
             // Xác nhận cập nhật Cooldown
-            verify(cooldownManager).recordPunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class), eq(PunchType.CHECK_IN), eq(sampleKiosk.getId()));
+            verify(cooldownManager).tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class), eq(PunchType.CHECK_IN), eq(sampleKiosk.getId()));
 
             // Xác nhận phát sóng STOMP
             verify(stompEventBroadcaster).broadcastAttendancePunch(any(AttendanceLogItem.class));
@@ -183,9 +183,9 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.empty());
 
             // Ca kíp đánh giá: muộn 45 phút
             when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
@@ -211,9 +211,9 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.empty());
 
             when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
                     .thenReturn(ShiftEvaluationResult.anomalous());
@@ -244,7 +244,7 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
             // Đã có 1 log CHECK_IN trước đó
             AttendanceLog previousIn = AttendanceLog.builder()
@@ -252,8 +252,8 @@ class AttendanceServiceTest {
                     .punchType(PunchType.CHECK_IN)
                     .punchTimestamp(sampleTime.toInstant())
                     .build();
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(List.of(previousIn)));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.of(previousIn));
 
             // Ca kết thúc lúc 17:00
             when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
@@ -280,15 +280,15 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
             AttendanceLog previousIn = AttendanceLog.builder()
                     .id(1001L)
                     .punchType(PunchType.CHECK_IN)
                     .punchTimestamp(sampleTime.toInstant())
                     .build();
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(List.of(previousIn)));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.of(previousIn));
 
             when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
                     .thenReturn(Optional.of(standardShift));
@@ -314,15 +314,15 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
             AttendanceLog previousIn = AttendanceLog.builder()
                     .id(1001L)
                     .punchType(PunchType.CHECK_IN)
                     .punchTimestamp(sampleTime.toInstant())
                     .build();
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(List.of(previousIn)));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.of(previousIn));
 
             when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
                     .thenReturn(Optional.empty());
@@ -347,13 +347,13 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
             // Đã có 1 log CHECK_IN và 1 log CHECK_OUT
             AttendanceLog log1 = AttendanceLog.builder().punchType(PunchType.CHECK_IN).punchTimestamp(sampleTime.toInstant()).build();
             AttendanceLog log2 = AttendanceLog.builder().punchType(PunchType.CHECK_OUT).punchTimestamp(eveningInTime.minusMinutes(30).toInstant()).build();
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(List.of(log1, log2)));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.of(log2));
 
             when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
                     .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH", LocalTime.of(8, 0), 15));
@@ -424,8 +424,8 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class)))
-                    .thenReturn(true);
+            when(cooldownManager.tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class), any(PunchType.class), eq(sampleKiosk.getId())))
+                    .thenReturn(false);
 
             assertThatThrownBy(() -> attendanceService.recordPunch(req))
                     .isInstanceOf(ApiException.class)
@@ -442,9 +442,9 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.empty());
             when(shiftManagementService.evaluatePunch(any(), any(), any()))
                     .thenReturn(ShiftEvaluationResult.onTime(1L, "CA", LocalTime.of(8, 0), 15));
 
@@ -462,9 +462,9 @@ class AttendanceServiceTest {
 
             when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.isCooldownActive(any(), any(), any())).thenReturn(false);
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(any(), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
+                    .thenReturn(Optional.empty());
             when(shiftManagementService.evaluatePunch(any(), any(), any()))
                     .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH", LocalTime.of(8, 0), 15));
 

@@ -18,7 +18,7 @@ import com.fas.data.entity.Kiosk;
 import com.fas.data.enums.AttendanceStatus;
 import com.fas.data.enums.EmployeeStatus;
 import com.fas.data.enums.PunchType;
-import com.fas.data.repository.KioskRepository;
+import com.fas.security.kiosk.KioskAuthService;
 import com.fas.service.AttendanceService;
 import com.fas.service.EnrollmentService;
 import com.fas.service.OfflineBatchSyncService;
@@ -41,7 +41,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -57,6 +56,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class KioskAttendanceControllerTest {
 
+    private static final String KIOSK_SECRET = "test-secret";
+
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -71,7 +72,7 @@ class KioskAttendanceControllerTest {
     private EnrollmentService enrollmentService;
 
     @Mock
-    private KioskRepository kioskRepository;
+    private KioskAuthService kioskAuthService;
 
     @InjectMocks
     private KioskAttendanceController kioskAttendanceController;
@@ -135,11 +136,12 @@ class KioskAttendanceControllerTest {
                     "Phòng Kỹ thuật"
             );
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(attendanceService.recordPunch(any(KioskPunchRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -178,6 +180,57 @@ class KioskAttendanceControllerTest {
         }
 
         @Test
+        @DisplayName("Thiếu header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
+        void recordPunch_MissingSecret_Returns401() throws Exception {
+            KioskPunchRequest request = new KioskPunchRequest(
+                    1042L,
+                    OffsetDateTime.now(),
+                    "VERIFICATION_FACE",
+                    new BigDecimal("0.8824"),
+                    "KIOSK-HN-01"
+            );
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", null))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Mã bí mật của trạm Kiosk không chính xác: KIOSK-HN-01"));
+
+            mockMvc.perform(post("/api/v1/kiosk/punch")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
+
+            verifyNoInteractions(attendanceService);
+        }
+
+        @Test
+        @DisplayName("Sai header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
+        void recordPunch_WrongSecret_Returns401() throws Exception {
+            KioskPunchRequest request = new KioskPunchRequest(
+                    1042L,
+                    OffsetDateTime.now(),
+                    "VERIFICATION_FACE",
+                    new BigDecimal("0.8824"),
+                    "KIOSK-HN-01"
+            );
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", "wrong-secret"))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Mã bí mật của trạm Kiosk không chính xác: KIOSK-HN-01"));
+
+            mockMvc.perform(post("/api/v1/kiosk/punch")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", "wrong-secret")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
+
+            verifyNoInteractions(attendanceService);
+        }
+
+        @Test
         @DisplayName("Trạm Kiosk không tồn tại hoặc inactive -> trả về 401 KIOSK_UNAUTHORIZED")
         void recordPunch_KioskUnauthorized_Returns401() throws Exception {
             KioskPunchRequest request = new KioskPunchRequest(
@@ -188,10 +241,13 @@ class KioskAttendanceControllerTest {
                     "KIOSK-DISABLED"
             );
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-DISABLED")).thenReturn(Optional.empty());
+            when(kioskAuthService.authenticate("KIOSK-DISABLED", KIOSK_SECRET))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Trạm Kiosk không tồn tại hoặc đã bị vô hiệu hóa: KIOSK-DISABLED"));
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
                             .header("X-Kiosk-Id", "KIOSK-DISABLED")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized())
@@ -211,10 +267,11 @@ class KioskAttendanceControllerTest {
                     "KIOSK-HN-02"
             );
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized())
@@ -234,12 +291,13 @@ class KioskAttendanceControllerTest {
                     "KIOSK-HN-01"
             );
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(attendanceService.recordPunch(any(KioskPunchRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.COOLDOWN_ACTIVE, "Chống quẹt trùng lặp trong 120s"));
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
@@ -260,6 +318,7 @@ class KioskAttendanceControllerTest {
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(invalidJson))
                     .andExpect(status().isBadRequest())
@@ -280,11 +339,12 @@ class KioskAttendanceControllerTest {
 
             BatchSyncResult result = new BatchSyncResult(2, List.of(101L, 102L), List.of());
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(offlineBatchSyncService.processOfflineBatch(any(KioskSyncBatchRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/sync-batch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -314,16 +374,38 @@ class KioskAttendanceControllerTest {
         }
 
         @Test
+        @DisplayName("Thiếu header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
+        void syncBatch_MissingSecret_Returns401() throws Exception {
+            KioskSyncBatchRequest request = new KioskSyncBatchRequest("KIOSK-HN-01", 1, List.of(
+                    new OfflinePunchRecord(101L, 1042L, OffsetDateTime.now(), "VERIFICATION_FACE", new BigDecimal("0.891"))
+            ));
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", null))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Mã bí mật của trạm Kiosk không chính xác: KIOSK-HN-01"));
+
+            mockMvc.perform(post("/api/v1/kiosk/sync-batch")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
+
+            verifyNoInteractions(offlineBatchSyncService);
+        }
+
+        @Test
         @DisplayName("Header X-Kiosk-Id không khớp body -> trả về 401 KIOSK_UNAUTHORIZED")
         void syncBatch_HeaderMismatch_Returns401() throws Exception {
             KioskSyncBatchRequest request = new KioskSyncBatchRequest("KIOSK-HN-02", 1, List.of(
                     new OfflinePunchRecord(101L, 1042L, OffsetDateTime.now(), "VERIFICATION_FACE", new BigDecimal("0.891"))
             ));
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
 
             mockMvc.perform(post("/api/v1/kiosk/sync-batch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized())
@@ -351,11 +433,12 @@ class KioskAttendanceControllerTest {
             );
             GalleryResponse response = new GalleryResponse(18, 1, List.of(item));
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(enrollmentService.getGallery()).thenReturn(response);
 
             mockMvc.perform(get("/api/v1/kiosk/gallery")
-                            .header("X-Kiosk-Id", "KIOSK-HN-01"))
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.code").value("GALLERY_FETCHED"))
@@ -377,12 +460,30 @@ class KioskAttendanceControllerTest {
         }
 
         @Test
-        @DisplayName("Trạm Kiosk không tồn tại -> trả về 401 KIOSK_UNAUTHORIZED")
-        void getGallery_KioskUnauthorized_Returns401() throws Exception {
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-UNKNOWN")).thenReturn(Optional.empty());
+        @DisplayName("Thiếu header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
+        void getGallery_MissingSecret_Returns401() throws Exception {
+            when(kioskAuthService.authenticate("KIOSK-HN-01", null))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Mã bí mật của trạm Kiosk không chính xác: KIOSK-HN-01"));
 
             mockMvc.perform(get("/api/v1/kiosk/gallery")
-                            .header("X-Kiosk-Id", "KIOSK-UNKNOWN"))
+                            .header("X-Kiosk-Id", "KIOSK-HN-01"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
+
+            verifyNoInteractions(enrollmentService);
+        }
+
+        @Test
+        @DisplayName("Trạm Kiosk không tồn tại -> trả về 401 KIOSK_UNAUTHORIZED")
+        void getGallery_KioskUnauthorized_Returns401() throws Exception {
+            when(kioskAuthService.authenticate("KIOSK-UNKNOWN", KIOSK_SECRET))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Trạm Kiosk không tồn tại hoặc đã bị vô hiệu hóa: KIOSK-UNKNOWN"));
+
+            mockMvc.perform(get("/api/v1/kiosk/gallery")
+                            .header("X-Kiosk-Id", "KIOSK-UNKNOWN")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET))
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
 
@@ -406,11 +507,12 @@ class KioskAttendanceControllerTest {
                     "Phòng Kỹ thuật"
             );
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(enrollmentService.verifyOtp(any(KioskVerifyOtpRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/verify-otp")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -429,6 +531,7 @@ class KioskAttendanceControllerTest {
 
             mockMvc.perform(post("/api/v1/kiosk/verify-otp")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -466,11 +569,12 @@ class KioskAttendanceControllerTest {
                     OffsetDateTime.now()
             );
 
-            when(kioskRepository.findByIdAndIsActiveTrue("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
             when(enrollmentService.enrollFace(any(KioskEnrollFaceRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/enroll-face")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -500,6 +604,33 @@ class KioskAttendanceControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+
+            verifyNoInteractions(enrollmentService);
+        }
+
+        @Test
+        @DisplayName("Thiếu header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
+        void enrollFace_MissingSecret_Returns401() throws Exception {
+            List<Float> vector = new ArrayList<>(Collections.nCopies(512, 0.0f));
+            vector.set(0, 1.0f);
+
+            KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
+                    "123456",
+                    "sessionToken123",
+                    vector,
+                    "KIOSK-HN-01"
+            );
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", null))
+                    .thenThrow(new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
+                            "Mã bí mật của trạm Kiosk không chính xác: KIOSK-HN-01"));
+
+            mockMvc.perform(post("/api/v1/kiosk/enroll-face")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
 
             verifyNoInteractions(enrollmentService);
         }

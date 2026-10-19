@@ -93,10 +93,9 @@ public class AdminExcuseController {
     public ApiResponse<ExcuseRequestResponse> decideExcuseRequest(
             @PathVariable("id") Long id,
             @Valid @RequestBody DecideExcuseRequest request,
-            java.security.Principal principal,
-            @RequestHeader(name = "X-Decided-By-User-Id", required = false) Long headerUserId) {
+            java.security.Principal principal) {
 
-        Long decidedByUserId = resolveActorId(principal, headerUserId);
+        Long decidedByUserId = resolveActorId(principal);
 
         if (request.status() == ExcuseRequestStatus.APPROVED) {
             ApproveExcuseRequest approveRequest = new ApproveExcuseRequest(request.reviewNote());
@@ -129,10 +128,9 @@ public class AdminExcuseController {
     public ApiResponse<ExcuseRequestResponse> approveExcuseRequest(
             @PathVariable("id") Long id,
             @Valid @RequestBody(required = false) ApproveExcuseRequest request,
-            java.security.Principal principal,
-            @RequestHeader(name = "X-Decided-By-User-Id", required = false) Long headerUserId) {
+            java.security.Principal principal) {
 
-        Long decidedByUserId = resolveActorId(principal, headerUserId);
+        Long decidedByUserId = resolveActorId(principal);
         ApproveExcuseRequest approveReq = request != null ? request : new ApproveExcuseRequest(null);
         ExcuseRequestResponse response = excuseRequestService.approveExcuseRequest(id, decidedByUserId, approveReq);
         return ApiResponse.ok("EXCUSE_REQUEST_APPROVED", "Phê duyệt đơn giải trình công thành công", response);
@@ -152,19 +150,14 @@ public class AdminExcuseController {
     public ApiResponse<ExcuseRequestResponse> rejectExcuseRequest(
             @PathVariable("id") Long id,
             @Valid @RequestBody RejectExcuseRequest request,
-            java.security.Principal principal,
-            @RequestHeader(name = "X-Decided-By-User-Id", required = false) Long headerUserId) {
+            java.security.Principal principal) {
 
-        Long decidedByUserId = resolveActorId(principal, headerUserId);
+        Long decidedByUserId = resolveActorId(principal);
         ExcuseRequestResponse response = excuseRequestService.rejectExcuseRequest(id, decidedByUserId, request);
         return ApiResponse.ok("EXCUSE_REQUEST_REJECTED", "Từ chối đơn giải trình công thành công", response);
     }
 
-    private Long resolveActorId(java.security.Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveActorId(java.security.Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

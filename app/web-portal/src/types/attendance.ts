@@ -95,6 +95,10 @@ export interface PersonalAttendanceDayRecord {
   shiftCode?: string
   verificationMethod?: VerificationMethod
   kioskId?: string
+  /** ID bản ghi chấm công CHECK_IN đầu tiên trong ngày (dùng để nộp đơn giải trình). */
+  checkInLogId?: number | null
+  /** ID bản ghi chấm công CHECK_OUT cuối cùng trong ngày (dùng để nộp đơn giải trình). */
+  checkOutLogId?: number | null
 }
 
 export interface PersonalAttendanceResponse {

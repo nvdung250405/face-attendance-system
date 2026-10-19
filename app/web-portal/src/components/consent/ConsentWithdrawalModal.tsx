@@ -19,6 +19,7 @@ import React, { useState } from 'react'
 import { AlertTriangle, X, AlertCircle, Check } from 'lucide-react'
 import { dataSubjectService } from '@/services/dataSubjectService'
 import { useAuthStore } from '@/store/authStore'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import type { WithdrawConsentResponse } from '@/types'
 
 export type WithdrawalStep = 'WARNING' | 'CONFIRM' | 'SUCCESS'
@@ -93,13 +94,7 @@ const ConsentWithdrawalModalContent: React.FC<ConsentWithdrawalModalProps> = ({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="withdrawal-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
-    >
-      <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50">
           <div className="flex items-center gap-2.5">
@@ -309,12 +304,26 @@ const ConsentWithdrawalModalContent: React.FC<ConsentWithdrawalModalProps> = ({
           )}
         </div>
       </div>
-    </div>
   )
 }
 
 export const ConsentWithdrawalModal: React.FC<ConsentWithdrawalModalProps> = (props) => {
-  if (!props.isOpen) return null
-  return <ConsentWithdrawalModalContent {...props} />
+  return (
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={(open: boolean) => {
+        if (!open) props.onClose()
+      }}
+    >
+      <DialogContent
+        data-testid="consent-withdrawal-modal"
+        hideCloseButton
+        usePortal={false}
+        className="p-0 max-w-lg border-0 bg-transparent shadow-none"
+      >
+        <ConsentWithdrawalModalContent {...props} />
+      </DialogContent>
+    </Dialog>
+  )
 }
 

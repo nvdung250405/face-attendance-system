@@ -140,7 +140,14 @@ class KioskStompWorker(QThread):
                     self.worker._update_status(False, "Mất kết nối tới STOMP Broker")
 
             conn.set_listener("kiosk_listener", StompMsgListener(self))
-            conn.connect(wait=True, timeout=3.0)
+            conn.connect(
+                wait=True,
+                timeout=3.0,
+                headers={
+                    "X-Kiosk-Id": settings.kiosk_id,
+                    "X-Kiosk-Secret": settings.kiosk_secret_token,
+                },
+            )
             conn.subscribe(destination=self.topic, id=1, ack="auto")
 
             self._conn = conn

@@ -111,6 +111,7 @@ export function attachTokenRefreshInterceptor(
       if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
         // Kịch bản 1: Đang có một request khác thực hiện refresh token (Race Condition Mitigation)
         if (isRefreshing) {
+          originalRequest._retry = true
           return new Promise<string>((resolve, reject) => {
             failedQueue.push({ resolve, reject })
           })

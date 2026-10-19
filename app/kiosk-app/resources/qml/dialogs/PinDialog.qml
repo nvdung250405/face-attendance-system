@@ -13,7 +13,15 @@ Item {
 
     property bool isOpen: false
     property string activeField: "pin" // "empId" or "pin"
-    property string employeeIdInput: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.lastEmployeeId) ? String(kioskViewModel.lastEmployeeId) : ""
+
+    // Mã nhân viên được lưu trong PinController để gửi kèm mã PIN khi xác thực.
+    function employeeCodeText() {
+        return (typeof pinController !== "undefined" && pinController) ? pinController.employeeCode : ""
+    }
+    function setEmployeeCodeText(value) {
+        if (typeof pinController !== "undefined" && pinController)
+            pinController.setEmployeeCode(value)
+    }
 
     function open() {
         isOpen = true
@@ -79,14 +87,14 @@ Item {
             if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
                 var digit = String(event.key - Qt.Key_0)
                 if (root.activeField === "empId") {
-                    root.employeeIdInput += digit
+                    root.setEmployeeCodeText(root.employeeCodeText() + digit)
                 } else if (typeof pinController !== "undefined" && pinController) {
                     pinController.appendDigit(digit)
                 }
                 event.accepted = true
             } else if (event.key === Qt.Key_Backspace) {
                 if (root.activeField === "empId") {
-                    root.employeeIdInput = root.employeeIdInput.slice(0, -1)
+                    root.setEmployeeCodeText(root.employeeCodeText().slice(0, -1))
                 } else if (typeof pinController !== "undefined" && pinController) {
                     pinController.backspace()
                 }
@@ -179,11 +187,11 @@ Item {
                         anchors.left: parent.left
                         anchors.leftMargin: 20
                         anchors.verticalCenter: parent.verticalCenter
-                        text: root.employeeIdInput.length > 0 ? root.employeeIdInput : "Nhấp để nhập mã số nhân viên"
+                        text: root.employeeCodeText().length > 0 ? root.employeeCodeText() : "Nhấp để nhập mã số nhân viên"
                         font.family: Theme.fontFamily
                         font.pixelSize: 18
-                        font.bold: root.employeeIdInput.length > 0
-                        color: root.employeeIdInput.length > 0 ? Theme.textPrimary : "#9CA3AF"
+                        font.bold: root.employeeCodeText().length > 0
+                        color: root.employeeCodeText().length > 0 ? Theme.textPrimary : "#9CA3AF"
                     }
 
                     MouseArea {
@@ -220,7 +228,7 @@ Item {
                         anchors.leftMargin: 20
                         anchors.verticalCenter: parent.verticalCenter
                         property int pinLen: (typeof pinController !== "undefined" && pinController) ? pinController.currentPin.length : 0
-                        text: pinLen > 0 ? "● ".repeat(pinLen).trim() : "Nhấp để nhập 4–6 chữ số PIN"
+                        text: pinLen > 0 ? "● ".repeat(pinLen).trim() : "Nhấp để nhập 6 chữ số PIN"
                         font.family: Theme.fontFamily
                         font.pixelSize: pinLen > 0 ? 24 : 18
                         font.bold: pinLen > 0
@@ -248,21 +256,21 @@ Item {
                 Layout.topMargin: 4
                 onDigitClicked: (digit) => {
                     if (root.activeField === "empId") {
-                        root.employeeIdInput += digit
+                        root.setEmployeeCodeText(root.employeeCodeText() + digit)
                     } else if (typeof pinController !== "undefined" && pinController) {
                         pinController.appendDigit(digit)
                     }
                 }
                 onBackspaceClicked: {
                     if (root.activeField === "empId") {
-                        root.employeeIdInput = root.employeeIdInput.slice(0, -1)
+                        root.setEmployeeCodeText(root.employeeCodeText().slice(0, -1))
                     } else if (typeof pinController !== "undefined" && pinController) {
                         pinController.backspace()
                     }
                 }
                 onClearClicked: {
                     if (root.activeField === "empId") {
-                        root.employeeIdInput = ""
+                        root.setEmployeeCodeText("")
                     } else if (typeof pinController !== "undefined" && pinController) {
                         pinController.clear()
                     }
@@ -275,7 +283,7 @@ Item {
                 height: 64
                 radius: 14
 
-                property bool isReady: (typeof pinController !== "undefined" && pinController) ? (!pinController.isLocked && pinController.currentPin.length >= 4) : false
+                property bool isReady: (typeof pinController !== "undefined" && pinController) ? (!pinController.isLocked && pinController.currentPin.length >= 6) : false
                 color: isReady ? (mouseConfirm.pressed ? Qt.darker(Theme.brandPurple, 1.15) : Theme.brandPurple) : "#E0E7FF"
 
                 Text {

@@ -55,6 +55,10 @@ public class User {
     @Column(name = "pin_locked_until")
     private Instant pinLockedUntil;
 
+    @Column(name = "pin_failed_attempts", nullable = false)
+    @Builder.Default
+    private Integer pinFailedAttempts = 0;
+
     @Column(name = "terminated_date")
     private LocalDate terminatedDate;
 

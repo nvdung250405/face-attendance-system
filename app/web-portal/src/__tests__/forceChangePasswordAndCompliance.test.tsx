@@ -241,6 +241,22 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
 
       useAuthStore.setState({
         isAuthenticated: true,
+        session: {
+          accessToken: 'mock-token',
+          refreshToken: 'mock-refresh',
+          tokenType: 'Bearer',
+          expiresAt: Date.now() + 3600000,
+          user: {
+            id: 14,
+            employeeCode: 'NV-PIN-001',
+            fullName: 'Người Dùng Chưa Có PIN',
+            email: 'nopin@company.com',
+            role: 'EMPLOYEE',
+            status: 'ACTIVE',
+            department: 'Phòng Kỹ thuật',
+            hasPin: false,
+          },
+        },
         user: {
           id: 14,
           employeeCode: 'NV-PIN-001',

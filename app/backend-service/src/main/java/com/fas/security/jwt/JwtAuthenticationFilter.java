@@ -52,8 +52,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // Kiểm tra trạng thái tài khoản: TERMINATED/SUSPENDED không dùng được access token còn hạn (FR-BE-020, DD-BE-023)
             boolean userAllowed = true;
+            java.util.Optional<com.fas.data.entity.User> userOpt = java.util.Optional.empty();
             if (userRepository != null && StringUtils.hasText(username)) {
-                java.util.Optional<com.fas.data.entity.User> userOpt = userRepository.findByEmail(username)
+                userOpt = userRepository.findByEmail(username)
                         .or(() -> userRepository.findByEmployeeCode(username));
                 if (userOpt.isPresent()) {
                     com.fas.data.enums.EmployeeStatus status = userOpt.get().getStatus();
@@ -64,7 +65,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             if (userAllowed) {
-                String role = tokenProvider.getRoleFromToken(token);
+                String role = (userOpt != null && userOpt.isPresent())
+                        ? userOpt.get().getRole().name()
+                        : tokenProvider.getRoleFromToken(token);
 
                 List<SimpleGrantedAuthority> authorities = Collections.singletonList(
                         new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "EMPLOYEE"))

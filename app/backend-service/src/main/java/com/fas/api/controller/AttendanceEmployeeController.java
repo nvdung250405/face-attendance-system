@@ -59,10 +59,9 @@ public class AttendanceEmployeeController {
     public ApiResponse<PersonalAttendanceResponse> getMonthlyPersonalAttendance(
             @RequestParam(name = "month", required = false) Integer month,
             @RequestParam(name = "year", required = false) Integer year,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long headerUserId) {
+            Principal principal) {
 
-        Long userId = resolveCallerUserId(principal, headerUserId);
+        Long userId = resolveCallerUserId(principal);
 
         LocalDate now = LocalDate.now(ApiResponse.VIETNAM_ZONE);
         int targetMonth = (month != null) ? month : now.getMonthValue();
@@ -90,10 +89,9 @@ public class AttendanceEmployeeController {
             @RequestParam(name = "year", required = false) Integer year,
             @RequestParam(name = "month", required = false) Integer month,
             @PageableDefault(size = 20, sort = "punchTimestamp", direction = Sort.Direction.DESC) Pageable pageable,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long headerUserId) {
+            Principal principal) {
 
-        Long userId = resolveCallerUserId(principal, headerUserId);
+        Long userId = resolveCallerUserId(principal);
 
         Page<AttendanceLogItem> page = employeeAttendanceQueryService
                 .getPersonalAttendanceLogs(userId, year, month, pageable);
@@ -101,11 +99,7 @@ public class AttendanceEmployeeController {
         return ApiResponse.ok("PERSONAL_LOGS_FETCHED", "Tra cứu danh sách lượt chấm công thành công", PageResponse.from(page));
     }
 
-    private Long resolveCallerUserId(Principal principal, Long headerUserId) {
-        if (headerUserId != null) {
-            return headerUserId;
-        }
-
+    private Long resolveCallerUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

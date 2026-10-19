@@ -110,8 +110,11 @@ class EmployeeExcuseControllerTest {
             when(excuseRequestService.submitExcuseRequest(eq(1042L), any(SubmitExcuseRequest.class)))
                     .thenReturn(response);
 
+            User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
-                            .header("X-User-Id", 1042L)
+                            .principal(() -> "dung@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -136,7 +139,6 @@ class EmployeeExcuseControllerTest {
                     """;
 
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
-                            .header("X-User-Id", 1042L)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(invalidJson))
                     .andExpect(status().isBadRequest())
@@ -158,8 +160,11 @@ class EmployeeExcuseControllerTest {
             when(excuseRequestService.submitExcuseRequest(eq(1042L), any(SubmitExcuseRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy bản ghi điểm danh thuộc nhân viên ID=1042"));
 
+            User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
-                            .header("X-User-Id", 1042L)
+                            .principal(() -> "dung@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
@@ -179,8 +184,11 @@ class EmployeeExcuseControllerTest {
             when(excuseRequestService.submitExcuseRequest(eq(1042L), any(SubmitExcuseRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.EXCUSE_WINDOW_EXPIRED, "Bản ghi điểm danh đã vượt quá thời hạn 30 ngày"));
 
+            User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
-                            .header("X-User-Id", 1042L)
+                            .principal(() -> "dung@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -199,8 +207,11 @@ class EmployeeExcuseControllerTest {
             when(excuseRequestService.submitExcuseRequest(eq(1042L), any(SubmitExcuseRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.EXCUSE_ALREADY_PENDING, "Lượt điểm danh đã có đơn giải trình đang chờ xử lý"));
 
+            User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
-                            .header("X-User-Id", 1042L)
+                            .principal(() -> "dung@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
@@ -242,8 +253,11 @@ class EmployeeExcuseControllerTest {
             when(excuseRequestService.getEmployeeExcuseRequests(eq(1042L), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(item), PageRequest.of(0, 20), 1));
 
+            User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+
             mockMvc.perform(get("/api/v1/employee/excuse-requests")
-                            .header("X-User-Id", 1042L)
+                            .principal(() -> "dung@company.com")
                             .param("page", "0")
                             .param("size", "20"))
                     .andExpect(status().isOk())

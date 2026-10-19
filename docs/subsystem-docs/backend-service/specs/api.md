@@ -219,7 +219,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 ```
 
 ### 3.2. `POST /api/v1/kiosk/punch` (`API-BE-003`)
-* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `Authorization: Bearer <KioskSecretToken>`
+* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `X-Kiosk-Secret: <KioskSecretToken>`
 * **Request**:
 ```json
 {
@@ -251,7 +251,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 ```
 
 ### 3.3. `POST /api/v1/kiosk/sync-batch` (`API-BE-004`)
-* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `Authorization: Bearer <KioskSecretToken>`
+* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `X-Kiosk-Secret: <KioskSecretToken>`
 * **Request**:
 ```json
 {
@@ -290,7 +290,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 ```
 
 ### 3.4. `GET /api/v1/kiosk/gallery` (`API-BE-005`)
-* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `Authorization: Bearer <KioskSecretToken>`, `Accept-Encoding: gzip`
+* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `X-Kiosk-Secret: <KioskSecretToken>`, `Accept-Encoding: gzip`
 * **Response 200 OK**:
 ```json
 {
@@ -315,7 +315,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 ```
 
 ### 3.5. `POST /api/v1/kiosk/verify-pin` (`API-BE-022`)
-* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `Authorization: Bearer <KioskSecretToken>`
+* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `X-Kiosk-Secret: <KioskSecretToken>`
 * **Request**:
 ```json
 {
@@ -403,7 +403,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 
 ### 3.9. `POST /api/v1/kiosk/verify-otp` (`API-BE-006`)
 * **Mục đích**: Thẩm định mã OTP 6 chữ số khi nhân viên quét QR/nhập OTP tại trạm Kiosk để chuẩn bị đăng ký khuôn mặt.
-* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `Authorization: Bearer <KioskSecretToken>`
+* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `X-Kiosk-Secret: <KioskSecretToken>`
 * **Request Schema**:
 ```json
 {
@@ -430,7 +430,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 
 ### 3.10. `POST /api/v1/kiosk/enroll-face` (`API-BE-007`)
 * **Mục đích**: Nạp vector ArcFace 512 chiều trích xuất tại trạm Kiosk kèm `sessionToken` nhận từ bước thẩm định OTP, kích hoạt mẫu khuôn mặt nhân viên sang trạng thái `ACTIVE`.
-* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `Authorization: Bearer <KioskSecretToken>`
+* **Headers**: `X-Kiosk-Id: KIOSK-HN-01`, `X-Kiosk-Secret: <KioskSecretToken>`
 * **Request Schema**:
 ```json
 {
@@ -497,7 +497,7 @@ Tài liệu hợp nhất đặc tả các giao diện lập trình ứng dụng 
 ## 4. Kênh Đẩy Dữ liệu Thời gian thực STOMP (STOMP Events Contract)
 
 * **Endpoint Bắt tay WebSocket**: `ws://localhost:8080/ws-attendance` (kèm SockJS fallback).
-* **Header Kết nối STOMP**: `Authorization: Bearer <JWT>` (Web) hoặc `X-Kiosk-Id` + Token (Kiosk).
+* **Header Kết nối STOMP**: `Authorization: Bearer <JWT>` (Web) hoặc `X-Kiosk-Id` + `X-Kiosk-Secret` (Kiosk).
 
 ### 4.1. Topic `/topic/live-attendance` — Đẩy Sự kiện Điểm danh Lên Web Dashboard
 * **Bên phát**: `backend-service` $\rightarrow$ **Bên nhận**: `web-portal`.

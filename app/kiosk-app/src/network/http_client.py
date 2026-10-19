@@ -80,7 +80,7 @@ class KioskHttpClient:
         return {
             "Content-Type": "application/json; charset=UTF-8",
             "X-Kiosk-Id": self.kiosk_id,
-            "Authorization": f"Bearer {self.secret_token}",
+            "X-Kiosk-Secret": self.secret_token,
         }
 
     def _get_client(self) -> httpx.Client:

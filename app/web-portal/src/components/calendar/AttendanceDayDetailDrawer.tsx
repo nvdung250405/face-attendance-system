@@ -17,6 +17,7 @@ import {
   KeyRound,
   ShieldAlert,
 } from 'lucide-react'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import type { PersonalAttendanceDayRecord, DayAttendanceStatus } from '@/types'
 
 export interface AttendanceDayDetailDrawerProps {
@@ -123,25 +124,14 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
     (record.lateMinutes != null && record.lateMinutes > 0)
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="drawer-date-title"
-      data-testid="attendance-day-detail-drawer"
-      className="fixed inset-0 z-50 overflow-hidden"
-    >
-      {/* Backdrop mờ */}
-      <div
-        onClick={onClose}
-        data-testid="drawer-backdrop"
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-fade-in"
-      />
-
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <aside
-          className="w-screen max-w-[420px] bg-surface-card border-l border-border-subtle shadow-2xl flex flex-col justify-between transform transition-transform ease-out duration-300"
-          style={{ width: '420px' }}
-        >
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
+        data-testid="attendance-day-detail-drawer"
+        hideCloseButton
+        className="w-full max-w-[420px] p-0 flex flex-col sm:max-w-[420px] bg-surface-card border-l border-border-subtle"
+      >
+        <div className="w-full flex-1 flex flex-col justify-between overflow-hidden">
           {/* Header Drawer */}
           <div className="px-6 py-5 border-b border-border-subtle bg-slate-50/70 flex items-center justify-between">
             <div className="space-y-1">
@@ -302,8 +292,8 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
               Đóng chi tiết
             </button>
           </div>
-        </aside>
-      </div>
-    </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }

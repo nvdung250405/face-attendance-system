@@ -25,5 +25,11 @@ public interface EnrollmentSessionRepository extends JpaRepository<EnrollmentSes
 
     List<EnrollmentSession> findByIsUsedFalseAndExpiresAtAfter(Instant now);
 
+    /** Các phiên đã sử dụng gần nhất (có giới hạn) phục vụ phân biệt mã lỗi OTP_ALREADY_USED. */
+    List<EnrollmentSession> findTop100ByIsUsedTrueOrderByCreatedAtDesc();
+
+    /** Các phiên chưa dùng nhưng đã hết hạn gần nhất (có giới hạn) phục vụ phân biệt mã lỗi OTP_EXPIRED. */
+    List<EnrollmentSession> findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(Instant now);
+
     Page<EnrollmentSession> findAllByOrderByConsentSignedAtDesc(Pageable pageable);
 }

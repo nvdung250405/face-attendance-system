@@ -18,6 +18,13 @@ import {
 } from 'lucide-react'
 import { credentialService } from '@/services/credentialService'
 import { useAuthStore } from '@/store/authStore'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
 
 export interface PinManagementModalProps {
@@ -129,15 +136,8 @@ const PinManagementDialog: React.FC<{
 
       setSuccessMessage('Thiết lập mã PIN dự phòng thành công! Mã PIN đã có hiệu lực tại mọi trạm Kiosk.')
 
-      // Cập nhật trạng thái hasPin vào store
-      useAuthStore.setState((state) => {
-        if (!state.user) return state
-        const updatedUser = { ...state.user, hasPin: true }
-        return {
-          user: updatedUser,
-          session: state.session ? { ...state.session, user: updatedUser } : null,
-        }
-      })
+      // Cập nhật trạng thái hasPin vào store (ghi luôn xuống storage để không mất sau reload)
+      useAuthStore.getState().updateUser({ hasPin: true })
 
       onSuccess?.()
       setTimeout(() => {
@@ -152,34 +152,28 @@ const PinManagementDialog: React.FC<{
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      data-testid="pin-management-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto"
-    >
-      <div className="card-surface relative w-full max-w-sm p-6 bg-white shadow-2xl rounded-2xl border border-border-subtle my-auto animate-in zoom-in-95 duration-150 space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-primary flex items-center justify-center">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-text-primary">
-                {hasExistingPin ? 'Đặt Lại Mã PIN Dự Phòng' : 'Thiết Lập Mã PIN Dự Phòng'}
-              </h3>
-              <p className="text-2xs text-text-secondary">Dùng để chấm công khi Kiosk không nhận diện mặt</p>
-            </div>
+    <div className="space-y-4">
+      {/* Header */}
+      <DialogHeader className="flex flex-row items-center justify-between pb-3 border-b border-border-subtle">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-primary flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5" />
           </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="p-1 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-slate-100"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div>
+            <DialogTitle className="text-sm font-bold text-slate-900">
+              {hasExistingPin ? 'Đặt Lại Mã PIN Dự Phòng' : 'Thiết Lập Mã PIN Dự Phòng'}
+            </DialogTitle>
+            <p className="text-2xs text-slate-500">Dùng để chấm công khi Kiosk không nhận diện mặt</p>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={handleClose}
+          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </DialogHeader>
 
         {/* Thông báo lỗi & thành công */}
         {errorMessage && (
@@ -321,30 +315,31 @@ const PinManagementDialog: React.FC<{
             {/* Nút xác nhận hoàn tất (ở bước confirm_pin khi đủ 6 số) */}
             {step === 'confirm_pin' && (
               <div className="pt-2 flex items-center gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
                     setStep('enter_pin')
                     setConfirmPin('')
                   }}
-                  className="flex-1 py-2.5 rounded-xl border border-border-subtle text-xs font-semibold text-text-secondary hover:bg-slate-50"
+                  className="flex-1 py-2 text-xs"
                 >
                   Nhập lại từ đầu
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={isLoading || confirmPin.length !== 6}
                   data-testid="submit-pin-confirm-btn"
-                  className="flex-1 py-2.5 rounded-xl bg-brand-primary text-white text-xs font-bold hover:bg-brand-hover shadow-xs disabled:opacity-50"
+                  isLoading={isLoading}
+                  className="flex-1 py-2 text-xs"
                 >
-                  {isLoading ? 'Đang lưu...' : 'Xác Nhận PIN'}
-                </button>
+                  Xác Nhận PIN
+                </Button>
               </div>
             )}
           </div>
         )}
-      </div>
     </div>
   )
 }
@@ -354,7 +349,20 @@ export const PinManagementModal: React.FC<PinManagementModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  if (!isOpen) return null
-
-  return <PinManagementDialog onClose={onClose} onSuccess={onSuccess} />
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <DialogContent
+        data-testid="pin-management-modal"
+        hideCloseButton
+        className="max-w-sm p-6"
+      >
+        <PinManagementDialog onClose={onClose} onSuccess={onSuccess} />
+      </DialogContent>
+    </Dialog>
+  )
 }

@@ -32,6 +32,7 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { consentService } from '@/services/consentService'
 import { useEnrollmentStatus } from '@/services/hooks/useEnrollmentStatus'
 import { useAuthStore } from '@/store/authStore'
@@ -154,37 +155,31 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
     setStep('SUCCESS')
     updateUser({ status: 'ACTIVE', hasBiometric: true })
     consentService.clearConsentSession()
+    // Hủy OTP để dừng subscription /topic/enrollment/{otp} (activeOtp -> null)
+    setOtpData(null)
     onSuccess?.()
   }, [updateUser, onSuccess])
 
-  const { isEnrolled } = useEnrollmentStatus({
+  const { reset } = useEnrollmentStatus({
     otp: activeOtp,
     autoConnect: true,
     onSuccess: handleEnrollmentSuccess,
   })
 
-  // Khi nhận tín hiệu kích hoạt thành công (isEnrolled = true)
-  useEffect(() => {
-    if (isEnrolled) {
-      updateUser({ status: 'ACTIVE', hasBiometric: true })
-      consentService.clearConsentSession()
-      onSuccess?.()
-    }
-  }, [isEnrolled, updateUser, onSuccess])
-
   // Tự động đóng modal sau 3 giây khi kích hoạt hoàn tất (DD-WEB-011, BLD-WEB-007)
   useEffect(() => {
-    if (step === 'SUCCESS' || isEnrolled) {
+    if (step === 'SUCCESS') {
+      reset()
       const timer = setTimeout(() => {
         onClose()
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [step, isEnrolled, onClose])
+  }, [step, reset, onClose])
 
-  // Hiển thị bước hiện tại (nếu STOMP báo đã kích hoạt hoặc step là SUCCESS thì ưu tiên hiển thị SUCCESS)
+  // Hiển thị bước hiện tại (step SUCCESS thì ưu tiên hiển thị SUCCESS)
   const currentStep: ConsentModalStep =
-    step === 'SUCCESS' || isEnrolled
+    step === 'SUCCESS'
       ? 'SUCCESS'
       : effectiveOtpData?.otp
         ? 'OTP_DISPLAY'
@@ -286,13 +281,18 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
   if (!isOpen) return null
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="consent-modal-title"
-      data-testid="consent-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open: boolean) => {
+        if (!open && !isSubmitting) onClose()
+      }}
     >
+      <DialogContent
+        data-testid="consent-modal"
+        hideCloseButton
+        usePortal={false}
+        className="p-0 max-w-2xl border-0 bg-transparent shadow-none"
+      >
       <div
         ref={modalCardRef}
         className="relative w-full max-w-2xl bg-surface-card border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
@@ -587,6 +587,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

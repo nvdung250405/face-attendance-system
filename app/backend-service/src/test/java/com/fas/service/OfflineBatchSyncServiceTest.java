@@ -171,8 +171,8 @@ class OfflineBatchSyncServiceTest {
         void kiosk_updatesLastPingAt() {
             when(kioskRepository.findById("KIOSK-01")).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(100L)).thenReturn(Optional.of(sampleUser));
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(eq(100L), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(100L), any(), any()))
+                    .thenReturn(Optional.empty());
             when(shiftManagementService.evaluatePunch(any(), any(), any()))
                     .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HC", LocalTime.of(8, 0), 15));
 
@@ -197,8 +197,8 @@ class OfflineBatchSyncServiceTest {
             for (long i = 1; i <= 50; i++) {
                 User user = User.builder().id(i).employeeCode("NV-" + i).status(EmployeeStatus.ACTIVE).build();
                 when(userRepository.findById(i)).thenReturn(Optional.of(user));
-                when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(eq(i), any(), any(), any()))
-                        .thenReturn(new PageImpl<>(Collections.emptyList()));
+                when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(i), any(), any()))
+                        .thenReturn(Optional.empty());
                 when(shiftManagementService.evaluatePunch(eq(i), any(), any()))
                         .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HC", LocalTime.of(8, 0), 15));
 
@@ -237,8 +237,8 @@ class OfflineBatchSyncServiceTest {
         void processOfflineBatch_duplicateRecord_skipped() {
             when(kioskRepository.findById("KIOSK-01")).thenReturn(Optional.of(sampleKiosk));
             when(userRepository.findById(100L)).thenReturn(Optional.of(sampleUser));
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(eq(100L), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(100L), any(), any()))
+                    .thenReturn(Optional.empty());
 
             // Giả lập bản ghi localQueueId = 1 đã tồn tại trong CSDL
             when(attendanceLogRepository.existsByUserIdAndPunchTimestampAndPunchType(eq(100L), any(), eq(PunchType.CHECK_IN)))
@@ -270,8 +270,8 @@ class OfflineBatchSyncServiceTest {
             // User 300L: ACTIVE hợp lệ
             User activeUser = User.builder().id(300L).status(EmployeeStatus.ACTIVE).build();
             when(userRepository.findById(300L)).thenReturn(Optional.of(activeUser));
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(eq(300L), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(300L), any(), any()))
+                    .thenReturn(Optional.empty());
             when(shiftManagementService.evaluatePunch(eq(300L), any(), any()))
                     .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HC", LocalTime.of(8, 0), 15));
 
@@ -299,8 +299,8 @@ class OfflineBatchSyncServiceTest {
             when(userRepository.findById(100L)).thenReturn(Optional.of(sampleUser));
 
             // Lượt quẹt ban đầu chưa có gì trong ngày -> CHECK_IN
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(eq(100L), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(Collections.emptyList()));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(100L), any(), any()))
+                    .thenReturn(Optional.empty());
 
             when(shiftManagementService.evaluatePunch(eq(100L), any(), eq(LocalTime.of(8, 0))))
                     .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HC", LocalTime.of(8, 0), 15));
@@ -343,8 +343,8 @@ class OfflineBatchSyncServiceTest {
 
             // Đã có bản ghi CHECK_IN trong ngày -> lượt tiếp theo là CHECK_OUT
             AttendanceLog checkInLog = AttendanceLog.builder().punchType(PunchType.CHECK_IN).build();
-            when(attendanceLogRepository.findByUserIdAndPunchTimestampBetween(eq(100L), any(), any(), any()))
-                    .thenReturn(new PageImpl<>(List.of(checkInLog)));
+            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(100L), any(), any()))
+                    .thenReturn(Optional.of(checkInLog));
 
             Shift activeShift = Shift.builder()
                     .startTime(LocalTime.of(8, 0))

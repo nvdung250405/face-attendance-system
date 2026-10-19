@@ -7,6 +7,7 @@ import com.fas.api.dto.response.ExcuseRequestResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.enums.ExcuseRequestStatus;
 import com.fas.data.repository.UserRepository;
 import com.fas.service.ExcuseRequestService;
@@ -88,6 +89,10 @@ class AdminExcuseControllerTest {
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+    }
+
+    private static User hrUser() {
+        return User.builder().id(1001L).email("hr@company.com").employeeCode("HR-1001").build();
     }
 
     @Nested
@@ -181,8 +186,10 @@ class AdminExcuseControllerTest {
             when(excuseRequestService.approveExcuseRequest(eq(1L), eq(1001L), any(ApproveExcuseRequest.class)))
                     .thenReturn(response);
 
+            when(userRepository.findByEmail("hr@company.com")).thenReturn(java.util.Optional.of(hrUser()));
+
             mockMvc.perform(patch("/api/v1/admin/excuse-requests/1")
-                            .header("X-Decided-By-User-Id", 1001L)
+                            .principal(() -> "hr@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -209,8 +216,10 @@ class AdminExcuseControllerTest {
             when(excuseRequestService.rejectExcuseRequest(eq(1L), eq(1001L), any(RejectExcuseRequest.class)))
                     .thenReturn(response);
 
+            when(userRepository.findByEmail("hr@company.com")).thenReturn(java.util.Optional.of(hrUser()));
+
             mockMvc.perform(patch("/api/v1/admin/excuse-requests/1")
-                            .header("X-Decided-By-User-Id", 1001L)
+                            .principal(() -> "hr@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -230,8 +239,10 @@ class AdminExcuseControllerTest {
                     ""
             );
 
+            when(userRepository.findByEmail("hr@company.com")).thenReturn(java.util.Optional.of(hrUser()));
+
             mockMvc.perform(patch("/api/v1/admin/excuse-requests/1")
-                            .header("X-Decided-By-User-Id", 1001L)
+                            .principal(() -> "hr@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -253,8 +264,10 @@ class AdminExcuseControllerTest {
             when(excuseRequestService.approveExcuseRequest(eq(1L), eq(1001L), any(ApproveExcuseRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.EXCUSE_ALREADY_PROCESSED, "Đơn giải trình ID=1 đã được xử lý"));
 
+            when(userRepository.findByEmail("hr@company.com")).thenReturn(java.util.Optional.of(hrUser()));
+
             mockMvc.perform(patch("/api/v1/admin/excuse-requests/1")
-                            .header("X-Decided-By-User-Id", 1001L)
+                            .principal(() -> "hr@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
@@ -278,8 +291,10 @@ class AdminExcuseControllerTest {
             when(excuseRequestService.approveExcuseRequest(eq(1L), eq(1001L), any(ApproveExcuseRequest.class)))
                     .thenReturn(response);
 
+            when(userRepository.findByEmail("hr@company.com")).thenReturn(java.util.Optional.of(hrUser()));
+
             mockMvc.perform(post("/api/v1/admin/excuse-requests/1/approve")
-                            .header("X-Decided-By-User-Id", 1001L)
+                            .principal(() -> "hr@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -298,8 +313,10 @@ class AdminExcuseControllerTest {
             when(excuseRequestService.rejectExcuseRequest(eq(1L), eq(1001L), any(RejectExcuseRequest.class)))
                     .thenReturn(response);
 
+            when(userRepository.findByEmail("hr@company.com")).thenReturn(java.util.Optional.of(hrUser()));
+
             mockMvc.perform(post("/api/v1/admin/excuse-requests/1/reject")
-                            .header("X-Decided-By-User-Id", 1001L)
+                            .principal(() -> "hr@company.com")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())

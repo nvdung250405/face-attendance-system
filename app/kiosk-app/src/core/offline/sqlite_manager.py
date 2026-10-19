@@ -324,16 +324,17 @@ class SQLiteQueueManager:
         Returns:
             int: Số lượng bản ghi đã được dọn dẹp.
         """
-        sql = f"""
+        # Tham số hóa thời hạn lưu trữ (không nội suy f-string vào SQL)
+        sql = """
             DELETE FROM offline_punches
             WHERE is_synced = 1
-              AND created_at < datetime('now', '-{retention_days} days')
+              AND created_at < datetime('now', ?)
         """
         with self._lock:
             conn = self._get_connection()
             try:
                 cursor = conn.cursor()
-                cursor.execute(sql)
+                cursor.execute(sql, (f"-{retention_days} days",))
                 deleted_count = cursor.rowcount
                 conn.commit()
                 if deleted_count > 0:

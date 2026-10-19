@@ -4,6 +4,7 @@ import com.fas.api.dto.request.PinResetRequest;
 import com.fas.api.dto.response.PinOperationResult;
 import com.fas.api.dto.response.ResetCredentialsResponse;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.repository.UserRepository;
 import com.fas.service.CredentialRecoveryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +49,10 @@ class CredentialRecoveryControllerTest {
                 .build();
     }
 
+    private static User employeeUser() {
+        return User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+    }
+
     @Test
     @DisplayName("Admin cấp lại mật khẩu tạm thành công -> trả về 200 OK kèm temporaryPassword")
     void resetCredentials_Success() throws Exception {
@@ -73,8 +78,11 @@ class CredentialRecoveryControllerTest {
 
         when(credentialRecoveryService.resetPin(eq(1042L), any(PinResetRequest.class))).thenReturn(result);
 
+        when(userRepository.findByEmail("dung@company.com"))
+                .thenReturn(java.util.Optional.of(employeeUser()));
+
         mockMvc.perform(post("/api/v1/employee/pin/reset")
-                        .header("X-User-Id", 1042L)
+                        .principal(() -> "dung@company.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -91,7 +99,6 @@ class CredentialRecoveryControllerTest {
         PinResetRequest request = new PinResetRequest("Current@123", "123", "123");
 
         mockMvc.perform(post("/api/v1/employee/pin/reset")
-                        .header("X-User-Id", 1042L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

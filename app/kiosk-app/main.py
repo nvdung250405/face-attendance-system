@@ -19,6 +19,7 @@ if str(src_dir) not in sys.path:
 
 import cv2
 import numpy as np
+from PySide6.QtCore import QObject, Slot
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -32,6 +33,8 @@ from core.vision.face_detector import YuNetFaceDetector
 from core.vision.feature_extractor import ArcFaceFeatureExtractor
 from core.vision.gallery_matcher import GalleryCacheManager
 from core.vision.liveness_gate import MiniFASNetLivenessGate
+from network.http_client import KioskHttpClient, KioskNetworkError, KioskPinError
+from network.stomp_worker import KioskStompWorker
 from presentation.controllers.enrollment_controller import EnrollmentController
 from presentation.controllers.pin_controller import PinController
 from presentation.providers.video_image_provider import VideoImageProvider
@@ -41,6 +44,148 @@ from presentation.viewmodels.kiosk_view_model import (
 )
 
 logger = get_logger("main")
+
+
+def _load_gallery_from_backend(http_client: KioskHttpClient, gallery_matcher: GalleryCacheManager) -> int:
+    """Tải danh mục vector ArcFace từ Backend và nạp vào RAM Gallery khi khởi động.
+
+    Trả về số lượng nhân viên đã nạp (0 khi offline hoặc thất bại — không crash khởi động).
+    """
+    try:
+        raw = http_client.fetch_gallery()
+        data = raw.get("data", raw) if isinstance(raw, dict) else {}
+        items = data.get("items", []) or []
+        records = []
+        for item in items:
+            emp_id = int(item.get("employeeId"))
+            vec = np.asarray(item.get("vector512") or [], dtype=np.float32)
+            if vec.shape[0] != 512:
+                logger.warning("Bỏ qua nhân viên %d trong gallery: vector %dD", emp_id, vec.shape[0])
+                continue
+            records.append(
+                {
+                    "employee_id": emp_id,
+                    "vector": vec,
+                    "name": item.get("fullName", ""),
+                    "code": item.get("employeeCode", ""),
+                    "dept": item.get("department", ""),
+                }
+            )
+        version = data.get("galleryVersion")
+        count = gallery_matcher.load_gallery(records, version=version)
+        logger.info("Đã nạp Gallery RAM từ Backend: %d nhân viên (version=%s)", count, version)
+        return count
+    except Exception as exc:
+        logger.warning("Không thể tải gallery từ Backend lúc khởi động (offline?): %s", exc)
+        return 0
+
+
+def _handle_pin_submission(
+    http_client: KioskHttpClient,
+    pin_controller: PinController,
+    kiosk_view_model: KioskViewModel,
+    employee_code: str,
+    pin: str,
+) -> None:
+    """Xử lý xác thực PIN dự phòng qua Backend; chỉ ghi nhận điểm danh khi backend xác nhận PIN đúng."""
+    try:
+        raw = http_client.verify_pin(employee_code, pin)
+        data = raw.get("data", raw) if isinstance(raw, dict) else {}
+        emp_id = int(data.get("employeeId") or 0)
+        if emp_id <= 0:
+            pin_controller.set_status_message("Không xác định được nhân viên từ phản hồi máy chủ.")
+            return
+        pin_controller.on_verification_success()
+        kiosk_view_model.recordVerifiedPinPunch(emp_id)
+    except KioskPinError as exc:
+        pin_controller.on_verification_failure()
+        if exc.locked_until:
+            pin_controller.set_status_message(f"Mã PIN đang bị khóa đến {exc.locked_until}")
+    except KioskNetworkError as exc:
+        pin_controller.set_status_message(f"Không thể kết nối máy chủ xác thực PIN: {exc}")
+    except Exception as exc:
+        logger.warning("Lỗi xử lý xác thực PIN: %s", exc)
+        pin_controller.set_status_message("Đã xảy ra lỗi khi xác thực PIN. Vui lòng thử lại.")
+
+
+class DemoEnrollHandler(QObject):
+    """QObject sống ở main thread để xử lý --demo-enroll qua queued connection.
+
+    Tránh gọi đồng thời detector/extractor ONNX từ camera thread (race).
+    """
+
+    def __init__(
+        self,
+        detector: YuNetFaceDetector,
+        extractor: ArcFaceFeatureExtractor,
+        gallery_matcher: GalleryCacheManager,
+        employee_id: int,
+        parent: QObject | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._detector = detector
+        self._extractor = extractor
+        self._gallery_matcher = gallery_matcher
+        self._employee_id = employee_id
+        self._done = False
+        self._stable_count = 0
+        self._target_frames = 8
+        self._best_aligned = None
+        self._best_sharpness = 0.0
+
+    @Slot(object)
+    def handle_frame(self, frame: np.ndarray | None) -> None:
+        """Xử lý một khung hình camera để tự động ghi nhận khuôn mặt demo."""
+        if self._done or frame is None or frame.size == 0:
+            return
+        try:
+            det = self._detector.detect_face(frame)
+            if det is None or det.is_tilted or not det.is_valid_size:
+                self._stable_count = 0
+                return
+
+            is_aligned, _ = evaluate_face_oval_alignment(frame.shape, det.bbox)
+            if not is_aligned:
+                self._stable_count = 0
+                return
+
+            fh, fw = frame.shape[:2]
+            x, y, w, h = det.bbox
+            roi = frame[max(0, y):min(fh, y + h), max(0, x):min(fw, x + w)]
+            if roi.size > 0:
+                gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                sharpness = float(cv2.Laplacian(gray_roi, cv2.CV_64F).var())
+            else:
+                sharpness = 0.0
+
+            aligned = self._extractor.align_face(frame, det.landmarks)
+            self._stable_count += 1
+            cnt = self._stable_count
+
+            if sharpness > self._best_sharpness:
+                self._best_sharpness = sharpness
+                self._best_aligned = aligned
+
+            if cnt % 3 == 0 and cnt < self._target_frames:
+                logger.info(
+                    "⏳ [DEMO-ENROLL] Đang giữ yên khuôn mặt để lấy nét... (%d/%d frames)",
+                    cnt,
+                    self._target_frames,
+                )
+
+            if cnt >= self._target_frames:
+                best_crop = (
+                    self._best_aligned if self._best_aligned is not None else aligned
+                )
+                vec = self._extractor.extract_vector(best_crop)
+                self._gallery_matcher.add_or_update_employee(self._employee_id, vec)
+                self._done = True
+                logger.info(
+                    "✅ [DEMO-ENROLL] Đã lấy nét thành công! Đã lưu khuôn mặt vào RAM Gallery cho Mã NV: %d!",
+                    self._employee_id,
+                )
+        except Exception as exc:
+            logger.warning("Lỗi trong quá trình demo-enroll: %s", exc)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -182,14 +327,14 @@ def main() -> int:
         liveness_threshold=args.liveness_threshold,
     )
 
-    # 5. Khởi tạo tiến trình nền đồng bộ bù ngoại tuyến
+    # 5. Khởi tạo tiến trình nền đồng bộ bù ngoại tuyến (chưa start — start SAU khi các signal
+    #    của KioskViewModel đã được kết nối để không mất sự kiện trạng thái mạng ban đầu)
     sync_worker = OfflineSyncWorker(
         queue_manager=queue_manager,
         backend_url=settings.backend_url,
         kiosk_id=settings.kiosk_id,
         secret_token=settings.kiosk_secret_token,
     )
-    sync_worker.start()
 
     # 6. Khởi tạo VideoImageProvider & Controllers
     image_provider = VideoImageProvider()
@@ -198,6 +343,7 @@ def main() -> int:
         detector=detector,
         extractor=extractor,
         liveness_gate=liveness_gate,
+        demo_mode=args.demo,
     )
     kiosk_view_model = KioskViewModel(
         image_provider=image_provider,
@@ -212,6 +358,28 @@ def main() -> int:
         enrollment_controller=enrollment_controller,
     )
 
+    # 6b. Nạp danh mục vector khuôn mặt từ Backend vào RAM Gallery khi khởi động
+    http_client = KioskHttpClient(
+        base_url=settings.backend_url,
+        kiosk_id=settings.kiosk_id,
+        secret_token=settings.kiosk_secret_token,
+    )
+    _load_gallery_from_backend(http_client, gallery_matcher)
+
+    # 6c. Khởi động luồng STOMP nạp nóng gallery (ADD/DELETE vector thời gian thực)
+    stomp_worker = KioskStompWorker(gallery_matcher=gallery_matcher)
+    stomp_worker.start()
+
+    # 6d. Kết nối luồng xác thực mã PIN dự phòng qua Backend (không bao giờ coi PIN là mã nhân viên)
+    pin_controller.pinSubmitted.connect(
+        lambda employee_code, pin: _handle_pin_submission(
+            http_client, pin_controller, kiosk_view_model, employee_code, pin
+        )
+    )
+
+    # 7. Khởi động luồng nền đồng bộ offline SAU khi view model đã kết nối signal
+    sync_worker.start()
+
     # 7. Khởi tạo luồng đọc camera nếu không tắt qua flag
     camera_worker = None
     if not args.no_camera:
@@ -223,72 +391,11 @@ def main() -> int:
                 target_fps=settings.camera_fps,
             )
             # Nếu có cờ --demo-enroll, tự động đăng ký khuôn mặt người ngồi trước camera vào Gallery
+            # (xử lý trên MAIN thread qua queued connection để tránh đua ONNX inference)
+            demo_enroll_handler = None
             if args.demo_enroll is not None and extractor is not None and detector is not None:
-                enroll_state = {
-                    "done": False,
-                    "stable_count": 0,
-                    "target_frames": 8,
-                    "best_aligned": None,
-                    "best_sharpness": 0.0,
-                }
-
-                def _auto_enroll_handler(frame):
-                    if enroll_state["done"] or frame is None or frame.size == 0:
-                        return
-                    try:
-                        det = detector.detect_face(frame)
-                        if det is None or det.is_tilted or not det.is_valid_size:
-                            enroll_state["stable_count"] = 0
-                            return
-
-                        # Đảm bảo khuôn mặt đã đưa hẳn vào giữa khung hình Oval
-                        is_aligned, _ = evaluate_face_oval_alignment(frame.shape, det.bbox)
-                        if not is_aligned:
-                            enroll_state["stable_count"] = 0
-                            return
-
-                        # Đo độ sắc nét Laplacian để chọn ảnh chất lượng tốt nhất
-                        fh, fw = frame.shape[:2]
-                        x, y, w, h = det.bbox
-                        roi = frame[max(0, y):min(fh, y+h), max(0, x):min(fw, x+w)]
-                        if roi.size > 0:
-                            gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-                            sharpness = float(cv2.Laplacian(gray_roi, cv2.CV_64F).var())
-                        else:
-                            sharpness = 0.0
-
-                        aligned = extractor.align_face(frame, det.landmarks)
-                        enroll_state["stable_count"] += 1
-                        cnt = enroll_state["stable_count"]
-
-                        if sharpness > enroll_state["best_sharpness"]:
-                            enroll_state["best_sharpness"] = sharpness
-                            enroll_state["best_aligned"] = aligned
-
-                        if cnt % 3 == 0 and cnt < enroll_state["target_frames"]:
-                            logger.info(
-                                "⏳ [DEMO-ENROLL] Đang giữ yên khuôn mặt để lấy nét... (%d/%d frames)",
-                                cnt,
-                                enroll_state["target_frames"],
-                            )
-
-                        if cnt >= enroll_state["target_frames"]:
-                            best_crop = (
-                                enroll_state["best_aligned"]
-                                if enroll_state["best_aligned"] is not None
-                                else aligned
-                            )
-                            vec = extractor.extract_vector(best_crop)
-                            gallery_matcher.add_or_update_employee(args.demo_enroll, vec)
-                            enroll_state["done"] = True
-                            logger.info(
-                                "✅ [DEMO-ENROLL] Đã lấy nét thành công! Đã lưu khuôn mặt vào RAM Gallery cho Mã NV: %d!",
-                                args.demo_enroll,
-                            )
-                    except Exception as exc:
-                        logger.warning("Lỗi trong quá trình demo-enroll: %s", exc)
-
-                camera_worker.frame_ready.connect(_auto_enroll_handler)
+                demo_enroll_handler = DemoEnrollHandler(detector, extractor, gallery_matcher, args.demo_enroll)
+                camera_worker.frame_ready.connect(demo_enroll_handler.handle_frame)
 
             # Kết nối frame camera trực tiếp vào KioskViewModel và EnrollmentController
             camera_worker.frame_ready.connect(kiosk_view_model.process_camera_frame)
@@ -367,8 +474,11 @@ def main() -> int:
     # 10. Dọn dẹp tài nguyên khi thoát
     if camera_worker is not None and camera_worker.isRunning():
         camera_worker.stop()
+    if stomp_worker.isRunning():
+        stomp_worker.stop()
     if sync_worker.isRunning():
         sync_worker.stop()
+    http_client.close()
 
     return exit_code
 

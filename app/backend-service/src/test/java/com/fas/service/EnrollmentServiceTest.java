@@ -222,7 +222,10 @@ class EnrollmentServiceTest {
         when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
         when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
                 .thenReturn(List.of(session));
-        when(enrollmentSessionRepository.findAll()).thenReturn(List.of(session));
+        when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
+                .thenReturn(Collections.emptyList());
+        when(enrollmentSessionRepository.findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(any(Instant.class)))
+                .thenReturn(Collections.emptyList());
 
         KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(wrongOtp, "KIOSK-HN-01");
 
@@ -247,7 +250,10 @@ class EnrollmentServiceTest {
         when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
         when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
                 .thenReturn(Collections.emptyList());
-        when(enrollmentSessionRepository.findAll()).thenReturn(List.of(expiredSession));
+        when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
+                .thenReturn(Collections.emptyList());
+        when(enrollmentSessionRepository.findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(any(Instant.class)))
+                .thenReturn(List.of(expiredSession));
 
         KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01");
 
@@ -272,7 +278,8 @@ class EnrollmentServiceTest {
         when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
         when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
                 .thenReturn(Collections.emptyList());
-        when(enrollmentSessionRepository.findAll()).thenReturn(List.of(usedSession));
+        when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
+                .thenReturn(List.of(usedSession));
 
         KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01");
 

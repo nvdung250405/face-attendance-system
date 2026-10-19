@@ -3,6 +3,7 @@ package com.fas.api.controller;
 import com.fas.api.dto.request.UnlockPeriodRequest;
 import com.fas.api.dto.response.PayrollPeriodResponse;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.enums.PayrollPeriodStatus;
 import com.fas.data.repository.UserRepository;
 import com.fas.service.PayrollPeriodService;
@@ -65,6 +66,10 @@ class PayrollPeriodControllerTest {
         );
     }
 
+    private static User adminUser() {
+        return User.builder().id(100L).email("admin@company.com").employeeCode("ADMIN-001").build();
+    }
+
     @Test
     @DisplayName("Lấy danh sách kỳ công -> trả về 200 OK phân trang")
     void getPayrollPeriods_Success() throws Exception {
@@ -99,8 +104,11 @@ class PayrollPeriodControllerTest {
     void lockPeriod_Success() throws Exception {
         when(payrollPeriodService.lockPeriod(2026, 10, 100L)).thenReturn(sampleResponse);
 
+        when(userRepository.findByEmail("admin@company.com"))
+                .thenReturn(java.util.Optional.of(adminUser()));
+
         mockMvc.perform(post("/api/v1/admin/payroll-periods/2026-10/lock")
-                        .header("X-User-Id", 100L))
+                        .principal(() -> "admin@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("PAYROLL_PERIOD_LOCKED"));
@@ -121,8 +129,11 @@ class PayrollPeriodControllerTest {
         when(payrollPeriodService.unlockPeriod(2026, 10, 100L, "Điều chỉnh lỗi kỹ thuật"))
                 .thenReturn(openResponse);
 
+        when(userRepository.findByEmail("admin@company.com"))
+                .thenReturn(java.util.Optional.of(adminUser()));
+
         mockMvc.perform(post("/api/v1/admin/payroll-periods/2026-10/unlock")
-                        .header("X-User-Id", 100L)
+                        .principal(() -> "admin@company.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -136,8 +147,7 @@ class PayrollPeriodControllerTest {
     @Test
     @DisplayName("Kỳ công sai định dạng -> trả về 400 Bad Request")
     void lockPeriod_InvalidFormat_Returns400() throws Exception {
-        mockMvc.perform(post("/api/v1/admin/payroll-periods/invalid-format/lock")
-                        .header("X-User-Id", 100L))
+        mockMvc.perform(post("/api/v1/admin/payroll-periods/invalid-format/lock"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
 

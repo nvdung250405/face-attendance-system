@@ -12,7 +12,7 @@ import com.fas.api.dto.response.OtpVerificationResult;
 import com.fas.api.dto.response.PunchResult;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
-import com.fas.data.repository.KioskRepository;
+import com.fas.security.kiosk.KioskAuthService;
 import com.fas.service.AttendanceService;
 import com.fas.service.EnrollmentService;
 import com.fas.service.OfflineBatchSyncService;
@@ -40,6 +40,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>{@code POST /api/v1/kiosk/verify-otp}: Thẩm định mã OTP kích hoạt đăng ký mặt mới</li>
  *   <li>{@code POST /api/v1/kiosk/enroll-face}: Nạp mẫu vector 512D mới và kích hoạt nhân sự</li>
  * </ul>
+ *
+ * <p>Mọi endpoint nghiệp vụ (trừ {@code /health}) đều yêu cầu cặp header {@code X-Kiosk-Id} +
+ * {@code X-Kiosk-Secret} và được thẩm định qua {@link KioskAuthService}.</p>
  */
 @RestController
 @RequestMapping("/api/v1/kiosk")
@@ -48,17 +51,17 @@ public class KioskAttendanceController {
     private final AttendanceService attendanceService;
     private final OfflineBatchSyncService offlineBatchSyncService;
     private final EnrollmentService enrollmentService;
-    private final KioskRepository kioskRepository;
+    private final KioskAuthService kioskAuthService;
 
     public KioskAttendanceController(
             AttendanceService attendanceService,
             OfflineBatchSyncService offlineBatchSyncService,
             EnrollmentService enrollmentService,
-            KioskRepository kioskRepository) {
+            KioskAuthService kioskAuthService) {
         this.attendanceService = attendanceService;
         this.offlineBatchSyncService = offlineBatchSyncService;
         this.enrollmentService = enrollmentService;
-        this.kioskRepository = kioskRepository;
+        this.kioskAuthService = kioskAuthService;
     }
 
     /**
@@ -78,6 +81,7 @@ public class KioskAttendanceController {
      * (POST /api/v1/kiosk/punch - APD-BE-001, API-BE-003).
      *
      * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
+     * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
      * @param request dữ liệu lượt quét thẻ/mặt từ Kiosk
      * @return kết quả lượt điểm danh với mã HTTP 200 OK
      */
@@ -85,8 +89,9 @@ public class KioskAttendanceController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<PunchResult> recordPunch(
             @RequestHeader("X-Kiosk-Id") String kioskId,
+            @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskPunchRequest request) {
-        validateKiosk(kioskId, request.kioskId());
+        validateKiosk(kioskId, kioskSecret, request.kioskId());
         PunchResult result = attendanceService.recordPunch(request);
         return ApiResponse.ok("PUNCH_RECORDED", "Ghi nhận điểm danh thành công", result);
     }
@@ -96,6 +101,7 @@ public class KioskAttendanceController {
      * (POST /api/v1/kiosk/sync-batch - APD-BE-001, API-BE-004).
      *
      * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
+     * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
      * @param request gói lô tối đa 50 bản ghi quẹt ngoại tuyến
      * @return kết quả số bản ghi đã đồng bộ với mã HTTP 200 OK
      */
@@ -103,8 +109,9 @@ public class KioskAttendanceController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<BatchSyncResult> syncBatch(
             @RequestHeader("X-Kiosk-Id") String kioskId,
+            @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskSyncBatchRequest request) {
-        validateKiosk(kioskId, request.kioskId());
+        validateKiosk(kioskId, kioskSecret, request.kioskId());
         BatchSyncResult result = offlineBatchSyncService.processOfflineBatch(request);
         return ApiResponse.ok("BATCH_SYNCED", "Đồng bộ thành công " + result.syncedCount() + " bản ghi", result);
     }
@@ -114,13 +121,15 @@ public class KioskAttendanceController {
      * (GET /api/v1/kiosk/gallery - APD-BE-001, API-BE-005).
      *
      * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
+     * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
      * @return danh mục vector kèm phiên bản với mã HTTP 200 OK
      */
     @GetMapping("/gallery")
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<GalleryResponse> getGallery(
-            @RequestHeader("X-Kiosk-Id") String kioskId) {
-        validateKiosk(kioskId, null);
+            @RequestHeader("X-Kiosk-Id") String kioskId,
+            @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret) {
+        validateKiosk(kioskId, kioskSecret, null);
         GalleryResponse response = enrollmentService.getGallery();
         return ApiResponse.ok("GALLERY_FETCHED", "Lấy danh mục vector thành công", response);
     }
@@ -130,6 +139,7 @@ public class KioskAttendanceController {
      * (POST /api/v1/kiosk/verify-otp - APD-BE-001, API-BE-006).
      *
      * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
+     * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
      * @param request mã OTP và kioskId
      * @return token phiên tạm thời và thông tin nhân sự với mã HTTP 200 OK
      */
@@ -137,8 +147,9 @@ public class KioskAttendanceController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<OtpVerificationResult> verifyOtp(
             @RequestHeader("X-Kiosk-Id") String kioskId,
+            @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskVerifyOtpRequest request) {
-        validateKiosk(kioskId, request.kioskId());
+        validateKiosk(kioskId, kioskSecret, request.kioskId());
         OtpVerificationResult result = enrollmentService.verifyOtp(request);
         return ApiResponse.ok("OTP_VERIFIED", "Xác thực mã OTP thành công", result);
     }
@@ -148,6 +159,7 @@ public class KioskAttendanceController {
      * (POST /api/v1/kiosk/enroll-face - APD-BE-001, API-BE-007).
      *
      * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
+     * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
      * @param request dữ liệu vector 512 chiều, OTP, sessionToken và kioskId
      * @return kết quả kích hoạt mẫu sinh trắc học với mã HTTP 200 OK
      */
@@ -155,20 +167,19 @@ public class KioskAttendanceController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<EnrollmentResult> enrollFace(
             @RequestHeader("X-Kiosk-Id") String kioskId,
+            @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskEnrollFaceRequest request) {
-        validateKiosk(kioskId, request.kioskId());
+        validateKiosk(kioskId, kioskSecret, request.kioskId());
         EnrollmentResult result = enrollmentService.enrollFace(request);
         return ApiResponse.ok("FACE_ENROLLED", "Đăng ký khuôn mặt thành công", result);
     }
 
     /**
-     * Kiểm tra tính hợp lệ và trạng thái hoạt động của trạm Kiosk.
-     * Đồng thời đối soát tính nhất quán giữa header {@code X-Kiosk-Id} và nội dung request body (nếu có).
+     * Thẩm định cặp header {@code X-Kiosk-Id} + {@code X-Kiosk-Secret} qua {@link KioskAuthService}
+     * và đối soát tính nhất quán giữa header và nội dung request body (nếu có).
      */
-    private void validateKiosk(String headerKioskId, String requestKioskId) {
-        kioskRepository.findByIdAndIsActiveTrue(headerKioskId)
-                .orElseThrow(() -> new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
-                        "Trạm Kiosk không tồn tại hoặc đã bị vô hiệu hóa: " + headerKioskId));
+    private void validateKiosk(String headerKioskId, String kioskSecret, String requestKioskId) {
+        kioskAuthService.authenticate(headerKioskId, kioskSecret);
 
         if (requestKioskId != null && !requestKioskId.equals(headerKioskId)) {
             throw new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,

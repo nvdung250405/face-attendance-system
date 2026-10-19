@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from 'react'
-import { ScanFace, Lock, Search, CalendarCheck, UserCheck, RotateCcw, X } from 'lucide-react'
+import { ScanFace, Lock, Search, CalendarCheck, UserCheck, RotateCcw, X, Edit3 } from 'lucide-react'
 import type { AttendanceRecord } from '@/types'
 
 export interface LiveAttendanceTableProps {
@@ -18,6 +18,8 @@ export interface LiveAttendanceTableProps {
   isLoading?: boolean
   isConnected?: boolean
   highlightedRecordId?: number | null
+  showFilters?: boolean
+  onEditRecord?: (record: AttendanceRecord) => void
 }
 
 function formatTimeOnly(isoString?: string): string {
@@ -40,6 +42,8 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
   isLoading = false,
   isConnected = false,
   highlightedRecordId = null,
+  showFilters = true,
+  onEditRecord,
 }) => {
   const [filterKeyword, setFilterKeyword] = useState('')
   const [filterDepartment, setFilterDepartment] = useState('')
@@ -96,76 +100,78 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
         </div>
 
         {/* ── Bộ lọc nhanh ── */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative flex items-center">
-            <Search size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              data-testid="live-search-input"
-              placeholder="Tìm theo Mã NV, Họ tên..."
-              value={filterKeyword}
-              onChange={(e) => setFilterKeyword(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg pl-8.5 pr-7 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-44 sm:w-52 transition-all"
-            />
-            {filterKeyword && (
+        {showFilters && (
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative flex items-center">
+              <Search size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                data-testid="live-search-input"
+                placeholder="Tìm theo Mã NV, Họ tên..."
+                value={filterKeyword}
+                onChange={(e) => setFilterKeyword(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg pl-8.5 pr-7 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-44 sm:w-52 transition-all"
+              />
+              {filterKeyword && (
+                <button
+                  type="button"
+                  onClick={() => setFilterKeyword('')}
+                  aria-label="Xóa từ khóa tìm kiếm"
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-sm"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {departments.length > 0 && (
+              <select
+                data-testid="live-filter-department"
+                value={filterDepartment}
+                onChange={(e) => setFilterDepartment(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
+              >
+                <option value="">Tất cả phòng ban</option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <select
+              data-testid="live-filter-status"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="ON_TIME">Đúng giờ</option>
+              <option value="LATE">Đi muộn</option>
+              <option value="EARLY_LEAVE">Về sớm</option>
+              <option value="OVERTIME">Tăng ca</option>
+              <option value="ANOMALOUS">Bất thường</option>
+            </select>
+
+            {(filterKeyword || filterDepartment || filterStatus) && (
               <button
                 type="button"
-                onClick={() => setFilterKeyword('')}
-                aria-label="Xóa từ khóa tìm kiếm"
-                className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-sm"
+                data-testid="live-clear-filters-btn"
+                onClick={() => {
+                  setFilterKeyword('')
+                  setFilterDepartment('')
+                  setFilterStatus('')
+                }}
+                title="Đặt lại tất cả bộ lọc"
+                className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition-colors shrink-0"
               >
-                <X size={13} />
+                <RotateCcw size={12} />
+                <span>Đặt lại</span>
               </button>
             )}
           </div>
-
-          {departments.length > 0 && (
-            <select
-              data-testid="live-filter-department"
-              value={filterDepartment}
-              onChange={(e) => setFilterDepartment(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
-            >
-              <option value="">Tất cả phòng ban</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          )}
-
-          <select
-            data-testid="live-filter-status"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="ON_TIME">Đúng giờ</option>
-            <option value="LATE">Đi muộn</option>
-            <option value="EARLY_LEAVE">Về sớm</option>
-            <option value="OVERTIME">Tăng ca</option>
-            <option value="ANOMALOUS">Bất thường</option>
-          </select>
-
-          {(filterKeyword || filterDepartment || filterStatus) && (
-            <button
-              type="button"
-              data-testid="live-clear-filters-btn"
-              onClick={() => {
-                setFilterKeyword('')
-                setFilterDepartment('')
-                setFilterStatus('')
-              }}
-              title="Đặt lại tất cả bộ lọc"
-              className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition-colors shrink-0"
-            >
-              <RotateCcw size={12} />
-              <span>Đặt lại</span>
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* ── Bảng Dữ liệu Điểm danh ── */}
@@ -184,12 +190,17 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
               <th className="py-3 px-4">Phương Thức</th>
               <th className="py-3 px-4">Trạng Thái</th>
               <th className="py-3 px-4">Trạm Kiosk</th>
+              {onEditRecord && (
+                <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                  Thao Tác
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">
             {isLoading && records.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center text-text-muted">
+                <td colSpan={onEditRecord ? 9 : 8} className="py-16 text-center text-text-muted">
                   <div className="inline-flex items-center gap-2.5">
                     <svg
                       className="animate-spin w-5 h-5 text-indigo-600"
@@ -216,7 +227,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
               </tr>
             ) : filteredRecords.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
+                <td colSpan={onEditRecord ? 9 : 8} className="py-16 text-center">
                   <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
                     <CalendarCheck size={24} strokeWidth={1.5} />
                   </div>
@@ -316,6 +327,21 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                     <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
                       {record.kioskId}
                     </td>
+
+                    {onEditRecord && (
+                      <td className="py-3 px-4 text-xs whitespace-nowrap text-right sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                        <button
+                          type="button"
+                          data-testid={`adjust-record-btn-${record.recordId}`}
+                          onClick={() => onEditRecord(record)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
+                          title="Điều chỉnh giờ công / trạng thái"
+                        >
+                          <Edit3 size={13} />
+                          <span>Sửa</span>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 )
               })

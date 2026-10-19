@@ -109,18 +109,21 @@ public class AttendancePunchIntegrationTest {
     private Kiosk activeKiosk;
     private Shift standardShift;
 
+    private static final String KIOSK_SECRET_PLAINTEXT = "integration-test-secret";
+
     @BeforeEach
     void setUp() throws Exception {
         // Dọn dẹp dữ liệu điểm danh và phân ca trước mỗi ca kiểm thử
         attendanceLogRepository.deleteAll();
         employeeShiftRepository.deleteAll();
 
-        // 1. Tạo Kiosk đang hoạt động
+        // 1. Tạo Kiosk đang hoạt động với mã bí mật hợp lệ (đối xứng hợp đồng X-Kiosk-Id + X-Kiosk-Secret)
         activeKiosk = kioskRepository.findById("KIOSK-HN-01").orElseGet(() ->
                 kioskRepository.save(Kiosk.builder()
                         .id("KIOSK-HN-01")
                         .locationName("Cổng chính Tòa nhà Keangnam Hà Nội")
-                        .secretTokenHash("$2a$10$abcdefghijklmnopqrstuvwxyz1234567890")
+                        .secretTokenHash(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+                                .encode(KIOSK_SECRET_PLAINTEXT))
                         .isActive(true)
                         .build())
         );
@@ -207,6 +210,7 @@ public class AttendancePunchIntegrationTest {
                 .uri(URI.create("http://localhost:" + port + "/api/v1/kiosk/punch"))
                 .header("Content-Type", "application/json")
                 .header("X-Kiosk-Id", activeKiosk.getId())
+                .header("X-Kiosk-Secret", KIOSK_SECRET_PLAINTEXT)
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
 
@@ -284,6 +288,7 @@ public class AttendancePunchIntegrationTest {
                 .uri(URI.create("http://localhost:" + port + "/api/v1/kiosk/punch"))
                 .header("Content-Type", "application/json")
                 .header("X-Kiosk-Id", activeKiosk.getId())
+                .header("X-Kiosk-Secret", KIOSK_SECRET_PLAINTEXT)
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(firstRequest)))
                 .build();
 
@@ -308,6 +313,7 @@ public class AttendancePunchIntegrationTest {
                 .uri(URI.create("http://localhost:" + port + "/api/v1/kiosk/punch"))
                 .header("Content-Type", "application/json")
                 .header("X-Kiosk-Id", activeKiosk.getId())
+                .header("X-Kiosk-Secret", KIOSK_SECRET_PLAINTEXT)
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(secondRequest)))
                 .build();
 
@@ -377,6 +383,7 @@ public class AttendancePunchIntegrationTest {
                 .uri(URI.create("http://localhost:" + port + "/api/v1/kiosk/punch"))
                 .header("Content-Type", "application/json")
                 .header("X-Kiosk-Id", activeKiosk.getId())
+                .header("X-Kiosk-Secret", KIOSK_SECRET_PLAINTEXT)
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(request)))
                 .build();
 
@@ -406,6 +413,7 @@ public class AttendancePunchIntegrationTest {
                 .uri(URI.create("http://localhost:" + port + "/api/v1/kiosk/punch"))
                 .header("Content-Type", "application/json")
                 .header("X-Kiosk-Id", activeKiosk.getId())
+                .header("X-Kiosk-Secret", KIOSK_SECRET_PLAINTEXT)
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(checkInRequest)))
                 .build();
 
@@ -430,6 +438,7 @@ public class AttendancePunchIntegrationTest {
                 .uri(URI.create("http://localhost:" + port + "/api/v1/kiosk/punch"))
                 .header("Content-Type", "application/json")
                 .header("X-Kiosk-Id", activeKiosk.getId())
+                .header("X-Kiosk-Secret", KIOSK_SECRET_PLAINTEXT)
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(checkOutRequest)))
                 .build();
 

@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Download,
 } from 'lucide-react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import type { AttendanceReportItem } from '@/types'
 
 export interface ExportReportModalProps {
@@ -99,13 +100,18 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      data-testid="export-report-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
     >
-      <div className="card-surface w-full max-w-lg bg-white shadow-2xl rounded-3xl border border-slate-200/80 overflow-hidden space-y-5 p-6 animate-in zoom-in-95 duration-150">
+      <DialogContent
+        data-testid="export-report-modal"
+        hideCloseButton
+        usePortal={false}
+        className="card-surface w-full max-w-lg bg-white shadow-2xl rounded-3xl border border-slate-200/80 overflow-hidden space-y-5 p-6 animate-in zoom-in-95 duration-150"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
           <div className="flex items-center gap-2.5">
@@ -311,7 +317,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
             </div>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

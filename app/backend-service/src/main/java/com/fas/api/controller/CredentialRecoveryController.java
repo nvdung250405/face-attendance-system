@@ -19,7 +19,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -73,18 +72,13 @@ public class CredentialRecoveryController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PinOperationResult> resetPin(
             @Valid @RequestBody PinResetRequest request,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         PinOperationResult result = credentialRecoveryService.resetPin(userId, request);
         return ApiResponse.ok("PIN_RESET", result.message(), result);
     }
 
-    private Long resolveUserId(Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

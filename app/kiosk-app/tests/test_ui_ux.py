@@ -199,7 +199,7 @@ def test_tst_ksk_ux_003_pin_pad_and_lockout(qapp):
     """
     security = PinSecurityManager(max_attempts=5, lockout_minutes=15)
     controller = PinController(security_manager=security)
-    controller.set_employee_id(1008)
+    controller.set_employee_code("NV-1008")
 
     # 1. Gõ phím ảo: "4", "5", "6", "7"
     for digit in "4567":
