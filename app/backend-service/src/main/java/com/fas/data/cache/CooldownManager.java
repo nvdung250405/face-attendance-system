@@ -41,6 +41,44 @@ public class CooldownManager {
     }
 
     /**
+     * Nguyên tử hóa kiểm tra + ghi nhận Cooldown chống quẹt trùng lặp (chống race condition).
+     *
+     * <p>Dùng {@code putIfAbsent} để đảm bảo trong các request đồng thời của cùng một nhân viên
+     * chỉ có đúng một request sở hữu bản ghi Cooldown và được phép tiếp tục; các request còn lại
+     * bị từ chối với {@code false}.</p>
+     *
+     * @return true nếu lượt quẹt được phép ghi nhận, false nếu đang trong thời gian Cooldown
+     */
+    public boolean tryAcquire(Long userId, LocalDate date, Instant punchInstant, PunchType punchType, String kioskId) {
+        Cache cache = getCache();
+        if (cache == null) {
+            return true;
+        }
+
+        String key = buildKey(userId, date);
+        CooldownPunchRecord candidate = new CooldownPunchRecord(userId, punchInstant, punchType, kioskId);
+
+        Cache.ValueWrapper existing = cache.putIfAbsent(key, candidate);
+        if (existing == null) {
+            return true;
+        }
+
+        CooldownPunchRecord record = (CooldownPunchRecord) existing.get();
+        Duration elapsed = Duration.between(record.lastPunchTimestamp(), punchInstant);
+
+        boolean active = !elapsed.isNegative() && elapsed.getSeconds() < cooldownSeconds;
+        if (active) {
+            log.warn("Kích hoạt Cooldown cho userId={}, chênh lệch={}s (ngưỡng={}s). Từ chối ghi CSDL.",
+                    userId, elapsed.getSeconds(), cooldownSeconds);
+            return false;
+        }
+
+        // Đã hết thời gian giãn cách: ghi đè bản ghi mới và cho phép
+        cache.put(key, candidate);
+        return true;
+    }
+
+    /**
      * Kiểm tra lượt quẹt mới có vi phạm thời gian giãn cách Cooldown 120 giây hay không.
      *
      * @param userId              ID nhân viên

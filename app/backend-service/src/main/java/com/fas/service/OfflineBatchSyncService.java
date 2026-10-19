@@ -139,10 +139,12 @@ public class OfflineBatchSyncService {
 
             User employee = userOpt.get();
             OffsetDateTime punchOffset = record.punchTimestamp();
-            Instant punchInstant = punchOffset.toInstant();
-            LocalDate punchDate = punchOffset.toLocalDate();
-            LocalTime punchTime = punchOffset.toLocalTime();
-            ZoneId zoneId = punchOffset.getOffset();
+            // Chuẩn hóa về múi giờ hợp đồng hệ thống (Asia/Ho_Chi_Minh) như đường online
+            OffsetDateTime vietnamPunchOffset = punchOffset.atZoneSameInstant(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toOffsetDateTime();
+            Instant punchInstant = vietnamPunchOffset.toInstant();
+            LocalDate punchDate = vietnamPunchOffset.toLocalDate();
+            LocalTime punchTime = vietnamPunchOffset.toLocalTime();
+            ZoneId zoneId = com.fas.api.dto.ApiResponse.VIETNAM_ZONE;
 
             // Xác định PunchType tuần tự
             String trackerKey = employeeId + "_" + punchDate;
@@ -153,7 +155,6 @@ public class OfflineBatchSyncService {
             } else {
                 punchType = determineInitialPunchType(employeeId, punchDate, zoneId);
             }
-            lastPunchTypeTracker.put(trackerKey, punchType);
 
             // Kiểm tra ràng buộc duy nhất chống trùng lặp (Idempotency)
             if (attendanceLogRepository.existsByUserIdAndPunchTimestampAndPunchType(employeeId, punchInstant, punchType)) {
@@ -162,6 +163,10 @@ public class OfflineBatchSyncService {
                 failedLocalIds.add(record.localQueueId());
                 continue;
             }
+
+            // Chỉ cập nhật bộ theo dõi lượt quẹt SAU khi bản ghi vượt qua kiểm tra trùng lặp
+            // (tránh suy luận sai CHECK_IN/CHECK_OUT khi gói lô được gửi lại - idempotency)
+            lastPunchTypeTracker.put(trackerKey, punchType);
 
             // Đánh giá ca kíp và tính toán trạng thái
             AttendanceStatus status;
@@ -242,18 +247,14 @@ public class OfflineBatchSyncService {
         Instant startOfDay = punchDate.atStartOfDay(zoneId).toInstant();
         Instant endOfDay = punchDate.plusDays(1).atStartOfDay(zoneId).toInstant().minusNanos(1);
 
-        Page<AttendanceLog> logsToday = attendanceLogRepository.findByUserIdAndPunchTimestampBetween(
-                userId, startOfDay, endOfDay,
-                PageRequest.of(0, 100, Sort.by(Sort.Direction.ASC, "punchTimestamp"))
-        );
+        Optional<AttendanceLog> latestLog = attendanceLogRepository
+                .findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(userId, startOfDay, endOfDay);
 
-        List<AttendanceLog> list = logsToday.getContent();
-        if (list.isEmpty()) {
+        if (latestLog.isEmpty()) {
             return PunchType.CHECK_IN;
         }
 
-        AttendanceLog latestLog = list.get(list.size() - 1);
-        return latestLog.getPunchType() == PunchType.CHECK_IN ? PunchType.CHECK_OUT : PunchType.CHECK_IN;
+        return latestLog.get().getPunchType() == PunchType.CHECK_IN ? PunchType.CHECK_OUT : PunchType.CHECK_IN;
     }
 
     private VerificationMethod parseVerificationMethod(String rawMethod) {

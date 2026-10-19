@@ -16,7 +16,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -54,7 +53,6 @@ class BiometricCleanupServiceTest {
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    @InjectMocks
     private BiometricCleanupService cleanupService;
 
     private final LocalDate today = LocalDate.of(2026, 10, 9);
@@ -62,6 +60,10 @@ class BiometricCleanupServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Logic giao dịch đã chuyển sang BiometricCleanupExecutor; dựng executor thật với các mock repo
+        BiometricCleanupExecutor executor = new BiometricCleanupExecutor(
+                userRepository, biometricTemplateRepository, consentWithdrawalRepository, auditLogRepository, objectMapper);
+        cleanupService = new BiometricCleanupService(executor);
         ReflectionTestUtils.setField(cleanupService, "retentionDays", 20);
     }
 

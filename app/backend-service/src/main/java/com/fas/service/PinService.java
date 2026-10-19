@@ -20,8 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 /**
@@ -34,6 +32,8 @@ import java.util.regex.Pattern;
  *   <li>Thiết lập lần đầu kiểm tra xác nhận trùng khớp; đổi PIN yêu cầu mã PIN hiện tại; đặt lại PIN yêu cầu mật khẩu tài khoản.</li>
  *   <li>Thẩm định mã PIN tại trạm Kiosk: PIN đúng trả về thông tin nhân viên; PIN sai ném 401 {@code PIN_INVALID}.</li>
  *   <li>Sai 5 lần liên tiếp đặt {@code pin_locked_until = NOW() + 15m} và ném 423 {@code PIN_LOCKED}.</li>
+ *   <li>Bộ đếm lần sai được lưu bền vững tại cột {@code users.pin_failed_attempts} (không phụ thuộc RAM/JVM,
+ *       không bị reset khi restart hay khi chạy nhiều instance).</li>
  *   <li>Không tạo bất kỳ bản ghi điểm danh nào khi thẩm định thất bại.</li>
  * </ul>
  */
@@ -49,12 +49,6 @@ public class PinService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    /**
-     * Bộ đếm lượt nhập sai liên tiếp lưu trữ theo định danh nhân viên (userId).
-     * TTL của bản ghi là 15 phút.
-     */
-    private final ConcurrentMap<Long, FailedAttemptRecord> failedAttempts = new ConcurrentHashMap<>();
 
     public PinService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -97,8 +91,8 @@ public class PinService {
 
         user.setPinHash(passwordEncoder.encode(pin));
         user.setPinLockedUntil(null);
+        user.setPinFailedAttempts(0);
         userRepository.save(user);
-        failedAttempts.remove(userId);
 
         logger.info("Thiết lập mã PIN dự phòng thành công cho nhân viên ID={}", userId);
         return new PinOperationResult(true, "Thiết lập mã PIN dự phòng thành công");
@@ -150,8 +144,8 @@ public class PinService {
 
         user.setPinHash(passwordEncoder.encode(newPin));
         user.setPinLockedUntil(null);
+        user.setPinFailedAttempts(0);
         userRepository.save(user);
-        failedAttempts.remove(userId);
 
         logger.info("Đổi mã PIN dự phòng thành công cho nhân viên ID={}", userId);
         return new PinOperationResult(true, "Đổi mã PIN dự phòng thành công");
@@ -193,8 +187,8 @@ public class PinService {
 
         user.setPinHash(passwordEncoder.encode(newPin));
         user.setPinLockedUntil(null);
+        user.setPinFailedAttempts(0);
         userRepository.save(user);
-        failedAttempts.remove(userId);
 
         logger.info("Đặt lại mã PIN dự phòng bằng mật khẩu thành công cho nhân viên ID={}", userId);
         return new PinOperationResult(true, "Đặt lại mã PIN thành công");
@@ -254,32 +248,28 @@ public class PinService {
             } else {
                 // Khóa đã hết hạn: tự động mở khóa và reset lượt sai
                 user.setPinLockedUntil(null);
+                user.setPinFailedAttempts(0);
                 userRepository.save(user);
-                failedAttempts.remove(user.getId());
             }
         }
 
         // 2. Thẩm định mã PIN
         if (!passwordEncoder.matches(pin, user.getPinHash())) {
-            FailedAttemptRecord record = failedAttempts.compute(user.getId(), (k, prev) -> {
-                if (prev == null || prev.isExpired(now)) {
-                    return new FailedAttemptRecord(1, now);
-                }
-                return new FailedAttemptRecord(prev.count() + 1, now);
-            });
+            int attempts = (user.getPinFailedAttempts() != null ? user.getPinFailedAttempts() : 0) + 1;
 
-            int attempts = record.count();
             if (attempts >= MAX_FAILED_ATTEMPTS) {
                 Instant lockedUntil = now.plus(LOCKOUT_DURATION_MINUTES, ChronoUnit.MINUTES);
+                user.setPinFailedAttempts(0);
                 user.setPinLockedUntil(lockedUntil);
                 userRepository.save(user);
-                failedAttempts.remove(user.getId());
 
                 logger.warn("Nhân viên {} (ID={}) nhập sai mã PIN 5 lần liên tiếp. Khóa tài khoản 15 phút đến {}",
                         employeeCode, user.getId(), lockedUntil);
                 throw new ApiException(ApiErrorCode.PIN_LOCKED,
                         "Mã PIN đã bị khóa 15 phút do nhập sai 5 lần liên tiếp.");
             } else {
+                user.setPinFailedAttempts(attempts);
+                userRepository.save(user);
                 int remaining = MAX_FAILED_ATTEMPTS - attempts;
                 logger.warn("Nhân viên {} (ID={}) nhập sai mã PIN (lần {}/{}).",
                         employeeCode, user.getId(), attempts, MAX_FAILED_ATTEMPTS);
@@ -289,9 +279,9 @@ public class PinService {
         }
 
         // 3. Xác thực thành công: xóa bộ đếm sai và xóa mốc khóa nếu có
-        failedAttempts.remove(user.getId());
-        if (user.getPinLockedUntil() != null) {
+        if (user.getPinLockedUntil() != null || (user.getPinFailedAttempts() != null && user.getPinFailedAttempts() != 0)) {
             user.setPinLockedUntil(null);
+            user.setPinFailedAttempts(0);
             userRepository.save(user);
         }
 
@@ -325,12 +315,14 @@ public class PinService {
     /**
      * Lấy số lần nhập sai còn lại trước khi bị khóa.
      */
+    @Transactional(readOnly = true)
     public int getRemainingAttempts(Long userId) {
-        FailedAttemptRecord record = failedAttempts.get(userId);
-        if (record == null || record.isExpired(Instant.now())) {
-            return MAX_FAILED_ATTEMPTS;
+        User user = findUserById(userId);
+        if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(Instant.now())) {
+            return 0;
         }
-        return Math.max(0, MAX_FAILED_ATTEMPTS - record.count());
+        int attempts = user.getPinFailedAttempts() != null ? user.getPinFailedAttempts() : 0;
+        return Math.max(0, MAX_FAILED_ATTEMPTS - attempts);
     }
 
     private User findUserById(Long userId) {
@@ -343,15 +335,6 @@ public class PinService {
         if (pin == null || !PIN_PATTERN.matcher(pin).matches()) {
             throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
                     "Mã PIN phải gồm đúng " + PIN_LENGTH + " chữ số.");
-        }
-    }
-
-    /**
-     * Bản ghi lưu trữ số lần sai liên tiếp và mốc thời gian lần sai gần nhất.
-     */
-    private record FailedAttemptRecord(int count, Instant lastFailedAt) {
-        boolean isExpired(Instant now) {
-            return Duration.between(lastFailedAt, now).toMinutes() >= LOCKOUT_DURATION_MINUTES;
         }
     }
 }

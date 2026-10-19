@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -95,10 +94,9 @@ public class PayrollPeriodController {
     @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
     public ApiResponse<PayrollPeriodResponse> lockPeriod(
             @PathVariable("period") String periodStr,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
+            Principal principal) {
         int[] ym = parsePeriod(periodStr);
-        Long userId = resolveUserId(principal, explicitUserId);
+        Long userId = resolveUserId(principal);
         PayrollPeriodResponse period = payrollPeriodService.lockPeriod(ym[0], ym[1], userId);
         return ApiResponse.ok("PAYROLL_PERIOD_LOCKED", "Chốt kỳ công thành công", period);
     }
@@ -119,10 +117,9 @@ public class PayrollPeriodController {
     public ApiResponse<PayrollPeriodResponse> unlockPeriod(
             @PathVariable("period") String periodStr,
             @Valid @RequestBody UnlockPeriodRequest request,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
+            Principal principal) {
         int[] ym = parsePeriod(periodStr);
-        Long userId = resolveUserId(principal, explicitUserId);
+        Long userId = resolveUserId(principal);
         String reason = request != null ? request.reason() : null;
         PayrollPeriodResponse period = payrollPeriodService.unlockPeriod(ym[0], ym[1], userId, reason);
         return ApiResponse.ok("PAYROLL_PERIOD_UNLOCKED", "Mở lại kỳ công thành công", period);
@@ -145,11 +142,7 @@ public class PayrollPeriodController {
         }
     }
 
-    private Long resolveUserId(Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

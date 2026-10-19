@@ -305,6 +305,7 @@ class PinServiceTest {
         void verifyPin_FailedAttempts_UnderLimit() {
             when(userRepository.findByEmployeeCode("NV-1042")).thenReturn(Optional.of(sampleUser));
             when(passwordEncoder.matches("999999", "$2a$12$correctPinHash")).thenReturn(false);
+            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Lần 1
             assertThatThrownBy(() -> pinService.verifyPin("NV-1042", "999999"))
@@ -334,9 +335,10 @@ class PinServiceTest {
                     .extracting("errorCode")
                     .isEqualTo(ApiErrorCode.PIN_INVALID);
 
-            // Chưa bị khóa
+            // Chưa bị khóa; bộ đếm lần sai được lưu bền vững trên thực thể User (không phải RAM)
             assertThat(sampleUser.getPinLockedUntil()).isNull();
-            verify(userRepository, never()).save(any(User.class));
+            assertThat(sampleUser.getPinFailedAttempts()).isEqualTo(4);
+            verify(userRepository, atLeastOnce()).save(sampleUser);
         }
 
         @Test
@@ -361,10 +363,11 @@ class PinServiceTest {
                     .extracting("errorCode")
                     .isEqualTo(ApiErrorCode.PIN_LOCKED);
 
-            // Kiểm tra trạng thái khóa 15 phút
+            // Kiểm tra trạng thái khóa 15 phút; bộ đếm được reset về 0 khi khóa
             assertThat(sampleUser.getPinLockedUntil()).isNotNull();
             assertThat(sampleUser.getPinLockedUntil()).isAfter(Instant.now().plus(14, ChronoUnit.MINUTES));
-            verify(userRepository).save(sampleUser);
+            assertThat(sampleUser.getPinFailedAttempts()).isZero();
+            verify(userRepository, atLeastOnce()).save(sampleUser);
         }
 
         @Test
@@ -404,8 +407,10 @@ class PinServiceTest {
         @DisplayName("Xác thực đúng sau các lần sai: xóa bộ đếm và không bị khóa")
         void verifyPin_CorrectPinAfterFailures_ResetsCounter() {
             when(userRepository.findByEmployeeCode("NV-1042")).thenReturn(Optional.of(sampleUser));
+            when(userRepository.findById(1042L)).thenReturn(Optional.of(sampleUser));
             when(passwordEncoder.matches("999999", "$2a$12$correctPinHash")).thenReturn(false);
             when(passwordEncoder.matches("123456", "$2a$12$correctPinHash")).thenReturn(true);
+            when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Sai 2 lần
             assertThatThrownBy(() -> pinService.verifyPin("NV-1042", "999999"))

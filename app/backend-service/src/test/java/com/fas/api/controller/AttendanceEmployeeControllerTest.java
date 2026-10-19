@@ -91,7 +91,9 @@ class AttendanceEmployeeControllerTest {
                     LocalTime.of(8, 25),
                     LocalTime.of(17, 30),
                     AttendanceStatus.ON_TIME,
-                    0
+                    0,
+                    201L,
+                    202L
             );
 
             PersonalAttendanceResponse response = new PersonalAttendanceResponse(
@@ -117,14 +119,16 @@ class AttendanceEmployeeControllerTest {
         }
 
         @Test
-        @DisplayName("Tra cứu thành công qua header X-User-Id dự phòng")
-        void getMonthlyAttendance_WithHeaderUserId_Success() throws Exception {
+        @DisplayName("Tra cứu thành công với principal là mã nhân viên")
+        void getMonthlyAttendance_WithEmployeeCodePrincipal_Success() throws Exception {
             DailyAttendanceItem daily = new DailyAttendanceItem(
                     LocalDate.of(2026, 10, 8),
                     LocalTime.of(8, 25),
                     null,
                     AttendanceStatus.ON_TIME,
-                    0
+                    0,
+                    201L,
+                    null
             );
 
             PersonalAttendanceResponse response = new PersonalAttendanceResponse(
@@ -134,8 +138,12 @@ class AttendanceEmployeeControllerTest {
             when(employeeAttendanceQueryService.getMonthlyPersonalAttendance(eq(1042L), eq(2026), eq(10)))
                     .thenReturn(response);
 
+            Principal mockPrincipal = () -> "NV-1042";
+            when(userRepository.findByEmail("NV-1042")).thenReturn(Optional.empty());
+            when(userRepository.findByEmployeeCode("NV-1042")).thenReturn(Optional.of(sampleUser));
+
             mockMvc.perform(get("/api/v1/employee/attendance")
-                            .header("X-User-Id", 1042L)
+                            .principal(mockPrincipal)
                             .param("year", "2026")
                             .param("month", "10"))
                     .andExpect(status().isOk())
@@ -172,8 +180,11 @@ class AttendanceEmployeeControllerTest {
             when(employeeAttendanceQueryService.getPersonalAttendanceLogs(eq(1042L), eq(2026), eq(10), any(Pageable.class)))
                     .thenReturn(page);
 
+            Principal mockPrincipal = () -> "dung.nv@company.com";
+            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+
             mockMvc.perform(get("/api/v1/employee/attendance/logs")
-                            .header("X-User-Id", 1042L)
+                            .principal(mockPrincipal)
                             .param("year", "2026")
                             .param("month", "10"))
                     .andExpect(status().isOk())

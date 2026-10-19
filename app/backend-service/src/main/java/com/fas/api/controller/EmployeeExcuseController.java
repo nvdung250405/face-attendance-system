@@ -62,10 +62,9 @@ public class EmployeeExcuseController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ExcuseRequestResponse> submitExcuseRequest(
             @Valid @RequestBody SubmitExcuseRequest request,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long headerUserId) {
+            Principal principal) {
 
-        Long userId = resolveUserId(principal, headerUserId);
+        Long userId = resolveUserId(principal);
         ExcuseRequestResponse response = excuseRequestService.submitExcuseRequest(userId, request);
         return ApiResponse.ok("EXCUSE_REQUEST_SUBMITTED", "Nộp đơn giải trình công thành công", response);
     }
@@ -83,19 +82,14 @@ public class EmployeeExcuseController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<Page<ExcuseRequestResponse>> getMyExcuseRequests(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long headerUserId) {
+            Principal principal) {
 
-        Long userId = resolveUserId(principal, headerUserId);
+        Long userId = resolveUserId(principal);
         Page<ExcuseRequestResponse> page = excuseRequestService.getEmployeeExcuseRequests(userId, pageable);
         return ApiResponse.ok("EMPLOYEE_EXCUSES_FETCHED", "Lấy danh sách đơn giải trình thành công", page);
     }
 
-    private Long resolveUserId(Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

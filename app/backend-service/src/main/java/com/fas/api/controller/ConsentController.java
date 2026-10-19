@@ -54,21 +54,16 @@ public class ConsentController {
     public ApiResponse<ConsentResult> signConsent(
             @Valid @RequestBody ConsentRequest request,
             HttpServletRequest servletRequest,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long headerUserId) {
+            Principal principal) {
 
-        Long userId = resolveCallerUserId(principal, headerUserId);
+        Long userId = resolveCallerUserId(principal);
         String clientIp = resolveClientIp(servletRequest);
 
         ConsentResult result = enrollmentService.createConsentSession(userId, request, clientIp);
         return ApiResponse.ok("CONSENT_ACCEPTED", "Tiếp nhận cam kết thành công. Vui lòng đến trạm Kiosk để quét mặt.", result);
     }
 
-    private Long resolveCallerUserId(Principal principal, Long headerUserId) {
-        if (headerUserId != null) {
-            return headerUserId;
-        }
-
+    private Long resolveCallerUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

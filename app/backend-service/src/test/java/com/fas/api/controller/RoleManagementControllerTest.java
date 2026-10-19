@@ -5,6 +5,7 @@ import com.fas.api.dto.response.UserRoleResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.enums.Role;
 import com.fas.data.repository.UserRepository;
 import com.fas.service.RoleManagementService;
@@ -49,6 +50,10 @@ class RoleManagementControllerTest {
                 .build();
     }
 
+    private static User adminUser() {
+        return User.builder().id(1L).email("admin@company.com").employeeCode("ADMIN-001").build();
+    }
+
     @Test
     @DisplayName("Admin cập nhật role thành công -> trả về 200 OK ROLE_UPDATED")
     void updateUserRole_Success() throws Exception {
@@ -61,8 +66,11 @@ class RoleManagementControllerTest {
         when(roleManagementService.updateUserRole(100L, Role.HR_MANAGER, 1L))
                 .thenReturn(response);
 
+        when(userRepository.findByEmail("admin@company.com"))
+                .thenReturn(java.util.Optional.of(adminUser()));
+
         mockMvc.perform(patch("/api/v1/admin/users/100/role")
-                        .header("X-User-Id", 1L)
+                        .principal(() -> "admin@company.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -81,8 +89,11 @@ class RoleManagementControllerTest {
         when(roleManagementService.updateUserRole(1L, Role.EMPLOYEE, 1L))
                 .thenThrow(new ApiException(ApiErrorCode.LAST_ADMIN_CANNOT_BE_DEMOTED, "Không thể hạ cấp ADMIN cuối cùng"));
 
+        when(userRepository.findByEmail("admin@company.com"))
+                .thenReturn(java.util.Optional.of(adminUser()));
+
         mockMvc.perform(patch("/api/v1/admin/users/1/role")
-                        .header("X-User-Id", 1L)
+                        .principal(() -> "admin@company.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())

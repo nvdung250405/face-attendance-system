@@ -2,6 +2,7 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.response.ConsentWithdrawalResponse;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.repository.UserRepository;
 import com.fas.service.ConsentWithdrawalService;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,13 +62,20 @@ class ConsentWithdrawalControllerTest {
         );
     }
 
+    private static User employeeUser() {
+        return User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+    }
+
     @Test
     @DisplayName("Nhân viên rút cam kết Informed Consent -> trả về 200 OK")
     void withdrawConsent_Success() throws Exception {
         when(consentWithdrawalService.withdrawConsent(eq(1042L), any())).thenReturn(sampleResponse);
 
+        when(userRepository.findByEmail("dung@company.com"))
+                .thenReturn(Optional.of(employeeUser()));
+
         mockMvc.perform(post("/api/v1/employee/consent/withdraw")
-                        .header("X-User-Id", 1042L))
+                        .principal(() -> "dung@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("CONSENT_WITHDRAWN"))
@@ -81,8 +89,11 @@ class ConsentWithdrawalControllerTest {
     void getLatestWithdrawal_Success() throws Exception {
         when(consentWithdrawalService.getLatestWithdrawal(1042L)).thenReturn(Optional.of(sampleResponse));
 
+        when(userRepository.findByEmail("dung@company.com"))
+                .thenReturn(Optional.of(employeeUser()));
+
         mockMvc.perform(get("/api/v1/employee/consent/withdrawal")
-                        .header("X-User-Id", 1042L))
+                        .principal(() -> "dung@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("CONSENT_WITHDRAWAL_FETCHED"))

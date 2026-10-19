@@ -19,7 +19,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,9 +57,8 @@ public class ConsentWithdrawalController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<ConsentWithdrawalResponse> withdrawConsent(
             Principal principal,
-            HttpServletRequest request,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            HttpServletRequest request) {
+        Long userId = resolveUserId(principal);
         String clientIp = resolveClientIp(request);
         ConsentWithdrawalResponse response = consentWithdrawalService.withdrawConsent(userId, clientIp);
         return ApiResponse.ok("CONSENT_WITHDRAWN", "Rút cam kết Informed Consent thành công", response);
@@ -77,9 +75,8 @@ public class ConsentWithdrawalController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<ConsentWithdrawalResponse> getLatestWithdrawal(
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         ConsentWithdrawalResponse response = consentWithdrawalService.getLatestWithdrawal(userId)
                 .orElse(null);
         return ApiResponse.ok("CONSENT_WITHDRAWAL_FETCHED", "Tra cứu thông tin rút cam kết thành công", response);
@@ -94,7 +91,7 @@ public class ConsentWithdrawalController {
      */
     @GetMapping("/dpo/consent-withdrawals")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('DPO')")
+    @PreAuthorize("hasAnyRole('DPO', 'ADMIN')")
     public ApiResponse<Page<ConsentWithdrawalResponse>> getAllWithdrawals(
             @PageableDefault(size = 20) Pageable pageable) {
         Page<ConsentWithdrawalResponse> withdrawals = consentWithdrawalService.getAllWithdrawals(pageable);
@@ -112,11 +109,7 @@ public class ConsentWithdrawalController {
         return request.getRemoteAddr() != null ? request.getRemoteAddr() : "127.0.0.1";
     }
 
-    private Long resolveUserId(Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

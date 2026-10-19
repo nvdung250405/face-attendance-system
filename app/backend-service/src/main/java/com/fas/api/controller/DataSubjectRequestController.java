@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -65,9 +64,8 @@ public class DataSubjectRequestController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<DataSubjectRequestResponse> createRequest(
             @Valid @RequestBody CreateDataSubjectRequest request,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         DataSubjectRequestResponse response = dataSubjectRequestService.createRequest(userId, request);
         return ApiResponse.ok("DATA_REQUEST_CREATED", "Gửi yêu cầu dữ liệu cá nhân thành công", response);
     }
@@ -86,9 +84,8 @@ public class DataSubjectRequestController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Page<DataSubjectRequestResponse>> getMyRequests(
             @PageableDefault(size = 20) Pageable pageable,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         Page<DataSubjectRequestResponse> requests = dataSubjectRequestService.getRequestsByUser(userId, pageable);
         return ApiResponse.ok("DATA_REQUESTS_FETCHED", "Tra cứu yêu cầu dữ liệu cá nhân thành công", requests);
     }
@@ -106,7 +103,8 @@ public class DataSubjectRequestController {
     public ApiResponse<DataSubjectRequestResponse> getMyRequestDetail(
             @PathVariable("id") Long id,
             Principal principal) {
-        DataSubjectRequestResponse response = dataSubjectRequestService.getRequestById(id);
+        Long userId = resolveUserId(principal);
+        DataSubjectRequestResponse response = dataSubjectRequestService.getRequestByIdForUser(id, userId);
         return ApiResponse.ok("DATA_REQUEST_FETCHED", "Tra cứu chi tiết yêu cầu thành công", response);
     }
 
@@ -120,7 +118,7 @@ public class DataSubjectRequestController {
      */
     @GetMapping("/dpo/data-requests")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('DPO')")
+    @PreAuthorize("hasAnyRole('DPO', 'ADMIN')")
     public ApiResponse<Page<DataSubjectRequestResponse>> getDpoRequests(
             @RequestParam(name = "status", required = false) DataSubjectRequestStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -140,22 +138,17 @@ public class DataSubjectRequestController {
      */
     @PatchMapping("/dpo/data-requests/{id}")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('DPO')")
+    @PreAuthorize("hasAnyRole('DPO', 'ADMIN')")
     public ApiResponse<DataSubjectRequestResponse> updateRequestStatus(
             @PathVariable("id") Long id,
             @Valid @RequestBody UpdateDataSubjectRequest request,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long dpoUserId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long dpoUserId = resolveUserId(principal);
         DataSubjectRequestResponse response = dataSubjectRequestService.updateRequestStatus(id, dpoUserId, request);
         return ApiResponse.ok("DATA_REQUEST_UPDATED", "Cập nhật yêu cầu dữ liệu cá nhân thành công", response);
     }
 
-    private Long resolveUserId(Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

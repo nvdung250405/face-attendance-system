@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,9 +60,8 @@ public class NotificationController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Page<NotificationResponse>> getMyNotifications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         Page<NotificationResponse> notifications = notificationService.getUserNotifications(userId, pageable);
         return ApiResponse.ok("NOTIFICATIONS_FETCHED", "Lấy danh sách thông báo thành công", notifications);
     }
@@ -80,9 +78,8 @@ public class NotificationController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Map<String, Long>> getUnreadCount(
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         long unreadCount = notificationService.getUnreadCount(userId);
         return ApiResponse.ok("UNREAD_COUNT_FETCHED", "Lấy số lượng thông báo chưa đọc thành công", Map.of("unreadCount", unreadCount));
     }
@@ -101,9 +98,8 @@ public class NotificationController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<NotificationResponse> markAsRead(
             @PathVariable("id") Long id,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         NotificationResponse notification = notificationService.markAsRead(id, userId);
         return ApiResponse.ok("NOTIFICATION_READ", "Đánh dấu đã đọc thông báo thành công", notification);
     }
@@ -120,18 +116,13 @@ public class NotificationController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> markAllAsRead(
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long userId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long userId = resolveUserId(principal);
         notificationService.markAllAsRead(userId);
         return ApiResponse.ok("NOTIFICATIONS_READ_ALL", "Đánh dấu đã đọc tất cả thông báo thành công", null);
     }
 
-    private Long resolveUserId(Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();

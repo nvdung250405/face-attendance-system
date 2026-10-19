@@ -62,6 +62,10 @@ public class EnrollmentService {
     private static final int OTP_VALIDITY_HOURS = 48;
     private static final int SESSION_TOKEN_TTL_MINUTES = 15;
 
+    /** Chặn brute-force OTP: tối đa 20 lần thử sai liên tiếp mỗi trạm trong 15 phút. */
+    private static final int MAX_OTP_FAILED_ATTEMPTS = 20;
+    private static final int OTP_LOCKOUT_MINUTES = 15;
+
     private final UserRepository userRepository;
     private final EnrollmentSessionRepository enrollmentSessionRepository;
     private final BiometricTemplateRepository biometricTemplateRepository;
@@ -73,6 +77,9 @@ public class EnrollmentService {
 
     /** Bộ nhớ đệm tạm thời lưu trữ các sessionToken đã xác minh hợp lệ tại trạm Kiosk. */
     private final ConcurrentMap<String, VerifiedSession> verifiedSessions = new ConcurrentHashMap<>();
+
+    /** Bộ đếm lần thử OTP sai liên tiếp theo kioskId (chống brute-force). */
+    private final ConcurrentMap<String, OtpFailedAttemptRecord> otpFailedAttempts = new ConcurrentHashMap<>();
 
     public EnrollmentService(
             UserRepository userRepository,
@@ -154,6 +161,7 @@ public class EnrollmentService {
         }
 
         validateKiosk(request.kioskId());
+        checkOtpAttemptLockout(request.kioskId());
 
         Instant now = Instant.now();
         List<EnrollmentSession> activeSessions = enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(now);
@@ -167,20 +175,31 @@ public class EnrollmentService {
         }
 
         if (matchedSession == null) {
-            // Đối soát với các phiên đã sử dụng hoặc hết hạn để trả mã lỗi chính xác
-            List<EnrollmentSession> allSessions = enrollmentSessionRepository.findAll();
-            for (EnrollmentSession session : allSessions) {
+            // Đối soát có giới hạn với các phiên đã sử dụng gần đây để trả mã lỗi chính xác
+            List<EnrollmentSession> recentlyUsedSessions = enrollmentSessionRepository
+                    .findTop100ByIsUsedTrueOrderByCreatedAtDesc();
+            for (EnrollmentSession session : recentlyUsedSessions) {
                 if (passwordEncoder.matches(request.otp(), session.getOtpHash())) {
-                    if (Boolean.TRUE.equals(session.getIsUsed())) {
-                        throw new ApiException(ApiErrorCode.OTP_ALREADY_USED, "Mã OTP này đã được sử dụng");
-                    }
-                    if (session.getExpiresAt().isBefore(now)) {
-                        throw new ApiException(ApiErrorCode.OTP_EXPIRED, "Mã OTP đã hết hạn");
-                    }
+                    recordOtpFailure(request.kioskId());
+                    throw new ApiException(ApiErrorCode.OTP_ALREADY_USED, "Mã OTP này đã được sử dụng");
                 }
             }
+
+            // Đối soát có giới hạn với các phiên chưa dùng nhưng đã hết hạn gần đây
+            List<EnrollmentSession> recentlyExpiredSessions = enrollmentSessionRepository
+                    .findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(now);
+            for (EnrollmentSession session : recentlyExpiredSessions) {
+                if (passwordEncoder.matches(request.otp(), session.getOtpHash())) {
+                    recordOtpFailure(request.kioskId());
+                    throw new ApiException(ApiErrorCode.OTP_EXPIRED, "Mã OTP đã hết hạn");
+                }
+            }
+
+            recordOtpFailure(request.kioskId());
             throw new ApiException(ApiErrorCode.OTP_INVALID, "Mã OTP không đúng hoặc không tồn tại");
         }
+
+        otpFailedAttempts.remove(request.kioskId());
 
         User user = matchedSession.getUser();
         if (user == null || user.getStatus() == EmployeeStatus.TERMINATED) {
@@ -302,6 +321,18 @@ public class EnrollmentService {
                 nowVietnam
         );
 
+        // Phát sóng sự kiện hoàn tất đăng ký tới Cổng Web của nhân viên qua STOMP topic /topic/enrollment/{otp}
+        try {
+            stompEventBroadcaster.broadcastEnrollmentSuccess(
+                    request.otp(),
+                    user.getId(),
+                    "Đăng ký khuôn mặt thành công! Tài khoản của bạn đã được kích hoạt.",
+                    nowVietnam);
+        } catch (Exception ex) {
+            logger.warn("Không thể phát sóng sự kiện hoàn tất đăng ký qua STOMP cho userId={}: {}",
+                    user.getId(), ex.getMessage());
+        }
+
         logger.info("Đăng ký khuôn mặt thành công: userId={}, templateId={}, employeeCode={}",
                 user.getId(), savedTemplate.getId(), user.getEmployeeCode());
 
@@ -375,6 +406,48 @@ public class EnrollmentService {
         }
     }
 
+    /** Kiểm tra trạng thái khóa chống brute-force OTP của trạm Kiosk. */
+    private void checkOtpAttemptLockout(String kioskId) {
+        OtpFailedAttemptRecord record = otpFailedAttempts.get(kioskId);
+        if (record != null && record.isLocked(Instant.now())) {
+            long remainingMinutes = Math.max(1, Duration.between(Instant.now(), record.lockedUntil()).toMinutes() + 1);
+            logger.warn("Từ chối verify-otp: Kiosk {} đang bị khóa chống brute-force (còn ~{} phút)", kioskId, remainingMinutes);
+            throw new ApiException(ApiErrorCode.OTP_LOCKED,
+                    "Xác thực OTP tạm khóa do thử sai quá nhiều lần. Vui lòng thử lại sau " + remainingMinutes + " phút.");
+        }
+    }
+
+    /** Ghi nhận một lần thử OTP sai; kích hoạt khóa tạm khi vượt ngưỡng. */
+    private void recordOtpFailure(String kioskId) {
+        Instant now = Instant.now();
+        OtpFailedAttemptRecord record = otpFailedAttempts.compute(kioskId, (k, prev) -> {
+            if (prev == null || prev.isExpired(now)) {
+                return new OtpFailedAttemptRecord(1, now, null);
+            }
+            return new OtpFailedAttemptRecord(prev.count() + 1, now, prev.lockedUntil());
+        });
+
+        if (record.count() >= MAX_OTP_FAILED_ATTEMPTS && (record.lockedUntil() == null || !record.lockedUntil().isAfter(now))) {
+            OtpFailedAttemptRecord locked = new OtpFailedAttemptRecord(
+                    record.count(), record.lastFailedAt(), now.plus(OTP_LOCKOUT_MINUTES, ChronoUnit.MINUTES));
+            otpFailedAttempts.put(kioskId, locked);
+            logger.warn("Khóa verify-otp 15 phút cho Kiosk {} do thử sai quá {} lần", kioskId, MAX_OTP_FAILED_ATTEMPTS);
+            throw new ApiException(ApiErrorCode.OTP_LOCKED,
+                    "Xác thực OTP tạm khóa do thử sai quá nhiều lần. Vui lòng thử lại sau " + OTP_LOCKOUT_MINUTES + " phút.");
+        }
+    }
+
     /** Bản ghi theo dõi phiên Kiosk đã xác minh OTP thành công. */
     private record VerifiedSession(Long sessionId, Long userId, Instant verifiedAt, String kioskId) {}
+
+    /** Bản ghi theo dõi số lần thử OTP sai liên tiếp của một trạm Kiosk. */
+    private record OtpFailedAttemptRecord(int count, Instant lastFailedAt, Instant lockedUntil) {
+        boolean isExpired(Instant now) {
+            return Duration.between(lastFailedAt, now).toMinutes() >= OTP_LOCKOUT_MINUTES;
+        }
+
+        boolean isLocked(Instant now) {
+            return lockedUntil != null && lockedUntil.isAfter(now);
+        }
+    }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Spring Data JPA Repository cho thực thể AttendanceLog (DATA-BE-004 - attendance_logs).
@@ -20,6 +21,10 @@ public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Lo
 
     Page<AttendanceLog> findByUserIdAndPunchTimestampBetween(
             Long userId, Instant start, Instant end, Pageable pageable);
+
+    /** Lượt điểm danh mới nhất của nhân viên trong khoảng thời gian (không giới hạn 100 bản ghi). */
+    Optional<AttendanceLog> findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+            Long userId, Instant start, Instant end);
 
     Page<AttendanceLog> findByKioskIdAndPunchTimestampBetween(
             String kioskId, Instant start, Instant end, Pageable pageable);

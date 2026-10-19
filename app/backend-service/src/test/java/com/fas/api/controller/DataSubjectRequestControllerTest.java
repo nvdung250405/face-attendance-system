@@ -4,6 +4,7 @@ import com.fas.api.dto.request.CreateDataSubjectRequest;
 import com.fas.api.dto.request.UpdateDataSubjectRequest;
 import com.fas.api.dto.response.DataSubjectRequestResponse;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.data.entity.User;
 import com.fas.data.enums.DataSubjectRequestStatus;
 import com.fas.data.enums.DataSubjectRequestType;
 import com.fas.data.repository.UserRepository;
@@ -70,6 +71,14 @@ class DataSubjectRequestControllerTest {
         );
     }
 
+    private static User employeeUser() {
+        return User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
+    }
+
+    private static User dpoUser() {
+        return User.builder().id(200L).email("dpo@company.com").employeeCode("DPO-200").build();
+    }
+
     @Test
     @DisplayName("Nhân viên gửi yêu cầu dữ liệu cá nhân mới -> trả về 201 Created")
     void createRequest_Success() throws Exception {
@@ -78,8 +87,11 @@ class DataSubjectRequestControllerTest {
         );
         when(dataSubjectRequestService.createRequest(eq(1042L), any())).thenReturn(sampleResponse);
 
+        when(userRepository.findByEmail("dung@company.com"))
+                .thenReturn(java.util.Optional.of(employeeUser()));
+
         mockMvc.perform(post("/api/v1/employee/data-requests")
-                        .header("X-User-Id", 1042L)
+                        .principal(() -> "dung@company.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -96,13 +108,50 @@ class DataSubjectRequestControllerTest {
         when(dataSubjectRequestService.getRequestsByUser(eq(1042L), any()))
                 .thenReturn(new PageImpl<>(List.of(sampleResponse), PageRequest.of(0, 20), 1));
 
+        when(userRepository.findByEmail("dung@company.com"))
+                .thenReturn(java.util.Optional.of(employeeUser()));
+
         mockMvc.perform(get("/api/v1/employee/data-requests")
-                        .header("X-User-Id", 1042L))
+                        .principal(() -> "dung@company.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("DATA_REQUESTS_FETCHED"));
 
         verify(dataSubjectRequestService).getRequestsByUser(eq(1042L), any());
+    }
+
+    @Test
+    @DisplayName("Nhân viên tra cứu chi tiết yêu cầu của chính mình -> trả về 200 OK")
+    void getMyRequestDetail_Success() throws Exception {
+        when(dataSubjectRequestService.getRequestByIdForUser(1L, 1042L)).thenReturn(sampleResponse);
+
+        when(userRepository.findByEmail("dung@company.com"))
+                .thenReturn(java.util.Optional.of(employeeUser()));
+
+        mockMvc.perform(get("/api/v1/employee/data-requests/1")
+                        .principal(() -> "dung@company.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value("DATA_REQUEST_FETCHED"))
+                .andExpect(jsonPath("$.data.id").value(1));
+
+        verify(dataSubjectRequestService).getRequestByIdForUser(1L, 1042L);
+    }
+
+    @Test
+    @DisplayName("Nhân viên tra cứu yêu cầu của người khác -> trả về 404 RESOURCE_NOT_FOUND")
+    void getMyRequestDetail_OtherUsersRequest_Returns404() throws Exception {
+        when(dataSubjectRequestService.getRequestByIdForUser(1L, 1042L))
+                .thenThrow(new com.fas.api.error.ApiException(com.fas.api.error.ApiErrorCode.RESOURCE_NOT_FOUND,
+                        "Không tìm thấy yêu cầu ID=1"));
+
+        when(userRepository.findByEmail("dung@company.com"))
+                .thenReturn(java.util.Optional.of(employeeUser()));
+
+        mockMvc.perform(get("/api/v1/employee/data-requests/1")
+                        .principal(() -> "dung@company.com"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
     }
 
     @Test
@@ -135,8 +184,11 @@ class DataSubjectRequestControllerTest {
         when(dataSubjectRequestService.updateRequestStatus(eq(1L), eq(200L), any()))
                 .thenReturn(updatedResponse);
 
+        when(userRepository.findByEmail("dpo@company.com"))
+                .thenReturn(java.util.Optional.of(dpoUser()));
+
         mockMvc.perform(patch("/api/v1/dpo/data-requests/1")
-                        .header("X-User-Id", 200L)
+                        .principal(() -> "dpo@company.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())

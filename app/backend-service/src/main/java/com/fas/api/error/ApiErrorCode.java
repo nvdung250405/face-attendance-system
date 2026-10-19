@@ -19,6 +19,7 @@ public enum ApiErrorCode {
     INVALID_VECTOR_DIMENSION(HttpStatus.BAD_REQUEST, "Sai kích thước vector"),
     OTP_INVALID(HttpStatus.BAD_REQUEST, "Mã OTP không đúng"),
     OTP_EXPIRED(HttpStatus.BAD_REQUEST, "Mã OTP đã hết hạn"),
+    OTP_LOCKED(HttpStatus.LOCKED, "Xác thực OTP tạm khóa do thử sai quá nhiều lần"),
     COOLDOWN_ACTIVE(HttpStatus.CONFLICT, "Chống quẹt trùng lặp"),
     OTP_ALREADY_USED(HttpStatus.CONFLICT, "Mã OTP đã sử dụng"),
     EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy nhân sự"),

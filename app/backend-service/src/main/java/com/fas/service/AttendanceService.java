@@ -127,15 +127,22 @@ public class AttendanceService {
         LocalTime punchTime = punchTimeOffset.toLocalTime();
         ZoneId zoneId = ApiResponse.VIETNAM_ZONE;
 
-        // 4. Kiểm tra Cooldown 120s
-        if (cooldownManager.isCooldownActive(employee.getId(), punchDate, punchInstant)) {
+        // 3b. Chống backdate/future timestamp: thời gian quẹt không được ở tương lai quá 2 phút
+        if (punchInstant.isAfter(Instant.now().plus(2, java.time.temporal.ChronoUnit.MINUTES))) {
+            log.warn("Từ chối điểm danh: Nhân viên ID={} gửi mốc thời gian tương lai {}", employee.getId(), punchInstant);
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
+                    "Thời gian điểm danh không được ở tương lai");
+        }
+
+        // 4. Xác định PunchType (CHECK_IN hay CHECK_OUT)
+        PunchType punchType = determinePunchType(employee.getId(), punchDate, zoneId);
+
+        // 5. Kiểm tra + ghi nhận Cooldown 120s nguyên tử (chống quẹt trùng lặp & race condition)
+        if (!cooldownManager.tryAcquire(employee.getId(), punchDate, punchInstant, punchType, kiosk.getId())) {
             log.warn("Từ chối điểm danh: Nhân viên ID={} vi phạm Cooldown 120s", employee.getId());
             throw new ApiException(ApiErrorCode.COOLDOWN_ACTIVE,
                     "Chống quẹt trùng lặp: Lượt điểm danh trong vòng 120 giây trước đó đã được ghi nhận");
         }
-
-        // 5. Xác định PunchType (CHECK_IN hay CHECK_OUT)
-        PunchType punchType = determinePunchType(employee.getId(), punchDate, zoneId);
 
         // 6. Đánh giá ca làm việc & tính toán trạng thái
         AttendanceStatus status;
@@ -189,10 +196,7 @@ public class AttendanceService {
         log.info("Ghi nhận điểm danh thành công: LogID={}, User={}, Type={}, Status={}, LateMinutes={}",
                 savedLog.getId(), employee.getEmployeeCode(), punchType, status, lateMinutes);
 
-        // 9. Cập nhật Cooldown Cache
-        cooldownManager.recordPunch(employee.getId(), punchDate, punchInstant, punchType, kiosk.getId());
-
-        // 10. Phát sóng STOMP WebSocket
+        // 9. Phát sóng STOMP WebSocket
         AttendanceLogItem logItem = new AttendanceLogItem(
                 savedLog.getId(),
                 employee.getId(),
@@ -240,18 +244,14 @@ public class AttendanceService {
         Instant startOfDay = punchDate.atStartOfDay(zoneId).toInstant();
         Instant endOfDay = punchDate.plusDays(1).atStartOfDay(zoneId).toInstant().minusNanos(1);
 
-        Page<AttendanceLog> logsToday = attendanceLogRepository.findByUserIdAndPunchTimestampBetween(
-                userId, startOfDay, endOfDay,
-                PageRequest.of(0, 100, Sort.by(Sort.Direction.ASC, "punchTimestamp"))
-        );
+        Optional<AttendanceLog> latestLog = attendanceLogRepository
+                .findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(userId, startOfDay, endOfDay);
 
-        List<AttendanceLog> list = logsToday.getContent();
-        if (list.isEmpty()) {
+        if (latestLog.isEmpty()) {
             return PunchType.CHECK_IN;
         }
 
-        AttendanceLog latestLog = list.get(list.size() - 1);
-        return latestLog.getPunchType() == PunchType.CHECK_IN ? PunchType.CHECK_OUT : PunchType.CHECK_IN;
+        return latestLog.get().getPunchType() == PunchType.CHECK_IN ? PunchType.CHECK_OUT : PunchType.CHECK_IN;
     }
 
     /**

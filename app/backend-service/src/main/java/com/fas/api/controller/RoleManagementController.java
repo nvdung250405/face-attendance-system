@@ -18,7 +18,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,18 +58,13 @@ public class RoleManagementController {
     public ApiResponse<UserRoleResponse> updateUserRole(
             @PathVariable("id") Long id,
             @Valid @RequestBody UpdateUserRoleRequest request,
-            Principal principal,
-            @RequestHeader(name = "X-User-Id", required = false) Long explicitUserId) {
-        Long actorUserId = resolveUserId(principal, explicitUserId);
+            Principal principal) {
+        Long actorUserId = resolveUserId(principal);
         UserRoleResponse response = roleManagementService.updateUserRole(id, request.role(), actorUserId);
         return ApiResponse.ok("ROLE_UPDATED", "Cập nhật vai trò người dùng thành công", response);
     }
 
-    private Long resolveUserId(Principal principal, Long explicitUserId) {
-        if (explicitUserId != null) {
-            return explicitUserId;
-        }
-
+    private Long resolveUserId(Principal principal) {
         String principalName = null;
         if (principal != null && StringUtils.hasText(principal.getName())) {
             principalName = principal.getName();
