@@ -16,8 +16,7 @@ Phân hệ **Cổng Web Quản trị & Người dùng** (`web-portal`) là ứng
 
 ### Ranh giới Trách nhiệm Kỹ thuật (Technical Scope):
 * **Cổng Thông tin Kép (Dual-Role Portal & Role Guards)**: Phân quyền điều hướng tự động dựa trên JWT Claims giữa giao diện Quản trị Chấm công (HR/ADMIN) và Không gian Cá nhân (Nhân viên), bảo vệ toàn bộ các tuyến đường (Protected Routes).
-* **Quản lý Trạng thái & Lưu trữ Client (Data Facet)**: Quản lý phiên xác thực an toàn qua `SafeLocalStorage` (`fas_auth_session`), cô lập tiến trình ký cam kết pháp lý trong `SafeSessionStorage` (`fas_consent_session`), đồng bộ phiên đa tab qua sự kiện `storage`, và bộ đệm truy vấn hiệu năng cao qua TanStack Query Cache.
-* **Giao tiếp Hai chiều (API Facet)**: Kết nối RESTful API qua Axios Client tích hợp bộ chặn tự động làm mới Token chống Race Condition (Mutex Refresh Queue) khi gặp HTTP 401; duy trì kết nối WebSocket STOMP (`/topic/live-attendance`, `/topic/enrollment/{otp}`) nhận thông báo trực tiếp.
+* **Giao tiếp Mạng & Lưu trữ Client**: Là bên tiêu thụ giao thức, gọi RESTful API qua Axios Client (Mutex Token Refresh Queue) và STOMP WebSocket (tuân thủ hợp đồng dịch vụ tại [`backend-service/specs/api.md`](../backend-service/specs/api.md)); quản lý state/cache phía client (Zustand, TanStack Query, SafeLocalStorage) được tích hợp trong [`specs/spec.md`](specs/spec.md).
 * **Trải nghiệm Người dùng Hiện đại (UI/UX Facet)**: Hệ thống Design Tokens phong cách Indigo Clean SaaS, bảng chấm công thời gian thực có hiệu ứng chớp sáng (Green Flash 1.5s), quy trình ký cam kết pháp lý (Nghị định 13/2023/NĐ-CP) cấp mã OTP 6 số hạn 48 giờ kèm mã QR, và lịch biểu công cá nhân dạng Calendar Grid.
 
 ---
@@ -33,8 +32,6 @@ docs/subsystem-docs/web-portal/
 │
 ├── specs/                         # Bộ tài liệu đặc tả & thiết kế kỹ thuật hợp nhất
 │   ├── spec.md                    # Spec Core: Kiến trúc SPA React 19, Vite 8, FR-WEB-, NFR-WEB-, SOL-WEB- & quyết định kỹ thuật DD-WEB-
-│   ├── data.md                    # Lưu trữ client, Safe Storage, TypeScript contracts & TanStack Query (DATA-WEB-, DTD-WEB-)
-│   ├── api.md                     # Hợp đồng RESTful API & STOMP Broker, Mutex Refresh Queue (API-WEB-, APD-WEB-)
 │   └── ui-ux.md                   # Trải nghiệm Indigo Clean SaaS, Admin Shell, Consent Modal & Tokens (UI-WEB-, UXD-WEB-)
 │
 └── plans/                         # Kế hoạch thực thi kỹ thuật & kiểm thử phân hệ
@@ -52,10 +49,9 @@ docs/subsystem-docs/web-portal/
 | :--- | :--- | :---: | :---: | :--- |
 | **Trang chủ** | [README.md](README.md) | `WEB-HUB` | — | `docs/meta.md`, `system-docs/specs/spec.md` (`ARC-003`) |
 | **Spec Core** | [specs/spec.md](specs/spec.md) | `WEB-SPEC` | `FR-WEB-`, `NFR-WEB-`, `SOL-WEB-`, `DD-WEB-` | `system-docs/specs/spec.md` (`ARC-003`, `FR-SYS-`, `NFR-SYS-`, `SOL-SYS-`, `DD-SYS-001..028`) |
-| **Data Facet** | [specs/data.md](specs/data.md) | `WEB-DATA` | `DATA-WEB-`, `DTD-WEB-` | `system-docs/specs/spec.md` (`DD-SYS-003`, `DD-SYS-004`) |
-| **API Facet** | [specs/api.md](specs/api.md) | `WEB-API` | `API-WEB-`, `APD-WEB-` | `system-docs/specs/spec.md` (`DD-SYS-001`, `DD-SYS-004`) |
 | **UI/UX Facet** | [specs/ui-ux.md](specs/ui-ux.md) | `WEB-UIUX` | `UI-WEB-`, `UXD-WEB-` | `system-docs/specs/spec.md` (`DD-SYS-003`, `DD-SYS-004`) |
+| **API Contract** | Tham chiếu: [`backend-service/specs/api.md`](../backend-service/specs/api.md) | `BE-API` | `API-BE-`, `APD-BE-` | Hợp đồng API do Backend Service cung cấp (Web Portal là Consumer) |
 | **Kế hoạch Nền tảng** | [plans/foundation-setup-plan.md](plans/foundation-setup-plan.md) | `WEB-FSP` | `FND-WEB-` | `system-docs/plans/foundation-setup-plan.md` |
 | **Kế hoạch Xây dựng** | [plans/build-plan.md](plans/build-plan.md) | `WEB-BLD` | `BLD-WEB-` | `plans/foundation-setup-plan.md`, `specs/spec.md` |
 | **Kế hoạch Task** | [plans/task-plan.md](plans/task-plan.md) | `WEB-TSK` | `TASK-WEB-` | `plans/build-plan.md` |
-| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `WEB-TST` | `TST-WEB-` | `specs/spec.md`, `specs/data.md`, `specs/api.md`, `specs/ui-ux.md` |
+| **Kế hoạch Kiểm thử** | [plans/test-plan.md](plans/test-plan.md) | `WEB-TST` | `TST-WEB-` | `specs/spec.md`, `specs/ui-ux.md` |
