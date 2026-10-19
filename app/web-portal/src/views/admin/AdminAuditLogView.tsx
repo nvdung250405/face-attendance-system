@@ -21,6 +21,7 @@ import {
   History,
 } from 'lucide-react'
 import { Button } from '@/components/common'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import type {
   AuditLogItem,
@@ -616,72 +617,77 @@ export const AdminAuditLogView: React.FC = () => {
       )}
 
       {/* ── Modal Chi Tiết Diff Giá Trị Cũ / Mới ── */}
-      {selectedLogDetail && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+      <Dialog
+        open={Boolean(selectedLogDetail)}
+        onOpenChange={(open) => !open && setSelectedLogDetail(null)}
+      >
+        <DialogContent
+          hideCloseButton
+          usePortal={false}
+          className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[85vh] overflow-y-auto"
         >
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-              <h3 className="text-base font-bold text-slate-900">
-                Chi tiết Kiểm toán #{selectedLogDetail.id} ({selectedLogDetail.action})
-              </h3>
-              <button
-                type="button"
-                onClick={() => setSelectedLogDetail(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <span className="font-semibold text-slate-500">Thời điểm:</span>{' '}
-                <span className="font-mono text-slate-800">{formatDateTime(selectedLogDetail.createdAt)}</span>
-              </div>
-              <div>
-                <span className="font-semibold text-slate-500">Người thực hiện:</span>{' '}
-                <span className="font-semibold text-slate-800">{selectedLogDetail.actorEmail}</span>
-              </div>
-              <div>
-                <span className="font-semibold text-slate-500">Tài nguyên:</span>{' '}
-                <span className="font-mono text-slate-800">{selectedLogDetail.targetResource}</span>
+          {selectedLogDetail && (
+            <>
+              <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+                <h3 className="text-base font-bold text-slate-900">
+                  Chi tiết Kiểm toán #{selectedLogDetail.id} ({selectedLogDetail.action})
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLogDetail(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {selectedLogDetail.oldValues && (
-                <div className="space-y-1">
-                  <span className="font-semibold text-slate-500">Giá trị trước thay đổi:</span>
-                  <pre className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs overflow-x-auto font-mono text-slate-700">
-                    {JSON.stringify(selectedLogDetail.oldValues, null, 2)}
-                  </pre>
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="font-semibold text-slate-500">Thời điểm:</span>{' '}
+                  <span className="font-mono text-slate-800">{formatDateTime(selectedLogDetail.createdAt)}</span>
                 </div>
-              )}
-
-              {selectedLogDetail.newValues && (
-                <div className="space-y-1">
-                  <span className="font-semibold text-slate-500">Giá trị mới cập nhật:</span>
-                  <pre className="p-2.5 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs overflow-x-auto font-mono">
-                    {JSON.stringify(selectedLogDetail.newValues, null, 2)}
-                  </pre>
+                <div>
+                  <span className="font-semibold text-slate-500">Người thực hiện:</span>{' '}
+                  <span className="font-semibold text-slate-800">{selectedLogDetail.actorEmail}</span>
                 </div>
-              )}
-            </div>
+                <div>
+                  <span className="font-semibold text-slate-500">Tài nguyên:</span>{' '}
+                  <span className="font-mono text-slate-800">{selectedLogDetail.targetResource}</span>
+                </div>
 
-            <div className="flex justify-end pt-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setSelectedLogDetail(null)}
-              >
-                Đóng
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+                {selectedLogDetail.oldValues && (
+                  <div className="space-y-1">
+                    <span className="font-semibold text-slate-500">Giá trị trước thay đổi:</span>
+                    <pre className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs overflow-x-auto font-mono text-slate-700">
+                      {JSON.stringify(selectedLogDetail.oldValues, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {selectedLogDetail.newValues && (
+                  <div className="space-y-1">
+                    <span className="font-semibold text-slate-500">Giá trị mới cập nhật:</span>
+                    <pre className="p-2.5 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs overflow-x-auto font-mono">
+                      {JSON.stringify(selectedLogDetail.newValues, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedLogDetail(null)}
+                >
+                  Đóng
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

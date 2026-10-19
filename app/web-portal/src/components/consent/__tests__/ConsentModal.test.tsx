@@ -17,10 +17,25 @@ let mockEnrollmentState = {
   enrollmentData: null as EnrollmentSuccessMessage | null,
   isConnected: true,
   reset: vi.fn(),
+  /** Mô phỏng sự kiện STOMP thành công: hook thật gọi onSuccess khi nhận frame ENROLLMENT_SUCCESS */
+  triggerSuccess: null as null | ((message?: EnrollmentSuccessMessage) => void),
 }
 
 vi.mock('@/services/hooks/useEnrollmentStatus', () => ({
-  useEnrollmentStatus: () => mockEnrollmentState,
+  useEnrollmentStatus: (options: {
+    onSuccess?: (message: EnrollmentSuccessMessage) => void
+  }) => {
+    mockEnrollmentState.triggerSuccess = (message?: EnrollmentSuccessMessage) => {
+      options?.onSuccess?.(message ?? ({
+        status: 'ENROLLMENT_SUCCESS',
+        otp: '839201',
+        employeeId: 1042,
+        message: 'Đăng ký khuôn mặt thành công!',
+        activatedAt: new Date().toISOString(),
+      } satisfies EnrollmentSuccessMessage))
+    }
+    return mockEnrollmentState
+  },
 }))
 
 describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
@@ -41,6 +56,7 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
       enrollmentData: null,
       isConnected: true,
       reset: vi.fn(),
+      triggerSuccess: null,
     }
 
     // Thiết lập AuthStore user ban đầu
@@ -231,7 +247,7 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
 
       // Giả lập STOMP message nhận được tín hiệu kích hoạt thành công từ Kiosk
       act(() => {
-        mockEnrollmentState.isEnrolled = true
+        mockEnrollmentState.triggerSuccess?.()
       })
 
       rerender(<ConsentModal isOpen={true} onClose={onCloseMock} onSuccess={onSuccessMock} />)
@@ -268,7 +284,7 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
       )
 
       act(() => {
-        mockEnrollmentState.isEnrolled = true
+        mockEnrollmentState.triggerSuccess?.()
       })
 
       rerender(<ConsentModal isOpen={true} onClose={onCloseMock} />)
@@ -287,9 +303,13 @@ describe('ConsentModal & Consent Flow (TASK-WEB-017)', () => {
 
     it('nút Hoàn tất & Bắt đầu cho phép đóng modal ngay lập tức', () => {
       const onCloseMock = vi.fn()
-      mockEnrollmentState.isEnrolled = true
 
       render(<ConsentModal isOpen={true} onClose={onCloseMock} />)
+
+      // Kích hoạt sự kiện STOMP thành công trước khi hiển thị bước SUCCESS
+      act(() => {
+        mockEnrollmentState.triggerSuccess?.()
+      })
 
       const completeBtn = screen.getByTestId('complete-consent-btn')
       expect(completeBtn).toBeTruthy()

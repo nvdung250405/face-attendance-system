@@ -23,6 +23,7 @@ import {
   Check,
 } from 'lucide-react'
 import { Button } from '@/components/common'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { complianceAdminService } from '@/services/complianceAdminService'
@@ -461,62 +462,73 @@ export const AdminKioskManagementView: React.FC = () => {
       />
 
       {/* ── Modal Hiển thị Secret Token Cấp Lại (Một Lần Trong RAM) ── */}
-      {reissuedTokenKiosk && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+      <Dialog
+        open={Boolean(reissuedTokenKiosk)}
+        onOpenChange={(open) => {
+          if (!open && reissuedTokenKiosk) {
+            clearSecretToken(reissuedTokenKiosk.kioskId)
+            setReissuedTokenKiosk(null)
+            setCopiedToken(false)
+          }
+        }}
+      >
+        <DialogContent
+          hideCloseButton
+          usePortal={false}
+          className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4"
         >
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4">
-            <h3 className="text-base font-bold text-slate-900">
-              Cấp Lại Secret Token Thành Công
-            </h3>
+          {reissuedTokenKiosk && (
+            <>
+              <h3 className="text-base font-bold text-slate-900">
+                Cấp Lại Secret Token Thành Công
+              </h3>
 
-            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
-              Secret Token mới của trạm <strong>{reissuedTokenKiosk.kioskId}</strong> chỉ hiển thị duy nhất 1 lần trong RAM. Khi đóng hộp thoại này, token sẽ bị hủy khỏi bộ nhớ trình duyệt.
-            </div>
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
+                Secret Token mới của trạm <strong>{reissuedTokenKiosk.kioskId}</strong> chỉ hiển thị duy nhất 1 lần trong RAM. Khi đóng hộp thoại này, token sẽ bị hủy khỏi bộ nhớ trình duyệt.
+              </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
-              <code
-                data-testid="reissued-token-value"
-                className="font-mono text-xs font-bold text-indigo-600 break-all select-all"
-              >
-                {reissuedTokenKiosk.token}
-              </code>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(reissuedTokenKiosk.token)
-                  setCopiedToken(true)
-                  setTimeout(() => setCopiedToken(false), 2000)
-                }}
-                leftIcon={copiedToken ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                className="shrink-0"
-              >
-                {copiedToken ? 'Đã chép' : 'Sao chép'}
-              </Button>
-            </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
+                <code
+                  data-testid="reissued-token-value"
+                  className="font-mono text-xs font-bold text-indigo-600 break-all select-all"
+                >
+                  {reissuedTokenKiosk.token}
+                </code>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(reissuedTokenKiosk.token)
+                    setCopiedToken(true)
+                    setTimeout(() => setCopiedToken(false), 2000)
+                  }}
+                  leftIcon={copiedToken ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                  className="shrink-0"
+                >
+                  {copiedToken ? 'Đã chép' : 'Sao chép'}
+                </Button>
+              </div>
 
-            <div className="flex justify-end pt-2">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                data-testid="close-reissued-token-modal-btn"
-                onClick={() => {
-                  clearSecretToken(reissuedTokenKiosk.kioskId)
-                  setReissuedTokenKiosk(null)
-                  setCopiedToken(false)
-                }}
-              >
-                Tôi đã lưu Token an toàn
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  data-testid="close-reissued-token-modal-btn"
+                  onClick={() => {
+                    clearSecretToken(reissuedTokenKiosk.kioskId)
+                    setReissuedTokenKiosk(null)
+                    setCopiedToken(false)
+                  }}
+                >
+                  Tôi đã lưu Token an toàn
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

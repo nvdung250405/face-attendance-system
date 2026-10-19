@@ -43,6 +43,20 @@ export function stripVietnameseDiacritics(str: string): string {
 }
 
 /**
+ * Chống XSS khi tạo HTML in ấn: escape toàn bộ ký tự đặc biệt (&, <, >, ", ')
+ * trước khi nội suy vào chuỗi HTML (generatePrintableHtml / printReport).
+ */
+export function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
  * Tạo tài liệu PDF chuẩn 1.4 tối giản hỗ trợ hiển thị bảng dữ liệu và tiêu đề doanh nghiệp
  */
 function createMinimalPdf(lines: string[]): Uint8Array {
@@ -321,11 +335,11 @@ export class ReportExportService {
    * Tạo mã HTML in ấn báo cáo chuẩn trang trọng (doanh nghiệp)
    */
   generatePrintableHtml(options: ClientReportOptions): string {
-    const companyName = options.companyName || 'CÔNG TY CỔ PHẦN CÔNG NGHỆ FAS'
-    const reportTitle = options.reportTitle || 'BÁO CÁO BẢNG CHẤM CÔNG NHÂN SỰ'
-    const generatedAt = options.generatedAt || new Date().toLocaleString('vi-VN')
-    const period = options.period || 'Hiện tại'
-    const departmentName = options.departmentName || 'Toàn bộ phòng ban'
+    const companyName = escapeHtml(options.companyName || 'CÔNG TY CỔ PHẦN CÔNG NGHỆ FAS')
+    const reportTitle = escapeHtml(options.reportTitle || 'BÁO CÁO BẢNG CHẤM CÔNG NHÂN SỰ')
+    const generatedAt = escapeHtml(options.generatedAt || new Date().toLocaleString('vi-VN'))
+    const period = escapeHtml(options.period || 'Hiện tại')
+    const departmentName = escapeHtml(options.departmentName || 'Toàn bộ phòng ban')
 
     const statusLabels: Record<string, { label: string; color: string }> = {
       ON_TIME: { label: 'Đúng giờ', color: '#10b981' },
@@ -407,19 +421,26 @@ export class ReportExportService {
     </thead>
     <tbody>
       ${options.records
-        .map(
-          (r, idx) => `<tr>
+        .map((r, idx) => {
+          const employeeCode = escapeHtml(r.employeeCode)
+          const fullName = escapeHtml(r.fullName)
+          const department = escapeHtml(r.department || 'Chung')
+          const punchTime = escapeHtml(r.punchTimestamp.slice(0, 19).replace('T', ' '))
+          const statusLabel = escapeHtml(statusLabels[r.status]?.label || r.status)
+          const statusColor = statusLabels[r.status]?.color || '#64748b'
+          const kioskId = escapeHtml(r.kioskId || 'Kiosk')
+          return `<tr>
         <td style="text-align: center;">${idx + 1}</td>
-        <td style="font-family: monospace; font-weight: 700;">${r.employeeCode}</td>
-        <td>${r.fullName}</td>
-        <td>${r.department || 'Chung'}</td>
-        <td style="font-family: monospace;">${r.punchTimestamp.slice(0, 19).replace('T', ' ')}</td>
+        <td style="font-family: monospace; font-weight: 700;">${employeeCode}</td>
+        <td>${fullName}</td>
+        <td>${department}</td>
+        <td style="font-family: monospace;">${punchTime}</td>
         <td>${r.punchType === 'CHECK_OUT' ? 'Tan ca' : 'Vào ca'}</td>
-        <td><span class="badge" style="background: ${statusLabels[r.status]?.color || '#64748b'};">${statusLabels[r.status]?.label || r.status}</span></td>
-        <td>${r.kioskId || 'Kiosk'}</td>
+        <td><span class="badge" style="background: ${statusColor};">${statusLabel}</span></td>
+        <td>${kioskId}</td>
         <td>${r.verificationMethod === 'VERIFICATION_PIN' ? 'Mã PIN' : 'Khuôn mặt'}</td>
       </tr>`
-        )
+        })
         .join('')}
     </tbody>
   </table>

@@ -21,6 +21,7 @@ import {
   CalendarCheck,
   ScanFace,
   MessageSquareText,
+  FileQuestion,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -71,6 +72,12 @@ const NAV_ITEMS: NavItem[] = [
     roles: ["HR_MANAGER", "ADMIN"],
   },
   {
+    label: "Duyệt giải trình",
+    to: "/admin/excuse-requests",
+    icon: <FileQuestion size={20} strokeWidth={1.75} />,
+    roles: ["HR_MANAGER", "ADMIN"],
+  },
+  {
     label: "Báo cáo tổng hợp",
     to: "/admin/reports",
     icon: <FileBarChart size={20} strokeWidth={1.75} />,
@@ -93,6 +100,12 @@ const NAV_ITEMS: NavItem[] = [
     label: "Bảng công của tôi",
     to: "/employee/dashboard",
     icon: <CalendarCheck size={20} strokeWidth={1.75} />,
+    roles: ["EMPLOYEE"],
+  },
+  {
+    label: "Đơn giải trình",
+    to: "/employee/excuse-requests",
+    icon: <FileQuestion size={20} strokeWidth={1.75} />,
     roles: ["EMPLOYEE"],
   },
   {
@@ -126,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navigate = useNavigate();
 
   const visibleItems = NAV_ITEMS.filter(
-    (item) => user?.role && item.roles.includes(user.role),
+    (item) => user?.role && (user.role === "ADMIN" || item.roles.includes(user.role)),
   );
 
   const handleLogout = async () => {
@@ -168,27 +181,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* ── Nav Menu ── */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1 px-2.5">
-        {visibleItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            title={collapsed ? item.label : undefined}
-            className={({ isActive }) =>
-              [
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
-                "group relative select-none",
-                isActive
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/50 font-semibold"
-                  : "text-slate-300 hover:bg-white/8 hover:text-white",
-              ].join(" ")
-            }
-          >
-            <span className="shrink-0 transition-transform duration-150 group-hover:scale-105">{item.icon}</span>
-            {!collapsed && (
-              <span className="truncate whitespace-nowrap">{item.label}</span>
-            )}
-          </NavLink>
-        ))}
+        {visibleItems.map((item) => {
+          const isFirstEmployeeItem = user?.role === "ADMIN" && item.to === "/employee/dashboard";
+          return (
+            <React.Fragment key={item.to}>
+              {isFirstEmployeeItem && (
+                <div className="pt-3 pb-1 px-3">
+                  {collapsed ? (
+                    <div className="border-t border-white/10 my-1" />
+                  ) : (
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border-t border-white/10 pt-2">
+                      Giao diện Nhân viên
+                    </div>
+                  )}
+                </div>
+              )}
+              <NavLink
+                to={item.to}
+                title={collapsed ? item.label : undefined}
+                className={({ isActive }) =>
+                  [
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                    "group relative select-none",
+                    isActive
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/50 font-semibold"
+                      : "text-slate-300 hover:bg-white/8 hover:text-white",
+                  ].join(" ")
+                }
+              >
+                <span className="shrink-0 transition-transform duration-150 group-hover:scale-105">{item.icon}</span>
+                {!collapsed && (
+                  <span className="truncate whitespace-nowrap">{item.label}</span>
+                )}
+              </NavLink>
+            </React.Fragment>
+          );
+        })}
       </nav>
 
       {/* ── Footer: Toggle + Logout ── */}

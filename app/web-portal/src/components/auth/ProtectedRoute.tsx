@@ -23,7 +23,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, ch
   }
 
   // 2. Nếu đã đăng nhập nhưng không có vai trò phù hợp: điều hướng về cổng mặc định của vai trò đó
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  // Tài khoản ADMIN có quyền truy cập tất cả các vai trò và màn hình để kiểm thử
+  if (allowedRoles && user && user.role !== 'ADMIN' && !allowedRoles.includes(user.role)) {
     const targetPath = getDefaultPathForRole(user.role)
     return <Navigate to={targetPath} replace />
   }

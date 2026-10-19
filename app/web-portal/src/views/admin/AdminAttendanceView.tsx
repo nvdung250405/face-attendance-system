@@ -32,6 +32,7 @@ import { reportExportService } from '@/services/reportExportService'
 import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'
 import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
 import { ExportReportModal } from '@/components/report'
+import { AdjustAttendanceModal } from '@/components/attendance/AdjustAttendanceModal'
 import type { AttendanceRecord, AttendanceStatus, AttendanceStats } from '@/types'
 
 export const AdminAttendanceView: React.FC = () => {
@@ -41,6 +42,7 @@ export const AdminAttendanceView: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
+  const [recordToAdjust, setRecordToAdjust] = useState<AttendanceRecord | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Hiệu ứng Green Flash trong 3 giây trên dòng mới nhất (BLD-WEB-015, DD-WEB-014)
@@ -142,10 +144,32 @@ export const AdminAttendanceView: React.FC = () => {
     }
   }, [page, pageSize, keyword, department, status, fromDate, toDate])
 
+  // Kiểm tra một bản ghi STOMP có khớp bộ lọc hiện hành hay không (đồng bộ với predicate REST)
+  const recordMatchesFilters = useCallback(
+    (rec: AttendanceRecord): boolean => {
+      const kw = keyword.trim().toLowerCase()
+      if (kw) {
+        const matches =
+          rec.employeeCode.toLowerCase().includes(kw) ||
+          rec.fullName.toLowerCase().includes(kw)
+        if (!matches) return false
+      }
+      if (department && rec.department !== department) return false
+      if (status && rec.status !== status) return false
+
+      const datePart = rec.punchTimestamp ? rec.punchTimestamp.slice(0, 10) : ''
+      if (fromDate && datePart && datePart < fromDate) return false
+      if (toDate && datePart && datePart > toDate) return false
+
+      return true
+    },
+    [keyword, department, status, fromDate, toDate]
+  )
+
   // Xử lý sự kiện điểm danh thời gian thực từ trạm Kiosk qua STOMP
   const handleStompRecordReceived = useCallback(
     (newRecord: AttendanceRecord) => {
-      // 1. Tự động tăng bộ đếm thống kê
+      // 1. Tự động tăng bộ đếm thống kê (KPI hôm nay, độc lập với bộ lọc bảng)
       setStats((prev) => {
         if (!prev) return prev
         const total = prev.totalEmployees ?? 0
@@ -163,7 +187,12 @@ export const AdminAttendanceView: React.FC = () => {
         }
       })
 
-      // 2. Nếu chế độ Live đang Bật -> Chèn trực tiếp lên đầu bảng (Optimistic Prepend)
+      // 2. Nếu có bộ lọc active và bản ghi không khớp -> bỏ qua hoàn toàn (không chèn bảng/không tăng totalElements)
+      if (!recordMatchesFilters(newRecord)) {
+        return
+      }
+
+      // 3. Nếu chế độ Live đang Bật -> Chèn trực tiếp lên đầu bảng (Optimistic Prepend)
       if (isLiveEnabled) {
         setRecords((prev) => {
           const existingFiltered = prev.filter((r) => r.recordId !== newRecord.recordId)
@@ -171,7 +200,7 @@ export const AdminAttendanceView: React.FC = () => {
         })
         setTotalElements((prev) => prev + 1)
 
-        // 3. Kích hoạt hiệu ứng Green Flash 3 giây trên dòng mới nhất (BLD-WEB-015)
+        // Kích hoạt hiệu ứng Green Flash 3 giây trên dòng mới nhất (BLD-WEB-015)
         setHighlightedRecordId(newRecord.recordId)
         if (highlightTimerRef.current) {
           clearTimeout(highlightTimerRef.current)
@@ -187,7 +216,7 @@ export const AdminAttendanceView: React.FC = () => {
         setPendingLiveCount((c) => c + 1)
       }
     },
-    [isLiveEnabled]
+    [isLiveEnabled, recordMatchesFilters]
   )
 
   // Kết nối WebSocket STOMP
@@ -563,11 +592,11 @@ export const AdminAttendanceView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Bộ Lọc Nâng Cao ── */}
+      {/* ── Bộ Lọc Nâng Cao Đồng Bộ (Unified Filters) ── */}
       <div className="card-surface p-4 flex flex-col md:flex-row gap-3 items-stretch md:items-center flex-wrap">
         {/* Ô tìm kiếm từ khóa */}
-        <div className="flex-1 min-w-50 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+        <div className="flex-1 min-w-56 relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
           </div>
           <input
@@ -579,12 +608,12 @@ export const AdminAttendanceView: React.FC = () => {
             }}
             data-testid="filter-keyword-input"
             placeholder="Tìm theo Mã NV, Họ tên..."
-            className="bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           />
         </div>
 
         {/* Lọc theo phòng ban */}
-        <div className="w-full md:w-44">
+        <div className="w-full sm:w-44">
           <select
             value={department}
             onChange={(e) => {
@@ -592,7 +621,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-department-select"
-            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           >
             <option value="">Tất cả phòng ban</option>
             <option value="Phòng Kỹ thuật">Phòng Kỹ thuật</option>
@@ -603,7 +632,7 @@ export const AdminAttendanceView: React.FC = () => {
         </div>
 
         {/* Lọc theo trạng thái */}
-        <div className="w-full md:w-40">
+        <div className="w-full sm:w-38">
           <select
             value={status}
             onChange={(e) => {
@@ -611,7 +640,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-status-select"
-            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           >
             <option value="">Tất cả trạng thái</option>
             <option value="ON_TIME">Đúng giờ</option>
@@ -621,12 +650,12 @@ export const AdminAttendanceView: React.FC = () => {
         </div>
 
         {/* Lọc theo phương thức xác thực */}
-        <div className="w-full md:w-44">
+        <div className="w-full sm:w-44">
           <select
             value={verificationMethod}
             onChange={(e) => setVerificationMethod(e.target.value)}
             data-testid="filter-method-select"
-            className="input-base text-sm"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           >
             <option value="">Tất cả phương thức</option>
             <option value="VERIFICATION_FACE">Khuôn mặt (Face)</option>
@@ -635,7 +664,7 @@ export const AdminAttendanceView: React.FC = () => {
         </div>
 
         {/* Lọc theo khoảng ngày */}
-        <div className="flex items-center gap-1.5 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <input
             type="date"
             value={fromDate}
@@ -644,10 +673,10 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-from-date"
-            className="input-base text-sm px-2.5"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
             title="Từ ngày"
           />
-          <span className="text-text-muted text-xs">—</span>
+          <span className="text-slate-400 text-xs font-medium">—</span>
           <input
             type="date"
             value={toDate}
@@ -656,21 +685,22 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-to-date"
-            className="input-base text-sm px-2.5"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
             title="Đến ngày"
           />
         </div>
 
         {hasActiveFilters && (
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={handleResetFilters}
             data-testid="reset-filters-btn"
-            className="btn-secondary h-11 px-3 text-xs text-status-danger hover:bg-rose-50 hover:text-rose-700 flex items-center gap-1.5 self-end md:self-auto"
+            leftIcon={<X className="w-3.5 h-3.5" />}
+            className="h-10 px-3 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 shadow-2xs shrink-0"
           >
-            <X className="w-3.5 h-3.5" />
-            <span>Xóa lọc</span>
-          </button>
+            Xóa lọc
+          </Button>
         )}
       </div>
 
@@ -695,6 +725,8 @@ export const AdminAttendanceView: React.FC = () => {
           isLoading={isLoading}
           isConnected={isConnected}
           highlightedRecordId={highlightedRecordId}
+          showFilters={false}
+          onEditRecord={(record) => setRecordToAdjust(record)}
         />
 
         {/* ── Thanh Phân Trang (Chuẩn hóa theo EmployeeManagementView) ── */}
@@ -767,6 +799,16 @@ export const AdminAttendanceView: React.FC = () => {
         currentDepartment={department}
         onExport={handleExportReport}
         onPrintPreview={handlePrintPreview}
+      />
+
+      {/* ── Modal Điều Chỉnh Giờ Công & Trạng Thái (API-BE-048, API-WEB-021) ── */}
+      <AdjustAttendanceModal
+        isOpen={!!recordToAdjust}
+        record={recordToAdjust}
+        onClose={() => setRecordToAdjust(null)}
+        onSuccess={() => {
+          fetchAttendanceData()
+        }}
       />
     </div>
   )

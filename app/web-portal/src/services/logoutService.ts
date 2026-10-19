@@ -8,6 +8,9 @@
 import { apiClient, AUTH_STORAGE_KEY } from './apiClient'
 import { safeLocalStorage, safeSessionStorage, STORAGE_KEYS } from './storage'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationStore } from '@/store/notificationStore'
+import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
+import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import type { AuthSession } from '@/types'
 
 import { stompClientService } from './stompClientService'
@@ -42,6 +45,10 @@ export class LogoutService {
     safeLocalStorage.removeItem(AUTH_STORAGE_KEY)
     safeSessionStorage.removeItem(STORAGE_KEYS.CONSENT_SESSION)
     useAuthStore.getState().clearSession()
+    // Dọn sạch dữ liệu RAM của người dùng hiện tại để tránh rò rỉ sang phiên đăng nhập khác
+    useNotificationStore.getState().clearStore()
+    usePayrollPeriodStore.getState().clearStore()
+    useKioskRegistryStore.getState().clearStore()
     void stompClientService.deactivate().catch(() => {})
   }
 }

@@ -21,6 +21,8 @@ import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsV
 import { AdminAttendanceView } from '@/views/admin/AdminAttendanceView'
 import { AdminShiftManagementView } from '@/views/admin/AdminShiftManagementView'
 import { AdminPayrollPeriodView } from '@/views/admin/AdminPayrollPeriodView'
+import { AdminExcuseManagementView } from '@/views/admin/AdminExcuseManagementView'
+import { EmployeeExcuseHistoryView } from '@/views/employee/EmployeeExcuseHistoryView'
 import { UnauthorizedView } from '@/views/UnauthorizedView'
 import { NotFoundView } from '@/views/NotFoundView'
 
@@ -92,6 +94,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="kiosks" element={<AdminKioskManagementView />} />
           <Route path="attendance" element={<AdminAttendanceView />} />
           <Route path="reports" element={<AdminAttendanceView />} />
+          <Route path="excuse-requests" element={<AdminExcuseManagementView />} />
           <Route path="audit-logs" element={<AdminAuditLogView />} />
         </Route>
 
@@ -103,6 +106,7 @@ export const AppRoutes: React.FC = () => {
           <Route index element={<Navigate to="/employee/dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboardView />} />
           <Route path="consent" element={<EmployeeConsentView />} />
+          <Route path="excuse-requests" element={<EmployeeExcuseHistoryView />} />
           <Route path="data-requests" element={<EmployeeDataRequestsView />} />
         </Route>
       </Route>

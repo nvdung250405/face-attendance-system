@@ -107,12 +107,22 @@ export const queryClient = createQueryClient()
  * - 2. Tăng bộ đếm KPI trên Dashboard (Đã đến +1, Đúng giờ / Muộn +1).
  * - 3. Đánh dấu danh sách lịch sử đã cũ (Stale) để tự động refetch khi HR đổi màn hình.
  */
+/**
+ * Trả về ngày hôm nay theo múi giờ địa phương (YYYY-MM-DD), tránh lệch ngày khi dùng toISOString (UTC).
+ */
+export function getLocalDateString(d = new Date()): string {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function handleLiveAttendanceEvent(
   newRecord: AttendanceRecord,
   qc: QueryClient = queryClient,
   customDate?: string
 ): void {
-  const today = customDate ?? new Date().toISOString().split('T')[0]
+  const today = customDate ?? getLocalDateString()
 
   // 1. Chèn bản ghi mới lên đầu danh sách Live Table (tối đa 50 bản ghi)
   qc.setQueryData<AttendanceRecord[]>(attendanceKeys.live(), (oldData = []) => {

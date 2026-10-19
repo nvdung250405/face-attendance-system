@@ -11,12 +11,18 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus, Search, ScanFace, Lock, Edit2, KeyRound, CheckCircle2, Ban, X } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Plus, Search, ScanFace, Lock, Edit2, KeyRound, CheckCircle2, Ban, X, AlertCircle } from 'lucide-react'
+import { Button, Modal } from '@/components/common'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { EmployeeDrawer, TemporaryPasswordModal } from '@/components/account'
+import { useAuthStore } from '@/store/authStore'
 import type { EmployeeItem, UserRole, UserStatus } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
+
+interface PendingConfirmAction {
+  type: 'RESET_PASSWORD' | 'TOGGLE_STATUS'
+  employee: EmployeeItem
+}
 
 const DEFAULT_DEPARTMENTS = [
   'Phòng Kỹ thuật & Tích hợp',
@@ -60,6 +66,8 @@ export const EmployeeManagementView: React.FC = () => {
 
   // Tác vụ Vô hiệu hóa / Reset
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null)
+  const [pendingAction, setPendingAction] = useState<PendingConfirmAction | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   // Tải danh sách nhân sự
   const fetchEmployees = useCallback(async () => {
@@ -130,6 +138,13 @@ export const EmployeeManagementView: React.FC = () => {
     return Array.from(set)
   }, [employees])
 
+  // Đếm số lượng Quản trị viên (ADMIN) đang hoạt động
+  const activeAdminCount = useMemo(() => {
+    return employees.filter(
+      (emp) => emp.role === 'ADMIN' && (emp.status === 'ACTIVE' || !emp.status)
+    ).length
+  }, [employees])
+
   const hasActiveFilters = Boolean(
     keyword.trim() || departmentFilter !== 'ALL' || statusFilter !== 'ALL' || roleFilter !== 'ALL'
   )
@@ -165,6 +180,16 @@ export const EmployeeManagementView: React.FC = () => {
   // Xử lý sau khi lưu hồ sơ từ Drawer
   const handleDrawerSuccess = (result: { employee?: Partial<EmployeeItem>; temporaryPassword?: string }) => {
     fetchEmployees()
+    if (result.employee) {
+      const currentUser = useAuthStore.getState().user
+      if (currentUser && result.employee.id && currentUser.id === result.employee.id) {
+        useAuthStore.getState().updateUser({
+          role: result.employee.role,
+          fullName: result.employee.fullName,
+          department: result.employee.department,
+        })
+      }
+    }
     if (result.temporaryPassword) {
       setTempPassword(result.temporaryPassword)
       const emp = result.employee
@@ -183,48 +208,49 @@ export const EmployeeManagementView: React.FC = () => {
     setTempPasswordTarget(null)
   }
 
-  // Cấp lại mật khẩu tạm thời
-  const handleResetCredentials = async (emp: EmployeeItem) => {
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn cấp lại mật khẩu tạm thời cho nhân viên ${emp.fullName} (${emp.employeeCode})? Toàn bộ phiên hiện tại của nhân sự này sẽ bị thu hồi.`
-    )
-    if (!confirmed) return
-
-    setActionLoadingId(emp.id)
-    try {
-      const res = await adminEmployeeService.resetCredentials(emp.id)
-      setTempPassword(res.temporaryPassword)
-      setTempPasswordTarget({
-        name: emp.fullName,
-        code: emp.employeeCode,
-      })
-      setIsTempModalOpen(true)
-    } catch (err: unknown) {
-      const apiErr = err as NormalizedApiError
-      alert(apiErr?.message || 'Không thể cấp lại mật khẩu tạm.')
-    } finally {
-      setActionLoadingId(null)
-    }
+  // Cấp lại mật khẩu tạm thời (mở modal xác nhận)
+  const handleResetCredentials = (emp: EmployeeItem) => {
+    setActionError(null)
+    setPendingAction({ type: 'RESET_PASSWORD', employee: emp })
   }
 
-  // Đổi trạng thái nhân sự (Vô hiệu hóa / Kích hoạt)
-  const handleToggleStatus = async (emp: EmployeeItem) => {
-    const isActivating = emp.status === 'INACTIVE' || emp.status === 'TERMINATED' || emp.status === 'SUSPENDED'
-    const newStatus: UserStatus = isActivating ? 'ACTIVE' : 'INACTIVE'
+  // Đổi trạng thái nhân sự (Vô hiệu hóa / Kích hoạt - mở modal xác nhận)
+  const handleToggleStatus = (emp: EmployeeItem) => {
+    setActionError(null)
+    setPendingAction({ type: 'TOGGLE_STATUS', employee: emp })
+  }
 
-    const message = isActivating
-      ? `Bạn có chắc chắn muốn kích hoạt lại tài khoản ${emp.fullName} (${emp.employeeCode})?`
-      : `Bạn có chắc chắn muốn vô hiệu hóa tài khoản ${emp.fullName} (${emp.employeeCode})? Nhân sự này sẽ không thể điểm danh hay đăng nhập hệ thống.`
-
-    if (!window.confirm(message)) return
-
-    setActionLoadingId(emp.id)
+  // Thực thi tác vụ xác nhận từ Modal
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return
+    const { type, employee } = pendingAction
+    setActionLoadingId(employee.id)
+    setActionError(null)
     try {
-      await adminEmployeeService.updateEmployeeStatus(emp.id, newStatus)
-      await fetchEmployees()
+      if (type === 'RESET_PASSWORD') {
+        const res = await adminEmployeeService.resetCredentials(employee.id)
+        setPendingAction(null)
+        setTempPassword(res.temporaryPassword)
+        setTempPasswordTarget({
+          name: employee.fullName,
+          code: employee.employeeCode,
+        })
+        setIsTempModalOpen(true)
+      } else {
+        const isActivating =
+          employee.status === 'INACTIVE' || employee.status === 'TERMINATED' || employee.status === 'SUSPENDED'
+        const newStatus: UserStatus = isActivating ? 'ACTIVE' : 'INACTIVE'
+        await adminEmployeeService.updateEmployeeStatus(employee.id, newStatus)
+        setPendingAction(null)
+        await fetchEmployees()
+        const currentUser = useAuthStore.getState().user
+        if (currentUser && currentUser.id === employee.id) {
+          useAuthStore.getState().updateUser({ status: newStatus })
+        }
+      }
     } catch (err: unknown) {
       const apiErr = err as NormalizedApiError
-      alert(apiErr?.message || 'Không thể cập nhật trạng thái nhân sự.')
+      setActionError(apiErr?.message || 'Có lỗi xảy ra khi thực hiện thao tác.')
     } finally {
       setActionLoadingId(null)
     }
@@ -607,6 +633,11 @@ export const EmployeeManagementView: React.FC = () => {
         isOpen={isDrawerOpen}
         mode={drawerMode}
         initialData={selectedEmployee}
+        isLastActiveAdmin={
+          selectedEmployee?.role === 'ADMIN' &&
+          (selectedEmployee.status === 'ACTIVE' || !selectedEmployee.status) &&
+          activeAdminCount <= 1
+        }
         onClose={() => setIsDrawerOpen(false)}
         onSuccess={handleDrawerSuccess}
       />
@@ -619,6 +650,129 @@ export const EmployeeManagementView: React.FC = () => {
         employeeCode={tempPasswordTarget?.code}
         onClose={handleCloseTempModal}
       />
+
+      {/* ── Hộp thoại Xác nhận Tác vụ (Cấp lại mật khẩu / Vô hiệu hóa) ── */}
+      {pendingAction && (
+        <Modal
+          isOpen={Boolean(pendingAction)}
+          onClose={() => {
+            if (!actionLoadingId) {
+              setPendingAction(null)
+              setActionError(null)
+            }
+          }}
+          dataTestId="confirm-action-modal"
+          title={
+            pendingAction.type === 'RESET_PASSWORD'
+              ? 'Cấp lại mật khẩu tạm thời'
+              : (pendingAction.employee.status === 'INACTIVE' ||
+                 pendingAction.employee.status === 'TERMINATED' ||
+                 pendingAction.employee.status === 'SUSPENDED')
+              ? 'Kích hoạt lại tài khoản'
+              : 'Vô hiệu hóa tài khoản'
+          }
+          icon={
+            pendingAction.type === 'RESET_PASSWORD' ? (
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                <KeyRound size={20} strokeWidth={2} />
+              </div>
+            ) : (pendingAction.employee.status === 'INACTIVE' ||
+                 pendingAction.employee.status === 'TERMINATED' ||
+                 pendingAction.employee.status === 'SUSPENDED') ? (
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 size={20} strokeWidth={2} />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                <Ban size={20} strokeWidth={2} />
+              </div>
+            )
+          }
+          footer={
+            <div className="flex items-center justify-end gap-3 w-full">
+              <Button
+                type="button"
+                variant="secondary"
+                data-testid="btn-cancel-action"
+                onClick={() => {
+                  setPendingAction(null)
+                  setActionError(null)
+                }}
+                disabled={Boolean(actionLoadingId)}
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                type="button"
+                data-testid="btn-confirm-action"
+                variant={
+                  pendingAction.type === 'RESET_PASSWORD'
+                    ? 'primary'
+                    : (pendingAction.employee.status === 'INACTIVE' ||
+                       pendingAction.employee.status === 'TERMINATED' ||
+                       pendingAction.employee.status === 'SUSPENDED')
+                    ? 'primary'
+                    : 'danger'
+                }
+                isLoading={Boolean(actionLoadingId)}
+                onClick={handleConfirmAction}
+              >
+                {pendingAction.type === 'RESET_PASSWORD'
+                  ? 'Cấp mật khẩu'
+                  : (pendingAction.employee.status === 'INACTIVE' ||
+                     pendingAction.employee.status === 'TERMINATED' ||
+                     pendingAction.employee.status === 'SUSPENDED')
+                  ? 'Kích hoạt'
+                  : 'Vô hiệu hóa'}
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-3 text-sm text-slate-600">
+            {actionError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium">
+                {actionError}
+              </div>
+            )}
+            {pendingAction.type === 'RESET_PASSWORD' ? (
+              <p>
+                Bạn có chắc chắn muốn cấp lại mật khẩu tạm thời cho nhân viên{' '}
+                <strong className="text-slate-900">{pendingAction.employee.fullName}</strong> (
+                <span className="font-mono text-slate-800">{pendingAction.employee.employeeCode}</span>)?
+                Toàn bộ phiên làm việc hiện tại của nhân sự này sẽ bị thu hồi và một mật khẩu tạm mới sẽ được sinh ra.
+              </p>
+            ) : (pendingAction.employee.status === 'INACTIVE' ||
+                 pendingAction.employee.status === 'TERMINATED' ||
+                 pendingAction.employee.status === 'SUSPENDED') ? (
+              <p>
+                Bạn có chắc chắn muốn kích hoạt lại tài khoản của nhân viên{' '}
+                <strong className="text-slate-900">{pendingAction.employee.fullName}</strong> (
+                <span className="font-mono text-slate-800">{pendingAction.employee.employeeCode}</span>)?
+                Nhân sự này sẽ có thể đăng nhập hệ thống và thực hiện chấm công bình thường.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {pendingAction.employee.role === 'ADMIN' &&
+                  (pendingAction.employee.status === 'ACTIVE' || !pendingAction.employee.status) &&
+                  activeAdminCount <= 1 && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-medium flex items-center gap-2">
+                      <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                      <span>
+                        Tài khoản này là Quản trị viên (ADMIN) đang hoạt động duy nhất. Việc vô hiệu hóa sẽ khiến hệ thống không còn Quản trị viên nào hoạt động.
+                      </span>
+                    </div>
+                  )}
+                <p>
+                  Bạn có chắc chắn muốn vô hiệu hóa tài khoản của nhân viên{' '}
+                  <strong className="text-slate-900">{pendingAction.employee.fullName}</strong> (
+                  <span className="font-mono text-slate-800">{pendingAction.employee.employeeCode}</span>)?
+                  Nhân sự này sẽ không thể điểm danh hay đăng nhập vào hệ thống nữa.
+                </p>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

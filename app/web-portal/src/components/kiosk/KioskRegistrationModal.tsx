@@ -14,6 +14,7 @@ import React, { useState } from 'react'
 import { Monitor, X, AlertTriangle, Check, Copy } from 'lucide-react'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import type { KioskItemResponse } from '@/types'
 
 export interface KioskRegistrationModalProps {
@@ -83,13 +84,7 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="kiosk-registration-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
-    >
-      <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50">
           <div className="flex items-center gap-2.5">
@@ -278,11 +273,24 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
           )}
         </div>
       </div>
-    </div>
   )
 }
 
 export const KioskRegistrationModal: React.FC<KioskRegistrationModalProps> = (props) => {
-  if (!props.isOpen) return null
-  return <KioskRegistrationModalContent {...props} />
+  return (
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={(open) => {
+        if (!open) props.onClose()
+      }}
+    >
+      <DialogContent
+        hideCloseButton
+        usePortal={false}
+        className="p-0 max-w-lg border-0 bg-transparent shadow-none"
+      >
+        <KioskRegistrationModalContent {...props} />
+      </DialogContent>
+    </Dialog>
+  )
 }

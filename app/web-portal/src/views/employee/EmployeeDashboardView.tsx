@@ -3,16 +3,19 @@
  */
 
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, Sparkles, KeyRound } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal } from '@/components/consent'
 import { PersonalAttendanceCalendar } from '@/components/calendar'
 import { consentService } from '@/services/consentService'
+import { logoutService } from '@/services/logoutService'
 import { apiClient } from '@/services/apiClient'
 import type { ApiResponse, UserProfile } from '@/types'
 
 export const EmployeeDashboardView: React.FC = () => {
-  const { user, clearSession } = useAuthStore()
+  const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(() => {
     const session = consentService.getStoredConsentSession()
     return Boolean(session?.otp || user?.status === 'PENDING_CONSENT')
@@ -66,7 +69,10 @@ export const EmployeeDashboardView: React.FC = () => {
         <div>
           <button
             type="button"
-            onClick={clearSession}
+            onClick={async () => {
+              await logoutService.logout()
+              navigate('/login', { replace: true })
+            }}
             className="btn-secondary hover:bg-rose-50 hover:text-status-danger"
           >
             Đăng xuất

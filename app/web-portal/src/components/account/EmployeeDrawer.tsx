@@ -9,15 +9,23 @@
  */
 
 import React, { useState } from 'react'
-import { X, AlertCircle } from 'lucide-react'
+import { X, AlertCircle, RefreshCw, Sparkles } from 'lucide-react'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { EmployeeItem, UserRole } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
+
+const generateDefaultEmployeeCode = (): string => {
+  const rand = Math.floor(1000 + Math.random() * 9000)
+  return `NV-${rand}`
+}
 
 export interface EmployeeDrawerProps {
   isOpen: boolean
   mode: 'create' | 'edit'
   initialData?: EmployeeItem | null
+  isLastActiveAdmin?: boolean
   onClose: () => void
   onSuccess: (result: { employee: EmployeeItem; temporaryPassword?: string }) => void
 }
@@ -47,12 +55,16 @@ const ROLES: { value: UserRole; label: string }[] = [
 interface DrawerFormProps {
   mode: 'create' | 'edit'
   initialData?: EmployeeItem | null
+  isLastActiveAdmin?: boolean
   onClose: () => void
   onSuccess: (result: { employee: EmployeeItem; temporaryPassword?: string }) => void
 }
 
-const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onSuccess }) => {
-  const [employeeCode, setEmployeeCode] = useState(initialData?.employeeCode ?? '')
+const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActiveAdmin, onClose, onSuccess }) => {
+  const [employeeCode, setEmployeeCode] = useState(() => {
+    if (initialData?.employeeCode) return initialData.employeeCode
+    return mode === 'create' ? generateDefaultEmployeeCode() : ''
+  })
   const [fullName, setFullName] = useState(initialData?.fullName ?? '')
   const [email, setEmail] = useState(initialData?.email ?? '')
   const [department, setDepartment] = useState(initialData?.department || 'Phòng Kỹ thuật')
@@ -173,22 +185,46 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {/* Mã nhân viên */}
         <div>
-          <label
-            htmlFor="drawer-employee-code"
-            className="block text-xs font-semibold text-text-secondary mb-1"
-          >
-            Mã nhân viên <span className="text-rose-500">*</span>
-          </label>
-          <input
-            id="drawer-employee-code"
-            data-testid="drawer-employee-code"
-            type="text"
-            value={employeeCode}
-            onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
-            disabled={mode === 'edit' || isLoading}
-            placeholder="VD: NV-1042"
-            className={`input-base ${fieldErrors.employeeCode ? 'border-rose-400 focus:border-rose-500' : ''}`}
-          />
+          <div className="flex items-center justify-between mb-1">
+            <label
+              htmlFor="drawer-employee-code"
+              className="block text-xs font-semibold text-text-secondary"
+            >
+              Mã nhân viên <span className="text-rose-500">*</span>
+            </label>
+            {mode === 'create' && (
+              <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-medium inline-flex items-center gap-1">
+                <Sparkles size={12} className="text-emerald-600" />
+                Hệ thống tự cấp
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="drawer-employee-code"
+              data-testid="drawer-employee-code"
+              type="text"
+              value={employeeCode}
+              onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
+              disabled={mode === 'edit' || isLoading}
+              placeholder="VD: NV-1042"
+              className={`input-base font-mono flex-1 ${fieldErrors.employeeCode ? 'border-rose-400 focus:border-rose-500' : ''}`}
+            />
+            {mode === 'create' && (
+              <button
+                type="button"
+                id="drawer-btn-regenerate-code"
+                data-testid="drawer-btn-regenerate-code"
+                onClick={() => setEmployeeCode(generateDefaultEmployeeCode())}
+                disabled={isLoading}
+                title="Tạo mã nhân viên ngẫu nhiên khác"
+                className="px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                <RefreshCw size={13} className="text-slate-500" />
+                <span>Đổi mã</span>
+              </button>
+            )}
+          </div>
           {fieldErrors.employeeCode && (
             <p className="text-xs text-rose-600 mt-1">{fieldErrors.employeeCode}</p>
           )}
@@ -266,19 +302,27 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
 
         {/* Vai trò */}
         <div>
-          <label
-            htmlFor="drawer-role"
-            className="block text-xs font-semibold text-text-secondary mb-1"
-          >
-            Vai trò & Phân quyền <span className="text-rose-500">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label
+              htmlFor="drawer-role"
+              className="block text-xs font-semibold text-text-secondary"
+            >
+              Vai trò & Phân quyền <span className="text-rose-500">*</span>
+            </label>
+            {isLastActiveAdmin && mode === 'edit' && (
+              <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-medium inline-flex items-center gap-1">
+                <AlertCircle size={12} className="text-amber-600" />
+                ADMIN duy nhất
+              </span>
+            )}
+          </div>
           <select
             id="drawer-role"
             data-testid="drawer-role"
             value={role}
             onChange={(e) => setRole(e.target.value as UserRole)}
-            disabled={isLoading}
-            className="input-base"
+            disabled={isLoading || (Boolean(isLastActiveAdmin) && mode === 'edit')}
+            className={`input-base ${isLastActiveAdmin && mode === 'edit' ? 'bg-slate-100 cursor-not-allowed opacity-80' : ''}`}
           >
             {ROLES.map((r) => (
               <option key={r.value} value={r.value}>
@@ -286,12 +330,18 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-text-muted mt-1 leading-normal">
-            {role === 'EMPLOYEE' && 'Quyền nhân viên: Xem bảng công cá nhân, đăng ký sinh trắc & gửi yêu cầu dữ liệu.'}
-            {role === 'HR_MANAGER' && 'Quyền quản lý nhân sự: Quản lý danh mục nhân viên, điểm danh trực tiếp, ca kíp & kỳ công.'}
-            {role === 'ADMIN' && 'Quyền quản trị toàn quyền: Toàn quyền truy cập mọi tính năng và cấu hình trạm Kiosk.'}
-            {role === 'DPO' && 'Quyền bảo vệ dữ liệu: Tra cứu audit log và giám sát tuân thủ Nghị định 13 (chế độ chỉ đọc).'}
-          </p>
+          {isLastActiveAdmin && mode === 'edit' ? (
+            <p className="text-[11px] text-amber-600 font-medium mt-1">
+              Hệ thống yêu cầu duy trì ít nhất 1 Quản trị viên (ADMIN) đang hoạt động. Không thể chuyển sang vai trò khác.
+            </p>
+          ) : (
+            <p className="text-[11px] text-text-muted mt-1 leading-normal">
+              {role === 'EMPLOYEE' && 'Quyền nhân viên: Xem bảng công cá nhân, đăng ký sinh trắc & gửi yêu cầu dữ liệu.'}
+              {role === 'HR_MANAGER' && 'Quyền quản lý nhân sự: Quản lý danh mục nhân viên, điểm danh trực tiếp, ca kíp & kỳ công.'}
+              {role === 'ADMIN' && 'Quyền quản trị toàn quyền: Toàn quyền truy cập mọi tính năng và cấu hình trạm Kiosk.'}
+              {role === 'DPO' && 'Quyền bảo vệ dữ liệu: Tra cứu audit log và giám sát tuân thủ Nghị định 13 (chế độ chỉ đọc).'}
+            </p>
+          )}
         </div>
 
         {mode === 'create' && (
@@ -303,35 +353,25 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, onClose, onS
 
       {/* Footer Actions */}
       <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
-        <button
+        <Button
           type="button"
+          variant="secondary"
           id="drawer-btn-cancel"
           data-testid="drawer-btn-cancel"
           onClick={onClose}
           disabled={isLoading}
-          className="btn-secondary"
         >
           Hủy bỏ
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           id="drawer-btn-submit"
           data-testid="drawer-btn-submit"
           onClick={handleSubmit}
-          disabled={isLoading}
-          className="btn-primary"
+          isLoading={isLoading}
         >
-          {isLoading ? (
-            <span className="inline-flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Đang lưu...
-            </span>
-          ) : mode === 'create' ? (
-            'Tạo nhân sự'
-          ) : (
-            'Cập nhật hồ sơ'
-          )}
-        </button>
+          {mode === 'create' ? 'Tạo nhân sự' : 'Cập nhật hồ sơ'}
+        </Button>
       </div>
     </div>
   )
@@ -341,25 +381,31 @@ export const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({
   isOpen,
   mode,
   initialData,
+  isLastActiveAdmin,
   onClose,
   onSuccess,
 }) => {
-  if (!isOpen) return null
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      data-testid="employee-drawer"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
     >
-      <DrawerForm
-        key={`${mode}-${initialData?.id ?? 'new'}`}
-        mode={mode}
-        initialData={initialData}
-        onClose={onClose}
-        onSuccess={onSuccess}
-      />
-    </div>
+      <DialogContent
+        data-testid="employee-drawer"
+        hideCloseButton
+        className="p-0 max-w-lg border-0 bg-transparent shadow-none"
+      >
+        <DrawerForm
+          key={`${mode}-${initialData?.id ?? 'new'}`}
+          mode={mode}
+          initialData={initialData}
+          isLastActiveAdmin={isLastActiveAdmin}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }

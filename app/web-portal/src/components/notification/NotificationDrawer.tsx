@@ -21,6 +21,7 @@ import {
   Bell,
   X,
 } from 'lucide-react'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useNotificationStore } from '@/store/notificationStore'
 import { notificationService } from '@/services/notificationService'
 import type { NotificationEventType } from '@/types'
@@ -131,26 +132,14 @@ export const NotificationDrawer: React.FC = () => {
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Trung tâm thông báo"
-      data-testid="notification-drawer"
-      className="fixed inset-0 z-50 overflow-hidden"
-    >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
-        onClick={() => setIsOpen(false)}
-        aria-hidden="true"
-      />
-
-      {/* Slide-out Drawer */}
-      <div
-        className="fixed inset-y-0 right-0 max-w-full flex pl-10"
-        style={{ width: 'var(--spacing-drawer)' }}
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent
+        side="right"
+        data-testid="notification-drawer"
+        hideCloseButton
+        className="w-full max-w-md p-0 flex flex-col sm:max-w-md bg-surface-card border-l border-border-subtle"
       >
-        <div className="w-full bg-surface-card shadow-2xl border-l border-border-subtle flex flex-col">
+        <div className="w-full flex-1 flex flex-col overflow-hidden">
           {/* Drawer Header */}
           <div className="p-4 sm:p-5 border-b border-border-subtle flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2">
@@ -254,7 +243,7 @@ export const NotificationDrawer: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   )
 }

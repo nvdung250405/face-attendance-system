@@ -31,6 +31,7 @@ import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
 import { WeeklyShiftScheduleView } from '@/components/shift'
 import { Button } from '@/components/common'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import type {
   ShiftItem,
   CreateShiftRequest,
@@ -41,6 +42,14 @@ import type {
   EmployeeItem,
 } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
+
+/** Định dạng ngày theo múi giờ địa phương (YYYY-MM-DD) thay vì toISOString (UTC). */
+function formatLocalDateISO(d: Date): string {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export const AdminShiftManagementView: React.FC = () => {
   // Trạng thái tab hiển thị: 'shifts' (Danh mục ca) | 'assignments' (Lịch phân ca)
@@ -297,7 +306,7 @@ export const AdminShiftManagementView: React.FC = () => {
     if (employees.length === 0) {
       void loadEmployees()
     }
-    const today = new Date().toISOString().slice(0, 10)
+    const today = formatLocalDateISO(new Date())
     setAssignFormData({
       employeeId: employees[0]?.id || 0,
       shiftId: shifts[0]?.id || 0,
@@ -350,8 +359,8 @@ export const AdminShiftManagementView: React.FC = () => {
         const durationDays = Math.max(0, Math.round((newEnd - newStart) / (24 * 60 * 60 * 1000)))
         const suggestedEnd = new Date(nextDay.getTime() + durationDays * 24 * 60 * 60 * 1000)
 
-        const suggestedStartFormatted = nextDay.toISOString().slice(0, 10)
-        const suggestedEndFormatted = suggestedEnd.toISOString().slice(0, 10)
+        const suggestedStartFormatted = formatLocalDateISO(nextDay)
+        const suggestedEndFormatted = formatLocalDateISO(suggestedEnd)
 
         return {
           conflictingAssignmentId: item.id,
@@ -912,16 +921,17 @@ export const AdminShiftManagementView: React.FC = () => {
       )}
 
       {/* ── Modal Tạo mới / Chỉnh sửa Ca làm việc (UXD-WEB-006) ── */}
-      {isShiftDrawerOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+      <Dialog
+        open={isShiftDrawerOpen}
+        onOpenChange={(open) => !open && setIsShiftDrawerOpen(false)}
+      >
+        <DialogContent
+          data-testid="shift-drawer"
+          hideCloseButton
+          usePortal={false}
+          className="p-0 max-w-lg border-0 bg-transparent shadow-none"
         >
-          <div
-            data-testid="shift-drawer"
-            className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
-          >
+          <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
             {/* Header Modal */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -1081,20 +1091,21 @@ export const AdminShiftManagementView: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Modal Phân ca Nhân sự & Gợi ý Chồng lấn (SOL-WEB-007, UXD-WEB-006) ── */}
-      {isAssignDrawerOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+      <Dialog
+        open={isAssignDrawerOpen}
+        onOpenChange={(open) => !open && setIsAssignDrawerOpen(false)}
+      >
+        <DialogContent
+          data-testid="assign-shift-drawer"
+          hideCloseButton
+          usePortal={false}
+          className="p-0 max-w-lg border-0 bg-transparent shadow-none"
         >
-          <div
-            data-testid="assign-shift-drawer"
-            className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
-          >
+          <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
             {/* Header Modal */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -1260,8 +1271,8 @@ export const AdminShiftManagementView: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

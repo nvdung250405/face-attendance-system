@@ -35,7 +35,7 @@ import {
   mockCreateEmployeeSuccess,
   mockResetCredentialsSuccess,
 } from '@/mocks/fixtures'
-import type { UserProfile } from '@/types'
+import type { UserProfile, EmployeeItem } from '@/types'
 
 // Mock STOMP Connection store cho TopHeader
 vi.mock('@/store/stompConnectionStore', () => ({
@@ -288,6 +288,9 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
       expect(screen.getByTestId('employee-drawer')).toBeDefined()
       expect(screen.getByText('Tạo mới hồ sơ nhân sự')).toBeDefined()
 
+      // Xóa mã nhân viên đã được hệ thống tự động sinh để kiểm tra validation để trống
+      fireEvent.change(screen.getByTestId('drawer-employee-code'), { target: { value: '' } })
+
       // Bấm lưu khi form rỗng
       fireEvent.click(screen.getByTestId('drawer-btn-submit'))
 
@@ -373,6 +376,31 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
         expect(onSuccess).toHaveBeenCalled()
       })
     })
+
+    it('vô hiệu hóa đổi vai trò và hiển thị huy hiệu khi là ADMIN duy nhất (isLastActiveAdmin)', () => {
+      const adminEmployee: EmployeeItem = {
+        ...mockEmployeeList[0],
+        role: 'ADMIN',
+      }
+
+      render(
+        <EmployeeDrawer
+          isOpen={true}
+          mode="edit"
+          initialData={adminEmployee}
+          isLastActiveAdmin={true}
+          onClose={vi.fn()}
+          onSuccess={vi.fn()}
+        />
+      )
+
+      expect(screen.getByText('ADMIN duy nhất')).toBeDefined()
+      expect(
+        screen.getByText('Hệ thống yêu cầu duy trì ít nhất 1 Quản trị viên (ADMIN) đang hoạt động. Không thể chuyển sang vai trò khác.')
+      ).toBeDefined()
+      const roleSelect = screen.getByTestId('drawer-role') as HTMLSelectElement
+      expect(roleSelect.disabled).toBe(true)
+    })
   })
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -445,6 +473,10 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
       const resetBtn = screen.getByLabelText('Cấp lại mật khẩu cho Ngô Văn Dũng')
       fireEvent.click(resetBtn)
 
+      // Xác nhận cấp lại mật khẩu trong Modal
+      const confirmResetBtn = screen.getByTestId('btn-confirm-action')
+      fireEvent.click(confirmResetBtn)
+
       await waitFor(() => {
         expect(resetSpy).toHaveBeenCalledWith(1)
         expect(screen.getByTestId('temporary-password-modal')).toBeDefined()
@@ -468,6 +500,10 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
 
       const toggleBtn = screen.getByLabelText('Vô hiệu hóa Ngô Văn Dũng')
       fireEvent.click(toggleBtn)
+
+      // Xác nhận vô hiệu hóa trong Modal
+      const confirmToggleBtn = screen.getByTestId('btn-confirm-action')
+      fireEvent.click(confirmToggleBtn)
 
       await waitFor(() => {
         expect(statusSpy).toHaveBeenCalledWith(1, 'INACTIVE')

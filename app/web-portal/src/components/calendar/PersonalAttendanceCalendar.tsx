@@ -24,6 +24,7 @@ import {
 import { attendanceService } from '@/services/attendanceService'
 import { useAuthStore } from '@/store/authStore'
 import { AttendanceDayDetailDrawer } from './AttendanceDayDetailDrawer'
+import { SubmitExcuseModal } from '@/components/excuse/SubmitExcuseModal'
 import type { PersonalAttendanceDayRecord, PersonalAttendanceResponse } from '@/types'
 
 const WEEKDAYS = [
@@ -57,6 +58,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
   const [attendanceData, setAttendanceData] = useState<PersonalAttendanceResponse | null>(null)
   const [selectedDay, setSelectedDay] = useState<PersonalAttendanceDayRecord | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false)
+  const [isExcuseModalOpen, setIsExcuseModalOpen] = useState<boolean>(false)
 
   // Tải dữ liệu bảng công theo tháng
   const fetchAttendance = useCallback((m: number, y: number) => {
@@ -309,6 +311,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
   const totalWorkDays = attendanceData?.totalWorkDays ?? 0
   const totalOnTime = attendanceData?.totalOnTimeDays ?? 0
   const totalLate = attendanceData?.totalLateDays ?? 0
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
 
   return (
     <div
@@ -421,7 +424,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
             <span>Nghỉ tuần / Lễ</span>
           </span>
           <span className="text-xl font-bold text-slate-700 mt-1">
-            {isLoading ? '...' : Math.max(0, 31 - totalWorkDays)}
+            {isLoading ? '...' : Math.max(0, daysInMonth - totalWorkDays)}
           </span>
         </div>
       </div>
@@ -544,6 +547,21 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         record={selectedDay}
+        onOpenExcuseModal={() => {
+          setIsExcuseModalOpen(true)
+        }}
+      />
+
+      {/* ── Modal Nộp Đơn Giải Trình Công ── */}
+      <SubmitExcuseModal
+        isOpen={isExcuseModalOpen}
+        onClose={() => setIsExcuseModalOpen(false)}
+        attendanceLogId={selectedDay?.checkOutLogId ?? selectedDay?.checkInLogId ?? undefined}
+        attendanceDate={selectedDay?.date}
+        currentPunchTime={selectedDay?.checkIn || undefined}
+        onSuccess={() => {
+          fetchAttendance(currentMonth, currentYear)
+        }}
       />
     </div>
   )

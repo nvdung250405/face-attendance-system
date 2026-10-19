@@ -221,6 +221,92 @@ describe('Token Refresh Interceptor & Mutex Queue (TASK-WEB-014, TST-WEB-010)', 
         expect(res.data.token).toBe(`Bearer ${newAccessToken}`)
       })
     })
+
+    it('đánh dấu _retry cho các request trong hàng đợi trước khi retry (chống loop refresh)', async () => {
+      safeLocalStorage.setItem(AUTH_STORAGE_KEY, initialSession)
+      useAuthStore.setState({
+        session: initialSession,
+        user: initialSession.user,
+        isAuthenticated: true,
+      })
+
+      const newAccessToken = 'queued-retry-token-777'
+      const refreshedResponse: ApiResponse<TokenResponse> = {
+        success: true,
+        code: 'TOKEN_REFRESHED',
+        message: 'Token refreshed',
+        data: {
+          accessToken: newAccessToken,
+          refreshToken: 'new-refresh-token',
+          tokenType: 'Bearer',
+          expiresIn: 3600,
+        },
+        timestamp: new Date().toISOString(),
+      }
+
+      const requestCounters: Record<string, number> = {}
+      const configsByUrl: Record<string, Array<{ _retry?: boolean }>> = {}
+
+      client.defaults.adapter = async (config) => {
+        const url = config.url || 'req'
+        requestCounters[url] = (requestCounters[url] || 0) + 1
+        if (!configsByUrl[url]) configsByUrl[url] = []
+        configsByUrl[url].push({ _retry: (config as { _retry?: boolean })._retry })
+
+        if (requestCounters[url] === 1) {
+          throw new AxiosError(
+            'Request failed with status code 401',
+            'ERR_BAD_REQUEST',
+            config,
+            null,
+            {
+              status: 401,
+              statusText: 'Unauthorized',
+              headers: {},
+              config,
+              data: { message: 'Token expired' },
+            }
+          )
+        }
+
+        return {
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config,
+          data: { url, token: config.headers?.Authorization },
+        }
+      }
+
+      const refreshSpy = vi.spyOn(refreshClient, 'post').mockImplementation(async () => {
+        await new Promise((r) => setTimeout(r, 20))
+        return {
+          data: refreshedResponse,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: { headers: new AxiosHeaders() },
+        }
+      })
+
+      attachTokenRefreshInterceptor(client, {
+        customRefreshClient: refreshClient,
+      })
+
+      await Promise.all([
+        client.get('/api/v1/resource-a'),
+        client.get('/api/v1/resource-b'),
+      ])
+
+      expect(refreshSpy).toHaveBeenCalledTimes(1)
+
+      // Mỗi request đều được retry đúng 1 lần với cờ _retry = true để tránh loop refresh
+      for (const url of ['/api/v1/resource-a', '/api/v1/resource-b']) {
+        expect(configsByUrl[url]).toHaveLength(2)
+        expect(configsByUrl[url][0]._retry).toBeUndefined()
+        expect(configsByUrl[url][1]._retry).toBe(true)
+      }
+    })
   })
 
   describe('3. Kịch bản Refresh Token Hết hạn hoặc Lỗi (Session Expired & Logout)', () => {
