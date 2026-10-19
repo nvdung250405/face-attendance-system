@@ -14,6 +14,8 @@ import httpx
 BASE_URL_DIRECT = "http://localhost:8080/api/v1"
 BASE_URL_PROXY = "http://localhost:3000/api/v1"
 KIOSK_ID = "KIOSK-LOBBY-01"
+# Mã bí mật của trạm Kiosk seed trong scripts/seed-e2e-data.sql (cột kiosks.secret_token_hash)
+KIOSK_SECRET = "kiosk-secret-lobby-01"
 
 results = []
 
@@ -158,7 +160,11 @@ def run_tests():
                 # Thẩm định OTP tại Kiosk (TST-SYS-012)
                 if onboarding_otp:
                     verify_otp_payload = {"otp": onboarding_otp, "kioskId": KIOSK_ID}
-                    kiosk_headers = {"Content-Type": "application/json", "X-Kiosk-Id": KIOSK_ID}
+                    kiosk_headers = {
+                        "Content-Type": "application/json",
+                        "X-Kiosk-Id": KIOSK_ID,
+                        "X-Kiosk-Secret": KIOSK_SECRET,
+                    }
                     r_otp = client.post(f"{BASE_URL_DIRECT}/kiosk/verify-otp", json=verify_otp_payload, headers=kiosk_headers)
                     data_otp = r_otp.json()
                     passed_otp = r_otp.status_code == 200 and data_otp.get("code") == "OTP_VERIFIED"
@@ -232,7 +238,8 @@ def run_tests():
         print(f"\n--- PHẦN 6: ĐIỂM DANH KIOSK ({punch_date_1}), TÍNH CA KÍP & COOLDOWN 120S (TST-SYS-008, 016) ---")
         kiosk_headers = {
             "Content-Type": "application/json",
-            "X-Kiosk-Id": KIOSK_ID
+            "X-Kiosk-Id": KIOSK_ID,
+            "X-Kiosk-Secret": KIOSK_SECRET,
         }
         
         # Test 6a: Điểm danh đúng giờ (08:05:00 trong ca 08:00 - 17:00 ân hạn 15p)

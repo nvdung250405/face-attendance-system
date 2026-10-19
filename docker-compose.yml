@@ -14,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-fas_db}
       POSTGRES_USER: ${DB_USER:-fas_admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword_FAS_2026!}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required - set it in .env}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
@@ -42,7 +42,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://fas-postgres:5432/${DB_NAME:-fas_db}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-fas_admin}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-SecurePassword_FAS_2026!}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required - set it in .env}
       SERVER_PORT: ${SERVER_PORT:-8080}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       JWT_SECRET: ${JWT_SECRET}
