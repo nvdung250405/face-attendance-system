@@ -68,23 +68,25 @@ def test_pin_controller_typing_and_backspace(qapp):
 def test_pin_controller_submission(qapp):
     """Kiểm tra tín hiệu pinSubmitted khi nộp mã PIN hợp lệ."""
     controller = PinController()
-    controller.set_employee_id(1005)
+    controller.set_employee_code("NV-1005")
 
     submitted_payload = []
-    controller.pinSubmitted.connect(lambda emp_id, pin: submitted_payload.append((emp_id, pin)))
+    controller.pinSubmitted.connect(lambda emp_code, pin: submitted_payload.append((emp_code, pin)))
 
-    # Nhập mã < 4 số -> không gửi
+    # Nhập mã < 6 số -> không gửi
     controller.appendDigit("1")
     controller.appendDigit("2")
     controller.submitPin()
     assert len(submitted_payload) == 0
 
-    # Nhập đủ 4 số -> phát tín hiệu
+    # Nhập đủ 6 số -> phát tín hiệu (employee_code, pin)
     controller.appendDigit("3")
     controller.appendDigit("4")
+    controller.appendDigit("5")
+    controller.appendDigit("6")
     controller.submitPin()
     assert len(submitted_payload) == 1
-    assert submitted_payload[0] == (1005, "1234")
+    assert submitted_payload[0] == ("NV-1005", "123456")
 
 
 def test_pin_controller_lockout_on_consecutive_failures(qapp):
@@ -239,14 +241,20 @@ def test_enrollment_controller_real_quality_checker_integration(qapp):
 
 
 def test_enrollment_controller_manual_complete_step(qapp):
-    """Kiểm tra nút hoàn tất thủ công bước 2 sang bước 3 (cho dev/demo)."""
+    """Kiểm tra nút hoàn tất thủ công bước 2 sang bước 3 (CHỈ ở chế độ demo)."""
+    # Production (demo_mode=False): completeCaptureStep bị chặn
     controller = EnrollmentController()
     controller._current_step = 2
-
     controller.completeCaptureStep()
-    assert controller.currentStep == 3
-    assert controller.progressPercent == 1.0
-    assert "thành công" in controller.statusMessage.lower()
+    assert controller.currentStep == 2
+
+    # Demo mode: cho phép hoàn tất thủ công
+    demo_controller = EnrollmentController(demo_mode=True)
+    demo_controller._current_step = 2
+    demo_controller.completeCaptureStep()
+    assert demo_controller.currentStep == 3
+    assert demo_controller.progressPercent == 1.0
+    assert "thành công" in demo_controller.statusMessage.lower()
 
     # Kiểm tra setter currentStep
     controller.currentStep = 1
@@ -294,7 +302,7 @@ def test_tst_ksk_026_api_contract_alignment(qapp):
     assert verify_payload["otp"] == "123456"
     assert "kioskId" in verify_payload
     assert "X-Kiosk-Id" in verify_headers
-    assert "Authorization" in verify_headers
+    assert "X-Kiosk-Secret" in verify_headers
 
     # 2. Giả lập nạp 3 embeddings và submit enrollment
     vec1 = np.ones(512, dtype=np.float32)

@@ -6,9 +6,7 @@ Rectangle {
     id: root
 
     property real scaleRatio: 1.0
-    property string pinCode: ""
 
-    signal submitted(string code)
     signal canceled()
 
     anchors.fill: parent
@@ -21,13 +19,23 @@ Rectangle {
     }
 
     function open() {
-        root.pinCode = ""
+        if (typeof pinController !== "undefined" && pinController)
+            pinController.clear()
         root.opacity = 1.0
     }
 
     function close() {
         root.opacity = 0.0
         root.canceled()
+    }
+
+    // Tự đóng hộp thoại khi PIN được backend xác thực thành công
+    Connections {
+        target: (typeof pinController !== "undefined" && pinController) ? pinController : null
+        enabled: target !== null
+        function onVerificationSucceeded() {
+            root.close()
+        }
     }
 
     // Nền modal
@@ -75,7 +83,35 @@ Rectangle {
                 }
             }
 
-            // Màn hình hiển thị chuỗi PIN 6 chấm
+            // Ô nhập mã số nhân viên (bind vào PinController.employeeCode)
+            Text {
+                text: "Mã số nhân viên"
+                font.family: Theme.fontFamily
+                font.pixelSize: Math.max(12, 14 * root.scaleRatio)
+                font.bold: true
+                color: Theme.textPrimary
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                height: Math.max(40, 50 * root.scaleRatio)
+                radius: Math.max(6, Theme.radiusSm * root.scaleRatio)
+                color: Theme.bgBase
+                TextInput {
+                    anchors.fill: parent
+                    anchors.margins: Math.max(8, 12 * root.scaleRatio)
+                    verticalAlignment: TextInput.AlignVCenter
+                    text: (typeof pinController !== "undefined" && pinController) ? pinController.employeeCode : ""
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Math.max(14, 16 * root.scaleRatio)
+                    color: Theme.textPrimary
+                    onTextChanged: {
+                        if (typeof pinController !== "undefined" && pinController)
+                            pinController.setEmployeeCode(text)
+                    }
+                }
+            }
+
+            // Màn hình hiển thị chuỗi PIN 6 chấm (bind vào PinController.currentPin)
             Rectangle {
                 Layout.fillWidth: true
                 height: Math.max(40, 50 * root.scaleRatio)
@@ -92,7 +128,7 @@ Rectangle {
                             width: Math.max(10, 14 * root.scaleRatio)
                             height: Math.max(10, 14 * root.scaleRatio)
                             radius: Theme.radiusFull
-                            color: index < root.pinCode.length ? Theme.primary : Theme.bgCard
+                            color: index < ((typeof pinController !== "undefined" && pinController) ? pinController.currentPin.length : 0) ? Theme.primary : Theme.bgCard
 
                             Behavior on color {
                                 ColorAnimation { duration: 150 }
@@ -100,6 +136,16 @@ Rectangle {
                         }
                     }
                 }
+            }
+
+            // Trạng thái / thông điệp lỗi
+            Text {
+                Layout.fillWidth: true
+                text: (typeof pinController !== "undefined" && pinController) ? pinController.statusMessage : ""
+                font.family: Theme.fontFamily
+                font.pixelSize: Math.max(11, 13 * root.scaleRatio)
+                color: (typeof pinController !== "undefined" && pinController && pinController.isLocked) ? Theme.stateError : Theme.textSecondary
+                wrapMode: Text.WordWrap
             }
 
             // Grid Bàn phím số 3x4
@@ -133,21 +179,17 @@ Rectangle {
                             anchors.fill: parent
                             onClicked: {
                                 var val = modelData
+                                if (typeof pinController === "undefined" || !pinController) {
+                                    return
+                                }
                                 if (val === "Xóa") {
-                                    if (root.pinCode.length > 0)
-                                        root.pinCode = root.pinCode.substring(0, root.pinCode.length - 1)
+                                    pinController.backspace()
                                 } else if (val === "OK") {
-                                    if (root.pinCode.length > 0) {
-                                        var code = root.pinCode
-                                        root.submitted(code)
-                                        if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
-                                            kioskViewModel.submitPin(code)
-                                        }
-                                        root.close()
-                                    }
+                                    // Không tự đóng dialog ở đây — chỉ đóng khi backend xác thực thành công
+                                    // (xem Connections onVerificationSucceeded ở trên)
+                                    pinController.submitPin()
                                 } else {
-                                    if (root.pinCode.length < 6)
-                                        root.pinCode += val
+                                    pinController.appendDigit(val)
                                 }
                             }
                         }

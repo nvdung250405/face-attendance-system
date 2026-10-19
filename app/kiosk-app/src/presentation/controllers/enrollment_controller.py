@@ -38,18 +38,26 @@ class EnrollmentController(QObject):
         liveness_gate: MiniFASNetLivenessGate | None = None,
         client: httpx.Client | None = None,
         capture_interval: float = 0.35,
+        demo_mode: bool = False,
         parent: QObject | None = None,
     ) -> None:
-        """Khởi tạo EnrollmentController."""
+        """Khởi tạo EnrollmentController.
+
+        Args:
+            demo_mode: Chỉ cho phép fallback demo (bỏ qua OTP/kết quả thật) khi True.
+                       Trong vận hành production luôn False.
+        """
         super().__init__(parent)
         self.detector = detector
         self.extractor = extractor
         self.liveness_gate = liveness_gate
+        self._demo_mode: bool = demo_mode
         self.quality_checker = EnrollmentQualityChecker(
             max_angle_deg=15.0,
             min_face_size=80,
             min_sharpness=30.0,
-            min_liveness=0.60,
+            # Đồng bộ ngưỡng liveness với luồng chấm công (0.85) để tránh kẽ hở anti-spoofing
+            min_liveness=0.85,
         )
         self._client = client or httpx.Client(timeout=10.0)
         self._capture_interval: float = capture_interval
@@ -86,7 +94,11 @@ class EnrollmentController(QObject):
 
     @Slot()
     def completeCaptureStep(self) -> None:
-        """Cho phép hoàn tất thủ công bước chụp ảnh (cho dev/demo ngoại tuyến)."""
+        """Cho phép hoàn tất thủ công bước chụp ảnh (CHỈ hoạt động ở chế độ demo)."""
+        if not self._demo_mode:
+            self._status_message = "Vui lòng hoàn tất các bước đăng ký theo hướng dẫn."
+            self.statusMessageChanged.emit(self._status_message)
+            return
         self._current_step = 3
         self._progress_percent = 1.0
         self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công."
@@ -177,7 +189,7 @@ class EnrollmentController(QObject):
         url = f"{base_url}/kiosk/verify-otp"
         headers = {
             "X-Kiosk-Id": settings.kiosk_id,
-            "Authorization": f"Bearer {settings.kiosk_secret_token}",
+            "X-Kiosk-Secret": settings.kiosk_secret_token,
             "Content-Type": "application/json",
         }
         payload = {
@@ -209,19 +221,23 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
                 return False
         except Exception as exc:
-            logger.warning("Không thể kết nối máy chủ xác thực OTP (%s). Kích hoạt chế độ demo.", exc)
-            self._session_token = "demo-session-token"
-            self._employee_id = 1001
-            self._employee_code = "NV-DEMO"
-            self._employee_name = "Nhân viên Demo (Ngoại tuyến)"
-            self._current_step = 2
-            self._status_message = (
-                f"Đã xác thực OTP (Demo): {self._employee_name}. "
-                "Vui lòng nhìn thẳng vào camera để thu thập dữ liệu."
-            )
-            self.currentStepChanged.emit(self._current_step)
+            logger.warning("Không thể kết nối máy chủ xác thực OTP: %s", exc)
+            if self._demo_mode:
+                self._session_token = "demo-session-token"
+                self._employee_id = 1001
+                self._employee_code = "NV-DEMO"
+                self._employee_name = "Nhân viên Demo (Ngoại tuyến)"
+                self._current_step = 2
+                self._status_message = (
+                    f"Đã xác thực OTP (Demo): {self._employee_name}. "
+                    "Vui lòng nhìn thẳng vào camera để thu thập dữ liệu."
+                )
+                self.currentStepChanged.emit(self._current_step)
+                self.statusMessageChanged.emit(self._status_message)
+                return True
+            self._status_message = "Không thể kết nối máy chủ xác thực OTP. Vui lòng kiểm tra mạng và thử lại."
             self.statusMessageChanged.emit(self._status_message)
-            return True
+            return False
 
     @Slot(object)
     def process_capture_frame(self, frame: np.ndarray | None) -> None:
@@ -245,15 +261,15 @@ class EnrollmentController(QObject):
             self.statusMessageChanged.emit(self._status_message)
             return
 
-        # 2. Tính điểm thực thể sống
-        liveness_score = 1.0
+        # 2. Tính điểm thực thể sống (lỗi model = KHÔNG đạt, không bao giờ mặc định là "sống")
+        liveness_score = 0.0
         if self.liveness_gate:
             try:
                 res = self.liveness_gate.predict(frame, detection.bbox)
                 liveness_score = float(res.score)
             except Exception as exc:
                 logger.warning("Lỗi liveness predict trong enrollment: %s", exc)
-                liveness_score = 1.0
+                liveness_score = 0.0
 
         # Cắt face_crop an toàn trong phạm vi khung hình
         fh, fw = frame.shape[:2]
@@ -335,7 +351,7 @@ class EnrollmentController(QObject):
         url = f"{base_url}/kiosk/enroll-face"
         headers = {
             "X-Kiosk-Id": settings.kiosk_id,
-            "Authorization": f"Bearer {settings.kiosk_secret_token}",
+            "X-Kiosk-Secret": settings.kiosk_secret_token,
             "Content-Type": "application/json",
         }
 
@@ -379,19 +395,29 @@ class EnrollmentController(QObject):
             else:
                 err_body = resp.json() if resp.text else {}
                 err_msg = err_body.get("message") or f"Lỗi phản hồi HTTP {resp.status_code}"
-                logger.warning("Backend từ chối nạp khuôn mặt: %s. Chuyển demo fallback.", err_msg)
+                logger.warning("Backend từ chối nạp khuôn mặt: %s", err_msg)
+                # KHÔNG báo thành công khi backend từ chối — quay lại bước chụp để thử lại
+                self._status_message = f"Đăng ký không thành công: {err_msg}"
+                self._progress_percent = 0.0
+                self._captured_embeddings = []
+                self.currentStepChanged.emit(self._current_step)
+                self.progressPercentChanged.emit(self._progress_percent)
+                self.statusMessageChanged.emit(self._status_message)
+        except Exception as exc:
+            logger.warning("Lỗi gửi dữ liệu đăng ký lên Backend: %s", exc)
+            if self._demo_mode:
                 self._current_step = 3
-                self._status_message = f"Đăng ký khuôn mặt hoàn tất (Chế độ demo: {err_msg})."
+                self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
                 self.currentStepChanged.emit(self._current_step)
                 self.statusMessageChanged.emit(self._status_message)
                 self.enrollmentCompleted.emit(event_payload)
-        except Exception as exc:
-            logger.warning("Lỗi gửi dữ liệu đăng ký lên Backend (%s). Hoàn tất ở chế độ demo.", exc)
-            self._current_step = 3
-            self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
-            self.currentStepChanged.emit(self._current_step)
-            self.statusMessageChanged.emit(self._status_message)
-            self.enrollmentCompleted.emit(event_payload)
+            else:
+                self._status_message = "Không thể kết nối máy chủ đăng ký. Vui lòng thử lại."
+                self._progress_percent = 0.0
+                self._captured_embeddings = []
+                self.currentStepChanged.emit(self._current_step)
+                self.progressPercentChanged.emit(self._progress_percent)
+                self.statusMessageChanged.emit(self._status_message)
 
     @Slot()
     def reset(self) -> None:

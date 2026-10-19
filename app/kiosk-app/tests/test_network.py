@@ -76,7 +76,7 @@ def test_tst_ksk_api_001_send_punch_headers_and_success():
     assert len(recorded_requests) == 1
     req = recorded_requests[0]
     assert req.headers["X-Kiosk-Id"] == "KIOSK-HN-01"
-    assert req.headers["Authorization"] == "Bearer ksk_secret_123"
+    assert req.headers["X-Kiosk-Secret"] == "ksk_secret_123"
     assert "application/json" in req.headers["Content-Type"]
 
 

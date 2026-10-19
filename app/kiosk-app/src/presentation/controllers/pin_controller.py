@@ -18,7 +18,9 @@ class PinController(QObject):
     isLockedChanged = Signal(bool)
     remainingSecondsChanged = Signal(int)
     statusMessageChanged = Signal(str)
-    pinSubmitted = Signal(int, str)  # employee_id, pin_code
+    employeeCodeChanged = Signal(str)
+    pinSubmitted = Signal(str, str)  # employee_code, pin_code
+    verificationSucceeded = Signal()
 
     def __init__(
         self,
@@ -28,11 +30,11 @@ class PinController(QObject):
         """Khởi tạo PinController."""
         super().__init__(parent)
         self.security_manager = security_manager or PinSecurityManager()
-        self._employee_id: int = 0
+        self._employee_code: str = ""
         self._pin: str = ""
         self._is_locked: bool = False
         self._remaining_seconds: int = 0
-        self._status_message: str = "Vui lòng nhập mã PIN cá nhân (4-6 chữ số)"
+        self._status_message: str = "Vui lòng nhập mã PIN cá nhân (6 chữ số)"
 
         self._check_lockout_status()
 
@@ -56,14 +58,32 @@ class PinController(QObject):
         """Lấy thông điệp hướng dẫn PIN."""
         return self._status_message
 
-    @Property(int)
-    def employeeId(self) -> int:
-        """Lấy ID nhân viên cần xác thực."""
-        return self._employee_id
+    @Property(str, notify=employeeCodeChanged)
+    def employeeCode(self) -> str:
+        """Mã nhân viên cần xác thực PIN."""
+        return self._employee_code
 
-    def set_employee_id(self, emp_id: int) -> None:
-        """Gán ID nhân viên trước khi nhập PIN."""
-        self._employee_id = emp_id
+    @employeeCode.setter
+    def employeeCode(self, code: str) -> None:
+        self.set_employee_code(code)
+
+    @Slot(str)
+    def setEmployeeCode(self, code: str) -> None:
+        """Slot cho QML gán mã nhân viên trước khi nhập PIN."""
+        self.set_employee_code(code)
+
+    def set_employee_code(self, code: str) -> None:
+        """Gán mã nhân viên trước khi nhập PIN."""
+        code = code or ""
+        if self._employee_code != code:
+            self._employee_code = code
+            self.employeeCodeChanged.emit(self._employee_code)
+
+    def set_status_message(self, message: str) -> None:
+        """Cập nhật thông điệp trạng thái cho bàn phím PIN."""
+        if self._status_message != message:
+            self._status_message = message
+            self.statusMessageChanged.emit(self._status_message)
 
     def _check_lockout_status(self) -> None:
         """Kiểm tra và cập nhật trạng thái khóa bàn phím theo thời gian thực."""
@@ -82,7 +102,7 @@ class PinController(QObject):
                 self._status_message = msg
                 self.statusMessageChanged.emit(self._status_message)
         elif not self._pin:
-            msg = "Vui lòng nhập mã PIN cá nhân (4-6 chữ số)"
+            msg = "Vui lòng nhập mã PIN cá nhân (6 chữ số)"
             if self._status_message != msg:
                 self._status_message = msg
                 self.statusMessageChanged.emit(self._status_message)
@@ -120,13 +140,12 @@ class PinController(QObject):
         if self._is_locked:
             return
 
-        if len(self._pin) < 4:
-            self._status_message = "Mã PIN phải có từ 4 đến 6 chữ số!"
-            self.statusMessageChanged.emit(self._status_message)
+        if len(self._pin) < 6:
+            self.set_status_message("Mã PIN phải có đúng 6 chữ số!")
             return
 
-        logger.info("PinController nộp mã PIN cho nhân viên ID %d", self._employee_id)
-        self.pinSubmitted.emit(self._employee_id, self._pin)
+        logger.info("PinController nộp mã PIN cho mã NV: %s", self._employee_code)
+        self.pinSubmitted.emit(self._employee_code, self._pin)
 
     def on_verification_failure(self) -> None:
         """Được gọi khi Backend hoặc hệ thống phản hồi sai mã PIN."""
@@ -135,12 +154,11 @@ class PinController(QObject):
         self._check_lockout_status()
         if not status.is_locked:
             remaining = settings.max_pin_attempts - status.failed_attempts
-            self._status_message = f"Sai mã PIN! Còn lại {remaining} lần thử."
-            self.statusMessageChanged.emit(self._status_message)
+            self.set_status_message(f"Sai mã PIN! Còn lại {remaining} lần thử.")
 
     def on_verification_success(self) -> None:
         """Được gọi khi xác thực mã PIN thành công."""
         self.security_manager.record_success()
         self.clear()
-        self._status_message = "Xác thực mã PIN thành công!"
-        self.statusMessageChanged.emit(self._status_message)
+        self.set_status_message("Xác thực mã PIN thành công!")
+        self.verificationSucceeded.emit()
