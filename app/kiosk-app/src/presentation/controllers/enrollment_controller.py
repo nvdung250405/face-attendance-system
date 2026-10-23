@@ -270,6 +270,9 @@ class EnrollmentController(QObject):
             except Exception as exc:
                 logger.warning("Lỗi liveness predict trong enrollment: %s", exc)
                 liveness_score = 0.0
+        else:
+            # Chế độ tắt kiểm tra liveness (--no-liveness / demo)
+            liveness_score = 1.0
 
         # Cắt face_crop an toàn trong phạm vi khung hình
         fh, fw = frame.shape[:2]

@@ -297,14 +297,20 @@ def main() -> int:
         settings.camera_frame_height,
         settings.camera_fps,
     )
-    logger.info("Ngưỡng Liveness: %.2f", settings.liveness_threshold)
-    logger.info("Ngưỡng Cosine:   %.2f", settings.cosine_similarity_threshold)
-    logger.info("Thời gian chờ:   %d giây (Cooldown)", settings.cooldown_seconds)
     if args.demo:
         args.no_liveness = True
         logger.info("Chế độ vận hành: [DEMO DEV] (Tự động bật --no-liveness để kiểm thử linh hoạt)")
+    elif args.no_liveness:
+        logger.info("Chế độ vận hành: [NO-LIVENESS DEV] (Đã tắt kiểm tra thực thể sống Liveness)")
     else:
         logger.info("Chế độ vận hành: [PRODUCTION CLEAN] (Dữ liệu thực, kiểm soát sinh trắc chuẩn)")
+
+    if args.no_liveness:
+        logger.info("Ngưỡng Liveness: [ĐÃ BỎ QUA (--no-liveness)]")
+    else:
+        logger.info("Ngưỡng Liveness: %.2f", settings.liveness_threshold)
+    logger.info("Ngưỡng Cosine:   %.2f", settings.cosine_similarity_threshold)
+    logger.info("Thời gian chờ:   %d giây (Cooldown)", settings.cooldown_seconds)
 
     # 1. Khởi tạo QGuiApplication
     app = QGuiApplication.instance()
