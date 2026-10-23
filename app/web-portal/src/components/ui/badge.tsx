@@ -54,10 +54,10 @@ function Badge({ className, variant, dot = false, icon, children, ...props }: Ba
   const dotColor = (variant && dotColorMap[variant]) || 'bg-slate-400'
 
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+    <div data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props}>
       {dot && (
         <span
-          className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotColor)}
+          className={cn('size-1.5 rounded-full shrink-0', dotColor)}
           aria-hidden="true"
         />
       )}

@@ -123,10 +123,6 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
       {/* ── Tiêu đề trang & Tác vụ ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-brand-primary border border-blue-200 mb-1.5">
-            <FileQuestion className="w-3.5 h-3.5" />
-            <span>Cổng Nhân Viên</span>
-          </div>
           <h1 className="page-title">Đơn Giải Trình Công Của Tôi</h1>
           <p className="page-subtitle">
             Theo dõi tiến độ phê duyệt đơn giải trình đi muộn, về sớm hoặc sự cố chấm công (Tổng cộng:{' '}

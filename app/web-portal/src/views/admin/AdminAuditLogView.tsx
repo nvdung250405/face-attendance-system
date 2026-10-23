@@ -21,7 +21,7 @@ import {
   History,
 } from 'lucide-react'
 import { Button } from '@/components/common'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import type {
   AuditLogItem,
@@ -629,9 +629,9 @@ export const AdminAuditLogView: React.FC = () => {
           {selectedLogDetail && (
             <>
               <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-                <h3 className="text-base font-bold text-slate-900">
+                <DialogTitle className="text-base font-bold text-slate-900">
                   Chi tiết Kiểm toán #{selectedLogDetail.id} ({selectedLogDetail.action})
-                </h3>
+                </DialogTitle>
                 <button
                   type="button"
                   onClick={() => setSelectedLogDetail(null)}

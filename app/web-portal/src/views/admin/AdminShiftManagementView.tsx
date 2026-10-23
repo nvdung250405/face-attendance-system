@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Màn hình Quản lý Danh mục Ca làm việc & Phân ca Nhân sự
  * (SOL-WEB-007, BLD-WEB-019, UXD-WEB-006, FR-WEB-008, TASK-WEB-025).
  *
@@ -21,17 +21,14 @@ import {
   Lock,
   Search,
   RotateCw,
-  Sparkles,
-  ArrowRight,
   List,
   CalendarDays,
 } from 'lucide-react'
 import { shiftAdminService } from '@/services/shiftAdminService'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
-import { WeeklyShiftScheduleView } from '@/components/shift'
+import { WeeklyShiftScheduleView, ShiftFormDrawer, AssignShiftDrawer } from '@/components/shift'
 import { Button } from '@/components/common'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import type {
   ShiftItem,
   CreateShiftRequest,
@@ -344,29 +341,40 @@ export const AdminShiftManagementView: React.FC = () => {
     startDateStr: string,
     endDateStr: string
   ): OverlapConflictInfo | null => {
-    const existing = assignments.filter((a) => a.employeeId === employeeId)
+    const existing = assignments.filter((a) => a.employeeId === employeeId || a.userId === employeeId)
     const newStart = new Date(startDateStr).getTime()
-    const newEnd = new Date(endDateStr).getTime()
+    const newEnd = endDateStr ? new Date(endDateStr).getTime() : Infinity
 
     for (const item of existing) {
-      const curStart = new Date(item.effectiveStartDate).getTime()
-      const curEnd = new Date(item.effectiveEndDate).getTime()
+      const startStr = item.effectiveStartDate || item.effectiveFrom || ''
+      const endStr = item.effectiveEndDate || item.effectiveTo
+      const curStart = new Date(startStr).getTime()
+      const curEnd = endStr ? new Date(endStr).getTime() : Infinity
 
       // Giao thoa khoảng ngày: newStart <= curEnd && newEnd >= curStart
       if (newStart <= curEnd && newEnd >= curStart) {
-        // Tính khoảng trống gợi ý khả dụng tiếp theo (ngày kế tiếp của curEnd)
-        const nextDay = new Date(curEnd + 24 * 60 * 60 * 1000)
-        const durationDays = Math.max(0, Math.round((newEnd - newStart) / (24 * 60 * 60 * 1000)))
-        const suggestedEnd = new Date(nextDay.getTime() + durationDays * 24 * 60 * 60 * 1000)
+        let suggestedStartFormatted: string | undefined
+        let suggestedEndFormatted: string | undefined
 
-        const suggestedStartFormatted = formatLocalDateISO(nextDay)
-        const suggestedEndFormatted = formatLocalDateISO(suggestedEnd)
+        if (Number.isFinite(curEnd)) {
+          // Tính khoảng trống gợi ý khả dụng tiếp theo (ngày kế tiếp của curEnd)
+          const nextDay = new Date(curEnd + 24 * 60 * 60 * 1000)
+          const durationDays = Number.isFinite(newEnd)
+            ? Math.max(0, Math.round((newEnd - newStart) / (24 * 60 * 60 * 1000)))
+            : 0
+          const suggestedEnd = new Date(nextDay.getTime() + durationDays * 24 * 60 * 60 * 1000)
+
+          suggestedStartFormatted = formatLocalDateISO(nextDay)
+          suggestedEndFormatted = formatLocalDateISO(suggestedEnd)
+        }
+
+        const dateRangeText = endStr ? `${startStr} đến ${endStr}` : `từ ${startStr} (Vô thời hạn)`
 
         return {
           conflictingAssignmentId: item.id,
           suggestedStartDate: suggestedStartFormatted,
           suggestedEndDate: suggestedEndFormatted,
-          message: `Lịch phân ca bị chồng lấn với ca ${item.shiftName} (${item.effectiveStartDate} đến ${item.effectiveEndDate}).`,
+          message: `Lịch phân ca bị chồng lấn với ca ${item.shiftName} (${dateRangeText}).`,
         }
       }
     }
@@ -466,11 +474,12 @@ export const AdminShiftManagementView: React.FC = () => {
 
   // Lọc lịch phân ca
   const filteredAssignments = useMemo(() => {
+    const kw = searchEmployeeKeyword.trim().toLowerCase()
     return assignments.filter((a) => {
       const matchKeyword =
-        !searchEmployeeKeyword.trim() ||
-        a.fullName.toLowerCase().includes(searchEmployeeKeyword.toLowerCase()) ||
-        a.employeeCode.toLowerCase().includes(searchEmployeeKeyword.toLowerCase())
+        !kw ||
+        (a.fullName || '').toLowerCase().includes(kw) ||
+        (a.employeeCode || '').toLowerCase().includes(kw)
 
       const matchShift = !filterShiftId || String(a.shiftId) === filterShiftId
 
@@ -483,15 +492,11 @@ export const AdminShiftManagementView: React.FC = () => {
       {/* ── Tiêu đề trang & Tác vụ hàng đầu ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="page-title flex items-center gap-3">
-            <span>Quản Lý Ca Làm Việc & Phân Ca</span>
+          <h1 className="page-title">
+            Quản Lý Ca Làm Việc & Phân Ca
             {isAdjustmentLocked && (
-              <span
-                data-testid="shift-payroll-locked-badge"
-                className="badge-warning inline-flex items-center gap-1.5"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Kỳ công đã khóa</span>
+              <span data-testid="shift-payroll-locked-badge" className="sr-only">
+                Kỳ công đã khóa
               </span>
             )}
           </h1>
@@ -679,7 +684,7 @@ export const AdminShiftManagementView: React.FC = () => {
                       <td className="py-3.5 px-4 font-mono font-bold text-brand-primary text-xs">
                         {shift.shiftCode}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-text-primary text-xs">{shift.name}</td>
+                      <td className="py-3.5 px-4 font-semibold text-text-primary text-xs">{shift.name || shift.shiftName}</td>
                       <td className="py-3.5 px-4 text-text-secondary text-xs">
                         <span className="inline-flex items-center gap-1 font-mono">
                           <Clock className="w-3.5 h-3.5 text-text-tertiary" />
@@ -706,7 +711,7 @@ export const AdminShiftManagementView: React.FC = () => {
                           {shift.isActive ? 'Đang áp dụng' : 'Tạm dừng'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-bg-app shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
                           <button
                             type="button"
@@ -892,12 +897,12 @@ export const AdminShiftManagementView: React.FC = () => {
                               : 'Theo ca'}
                           </td>
                           <td className="py-3.5 px-4 font-mono text-text-secondary text-xs">
-                            {item.effectiveStartDate}
+                            {item.effectiveStartDate || item.effectiveFrom || '—'}
                           </td>
                           <td className="py-3.5 px-4 font-mono text-text-secondary text-xs">
-                            {item.effectiveEndDate}
+                            {item.effectiveEndDate || item.effectiveTo || 'Vô thời hạn'}
                           </td>
-                          <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-bg-app shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => handleRemoveAssignment(item)}
@@ -921,358 +926,31 @@ export const AdminShiftManagementView: React.FC = () => {
       )}
 
       {/* ── Modal Tạo mới / Chỉnh sửa Ca làm việc (UXD-WEB-006) ── */}
-      <Dialog
-        open={isShiftDrawerOpen}
-        onOpenChange={(open) => !open && setIsShiftDrawerOpen(false)}
-      >
-        <DialogContent
-          data-testid="shift-drawer"
-          hideCloseButton
-          usePortal={false}
-          className="p-0 max-w-lg border-0 bg-transparent shadow-none"
-        >
-          <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Header Modal */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
-                  <Clock className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-text-primary">
-                    {editingShift ? 'Chỉnh Sửa Ca Làm Việc' : 'Tạo Mới Ca Làm Việc'}
-                  </h3>
-                  <p className="text-xs text-text-muted">
-                    {editingShift ? 'Cập nhật khung giờ & thời gian ân hạn' : 'Thiết lập khung giờ làm việc chuẩn cho tổ chức'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsShiftDrawerOpen(false)}
-                aria-label="Đóng"
-                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Form Modal */}
-            <form onSubmit={handleSaveShift} className="p-6 space-y-4 flex-1 overflow-y-auto">
-              {shiftFormError && (
-                <div
-                  data-testid="shift-form-error"
-                  className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center gap-2"
-                >
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{shiftFormError}</span>
-                </div>
-              )}
-
-              {/* Mã ca */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Mã ca làm việc <span className="text-status-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={shiftFormData.shiftCode}
-                  onChange={(e) =>
-                    setShiftFormData((prev) => ({ ...prev, shiftCode: e.target.value.toUpperCase() }))
-                  }
-                  disabled={Boolean(editingShift)}
-                  data-testid="input-shift-code"
-                  placeholder="Ví dụ: CA_SANG, CA_TOI..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white disabled:bg-slate-50 disabled:text-text-muted uppercase font-mono"
-                />
-              </div>
-
-              {/* Tên ca */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Tên ca làm việc <span className="text-status-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={shiftFormData.name}
-                  onChange={(e) => setShiftFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  data-testid="input-shift-name"
-                  placeholder="Ví dụ: Ca Hành Chính, Ca Chiều..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
-                />
-              </div>
-
-              {/* Khung giờ: Bắt đầu - Kết thúc */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-secondary">
-                    Giờ bắt đầu <span className="text-status-danger">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    value={shiftFormData.startTime}
-                    onChange={(e) => setShiftFormData((prev) => ({ ...prev, startTime: e.target.value }))}
-                    data-testid="input-shift-start-time"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-secondary">
-                    Giờ kết thúc <span className="text-status-danger">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    value={shiftFormData.endTime}
-                    onChange={(e) => setShiftFormData((prev) => ({ ...prev, endTime: e.target.value }))}
-                    data-testid="input-shift-end-time"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Ân hạn */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Thời gian ân hạn đi muộn (Phút)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={60}
-                  value={shiftFormData.gracePeriodMinutes}
-                  onChange={(e) =>
-                    setShiftFormData((prev) => ({ ...prev, gracePeriodMinutes: Number(e.target.value) }))
-                  }
-                  data-testid="input-shift-grace-minutes"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
-                />
-                <span className="text-2xs text-text-muted">
-                  Khoảng thời gian nhân viên đến trễ mà không bị tính vi phạm đi muộn (0 - 60 phút)
-                </span>
-              </div>
-
-              {/* Kích hoạt trạng thái khi chỉnh sửa */}
-              {editingShift && (
-                <div className="pt-2 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="shift-is-active"
-                    checked={shiftFormData.isActive}
-                    onChange={(e) =>
-                      setShiftFormData((prev) => ({ ...prev, isActive: e.target.checked }))
-                    }
-                    data-testid="input-shift-is-active"
-                    className="rounded text-brand-primary focus:ring-brand-primary"
-                  />
-                  <label htmlFor="shift-is-active" className="text-xs font-semibold text-text-secondary">
-                    Kích hoạt áp dụng ca làm việc này
-                  </label>
-                </div>
-              )}
-            </form>
-
-            {/* Footer Modal */}
-            <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsShiftDrawerOpen(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white text-text-secondary hover:bg-slate-100 transition-colors shadow-xs"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveShift}
-                disabled={isSubmittingShift}
-                data-testid="submit-shift-btn"
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50 transition-colors"
-              >
-                {isSubmittingShift ? 'Đang lưu...' : editingShift ? 'Lưu Thay Đổi' : 'Tạo Ca'}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ShiftFormDrawer
+        isOpen={isShiftDrawerOpen}
+        onClose={() => setIsShiftDrawerOpen(false)}
+        editingShift={editingShift}
+        formData={shiftFormData}
+        onChangeFormData={setShiftFormData}
+        formError={shiftFormError}
+        isSubmitting={isSubmittingShift}
+        onSubmit={handleSaveShift}
+      />
 
       {/* ── Modal Phân ca Nhân sự & Gợi ý Chồng lấn (SOL-WEB-007, UXD-WEB-006) ── */}
-      <Dialog
-        open={isAssignDrawerOpen}
-        onOpenChange={(open) => !open && setIsAssignDrawerOpen(false)}
-      >
-        <DialogContent
-          data-testid="assign-shift-drawer"
-          hideCloseButton
-          usePortal={false}
-          className="p-0 max-w-lg border-0 bg-transparent shadow-none"
-        >
-          <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Header Modal */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-text-primary">Phân Ca Nhân Sự Theo Khoảng Ngày</h3>
-                  <p className="text-xs text-text-muted">Gán ca làm việc cho nhân viên & kiểm tra xung đột ca</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAssignDrawerOpen(false)}
-                aria-label="Đóng"
-                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Form Modal */}
-            <form onSubmit={handleSaveAssign} className="p-6 space-y-4 flex-1 overflow-y-auto">
-              {/* Cảnh báo lỗi thông thường */}
-              {assignFormError && (
-                <div
-                  data-testid="assign-form-error"
-                  className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center gap-2"
-                >
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{assignFormError}</span>
-                </div>
-              )}
-
-              {/* Hộp gợi ý khoảng trống khi trùng ca (BLD-WEB-019, SOL-WEB-007) */}
-              {overlapConflict && (
-                <div
-                  data-testid="overlap-conflict-suggestion-box"
-                  className="p-4 rounded-xl bg-indigo-50/80 border border-indigo-200 text-indigo-950 space-y-2.5 animate-in fade-in"
-                >
-                  <div className="flex items-center gap-2 font-bold text-xs text-indigo-900">
-                    <Sparkles className="w-4 h-4 text-indigo-600" />
-                    <span>Gợi Ý Khoảng Trống Khả Dụng Tiếp Theo</span>
-                  </div>
-                  <p className="text-2xs text-indigo-800 leading-relaxed">
-                    Hệ thống đã tự động tính toán khoảng thời gian trống không bị giao thoa cho nhân sự này:
-                  </p>
-                  <div className="flex items-center gap-2 font-mono font-semibold text-xs text-indigo-900 bg-white/80 p-2 rounded-lg border border-indigo-100">
-                    <span>{overlapConflict.suggestedStartDate || '—'}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>{overlapConflict.suggestedEndDate || '—'}</span>
-                  </div>
-                  {overlapConflict.suggestedStartDate && (
-                    <button
-                      type="button"
-                      onClick={handleApplySuggestedSlot}
-                      data-testid="apply-suggested-slot-btn"
-                      className="w-full py-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Áp Dụng Khoảng Trống Này</span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Chọn nhân viên */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Chọn nhân sự áp dụng <span className="text-status-danger">*</span>
-                </label>
-                <select
-                  value={assignFormData.employeeId}
-                  onChange={(e) =>
-                    setAssignFormData((prev) => ({ ...prev, employeeId: Number(e.target.value) }))
-                  }
-                  data-testid="select-assign-employee"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
-                >
-                  <option value={0}>-- Chọn nhân sự --</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.fullName} ({emp.employeeCode}) - {emp.department}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Chọn ca làm việc */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Chọn ca làm việc <span className="text-status-danger">*</span>
-                </label>
-                <select
-                  value={assignFormData.shiftId}
-                  onChange={(e) =>
-                    setAssignFormData((prev) => ({ ...prev, shiftId: Number(e.target.value) }))
-                  }
-                  data-testid="select-assign-shift"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
-                >
-                  <option value={0}>-- Chọn ca làm việc --</option>
-                  {shifts
-                    .filter((s) => s.isActive)
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.shiftCode}) [{s.startTime} - {s.endTime}]
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Khoảng ngày hiệu lực */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-secondary">
-                    Từ ngày <span className="text-status-danger">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={assignFormData.effectiveStartDate}
-                    onChange={(e) =>
-                      setAssignFormData((prev) => ({ ...prev, effectiveStartDate: e.target.value }))
-                    }
-                    data-testid="input-assign-start-date"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-secondary">
-                    Đến ngày <span className="text-status-danger">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={assignFormData.effectiveEndDate}
-                    onChange={(e) =>
-                      setAssignFormData((prev) => ({ ...prev, effectiveEndDate: e.target.value }))
-                    }
-                    data-testid="input-assign-end-date"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-                  />
-                </div>
-              </div>
-            </form>
-
-            {/* Footer Modal */}
-            <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsAssignDrawerOpen(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white text-text-secondary hover:bg-slate-100 transition-colors shadow-xs"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveAssign}
-                disabled={isSubmittingAssign}
-                data-testid="submit-assign-shift-btn"
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50 transition-colors"
-              >
-                {isSubmittingAssign ? 'Đang phân ca...' : 'Xác Nhận Phân Ca'}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AssignShiftDrawer
+        isOpen={isAssignDrawerOpen}
+        onClose={() => setIsAssignDrawerOpen(false)}
+        formData={assignFormData}
+        onChangeFormData={setAssignFormData}
+        formError={assignFormError}
+        overlapConflict={overlapConflict}
+        onApplySuggestedSlot={handleApplySuggestedSlot}
+        isSubmitting={isSubmittingAssign}
+        onSubmit={handleSaveAssign}
+        employees={employees}
+        shifts={shifts}
+      />
     </div>
   )
 }

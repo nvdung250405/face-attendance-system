@@ -14,14 +14,14 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 [&>span]:line-clamp-1',
+      'flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:outline-hidden focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 [&>span]:line-clamp-1',
       className
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+      <ChevronDown className="size-4 opacity-50 shrink-0" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -39,7 +39,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronUp className="h-4 w-4" />
+    <ChevronUp className="size-4" />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -56,7 +56,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronDown className="h-4 w-4" />
+    <ChevronDown className="size-4" />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =
@@ -118,9 +118,9 @@ const SelectItem = React.forwardRef<
     )}
     {...props}
   >
-    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className="absolute right-2 flex size-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4 text-indigo-600" />
+        <Check className="size-4 text-brand-primary" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

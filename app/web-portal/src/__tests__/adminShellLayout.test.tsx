@@ -204,11 +204,11 @@ describe('Khung Bố cục Admin Shell Responsive (TST-WEB-005, TASK-WEB-009, UX
       expect(header.textContent).toContain('FAS Portal')
     })
 
-    it('Chỉ báo STOMP "Kiosk Live" hiển thị khi status CONNECTED', () => {
+    it('Chỉ báo STOMP "Trực tuyến" hiển thị khi status CONNECTED', () => {
       renderShell()
 
       const stompEl = screen.getByTestId('stomp-status')
-      expect(stompEl.textContent).toContain('Kiosk Live')
+      expect(stompEl.textContent).toContain('Trực tuyến')
     })
 
     it('Avatar button hiển thị với aria-expanded và id header-avatar', () => {

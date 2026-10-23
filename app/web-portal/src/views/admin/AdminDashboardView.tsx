@@ -125,6 +125,11 @@ export const AdminDashboardView: React.FC = () => {
         if (attendanceData.status === 'fulfilled' && attendanceData.value?.content) {
           setInitialRecords(attendanceData.value.content)
         }
+
+        if (statsData.status === 'rejected' && attendanceData.status === 'rejected') {
+          const err = (attendanceData.reason || statsData.reason) as { message?: string }
+          setErrorMessage(err?.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
+        }
       } catch (err) {
         if (!ignore) {
           const error = err as { message?: string }

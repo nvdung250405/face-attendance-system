@@ -36,16 +36,18 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
   return (
     <div
       data-testid="kpi-cards-grid"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
     >
       {/* ── Thẻ 1: Tổng Nhân Sự ── */}
-      <div className="card-surface p-5 space-y-3.5 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/80" />
+      <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-400" />
+        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-indigo-500/5 blur-2xl group-hover:bg-indigo-500/15 transition-colors pointer-events-none" />
+        
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             Tổng số nhân sự
           </span>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+          <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-500/20 shadow-xs flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-108">
             <Users size={20} strokeWidth={2} />
           </div>
         </div>
@@ -53,7 +55,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
         <div>
           <div
             data-testid="kpi-total-employees"
-            className="text-3xl font-extrabold font-mono text-slate-900 tracking-tight"
+            className="text-3xl font-black font-mono text-slate-900 tracking-tight"
           >
             {isLoading ? '...' : totalEmployees}
           </div>
@@ -62,13 +64,15 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
       </div>
 
       {/* ── Thẻ 2: Đã Có Mặt (Tỷ lệ %) ── */}
-      <div className="card-surface p-5 space-y-3.5 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80" />
+      <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400" />
+        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-emerald-500/5 blur-2xl group-hover:bg-emerald-500/15 transition-colors pointer-events-none" />
+        
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
             Đã có mặt
           </span>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20 shadow-xs flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-108">
             <CheckCircle2 size={20} strokeWidth={2} />
           </div>
         </div>
@@ -77,13 +81,13 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
           <div className="flex items-baseline gap-2.5">
             <span
               data-testid="kpi-present-count"
-              className="text-3xl font-extrabold font-mono text-emerald-600 tracking-tight"
+              className="text-3xl font-black font-mono text-emerald-600 tracking-tight"
             >
               {isLoading ? '...' : presentCount}
             </span>
             <span
               data-testid="kpi-present-percentage"
-              className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200/60"
+              className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs"
             >
               {presentPercentage}%
             </span>
@@ -95,13 +99,15 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
       </div>
 
       {/* ── Thẻ 3: Đi Muộn ── */}
-      <div className="card-surface p-5 space-y-3.5 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500/80" />
+      <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400" />
+        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-amber-500/5 blur-2xl group-hover:bg-amber-500/15 transition-colors pointer-events-none" />
+        
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
             Đi muộn
           </span>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+          <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-500/20 shadow-xs flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-108">
             <Clock size={20} strokeWidth={2} />
           </div>
         </div>
@@ -109,7 +115,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
         <div>
           <div
             data-testid="kpi-late-count"
-            className="text-3xl font-extrabold font-mono text-amber-600 tracking-tight"
+            className="text-3xl font-black font-mono text-amber-600 tracking-tight"
           >
             {isLoading ? '...' : lateCount}
           </div>
@@ -120,13 +126,15 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
       </div>
 
       {/* ── Thẻ 4: Chưa Đến / Vắng Mặt ── */}
-      <div className="card-surface p-5 space-y-3.5 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500/80" />
+      <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-rose-600 to-rose-400" />
+        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-rose-500/5 blur-2xl group-hover:bg-rose-500/15 transition-colors pointer-events-none" />
+        
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
             Chưa đến
           </span>
-          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-500/20 shadow-xs flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-108">
             <UserX size={20} strokeWidth={2} />
           </div>
         </div>
@@ -134,7 +142,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
         <div>
           <div
             data-testid="kpi-absent-count"
-            className="text-3xl font-extrabold font-mono text-rose-600 tracking-tight"
+            className="text-3xl font-black font-mono text-rose-600 tracking-tight"
           >
             {isLoading ? '...' : absentCount}
           </div>

@@ -114,9 +114,9 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
     const kw = searchKeyword.toLowerCase()
     return employees.filter(
       (emp) =>
-        emp.fullName.toLowerCase().includes(kw) ||
-        emp.employeeCode.toLowerCase().includes(kw) ||
-        (emp.department && emp.department.toLowerCase().includes(kw))
+        (emp.fullName || '').toLowerCase().includes(kw) ||
+        (emp.employeeCode || '').toLowerCase().includes(kw) ||
+        ((emp.department || '').toLowerCase().includes(kw))
     )
   }, [employees, searchKeyword])
 
@@ -188,6 +188,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             data-testid="search-weekly-employee-input"
+            aria-label="Tìm theo mã nhân viên hoặc họ tên"
             placeholder="Tìm theo Mã NV, Họ tên..."
             className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
           />
@@ -272,9 +273,9 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                         // Tìm lịch phân ca của nhân sự đang bao phủ ngày d.dateStr
                         const activeAssignment = assignments.find(
                           (a) =>
-                            a.employeeId === emp.id &&
-                            a.effectiveStartDate <= d.dateStr &&
-                            d.dateStr <= a.effectiveEndDate
+                            (a.employeeId === emp.id || a.userId === emp.id) &&
+                            (a.effectiveStartDate || a.effectiveFrom || '') <= d.dateStr &&
+                            d.dateStr <= (a.effectiveEndDate || a.effectiveTo || '9999-12-31')
                         )
 
                         const assignedShift = activeAssignment

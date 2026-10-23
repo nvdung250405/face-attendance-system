@@ -21,7 +21,7 @@ import {
   Download,
 } from 'lucide-react'
 import { Button } from '@/components/common'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { payrollPeriodService } from '@/services/payrollPeriodService'
 import { reportExportService } from '@/services/reportExportService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
@@ -224,23 +224,15 @@ export const AdminPayrollPeriodView: React.FC = () => {
       {/* ── Tiêu đề trang & Thanh công cụ ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="page-title flex items-center gap-3">
-            <span>Quản Lý & Chốt Kỳ Công</span>
+          <h1 className="page-title">
+            Quản Lý & Chốt Kỳ Công
             {isAdjustmentLocked ? (
-              <span
-                data-testid="payroll-status-badge-locked"
-                className="badge-warning inline-flex items-center gap-1.5"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Kỳ đang chọn: ĐÃ KHÓA</span>
+              <span data-testid="payroll-status-badge-locked" className="sr-only">
+                Kỳ đang chọn: ĐÃ KHÓA
               </span>
             ) : (
-              <span
-                data-testid="payroll-status-badge-open"
-                className="badge-success inline-flex items-center gap-1.5"
-              >
-                <Unlock className="w-3.5 h-3.5" />
-                <span>Kỳ đang chọn: ĐANG MỞ</span>
+              <span data-testid="payroll-status-badge-open" className="sr-only">
+                Kỳ đang chọn: ĐANG MỞ
               </span>
             )}
           </h1>
@@ -459,7 +451,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                       </td>
 
                       {/* Thao tác */}
-                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-[#f8fafc] shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-bg-app shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
                           {/* Nút chọn làm kỳ hiện hành */}
                           {!isCurrentSelected && (
@@ -550,7 +542,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                   <Lock className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">Xác Nhận Chốt Kỳ Công</h3>
+                  <DialogTitle className="font-bold text-base text-slate-900">Xác Nhận Chốt Kỳ Công</DialogTitle>
                   <span className="text-xs text-slate-500">
                     Kỳ Tháng {String(periodToLock.periodMonth).padStart(2, '0')}/{periodToLock.periodYear}
                   </span>
@@ -611,7 +603,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                   <Unlock className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">Mở Lại Kỳ Công Đã Chốt</h3>
+                  <DialogTitle className="font-bold text-base text-slate-900">Mở Lại Kỳ Công Đã Chốt</DialogTitle>
                   <span className="text-xs text-slate-500">
                     Kỳ Tháng {String(periodToUnlock.periodMonth).padStart(2, '0')}/{periodToUnlock.periodYear}
                   </span>
