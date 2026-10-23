@@ -23,7 +23,7 @@ import {
   Check,
 } from 'lucide-react'
 import { Button } from '@/components/common'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { complianceAdminService } from '@/services/complianceAdminService'
@@ -479,9 +479,9 @@ export const AdminKioskManagementView: React.FC = () => {
         >
           {reissuedTokenKiosk && (
             <>
-              <h3 className="text-base font-bold text-slate-900">
+              <DialogTitle className="text-base font-bold text-slate-900">
                 Cấp Lại Secret Token Thành Công
-              </h3>
+              </DialogTitle>
 
               <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
                 Secret Token mới của trạm <strong>{reissuedTokenKiosk.kioskId}</strong> chỉ hiển thị duy nhất 1 lần trong RAM. Khi đóng hộp thoại này, token sẽ bị hủy khỏi bộ nhớ trình duyệt.

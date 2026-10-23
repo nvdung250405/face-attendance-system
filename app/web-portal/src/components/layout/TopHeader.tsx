@@ -27,9 +27,11 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/admin/shifts': 'Ca & Phân ca',
   '/admin/payroll-periods': 'Chốt kỳ công',
   '/admin/reports': 'Báo cáo tổng hợp',
+  '/admin/excuse-requests': 'Duyệt đơn giải trình',
   '/admin/kiosks': 'Quản lý Kiosk',
   '/admin/audit-logs': 'Nhật ký kiểm toán',
   '/employee/dashboard': 'Bảng công của tôi',
+  '/employee/excuse-requests': 'Đơn giải trình của tôi',
   '/employee/consent': 'Đăng ký sinh trắc & OTP',
   '/employee/data-requests': 'Yêu cầu dữ liệu cá nhân',
 }
@@ -75,7 +77,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const currentPage = BREADCRUMB_MAP[location.pathname] ?? 'Trang không tìm thấy'
+  const currentPage =
+    BREADCRUMB_MAP[location.pathname] ??
+    (location.pathname.startsWith('/admin')
+      ? 'Quản trị hệ thống'
+      : location.pathname.startsWith('/employee')
+        ? 'Cổng nhân viên'
+        : 'Trang làm việc')
 
   // Đồng bộ thông báo của người dùng đăng nhập
   useEffect(() => {
@@ -120,7 +128,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
 
   const stompLabel =
     stompStatus === 'CONNECTED'
-      ? 'Kiosk Live'
+      ? 'Trực tuyến'
       : stompStatus === 'CONNECTING'
         ? 'Đang kết nối...'
         : 'Mất kết nối'
@@ -138,15 +146,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
           right: 0,
           transition: 'left 200ms ease-in-out',
         }}
-        className="fixed top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-slate-200/80 flex items-center px-6 gap-4"
+        className="fixed top-0 z-30 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] flex items-center px-6 gap-4"
       >
       {/* ── Breadcrumb ── */}
       <div className="flex-1 min-w-0">
         <nav aria-label="breadcrumb">
           <ol className="flex items-center gap-2 text-xs font-medium">
-            <li className="text-slate-400">FAS Portal</li>
+            <li className="text-slate-400 hover:text-slate-600 transition-colors">FAS Portal</li>
             <li className="text-slate-300">/</li>
-            <li className="text-slate-800 font-semibold truncate text-sm">{currentPage}</li>
+            <li className="text-slate-900 font-bold truncate text-sm">{currentPage}</li>
           </ol>
         </nav>
       </div>
@@ -154,23 +162,28 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
       {/* ── STOMP Indicator ── */}
       <div
         data-testid="stomp-status"
-        className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+        className={`hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ${
           stompStatus === 'CONNECTED'
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70'
+            ? 'bg-emerald-50/90 text-emerald-700 border-emerald-200/80 shadow-xs'
             : stompStatus === 'CONNECTING'
-              ? 'bg-amber-50 text-amber-700 border-amber-200/70'
-              : 'bg-rose-50 text-rose-700 border-rose-200/70'
+              ? 'bg-amber-50/90 text-amber-700 border-amber-200/80 shadow-xs'
+              : 'bg-rose-50/90 text-rose-700 border-rose-200/80 shadow-xs'
         }`}
       >
-        <span
-          className={`w-2 h-2 rounded-full ${
-            stompStatus === 'CONNECTED'
-              ? 'bg-emerald-500 animate-pulse'
-              : stompStatus === 'CONNECTING'
-                ? 'bg-amber-500'
-                : 'bg-rose-500'
-          }`}
-        />
+        <span className="relative flex h-2 w-2">
+          {stompStatus === 'CONNECTED' && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          )}
+          <span
+            className={`relative inline-flex rounded-full h-2 w-2 ${
+              stompStatus === 'CONNECTED'
+                ? 'bg-emerald-500'
+                : stompStatus === 'CONNECTING'
+                  ? 'bg-amber-500 animate-pulse'
+                  : 'bg-rose-500'
+            }`}
+          />
+        </span>
         <span>{stompLabel}</span>
       </div>
 
@@ -181,7 +194,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
         data-testid="header-notifications"
         aria-label="Thông báo"
         onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-        className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors relative"
+        className="w-9.5 h-9.5 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 border border-transparent hover:border-slate-200/60 transition-all duration-150 relative cursor-pointer"
       >
         <IconBell hasUnread={unreadCount > 0} unreadCount={unreadCount} />
       </button>
@@ -194,16 +207,18 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
           aria-expanded={dropdownOpen}
           aria-haspopup="true"
           onClick={() => setDropdownOpen((v) => !v)}
-          className="flex items-center gap-2.5 rounded-xl px-2 py-1 hover:bg-slate-100 transition-colors"
+          className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 hover:bg-slate-100/90 border border-transparent hover:border-slate-200/60 transition-all duration-150 cursor-pointer"
         >
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-indigo-500/20 shadow-xs">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 via-indigo-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-indigo-500/25 shadow-sm">
             {initials}
           </div>
           <div className="hidden md:block text-left">
-            <div className="text-sm font-semibold text-slate-800 leading-tight max-w-44 truncate">
+            <div className="text-sm font-bold text-slate-800 leading-tight max-w-44 truncate">
               {user?.fullName ?? 'Người dùng'}
             </div>
-            <div className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">{user?.role}</div>
+            <div className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider leading-tight mt-0.5">
+              {user?.role}
+            </div>
           </div>
           <span className="text-slate-400">
             <ChevronDown size={14} strokeWidth={2} />
@@ -214,7 +229,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
         {dropdownOpen && (
           <div
             role="menu"
-            className="absolute right-0 top-full mt-2 w-52 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
+            className="absolute right-0 top-full mt-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
           >
             <div className="px-3.5 py-2.5 border-b border-slate-100">
               <div className="text-sm font-bold text-slate-900 truncate">
@@ -231,7 +246,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
                   setDropdownOpen(false)
                   setIsChangePasswordOpen(true)
                 }}
-                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors flex items-center gap-2.5 font-medium"
+                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50/60 hover:text-indigo-700 rounded-xl transition-colors flex items-center gap-2.5 font-medium cursor-pointer"
               >
                 <Lock size={15} className="text-slate-400" />
                 <span>Đổi mật khẩu</span>
@@ -245,7 +260,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
                   setDropdownOpen(false)
                   setIsPinModalOpen(true)
                 }}
-                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors flex items-center gap-2.5 font-medium"
+                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50/60 hover:text-indigo-700 rounded-xl transition-colors flex items-center gap-2.5 font-medium cursor-pointer"
               >
                 <Shield size={15} className="text-slate-400" />
                 <span>{user?.hasPin ? 'Đổi mã PIN dự phòng' : 'Thiết lập mã PIN'}</span>
@@ -255,7 +270,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
                 role="menuitem"
                 id="header-logout"
                 onClick={handleLogout}
-                className="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2.5 font-medium"
+                className="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center gap-2.5 font-medium cursor-pointer"
               >
                 <LogOut size={15} />
                 <span>Đăng xuất</span>

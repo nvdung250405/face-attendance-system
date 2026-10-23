@@ -3,7 +3,7 @@
  * (FR-BE-008, API-BE-048, API-WEB-021, SOL-BE-007, DD-BE-002, TASK-WEB-019).
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Edit3,
   CheckCircle2,
@@ -50,25 +50,28 @@ export const AdjustAttendanceModal: React.FC<AdjustAttendanceModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // Khởi tạo giá trị khi mở modal với record tương ứng
-  useEffect(() => {
-    if (record) {
-      // Chuyển ISO string sang định dạng YYYY-MM-DDTHH:mm cho datetime-local input
-      try {
-        const d = new Date(record.punchTimestamp)
-        const pad = (n: number) => n.toString().padStart(2, '0')
-        const localIso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-        setPunchDateTime(localIso)
-      } catch {
-        setPunchDateTime('')
-      }
-      setStatus(record.status || 'ON_TIME')
-      setLateMinutes(record.lateMinutes || 0)
-      setReason('')
-      setErrorMessage(null)
-      setSuccessMessage(null)
+  // Theo dõi ID của record trước đó để đồng bộ state khi record thay đổi
+  const [prevRecordId, setPrevRecordId] = useState<number | null>(null)
+
+  if (record && record.recordId !== prevRecordId) {
+    setPrevRecordId(record.recordId)
+    // Chuyển ISO string sang định dạng YYYY-MM-DDTHH:mm cho datetime-local input
+    try {
+      const d = new Date(record.punchTimestamp)
+      const pad = (n: number) => n.toString().padStart(2, '0')
+      const localIso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      setPunchDateTime(localIso)
+    } catch {
+      setPunchDateTime('')
     }
-  }, [record])
+    setStatus(record.status || 'ON_TIME')
+    setLateMinutes(record.lateMinutes || 0)
+    setReason('')
+    setErrorMessage(null)
+    setSuccessMessage(null)
+  } else if (!record && prevRecordId !== null) {
+    setPrevRecordId(null)
+  }
 
   // Kiểm tra xem kỳ công chứa ngày này có đang bị LOCKED không
   const isDateLocked = React.useMemo(() => {

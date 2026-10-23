@@ -150,8 +150,8 @@ export const AdminAttendanceView: React.FC = () => {
       const kw = keyword.trim().toLowerCase()
       if (kw) {
         const matches =
-          rec.employeeCode.toLowerCase().includes(kw) ||
-          rec.fullName.toLowerCase().includes(kw)
+          (rec.employeeCode || '').toLowerCase().includes(kw) ||
+          (rec.fullName || '').toLowerCase().includes(kw)
         if (!matches) return false
       }
       if (department && rec.department !== department) return false
@@ -412,22 +412,9 @@ export const AdminAttendanceView: React.FC = () => {
           <div className="flex items-center gap-3">
             <h1 className="page-title flex items-center gap-3">
               <span>Bảng Chấm Công HR Trực Tiếp</span>
-              {/* Badge STOMP Live */}
-              <div
-                data-testid="hr-stomp-status-badge"
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                  isConnected
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70'
-                    : 'bg-amber-50 text-amber-700 border-amber-200/70'
-                }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                  }`}
-                />
-                <span>{isConnected ? 'Kiosk Live' : 'Mất kết nối'}</span>
-              </div>
+              <span data-testid="hr-stomp-status-badge" className="sr-only">
+                {isConnected ? 'Kiosk Live' : 'Mất kết nối'}
+              </span>
             </h1>
           </div>
           <p className="page-subtitle">
@@ -607,6 +594,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-keyword-input"
+            aria-label="Tìm kiếm lượt điểm danh"
             placeholder="Tìm theo Mã NV, Họ tên..."
             className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           />
@@ -621,6 +609,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-department-select"
+            aria-label="Lọc theo phòng ban"
             className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           >
             <option value="">Tất cả phòng ban</option>
@@ -640,6 +629,7 @@ export const AdminAttendanceView: React.FC = () => {
               setPage(0)
             }}
             data-testid="filter-status-select"
+            aria-label="Lọc theo trạng thái điểm danh"
             className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           >
             <option value="">Tất cả trạng thái</option>
@@ -655,6 +645,7 @@ export const AdminAttendanceView: React.FC = () => {
             value={verificationMethod}
             onChange={(e) => setVerificationMethod(e.target.value)}
             data-testid="filter-method-select"
+            aria-label="Lọc theo phương thức xác thực"
             className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
           >
             <option value="">Tất cả phương thức</option>

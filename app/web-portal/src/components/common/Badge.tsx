@@ -1,1 +1,1 @@
-export * from '@/components/ui/badge'
+export { Badge, type BadgeProps } from '@/components/ui/badge'

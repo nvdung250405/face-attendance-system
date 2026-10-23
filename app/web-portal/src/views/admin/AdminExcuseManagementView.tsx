@@ -187,10 +187,6 @@ export const AdminExcuseManagementView: React.FC = () => {
       {/* ── Tiêu đề trang & Tác vụ ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-status-success border border-emerald-200 mb-1.5">
-            <FileQuestion className="w-3.5 h-3.5" />
-            <span>Phân Hệ Quản Trị HR</span>
-          </div>
           <h1 className="page-title">Quản Lý & Duyệt Đơn Giải Trình Công</h1>
           <p className="page-subtitle">
             Tiếp nhận, kiểm tra và ra quyết định phê duyệt hoặc từ chối giải trình chấm công của nhân sự

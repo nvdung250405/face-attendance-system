@@ -157,11 +157,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : "var(--spacing-sidebar)",
         transition: "width 200ms ease-in-out",
       }}
-      className="fixed left-0 top-0 h-screen z-40 flex flex-col bg-[#0b1b32] border-r border-white/5 overflow-hidden shrink-0 shadow-xl"
+      className="fixed left-0 top-0 h-screen z-40 flex flex-col bg-gradient-to-b from-[#0b1727] via-[#0d1f36] to-[#091322] border-r border-white/8 overflow-hidden shrink-0 shadow-2xl"
     >
       {/* ── Logo ── */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10 shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 flex items-center justify-center font-extrabold text-white text-sm shrink-0 shadow-md shadow-indigo-500/25 ring-1 ring-white/20">
+      <div className="flex items-center gap-3 px-4.5 h-16 border-b border-white/8 shrink-0 bg-white/2">
+        <div className="w-9.5 h-9.5 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 flex items-center justify-center font-black text-white text-sm shrink-0 shadow-lg shadow-indigo-500/30 ring-1 ring-white/25 tracking-wide">
           FAS
         </div>
         {!collapsed && (
@@ -170,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               FAS Portal
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ring-2 ring-emerald-400/20" />
               <span className="text-slate-400 text-[10px] font-semibold tracking-wider uppercase">
                 Enterprise 2.0
               </span>
@@ -180,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* ── Nav Menu ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1 px-2.5">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1.5 px-3">
         {visibleItems.map((item) => {
           const isFirstEmployeeItem = user?.role === "ADMIN" && item.to === "/employee/dashboard";
           return (
@@ -204,12 +204,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
                     "group relative select-none",
                     isActive
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/50 font-semibold"
+                      ? "bg-gradient-to-r from-indigo-600 to-indigo-600/90 text-white shadow-lg shadow-indigo-950/60 font-semibold ring-1 ring-indigo-400/30"
                       : "text-slate-300 hover:bg-white/8 hover:text-white",
                   ].join(" ")
                 }
               >
-                <span className="shrink-0 transition-transform duration-150 group-hover:scale-105">{item.icon}</span>
+                <span className="shrink-0 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
                 {!collapsed && (
                   <span className="truncate whitespace-nowrap">{item.label}</span>
                 )}
@@ -220,14 +220,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* ── Footer: Toggle + Logout ── */}
-      <div className="shrink-0 border-t border-white/10 px-2.5 py-3 space-y-1 bg-black/10">
+      <div className="shrink-0 border-t border-white/8 px-3 py-3 space-y-1 bg-black/20">
         {/* Nút thu gọn / mở rộng */}
         <button
           type="button"
           id="sidebar-toggle"
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
           onClick={onToggleCollapse}
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-150"
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 hover:bg-white/8 hover:text-white transition-all duration-150"
         >
           <span className="shrink-0">
             {collapsed ? (
@@ -249,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id="sidebar-logout"
           onClick={handleLogout}
           title={collapsed ? "Đăng xuất" : undefined}
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 hover:bg-rose-500/20 hover:text-rose-300 transition-all duration-150"
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all duration-150"
         >
           <span className="shrink-0">
             <LogOut size={18} strokeWidth={1.75} />

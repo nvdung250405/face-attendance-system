@@ -315,7 +315,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
                 {currentStep === 'TERMS' &&
                   'Vui lòng đọc hết điều khoản bảo mật dữ liệu trước khi ký'}
                 {currentStep === 'OTP_DISPLAY' &&
-                  'Sử dụng mã OTP hoặc quét mã QR tại trạm Kiosk để nạp khuôn mặt'}
+                  'Sử dụng mã OTP tại trạm Kiosk để mở camera nạp khuôn mặt'}
                 {currentStep === 'SUCCESS' && 'Hồ sơ sinh trắc học của bạn đã sẵn sàng hoạt động'}
               </p>
             </div>

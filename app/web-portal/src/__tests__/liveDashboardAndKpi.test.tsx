@@ -167,18 +167,13 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
   // 2. LiveAttendanceTable Tests (UXD-WEB-004, DD-WEB-014)
   // ────────────────────────────────────────────────────────────────────────────
   describe('2. LiveAttendanceTable Component (Bảng Chấm Công Trực Tiếp)', () => {
-    it('render danh sách bản ghi điểm danh và chỉ báo trạng thái STOMP', () => {
+    it('render danh sách bản ghi điểm danh và thông tin sự kiện', () => {
       render(
         <LiveAttendanceTable
           records={mockRecords}
-          isConnected={true}
           highlightedRecordId={null}
         />
       )
-
-      // STOMP Live Indicator
-      const badge = screen.getByTestId('live-stomp-status-badge')
-      expect(badge.textContent).toContain('Kiosk Live')
 
       // Dữ liệu dòng
       expect(screen.getByText('NV-1001')).toBeTruthy()
@@ -190,19 +185,6 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       expect(screen.getByText('NV-1002')).toBeTruthy()
       expect(screen.getByText('Mã PIN')).toBeTruthy()
       expect(screen.getByText(/Đi muộn \(5p\)/i)).toBeTruthy()
-    })
-
-    it('hiển thị chỉ báo mất kết nối khi isConnected = false', () => {
-      render(
-        <LiveAttendanceTable
-          records={mockRecords}
-          isConnected={false}
-          highlightedRecordId={null}
-        />
-      )
-
-      const badge = screen.getByTestId('live-stomp-status-badge')
-      expect(badge.textContent).toContain('Mất kết nối')
     })
 
     it('kích hoạt hiệu ứng chớp sáng Green Flash (1.5s) trên hàng được chỉ định', () => {

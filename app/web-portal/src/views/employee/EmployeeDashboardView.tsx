@@ -44,9 +44,7 @@ export const EmployeeDashboardView: React.FC = () => {
       {/* ── Tiêu đề & Tác vụ hàng đầu ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-status-success border border-emerald-200 mb-1.5">
-            Cổng Thông Tin Nhân Viên
-          </div>
+          <span className="sr-only">Cổng Thông Tin Nhân Viên</span>
           <h1 className="page-title">
             Xin chào, {user?.fullName || 'Nhân Viên'} {user?.employeeCode ? `(${user.employeeCode})` : ''}
           </h1>
@@ -96,7 +94,7 @@ export const EmployeeDashboardView: React.FC = () => {
               </h3>
               <p className="text-xs text-blue-800 mt-1 max-w-xl leading-relaxed">
                 Bạn chưa kích hoạt dữ liệu nhận diện khuôn mặt. Vui lòng ký bản cam kết bảo vệ dữ liệu
-                để nhận mã OTP và mã QR nạp khuôn mặt tại trạm Kiosk.
+                để nhận mã OTP kích hoạt và nạp khuôn mặt tại trạm Kiosk.
               </p>
             </div>
           </div>

@@ -341,6 +341,7 @@ export const EmployeeManagementView: React.FC = () => {
             id="search-input"
             data-testid="search-input"
             type="text"
+            aria-label="Tìm kiếm nhân sự"
             value={keyword}
             onChange={(e) => {
               setKeyword(e.target.value)
@@ -370,6 +371,7 @@ export const EmployeeManagementView: React.FC = () => {
           <select
             id="filter-department"
             data-testid="filter-department"
+            aria-label="Lọc theo phòng ban"
             value={departmentFilter}
             onChange={(e) => {
               setDepartmentFilter(e.target.value)
@@ -391,6 +393,7 @@ export const EmployeeManagementView: React.FC = () => {
           <select
             id="filter-status"
             data-testid="filter-status"
+            aria-label="Lọc theo trạng thái tài khoản"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value)
@@ -411,6 +414,7 @@ export const EmployeeManagementView: React.FC = () => {
           <select
             id="filter-role"
             data-testid="filter-role"
+            aria-label="Lọc theo vai trò"
             value={roleFilter}
             onChange={(e) => {
               setRoleFilter(e.target.value)

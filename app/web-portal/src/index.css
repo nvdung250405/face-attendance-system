@@ -89,6 +89,17 @@
   table {
     font-variant-numeric: tabular-nums;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 /* Các lớp tiện ích dùng chung chuẩn hóa (BLD-WEB-004, UXD-WEB-001) */
@@ -98,7 +109,20 @@
     background-color: var(--color-surface-card);
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-card);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.03), 0 4px 16px -2px rgb(0 0 0 / 0.04);
+    transition: box-shadow 200ms ease-in-out, border-color 200ms ease-in-out, transform 200ms ease-in-out;
+  }
+
+  .card-surface.is-disabled,
+  .card-surface[aria-disabled="true"] {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  .card-surface.is-error {
+    border-color: rgba(239, 68, 68, 0.4);
+    background-color: rgba(254, 242, 242, 0.4);
   }
 
   /* Tiêu đề & phụ đề trang */
@@ -133,15 +157,36 @@
     transition: background-color 150ms ease-in-out, box-shadow 150ms ease-in-out;
     cursor: pointer;
     border: none;
+    user-select: none;
   }
 
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     background-color: var(--color-brand-hover);
   }
 
   .btn-primary:focus-visible {
     outline: 2px solid var(--color-brand-primary);
     outline-offset: 2px;
+  }
+
+  .btn-primary:disabled,
+  .btn-primary[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-primary.is-loading,
+  .btn-primary[aria-busy="true"] {
+    opacity: 0.8;
+    cursor: wait;
+    pointer-events: none;
+  }
+
+  .btn-primary.is-error,
+  .btn-primary[aria-invalid="true"] {
+    background-color: var(--color-status-danger);
+    color: #ffffff;
   }
 
   /* Nút bấm thứ cấp */
@@ -160,11 +205,38 @@
     color: var(--color-text-primary);
     transition: background-color 150ms ease-in-out, border-color 150ms ease-in-out;
     cursor: pointer;
+    user-select: none;
   }
 
-  .btn-secondary:hover {
+  .btn-secondary:hover:not(:disabled) {
     background-color: #f8fafc;
     border-color: #cbd5e1;
+  }
+
+  .btn-secondary:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  .btn-secondary:disabled,
+  .btn-secondary[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-secondary.is-loading,
+  .btn-secondary[aria-busy="true"] {
+    opacity: 0.8;
+    cursor: wait;
+    pointer-events: none;
+  }
+
+  .btn-secondary.is-error,
+  .btn-secondary[aria-invalid="true"] {
+    border-color: var(--color-status-danger);
+    color: var(--color-status-danger);
+    background-color: var(--color-status-danger-bg);
   }
 
   /* Ô nhập liệu Form chuẩn */
@@ -189,6 +261,32 @@
     outline: none;
     border-color: var(--color-brand-primary);
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+
+  .input-base:disabled,
+  .input-base[aria-disabled="true"] {
+    cursor: not-allowed;
+    background-color: #f8fafc;
+    color: var(--color-text-muted);
+    border-color: var(--color-border-subtle);
+  }
+
+  .input-base.is-loading,
+  .input-base[aria-busy="true"] {
+    cursor: wait;
+    background-color: #f8fafc;
+  }
+
+  .input-base.is-error,
+  .input-base[aria-invalid="true"] {
+    border-color: var(--color-status-danger);
+    color: #991b1b;
+  }
+
+  .input-base.is-error:focus,
+  .input-base[aria-invalid="true"]:focus {
+    border-color: var(--color-status-danger);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
   }
 
   /* Huy hiệu trạng thái (Status Badges) */
@@ -264,4 +362,38 @@
   .row-green-flash {
     animation: var(--animate-green-flash);
   }
+
+  /* Hiệu ứng Frosted Glass hiện đại (Modern Enterprise) */
+  .glass-header {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.03);
+  }
+
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 10px -4px rgba(15, 23, 42, 0.02);
+  }
 }
+
+/* Thanh cuộn mảnh thanh lịch cho toàn hệ thống */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
