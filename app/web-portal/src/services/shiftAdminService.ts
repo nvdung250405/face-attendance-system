@@ -27,17 +27,89 @@ export interface EmployeeShiftQueryCriteria {
   endDate?: string // YYYY-MM-DD
 }
 
+interface BackendShiftResponse {
+  id: number
+  shiftCode: string
+  shiftName?: string
+  name?: string
+  startTime: string
+  endTime: string
+  gracePeriodMinutes?: number
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface BackendEmployeeShiftResponse {
+  id: number
+  userId?: number
+  employeeId?: number
+  employeeCode?: string
+  fullName?: string
+  shiftId: number
+  shiftCode?: string
+  shiftName?: string
+  effectiveFrom?: string
+  effectiveTo?: string | null
+  effectiveStartDate?: string
+  effectiveEndDate?: string | null
+  createdAt?: string
+}
+
 export class ShiftAdminService {
+  private mapShiftResponse(s: BackendShiftResponse): ShiftItem {
+    const rawStart = s.startTime || ''
+    const rawEnd = s.endTime || ''
+    const startTime = typeof rawStart === 'string' && rawStart.length > 5 ? rawStart.substring(0, 5) : rawStart
+    const endTime = typeof rawEnd === 'string' && rawEnd.length > 5 ? rawEnd.substring(0, 5) : rawEnd
+    const shiftName = s.shiftName || s.name || ''
+
+    return {
+      id: s.id,
+      shiftCode: s.shiftCode,
+      name: shiftName,
+      shiftName,
+      startTime,
+      endTime,
+      gracePeriodMinutes: s.gracePeriodMinutes ?? 0,
+      isActive: Boolean(s.isActive),
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    }
+  }
+
+  private mapEmployeeShiftResponse(item: BackendEmployeeShiftResponse): EmployeeShiftAssignment {
+    const userId = item.userId ?? item.employeeId ?? 0
+    const start = item.effectiveFrom ?? item.effectiveStartDate ?? ''
+    const end = item.effectiveTo ?? item.effectiveEndDate ?? ''
+
+    return {
+      id: item.id,
+      employeeId: userId,
+      userId,
+      employeeCode: item.employeeCode || '',
+      fullName: item.fullName || '',
+      shiftId: item.shiftId,
+      shiftCode: item.shiftCode || '',
+      shiftName: item.shiftName || '',
+      effectiveStartDate: start,
+      effectiveEndDate: end,
+      effectiveFrom: start,
+      effectiveTo: end,
+      createdAt: item.createdAt,
+    }
+  }
+
   /**
    * Lấy danh sách danh mục ca làm việc (GET /api/v1/admin/shifts)
    */
   async getShifts(criteria?: ShiftQueryCriteria): Promise<ShiftItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<ShiftItem[]>>(
+      const response = await apiClient.get<ApiResponse<BackendShiftResponse[]>>(
         '/api/v1/admin/shifts',
         { params: criteria }
       )
-      return response.data.data
+      return (response.data.data || []).map((s) => this.mapShiftResponse(s))
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -48,11 +120,23 @@ export class ShiftAdminService {
    */
   async createShift(data: CreateShiftRequest): Promise<ShiftItem> {
     try {
-      const response = await apiClient.post<ApiResponse<ShiftItem>>(
+      const startTime = data.startTime.length === 5 ? `${data.startTime}:00` : data.startTime
+      const endTime = data.endTime.length === 5 ? `${data.endTime}:00` : data.endTime
+      const shiftName = data.name || data.shiftName || ''
+
+      const payload = {
+        shiftCode: data.shiftCode,
+        shiftName,
+        startTime,
+        endTime,
+        gracePeriodMinutes: data.gracePeriodMinutes ?? 15,
+      }
+
+      const response = await apiClient.post<ApiResponse<BackendShiftResponse>>(
         '/api/v1/admin/shifts',
-        data
+        payload
       )
-      return response.data.data
+      return this.mapShiftResponse(response.data.data)
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -63,11 +147,68 @@ export class ShiftAdminService {
    */
   async updateShift(id: number, data: UpdateShiftRequest): Promise<ShiftItem> {
     try {
-      const response = await apiClient.patch<ApiResponse<ShiftItem>>(
+      // Trường hợp chỉ kích hoạt hoặc tạm dừng ca (không truyền lại thông tin giờ)
+      if (
+        data.isActive !== undefined &&
+        !data.name &&
+        !data.shiftName &&
+        !data.startTime &&
+        !data.endTime
+      ) {
+        if (data.isActive) {
+          await this.activateShift(id)
+        } else {
+          await this.deactivateShift(id)
+        }
+        return {
+          id,
+          shiftCode: '',
+          name: '',
+          shiftName: '',
+          startTime: '',
+          endTime: '',
+          gracePeriodMinutes: 0,
+          isActive: data.isActive,
+        }
+      }
+
+      const payload: Record<string, unknown> = {
+        shiftName: data.name || data.shiftName,
+        startTime: data.startTime && data.startTime.length === 5 ? `${data.startTime}:00` : data.startTime,
+        endTime: data.endTime && data.endTime.length === 5 ? `${data.endTime}:00` : data.endTime,
+        gracePeriodMinutes: data.gracePeriodMinutes ?? 15,
+      }
+      if (data.isActive !== undefined) {
+        payload.isActive = data.isActive
+      }
+
+      const response = await apiClient.patch<ApiResponse<BackendShiftResponse>>(
         `/api/v1/admin/shifts/${id}`,
-        data
+        payload
       )
-      return response.data.data
+      return this.mapShiftResponse(response.data.data)
+    } catch (error) {
+      throw normalizeApiError(error)
+    }
+  }
+
+  /**
+   * Kích hoạt ca làm việc (POST /api/v1/admin/shifts/{id}/activate)
+   */
+  async activateShift(id: number): Promise<void> {
+    try {
+      await apiClient.post(`/api/v1/admin/shifts/${id}/activate`)
+    } catch (error) {
+      throw normalizeApiError(error)
+    }
+  }
+
+  /**
+   * Vô hiệu hóa ca làm việc (POST /api/v1/admin/shifts/{id}/deactivate)
+   */
+  async deactivateShift(id: number): Promise<void> {
+    try {
+      await apiClient.post(`/api/v1/admin/shifts/${id}/deactivate`)
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -78,11 +219,17 @@ export class ShiftAdminService {
    */
   async getEmployeeShifts(criteria?: EmployeeShiftQueryCriteria): Promise<EmployeeShiftAssignment[]> {
     try {
-      const response = await apiClient.get<ApiResponse<EmployeeShiftAssignment[]>>(
+      const params: Record<string, string | number> = {}
+      if (criteria?.employeeId) params.userId = criteria.employeeId
+      if (criteria?.shiftId) params.shiftId = criteria.shiftId
+      if (criteria?.startDate) params.fromDate = criteria.startDate
+      if (criteria?.endDate) params.toDate = criteria.endDate
+
+      const response = await apiClient.get<ApiResponse<BackendEmployeeShiftResponse[]>>(
         '/api/v1/admin/employee-shifts',
-        { params: criteria }
+        { params }
       )
-      return response.data.data
+      return (response.data.data || []).map((item) => this.mapEmployeeShiftResponse(item))
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -94,11 +241,18 @@ export class ShiftAdminService {
    */
   async assignShift(data: AssignShiftRequest): Promise<EmployeeShiftAssignment> {
     try {
-      const response = await apiClient.post<ApiResponse<EmployeeShiftAssignment>>(
+      const payload = {
+        userId: data.employeeId ?? data.userId,
+        shiftId: data.shiftId,
+        effectiveFrom: data.effectiveStartDate ?? data.effectiveFrom,
+        effectiveTo: data.effectiveEndDate || data.effectiveTo || null,
+      }
+
+      const response = await apiClient.post<ApiResponse<BackendEmployeeShiftResponse>>(
         '/api/v1/admin/employee-shifts',
-        data
+        payload
       )
-      return response.data.data
+      return this.mapEmployeeShiftResponse(response.data.data)
     } catch (error) {
       throw normalizeApiError(error)
     }
