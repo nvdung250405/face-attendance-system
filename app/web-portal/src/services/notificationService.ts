@@ -43,11 +43,11 @@ export class NotificationService {
   }
 
   /**
-   * Đánh dấu toàn bộ thông báo là đã đọc (PATCH /api/v1/notifications/read-all)
+   * Đánh dấu toàn bộ thông báo là đã đọc (POST /api/v1/notifications/read-all)
    */
   async markAllAsRead(): Promise<void> {
     try {
-      await apiClient.patch('/api/v1/notifications/read-all')
+      await apiClient.post('/api/v1/notifications/read-all')
     } catch (error) {
       throw normalizeApiError(error)
     }

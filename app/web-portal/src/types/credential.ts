@@ -11,11 +11,13 @@ export interface ChangePasswordResponse {
 
 export interface SetupPinRequest {
   pin: string
+  confirmPin?: string
 }
 
 export interface ResetPinRequest {
   currentPassword: string
   newPin: string
+  confirmPin?: string
 }
 
 export interface PinStatusResponse {

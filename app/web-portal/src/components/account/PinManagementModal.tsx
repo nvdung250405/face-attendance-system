@@ -127,10 +127,12 @@ const PinManagementDialog: React.FC<{
         await credentialService.resetPin({
           currentPassword: accountPassword,
           newPin: pin,
+          confirmPin,
         })
       } else {
         await credentialService.setupPin({
           pin,
+          confirmPin,
         })
       }
 
