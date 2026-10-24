@@ -282,9 +282,9 @@ describe('Bộ Client Dịch vụ Vòng đời (TASK-WEB-023, BLD-WEB-022, APD-W
       const read = await notificationService.markAsRead(1)
       expect(read.readAt).toBeDefined()
 
-      vi.spyOn(apiClient, 'patch').mockResolvedValueOnce({ status: 200 })
+      vi.spyOn(apiClient, 'post').mockResolvedValueOnce({ status: 200 })
       await notificationService.markAllAsRead()
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/v1/notifications/read-all')
+      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/notifications/read-all')
     })
   })
 

@@ -303,7 +303,7 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
       fireEvent.click(confirmSubmitBtn)
 
       await waitFor(() => {
-        expect(mockSetupPin).toHaveBeenCalledWith({ pin: '123456' })
+        expect(mockSetupPin).toHaveBeenCalledWith({ pin: '123456', confirmPin: '123456' })
       })
 
       expect(screen.getByTestId('pin-modal-success')).toBeTruthy()
@@ -371,6 +371,7 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
         expect(mockResetPin).toHaveBeenCalledWith({
           currentPassword: 'CurrentPassword@123',
           newPin: '654321',
+          confirmPin: '654321',
         })
       })
 
