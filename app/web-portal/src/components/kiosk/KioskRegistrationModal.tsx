@@ -95,7 +95,7 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
               <h2 id="kiosk-registration-title" className="text-base font-bold text-text-primary">
                 {step === 'FORM' ? 'Đăng Ký Trạm Kiosk Mới' : 'Secret Token Kiosk (Một Lần)'}
               </h2>
-              <p className="text-xs text-text-muted">
+              <p className="text-xs text-text-secondary">
                 {step === 'FORM'
                   ? 'Khởi tạo cấu hình kết nối trạm điểm danh biên'
                   : 'Mã xác thực duy nhất — Chỉ hiển thị một lần trong RAM'}
@@ -107,7 +107,7 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
             type="button"
             onClick={handleClose}
             aria-label="Đóng"
-            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors"
           >
             <X size={18} strokeWidth={2} />
           </button>
@@ -145,7 +145,7 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
                   className="input-base font-mono font-medium"
                   required
                 />
-                <p className="text-[11px] text-text-muted mt-1">Định danh duy nhất của trạm Kiosk trong hệ thống</p>
+                <p className="text-[11px] text-text-secondary mt-1">Định danh duy nhất của trạm Kiosk trong hệ thống</p>
               </div>
 
               <div>

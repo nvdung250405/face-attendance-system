@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Màn hình Quản lý Danh mục Ca làm việc & Phân ca Nhân sự
  * (SOL-WEB-007, BLD-WEB-019, UXD-WEB-006, FR-WEB-008, TASK-WEB-025).
  *
@@ -661,7 +661,7 @@ export const AdminShiftManagementView: React.FC = () => {
               <tbody className="divide-y divide-border-subtle">
                 {isLoadingShifts ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-text-muted">
+                    <td colSpan={7} className="py-8 text-center text-text-secondary">
                       <div className="flex items-center justify-center gap-2">
                         <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                         <span>Đang tải danh mục ca...</span>
@@ -670,7 +670,7 @@ export const AdminShiftManagementView: React.FC = () => {
                   </tr>
                 ) : shifts.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-text-muted">
+                    <td colSpan={7} className="py-8 text-center text-text-secondary">
                       Chưa có ca làm việc nào. Bấm "Thêm Ca Mới" để thiết lập.
                     </td>
                   </tr>
@@ -855,7 +855,7 @@ export const AdminShiftManagementView: React.FC = () => {
                   <tbody className="divide-y divide-border-subtle">
                     {isLoadingAssignments ? (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-text-muted">
+                        <td colSpan={6} className="py-8 text-center text-text-secondary">
                           <div className="flex items-center justify-center gap-2">
                             <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                             <span>Đang tải lịch phân ca...</span>
@@ -864,7 +864,7 @@ export const AdminShiftManagementView: React.FC = () => {
                       </tr>
                     ) : filteredAssignments.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-text-muted">
+                        <td colSpan={6} className="py-8 text-center text-text-secondary">
                           Không có lịch phân ca nào phù hợp. Bấm "Phân Ca Nhân Sự" để tạo lịch mới.
                         </td>
                       </tr>

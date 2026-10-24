@@ -170,7 +170,7 @@ export const NotificationDrawer: React.FC = () => {
                 data-testid="close-notification-drawer-btn"
                 onClick={() => setIsOpen(false)}
                 aria-label="Đóng bảng thông báo"
-                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors"
               >
                 <X size={18} strokeWidth={2} />
               </button>
@@ -186,7 +186,7 @@ export const NotificationDrawer: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-text-secondary">Chưa có thông báo nào</p>
-                  <p className="text-xs text-text-muted mt-1 max-w-xs">
+                  <p className="text-xs text-text-secondary mt-1 max-w-xs">
                     Bạn sẽ nhận được thông báo khi có ca làm việc mới, điểm danh, hoặc sự kiện hệ thống.
                   </p>
                 </div>

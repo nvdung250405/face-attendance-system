@@ -59,7 +59,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
                 <DialogTitle className="font-bold text-base text-text-primary">
                   Phân Ca Nhân Sự Theo Khoảng Ngày
                 </DialogTitle>
-                <p className="text-xs text-text-muted">
+                <p className="text-xs text-text-secondary">
                   Gán ca làm việc cho nhân viên & kiểm tra xung đột ca
                 </p>
               </div>
@@ -68,7 +68,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Đóng"
-              className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>

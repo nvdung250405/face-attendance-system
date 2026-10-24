@@ -346,7 +346,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-text-muted">
+                  <td colSpan={5} className="py-8 text-center text-text-secondary">
                     <div className="flex items-center justify-center gap-2">
                       <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                       <span>Đang tải danh sách kỳ công năm {selectedYear}...</span>
@@ -355,7 +355,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                 </tr>
               ) : periods.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-text-muted">
+                  <td colSpan={5} className="py-8 text-center text-text-secondary">
                     Không có dữ liệu kỳ công nào cho năm {selectedYear}.
                   </td>
                 </tr>

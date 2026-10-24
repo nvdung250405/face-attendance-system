@@ -168,7 +168,7 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
       {/* ── Danh sách đơn giải trình ── */}
       <div className="card-surface overflow-hidden">
         {isLoading && requests.length === 0 ? (
-          <div className="py-16 text-center text-xs text-text-muted">
+          <div className="py-16 text-center text-xs text-text-secondary">
             <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-brand-primary" />
             <span>Đang tải danh sách đơn giải trình...</span>
           </div>
@@ -213,7 +213,7 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
                     <td className="py-3 px-4 font-mono font-bold text-brand-primary">#{item.id}</td>
                     <td className="py-3 px-4 text-text-secondary">
                       <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-text-muted" />
+                        <Calendar className="w-3.5 h-3.5 text-text-secondary" />
                         <span>{formatDateTime(item.createdAt)}</span>
                       </div>
                     </td>
@@ -227,7 +227,7 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 max-w-xs">
                       <div className="flex items-start gap-1.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-text-muted shrink-0 mt-0.5" />
+                        <MessageSquare className="w-3.5 h-3.5 text-text-secondary shrink-0 mt-0.5" />
                         <span className="line-clamp-2" title={item.reason}>
                           {item.reason}
                         </span>
@@ -245,7 +245,7 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
                           <div className="italic text-slate-600">Lý do: {item.rejectionReason}</div>
                         </div>
                       ) : (
-                        <span className="text-2xs text-text-muted">Đang chờ xem xét</span>
+                        <span className="text-2xs text-text-secondary">Đang chờ xem xét</span>
                       )}
                     </td>
                   </tr>

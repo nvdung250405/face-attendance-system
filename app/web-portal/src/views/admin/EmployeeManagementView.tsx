@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus, Search, ScanFace, Lock, Edit2, KeyRound, CheckCircle2, Ban, X, AlertCircle } from 'lucide-react'
-import { Button, Modal } from '@/components/common'
+import { Button, Modal, TableSkeleton } from '@/components/common'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { EmployeeDrawer, TemporaryPasswordModal } from '@/components/account'
 import { useAuthStore } from '@/store/authStore'
@@ -465,17 +465,15 @@ export const EmployeeManagementView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-text-muted">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                      <span>Đang tải danh sách nhân sự...</span>
-                    </div>
-                  </td>
-                </tr>
+                <TableSkeleton
+                  columns={8}
+                  rows={5}
+                  hasActionColumn={true}
+                  ariaLabel="Đang tải danh sách nhân sự..."
+                />
               ) : displayedEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-text-muted">
+                  <td colSpan={8} className="py-12 text-center text-text-secondary">
                     <p className="text-base font-medium">Không tìm thấy hồ sơ nhân sự nào</p>
                     <p className="text-xs mt-1">Thử thay đổi bộ lọc hoặc thêm mới nhân viên</p>
                   </td>
