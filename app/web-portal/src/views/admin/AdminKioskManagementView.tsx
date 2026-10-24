@@ -355,7 +355,7 @@ export const AdminKioskManagementView: React.FC = () => {
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
                 <tr>
-                  <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-muted">
+                  <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-secondary">
                     <div className="flex items-center justify-center gap-2">
                       <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                       <span>Đang nạp danh sách trạm Kiosk...</span>
@@ -364,7 +364,7 @@ export const AdminKioskManagementView: React.FC = () => {
                 </tr>
               ) : kiosks.length === 0 ? (
                 <tr>
-                  <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-muted">
+                  <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-secondary">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                         <Monitor size={24} />

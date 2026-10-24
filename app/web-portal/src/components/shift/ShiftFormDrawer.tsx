@@ -47,7 +47,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
                 <DialogTitle className="font-bold text-base text-text-primary">
                   {editingShift ? 'Chỉnh Sửa Ca Làm Việc' : 'Tạo Mới Ca Làm Việc'}
                 </DialogTitle>
-                <p className="text-xs text-text-muted">
+                <p className="text-xs text-text-secondary">
                   {editingShift ? 'Cập nhật khung giờ & thời gian ân hạn' : 'Thiết lập khung giờ làm việc chuẩn cho tổ chức'}
                 </p>
               </div>
@@ -56,7 +56,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Đóng"
-              className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -151,7 +151,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
                 data-testid="input-shift-grace-minutes"
                 className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
               />
-              <span className="text-2xs text-text-muted">
+              <span className="text-2xs text-text-secondary">
                 Khoảng thời gian nhân viên đến trễ mà không bị tính vi phạm đi muộn (0 - 60 phút)
               </span>
             </div>

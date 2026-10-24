@@ -169,6 +169,7 @@ const PinManagementDialog: React.FC<{
         <button
           type="button"
           onClick={handleClose}
+          aria-label="Đóng"
           className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
         >
           <X className="w-4 h-4" />

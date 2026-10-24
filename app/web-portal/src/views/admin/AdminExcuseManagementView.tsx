@@ -290,7 +290,7 @@ export const AdminExcuseManagementView: React.FC = () => {
       {/* ── Bảng Dữ Liệu Đơn Giải Trình ── */}
       <div className="card-surface overflow-hidden">
         {isLoading && requests.length === 0 ? (
-          <div className="py-16 text-center text-xs text-text-muted">
+          <div className="py-16 text-center text-xs text-text-secondary">
             <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-brand-primary" />
             <span>Đang tải danh sách đơn giải trình...</span>
           </div>
@@ -481,7 +481,7 @@ export const AdminExcuseManagementView: React.FC = () => {
 
             <div className="space-y-1">
               <label htmlFor="approve-note" className="font-semibold text-text-primary">
-                Ghi chú phê duyệt <span className="text-text-muted font-normal">(tùy chọn)</span>
+                Ghi chú phê duyệt <span className="text-text-secondary font-normal">(tùy chọn)</span>
               </label>
               <textarea
                 id="approve-note"

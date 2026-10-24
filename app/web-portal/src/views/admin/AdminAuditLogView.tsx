@@ -192,7 +192,7 @@ export const AdminAuditLogView: React.FC = () => {
             <span className="font-semibold text-text-primary">
               Chế độ Tra cứu Chỉ Đọc (Read-Only Compliance &amp; Audit Trail)
             </span>
-            <span className="hidden md:inline text-text-muted text-xs ml-2">
+            <span className="hidden md:inline text-text-secondary text-xs ml-2">
               — Toàn bộ nhật ký kiểm toán mang tính bất biến và được bảo vệ toàn vẹn theo quy chuẩn.
             </span>
           </div>
@@ -377,7 +377,7 @@ export const AdminAuditLogView: React.FC = () => {
                 <tbody className="divide-y divide-border-subtle">
                   {isAuditLoading ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-text-muted">
+                      <td colSpan={7} className="py-12 text-center text-text-secondary">
                         <div className="flex items-center justify-center gap-2">
                           <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                           <span>Đang nạp dữ liệu kiểm toán...</span>
@@ -386,7 +386,7 @@ export const AdminAuditLogView: React.FC = () => {
                     </tr>
                   ) : auditLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-text-muted">
+                      <td colSpan={7} className="py-12 text-center text-text-secondary">
                         Không tìm thấy sự kiện kiểm toán nào phù hợp điều kiện lọc.
                       </td>
                     </tr>
@@ -467,7 +467,7 @@ export const AdminAuditLogView: React.FC = () => {
               <tbody className="divide-y divide-border-subtle">
                 {isConsentsLoading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-text-muted">
+                    <td colSpan={6} className="py-12 text-center text-text-secondary">
                       <div className="flex items-center justify-center gap-2">
                         <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                         <span>Đang nạp hồ sơ cam kết...</span>
@@ -476,7 +476,7 @@ export const AdminAuditLogView: React.FC = () => {
                   </tr>
                 ) : dpoConsents.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-text-muted">
+                    <td colSpan={6} className="py-12 text-center text-text-secondary">
                       Chưa có dữ liệu cam kết điện tử nào.
                     </td>
                   </tr>
@@ -554,7 +554,7 @@ export const AdminAuditLogView: React.FC = () => {
                 <tbody className="divide-y divide-border-subtle">
                   {isRetentionLoading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-text-muted">
+                      <td colSpan={6} className="py-12 text-center text-text-secondary">
                         <div className="flex items-center justify-center gap-2">
                           <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
                           <span>Đang nạp lịch trình tiêu hủy...</span>
@@ -563,7 +563,7 @@ export const AdminAuditLogView: React.FC = () => {
                     </tr>
                   ) : retentionItems.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-text-muted">
+                      <td colSpan={6} className="py-12 text-center text-text-secondary">
                         Hiện không có dữ liệu sinh trắc nào đang trong lịch tiêu hủy.
                       </td>
                     </tr>

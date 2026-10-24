@@ -133,6 +133,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Đóng"
             className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-slate-100"
           >
             <X className="w-4 h-4" />

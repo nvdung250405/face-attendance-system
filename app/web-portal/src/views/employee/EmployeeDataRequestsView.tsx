@@ -173,7 +173,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
           </div>
           <div>
             <h2 className="text-base font-bold text-text-primary">Gửi Yêu Cầu Mới tới DPO</h2>
-            <p className="text-xs text-text-muted">Nhân viên Bảo vệ Dữ liệu (DPO) sẽ xử lý trong thời hạn luật định</p>
+            <p className="text-xs text-text-secondary">Nhân viên Bảo vệ Dữ liệu (DPO) sẽ xử lý trong thời hạn luật định</p>
           </div>
         </div>
 
@@ -215,7 +215,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                 <option value="ERASURE">{REQUEST_TYPE_LABELS.ERASURE.label}</option>
                 <option value="EXPORT">{REQUEST_TYPE_LABELS.EXPORT.label}</option>
               </select>
-              <p className="text-xs text-text-muted mt-1">
+              <p className="text-xs text-text-secondary mt-1">
                 {REQUEST_TYPE_LABELS[selectedType].desc}
               </p>
             </div>
@@ -285,7 +285,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-text-muted">
+                  <td colSpan={6} className="py-12 text-center text-text-secondary">
                     <div className="inline-flex items-center gap-2">
                       <svg className="animate-spin w-5 h-5 text-brand-primary" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -297,7 +297,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-text-muted">
+                  <td colSpan={6} className="py-12 text-center text-text-secondary">
                     <p className="font-semibold text-text-secondary">Bạn chưa gửi yêu cầu dữ liệu cá nhân nào</p>
                     <p className="text-xs mt-1">Các yêu cầu tiếp cận, chỉnh sửa, xóa hoặc xuất dữ liệu sẽ hiển thị tại đây.</p>
                   </td>
@@ -325,7 +325,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                       <td className="py-3 px-4 max-w-xs truncate text-text-secondary text-xs" title={item.details}>
                         {item.details}
                       </td>
-                      <td className="py-3 px-4 text-xs text-text-muted whitespace-nowrap">
+                      <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
                         {formatDate(item.submittedAt)}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -336,13 +336,13 @@ export const EmployeeDataRequestsView: React.FC = () => {
                           <div className="space-y-0.5">
                             <p className="text-text-primary font-medium">{item.adminNote}</p>
                             {item.handledAt && (
-                              <p className="text-[11px] text-text-muted">
+                              <p className="text-[11px] text-text-secondary">
                                 Xử lý ngày: {formatDate(item.handledAt)} {item.handledBy ? `bởi ${item.handledBy}` : ''}
                               </p>
                             )}
                           </div>
                         ) : (
-                          <span className="text-text-muted italic">Chưa có phản hồi</span>
+                          <span className="text-text-secondary italic">Chưa có phản hồi</span>
                         )}
                       </td>
                     </tr>
