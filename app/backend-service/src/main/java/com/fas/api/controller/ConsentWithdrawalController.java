@@ -1,6 +1,7 @@
 package com.fas.api.controller;
 
 import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.response.ConsentWithdrawalResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
@@ -92,10 +93,10 @@ public class ConsentWithdrawalController {
     @GetMapping("/dpo/consent-withdrawals")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasAnyRole('DPO', 'ADMIN')")
-    public ApiResponse<Page<ConsentWithdrawalResponse>> getAllWithdrawals(
+    public ApiResponse<PageResponse<ConsentWithdrawalResponse>> getAllWithdrawals(
             @PageableDefault(size = 20) Pageable pageable) {
         Page<ConsentWithdrawalResponse> withdrawals = consentWithdrawalService.getAllWithdrawals(pageable);
-        return ApiResponse.ok("CONSENT_WITHDRAWALS_FETCHED", "Tra cứu danh sách rút cam kết thành công", withdrawals);
+        return ApiResponse.ok("CONSENT_WITHDRAWALS_FETCHED", "Tra cứu danh sách rút cam kết thành công", PageResponse.from(withdrawals));
     }
 
     private String resolveClientIp(HttpServletRequest request) {

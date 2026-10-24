@@ -1,6 +1,7 @@
 package com.fas.api.controller;
 
 import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.response.NotificationResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
@@ -58,12 +59,12 @@ public class NotificationController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<Page<NotificationResponse>> getMyNotifications(
+    public ApiResponse<PageResponse<NotificationResponse>> getMyNotifications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Principal principal) {
         Long userId = resolveUserId(principal);
         Page<NotificationResponse> notifications = notificationService.getUserNotifications(userId, pageable);
-        return ApiResponse.ok("NOTIFICATIONS_FETCHED", "Lấy danh sách thông báo thành công", notifications);
+        return ApiResponse.ok("NOTIFICATIONS_FETCHED", "Lấy danh sách thông báo thành công", PageResponse.from(notifications));
     }
 
     /**

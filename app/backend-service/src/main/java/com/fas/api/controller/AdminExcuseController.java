@@ -1,6 +1,7 @@
 package com.fas.api.controller;
 
 import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.ApproveExcuseRequest;
 import com.fas.api.dto.request.DecideExcuseRequest;
 import com.fas.api.dto.request.RejectExcuseRequest;
@@ -51,12 +52,12 @@ public class AdminExcuseController {
      */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<Page<ExcuseRequestResponse>> getExcuseRequests(
+    public ApiResponse<PageResponse<ExcuseRequestResponse>> getExcuseRequests(
             @RequestParam(name = "status", required = false) ExcuseRequestStatus status,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<ExcuseRequestResponse> page = excuseRequestService.getExcuseRequests(status, pageable);
-        return ApiResponse.ok("EXCUSE_REQUEST_LIST_FETCHED", "Lấy danh sách đơn giải trình thành công", page);
+        return ApiResponse.ok("EXCUSE_REQUEST_LIST_FETCHED", "Lấy danh sách đơn giải trình thành công", PageResponse.from(page));
     }
 
     /**
