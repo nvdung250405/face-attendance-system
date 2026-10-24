@@ -1,6 +1,7 @@
 package com.fas.api.controller;
 
 import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.UnlockPeriodRequest;
 import com.fas.api.dto.response.PayrollPeriodResponse;
 import com.fas.api.error.ApiErrorCode;
@@ -57,11 +58,11 @@ public class PayrollPeriodController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
-    public ApiResponse<Page<PayrollPeriodResponse>> getPayrollPeriods(
+    public ApiResponse<PageResponse<PayrollPeriodResponse>> getPayrollPeriods(
             @RequestParam(name = "year", required = false) Integer year,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<PayrollPeriodResponse> periods = payrollPeriodService.getPayrollPeriods(year, pageable);
-        return ApiResponse.ok("PAYROLL_PERIODS_FETCHED", "Tra cứu danh sách kỳ công thành công", periods);
+        return ApiResponse.ok("PAYROLL_PERIODS_FETCHED", "Tra cứu danh sách kỳ công thành công", PageResponse.from(periods));
     }
 
     /**

@@ -262,6 +262,37 @@ Trạm Kiosk vận hành theo máy trạng thái hữu hạn với 6 trạng th�
 
 ---
 
+
+---
+
+---
+
+## 3. Giao diện Tiêu thụ & Kiến trúc Mạng Máy trạm (Consumed Interfaces & Network Architecture)
+
+Phân hệ Kiosk đóng vai trò máy trạm biên (Edge Client) tiêu thụ các dịch vụ REST API và WebSocket STOMP do Backend Service cung cấp.
+
+### 3.1. Danh mục Giao diện Tiêu thụ (`API-KSK-`)
+
+| ID | Giao thức | Phương thức / Topic | Endpoint / Destination | Mô tả Tóm tắt | Nguồn Tham chiếu Upstream | Trạng thái |
+| :--- | :---: | :---: | :--- | :--- | :---: | :---: |
+| `API-KSK-001` | REST | `POST` | `/api/v1/kiosk/punch` | Gửi giao dịch điểm danh nhận diện khuôn mặt trực tuyến | `API-BE-003`, `FR-SYS-004` | Approved |
+| `API-KSK-002` | REST | `POST` | `/api/v1/kiosk/sync-batch` | Đồng bộ gói lô bản ghi ngoại tuyến (tối đa 50 bản ghi/mẻ) | `API-BE-004`, `FR-SYS-005` | Approved |
+| `API-KSK-003` | REST | `GET` | `/api/v1/kiosk/gallery` | Nạp toàn bộ danh mục vector đặc trưng khuôn mặt lúc khởi động | `API-BE-005`, `FR-SYS-002` | Approved |
+| `API-KSK-004` | REST | `POST` | `/api/v1/kiosk/verify-otp` | Xác thực mã OTP 6 số kích hoạt quy trình tự đăng ký khuôn mặt | `API-BE-006`, `FR-SYS-008` | Approved |
+| `API-KSK-005` | REST | `POST` | `/api/v1/kiosk/enroll-face` | Gửi vector 512D khuôn mặt mới sau khi tự nạp mẫu tại Kiosk | `API-BE-007`, `FR-SYS-008` | Approved |
+| `API-KSK-006` | STOMP | `SUBSCRIBE` | `/topic/kiosk-gallery` | Kênh WebSocket lắng nghe nạp nóng/gỡ bỏ vector từ Backend | `API-BE-012`, `FR-SYS-002` | Approved |
+| `API-KSK-007` | REST | `POST` | `/api/v1/kiosk/verify-pin` | Xác thực mã PIN dự phòng trực tuyến khi khuôn mặt thất bại | `API-BE-022`, `FR-SYS-017` | Approved |
+| `API-KSK-008` | REST | `GET` | `/api/v1/kiosk/health` | Kiểm tra sẵn sàng của máy chủ trung tâm trước khi khởi động | `API-BE-045`, `NFR-SYS-008` | Approved |
+
+### 3.2. Danh mục Thành phần Thiết kế Giao tiếp Mạng (`APD-KSK-`)
+
+| ID | Name | Definition | Uses | Realizes | Decisions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+| `APD-KSK-001` | `KioskHttpClient` REST Client Wrapper | Thực hiện các lệnh gọi REST API đồng bộ/bất đồng bộ với timeout 3.0s; tự động tiêm Header xác thực (`X-Kiosk-Id`, Bearer Token); ánh xạ mã lỗi HTTP sang domain exceptions. | `STK-007` | `API-KSK-001`, `API-KSK-002`, `API-KSK-003`, `API-KSK-004`, `API-KSK-005`, `API-KSK-007`, `API-KSK-008` | `DD-SYS-001` | Accepted |
+| `APD-KSK-002` | `KioskStompWorker` Real-time Receiver | Luồng nền `QThread` duy trì kết nối WebSocket STOMP tới Backend qua `stomp.py`, lắng nghe `/topic/kiosk-gallery`; tự động kết nối lại và phát tín hiệu nạp nóng vector. | `STK-008`, `STK-003` | `API-KSK-006` | `DD-SYS-001` | Accepted |
+| `APD-KSK-003` | `OfflineSyncWorker` Batch Uploader | Luồng nền `QThread` quét hàng đợi SQLite `offline_punches` mỗi 10s, gom tối đa 50 bản ghi gửi `sync-batch` và cập nhật trạng thái đã gửi thành công. | `STK-005`, `STK-003` | `API-KSK-002` | `DD-SYS-005` | Accepted |
+| `APD-KSK-004` | REST API Field-by-Field Contracts & Error Mapping | Quy chuẩn định dạng JSON, validation tham số và ánh xạ mã lỗi HTTP ProblemDetails cho toàn bộ các endpoint của trạm Kiosk. | `STK-007` | `API-KSK-001`, `API-KSK-007` | `DD-SYS-001` | Accepted |
+
 ## 4. Decisions (Quyết định Thiết kế Cấp Phân hệ Kiosk)
 
 | ID | Decision | Rationale | Alternatives | Consequences | Basis | Status |

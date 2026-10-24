@@ -1,6 +1,7 @@
 package com.fas.api.controller;
 
 import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.CreateDataSubjectRequest;
 import com.fas.api.dto.request.UpdateDataSubjectRequest;
 import com.fas.api.dto.response.DataSubjectRequestResponse;
@@ -82,12 +83,12 @@ public class DataSubjectRequestController {
     @GetMapping("/employee/data-requests")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<Page<DataSubjectRequestResponse>> getMyRequests(
+    public ApiResponse<PageResponse<DataSubjectRequestResponse>> getMyRequests(
             @PageableDefault(size = 20) Pageable pageable,
             Principal principal) {
         Long userId = resolveUserId(principal);
         Page<DataSubjectRequestResponse> requests = dataSubjectRequestService.getRequestsByUser(userId, pageable);
-        return ApiResponse.ok("DATA_REQUESTS_FETCHED", "Tra cứu yêu cầu dữ liệu cá nhân thành công", requests);
+        return ApiResponse.ok("DATA_REQUESTS_FETCHED", "Tra cứu yêu cầu dữ liệu cá nhân thành công", PageResponse.from(requests));
     }
 
     /**
@@ -119,11 +120,11 @@ public class DataSubjectRequestController {
     @GetMapping("/dpo/data-requests")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasAnyRole('DPO', 'ADMIN')")
-    public ApiResponse<Page<DataSubjectRequestResponse>> getDpoRequests(
+    public ApiResponse<PageResponse<DataSubjectRequestResponse>> getDpoRequests(
             @RequestParam(name = "status", required = false) DataSubjectRequestStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<DataSubjectRequestResponse> requests = dataSubjectRequestService.getAllRequests(status, pageable);
-        return ApiResponse.ok("DPO_REQUESTS_FETCHED", "Tra cứu danh sách yêu cầu DPO thành công", requests);
+        return ApiResponse.ok("DPO_REQUESTS_FETCHED", "Tra cứu danh sách yêu cầu DPO thành công", PageResponse.from(requests));
     }
 
     /**

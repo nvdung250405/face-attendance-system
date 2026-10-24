@@ -175,33 +175,139 @@ Các ID dưới đây được duy trì để giữ liên kết hai chiều vớ
 | `POST /kiosk/verify-pin` | `employeeCode`, `pin` | định danh nhân sự | `200` |
 | `GET /kiosk/health` | — | `status: "UP"`, `service` | `200` |
 
-### 2.4. REST Endpoint: Nghiệp vụ nhân sự và quản trị
+### 2.4. REST Endpoint: Nghiệp vụ nhân sự, Ca làm việc, Điểm danh, Kỳ công, Kiosk Admin
 
-| Resource | Contract quan trọng |
-|---|---|
-| Nhân sự | `POST /admin/employees` nhận mã, họ tên, email, phòng ban và vai trò. Mật khẩu tạm chỉ có trong response tạo/cấp lại; không được lưu phía client. |
-| Ca làm việc | Ca có `shiftCode`, `shiftName`, `startTime`, `endTime`, `gracePeriodMinutes`, `isActive`; giờ bắt đầu phải nhỏ hơn giờ kết thúc. |
-| Phân ca | `POST /admin/employee-shifts` nhận `userId`, `shiftId`, `effectiveFrom`, `effectiveTo`; `effectiveTo` có thể là `null` cho hiệu lực vô thời hạn. Khoảng hiệu lực cùng nhân sự không được chồng lấn. |
-| Điểm danh | Lọc qua query string; điều chỉnh nhận `punchTimestamp`, `status`, `lateMinutes`, `reason`. |
-| Đơn giải trình | Nhân viên gửi bản ghi điểm danh và lý do; HR/Admin quyết định `APPROVED` hoặc `REJECTED`. Từ chối yêu cầu `rejectionReason`. |
-| Kỳ công | `period` có dạng `YYYY-MM`; mở kỳ yêu cầu lý do và chỉ `ADMIN` được thực hiện. |
-| Kiosk quản trị | Secret đăng ký/luân chuyển chỉ hiển thị một lần trong response. |
+#### 2.4.1. Quản lý Nhân sự & Tài khoản (`/admin/employees`)
 
-### 2.5. REST Endpoint: Tuân thủ, thông báo và báo cáo
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `POST /admin/employees` | `HR_MANAGER`, `ADMIN` | Body: `employeeCode`, `fullName`, `email`, `department`, `role` (`ADMIN`, `HR_MANAGER`, `EMPLOYEE`, `DPO`) | `CreateEmployeeResponse`: `employeeId`, `employeeCode`, `fullName`, `email`, `role`, `status`, `department`, `temporaryPassword`, `createdAt` | `200` |
+| `GET /admin/employees` | `HR_MANAGER`, `ADMIN` | Query: `status`, `department`, `keyword`, `page`, `size`, `sort` | `PageResponse<EmployeeItem>`: `content`: `[id, employeeCode, fullName, email, department, role, status, hasBiometric, hasPin, createdAt]`, `page`, `size`, `totalElements`, `totalPages`, `last` | `200` |
+| `PATCH /admin/employees/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: `fullName`, `email`, `department`, `role` | `EmployeeItem`: `id`, `employeeCode`, `fullName`, `email`, `department`, `role`, `status`, `hasBiometric`, `hasPin`, `createdAt` | `200` |
+| `PATCH /admin/employees/{id}/status` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: `status` (`ACTIVE`, `SUSPENDED`, `TERMINATED`), `reason` | `EmployeeItem`: `id`, `employeeCode`, `fullName`, `email`, `department`, `role`, `status`, `hasBiometric`, `hasPin`, `createdAt` | `200` |
+| `POST /admin/employees/{id}/credentials/reset` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: empty | `ResetCredentialsResponse`: `employeeId`, `employeeCode`, `email`, `temporaryPassword` | `200` |
+| `PATCH /admin/users/{id}/role` | `ADMIN` | Path: `id`. Body: `role` (`EMPLOYEE`, `HR_MANAGER`, `ADMIN`, `DPO`) | `UserRoleResponse`: `userId`, `employeeCode`, `fullName`, `email`, `role` | `200` |
 
-| Resource | Contract quan trọng |
-|---|---|
-| Consent | Nhân viên ký hoặc rút consent; DPO chỉ đọc consent, lịch retention và consent withdrawal. |
-| Yêu cầu dữ liệu | Nhân viên tạo/xem yêu cầu của mình; DPO xem danh sách và cập nhật trạng thái. |
-| Thông báo | `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/{id}/read`, `POST /notifications/read-all`. |
-| Báo cáo | Kết xuất XLSX áp dụng lọc điểm danh và triệt tiêu công thức Excel bắt đầu bằng `=`, `+`, `-`, `@`. |
+#### 2.4.2. Ca làm việc & Phân ca (`/admin/shifts`, `/admin/employee-shifts`, `/employee/shifts`)
 
-### 2.6. Hợp đồng Sự kiện Bất đồng bộ (STOMP)
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `POST /admin/shifts` | `HR_MANAGER`, `ADMIN` | Body: `shiftCode`, `shiftName`, `startTime` (`HH:mm:ss`), `endTime` (`HH:mm:ss`), `gracePeriodMinutes` | `ShiftResponse`: `id`, `shiftCode`, `shiftName`, `startTime`, `endTime`, `gracePeriodMinutes`, `isActive` | `200` |
+| `GET /admin/shifts` | `HR_MANAGER`, `ADMIN` | Query: `activeOnly` (boolean, optional) | `List<ShiftResponse>`: danh sách các ca làm việc | `200` |
+| `GET /admin/shifts/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id` | `ShiftResponse`: thông tin chi tiết ca | `200` |
+| `PATCH /admin/shifts/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: `shiftName`, `startTime`, `endTime`, `gracePeriodMinutes`, `isActive` | `ShiftResponse`: thông tin ca sau khi cập nhật | `200` |
+| `POST /admin/shifts/{id}/activate` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: empty | `ShiftResponse`: `isActive = true` | `200` |
+| `POST /admin/shifts/{id}/deactivate` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: empty | `ShiftResponse`: `isActive = false` | `200` |
+| `POST /admin/employee-shifts` | `HR_MANAGER`, `ADMIN` | Body: `userId`, `shiftId`, `effectiveFrom` (`YYYY-MM-DD`), `effectiveTo` (`YYYY-MM-DD` hoặc `null`) | `EmployeeShiftResponse`: `id`, `userId`, `employeeCode`, `fullName`, `shiftId`, `shiftCode`, `shiftName`, `effectiveFrom`, `effectiveTo` | `200` |
+| `GET /admin/employee-shifts` | `HR_MANAGER`, `ADMIN` | Query: `userId`, `shiftId`, `effectiveDate`, `page`, `size` | `PageResponse<EmployeeShiftResponse>`: danh sách phân ca theo bộ lọc | `200` |
+| `DELETE /admin/employee-shifts/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id` | `null` (`ApiResponse<Void>`) | `200` |
+| `GET /employee/shifts/my` | `EMPLOYEE` | Query: `from` (`YYYY-MM-DD`), `to` (`YYYY-MM-DD`) | `List<EmployeeShiftResponse>`: lịch phân ca của cá nhân | `200` |
 
-* Client kết nối qua `/ws` hoặc `/ws-attendance`; Web Portal có thể dùng SockJS.
-* Backend cung cấp broker cho `/topic/*` và `/queue/*`; client gửi message ứng dụng qua `/app/*`.
-* Các luồng nghiệp vụ dùng topic `/topic/live-attendance`, `/topic/kiosk-gallery` và topic trạng thái enrollment theo phiên.
-* Payload event là JSON nghiệp vụ. Backend không cung cấp Pub/Sub message broker hoặc CloudEvents độc lập ngoài STOMP.
+#### 2.4.3. Điểm danh & Thống kê (`/admin/attendance`, `/employee/attendance`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `GET /admin/attendance` | `HR_MANAGER`, `ADMIN` | Query: `fromDate`, `toDate`, `department`, `status`, `keyword`, `page`, `size`, `sort` | `PageResponse<AttendanceLogItem>`: `content`: `[recordId, employeeId, employeeCode, fullName, department, punchTimestamp, punchType, verificationMethod, status, lateMinutes, kioskId]`, metadata phân trang | `200` |
+| `GET /admin/attendance/stats` | `HR_MANAGER`, `ADMIN` | Query: `date` (`YYYY-MM-DD`, mặc định hiện tại) | `AttendanceStatsResponse`: `totalEmployees`, `presentCount`, `onTimeCount`, `lateCount`, `absentCount` | `200` |
+| `PATCH /admin/attendance/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: `punchTimestamp`, `status` (`PRESENT`, `LATE`), `lateMinutes`, `reason` | `AttendanceLogItem`: bản ghi điểm danh sau khi điều chỉnh | `200` |
+| `GET /employee/attendance` | `EMPLOYEE` | Query: `month` (1-12), `year` (`YYYY`) | `PersonalAttendanceResponse`: `month`, `year`, `totalWorkDays`, `totalOnTimeDays`, `totalLateDays`, `records`: `[date, checkInTime, checkOutTime, status, lateMinutes, checkInLogId, checkOutLogId]` | `200` |
+| `GET /employee/attendance/logs` | `EMPLOYEE` | Query: `year`, `month`, `page`, `size` | `PageResponse<AttendanceLogItem>`: lịch sử quẹt thẻ cá nhân | `200` |
+
+#### 2.4.4. Quản trị Kỳ công (`/admin/payroll-periods`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `GET /admin/payroll-periods` | `HR_MANAGER`, `ADMIN` | Query: `year` (optional), `page`, `size` | `PageResponse<PayrollPeriodResponse>`: `[id, periodYear, periodMonth, status, lockedById, lockedByName, lockedAt, unlockedById, unlockedByName, unlockedAt, unlockReason, createdAt, updatedAt]` | `200` |
+| `GET /admin/payroll-periods/{period}` | `HR_MANAGER`, `ADMIN` | Path: `period` (`YYYY-MM`) | `PayrollPeriodResponse`: thông tin trạng thái kỳ công | `200` |
+| `POST /admin/payroll-periods/{period}/lock` | `HR_MANAGER`, `ADMIN` | Path: `period` (`YYYY-MM`). Body: empty | `PayrollPeriodResponse`: `status = LOCKED`, `lockedAt`, `lockedByName` | `200` |
+| `POST /admin/payroll-periods/{period}/unlock` | `ADMIN` duy nhất | Path: `period` (`YYYY-MM`). Body: `reason` (bắt buộc) | `PayrollPeriodResponse`: `status = OPEN`, `unlockedAt`, `unlockReason` | `200` |
+
+#### 2.4.5. Quản trị Kiosk Edge (`/admin/kiosks`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `POST /admin/kiosks` | `ADMIN` | Body: `id` (mã kiosk), `locationName` | `RegisterKioskResponse`: `id`, `locationName`, `secretToken` (chỉ hiển thị một lần duy nhất), `createdAt` | `200` |
+| `GET /admin/kiosks` | `ADMIN` | Query: `page`, `size` | `PageResponse<KioskItemResponse>`: `[id, locationName, isActive, lastPingAt, createdAt, isOnline]`, metadata phân trang | `200` |
+| `GET /admin/kiosks/{id}` | `ADMIN` | Path: `id` | `KioskItemResponse`: `id`, `locationName`, `isActive`, `lastPingAt`, `createdAt`, `isOnline` | `200` |
+| `PATCH /admin/kiosks/{id}` | `ADMIN` | Path: `id`. Body: `locationName`, `isActive` | `KioskItemResponse`: thông tin kiosk cập nhật | `200` |
+| `POST /admin/kiosks/{id}/rotate-secret` | `ADMIN` | Path: `id`. Body: empty | `RotateKioskTokenResponse`: `id`, `newSecretToken` (chỉ hiển thị một lần duy nhất), `rotatedAt` | `200` |
+| `GET /admin/kiosks/{id}/health` | `ADMIN` | Path: `id` | `KioskHealthResponse`: `id`, `locationName`, `isActive`, `lastPingAt`, `isHealthy`, `warningMessage` | `200` |
+
+#### 2.4.6. Mã PIN Nhân sự (`/employee/pin`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `GET /employee/pin` | `EMPLOYEE` | Bearer token | `PinOperationResult`: `hasPin` (boolean), `message` | `200` |
+| `POST /employee/pin/setup` | `EMPLOYEE` | Body: `pin` (6 chữ số), `confirmPin` | `PinOperationResult`: `hasPin = true`, `message` | `200` |
+| `POST /employee/pin/change` | `EMPLOYEE` | Body: `currentPin`, `newPin`, `confirmPin` | `PinOperationResult`: `hasPin = true`, `message` | `200` |
+| `POST /employee/pin/reset` | `EMPLOYEE` | Body: `currentPassword`, `newPin`, `confirmPin` | `PinOperationResult`: `hasPin = true`, `message` | `200` |
+
+### 2.5. REST Endpoint: Tuân thủ DPO, Yêu cầu Dữ liệu Cá nhân, Giải trình Công, Thông báo, Xuất báo cáo
+
+#### 2.5.1. Đơn giải trình công (`/employee/excuse-requests`, `/admin/excuse-requests`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `POST /employee/excuse-requests` | `EMPLOYEE` | Body: `attendanceLogId` (Long), `reason` (String), `requestedPunchTimestamp` (Instant, optional) | `ExcuseRequestResponse`: `id`, `userId`, `employeeCode`, `fullName`, `attendanceLogId`, `originalPunchTimestamp`, `requestedPunchTimestamp`, `reason`, `status` (`PENDING`), `decidedById`, `decidedByName`, `decidedAt`, `rejectionReason`, `createdAt`, `updatedAt` | `200` |
+| `GET /employee/excuse-requests` | `EMPLOYEE` | Query: `page`, `size` | `PageResponse<ExcuseRequestResponse>`: danh sách đơn giải trình của cá nhân | `200` |
+| `GET /admin/excuse-requests` | `HR_MANAGER`, `ADMIN` | Query: `status` (`PENDING`, `APPROVED`, `REJECTED`, optional), `page`, `size` | `PageResponse<ExcuseRequestResponse>`: danh sách đơn giải trình toàn hệ thống | `200` |
+| `GET /admin/excuse-requests/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id` | `ExcuseRequestResponse`: chi tiết đơn giải trình | `200` |
+| `PATCH /admin/excuse-requests/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: `status` (`APPROVED` hoặc `REJECTED`), `reviewNote` (optional), `rejectionReason` (bắt buộc khi `REJECTED`) | `ExcuseRequestResponse`: đơn sau khi quyết định | `200` |
+| `POST /admin/excuse-requests/{id}/approve` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: `reviewNote` (optional) | `ExcuseRequestResponse`: `status = APPROVED`, `decidedByName`, `decidedAt` | `200` |
+| `POST /admin/excuse-requests/{id}/reject` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: `rejectionReason` (bắt buộc) | `ExcuseRequestResponse`: `status = REJECTED`, `rejectionReason`, `decidedAt` | `200` |
+
+#### 2.5.2. Informed Consent & Tuân thủ DPO (`/employee/consent`, `/dpo`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `POST /employee/consent` | `EMPLOYEE` | Body: `agreed` (boolean, required `true`), `consentVersion` (String, required) | `ConsentResult`: `otp` (6 số dùng kích hoạt tại Kiosk), `qrCodeDataUrl` (ảnh base64 QR), `expiresAt`, `consentSignedAt`, `notice` | `200` |
+| `POST /employee/consent/withdraw` | `EMPLOYEE` | Body: empty | `ConsentWithdrawalResponse`: `id`, `userId`, `employeeCode`, `withdrawnAt`, `clientIp`, `biometricDisposalDueAt` (hạn hủy dữ liệu trong 72h), `processedAt`, `createdAt` | `200` |
+| `GET /employee/consent/withdrawal` | `EMPLOYEE` | Bearer token | `ConsentWithdrawalResponse`: thông tin rút consent gần nhất của cá nhân | `200` |
+| `GET /dpo/consents` | `DPO` | Query: `page`, `size` | `PageResponse<ConsentRecordItem>`: `[sessionId, userId, employeeCode, fullName, email, consentVersion, consentSignedAt, clientIp, isUsed]` | `200` |
+| `GET /dpo/retention-schedule` | `DPO` | Query: `page`, `size` | `PageResponse<RetentionScheduleItem>`: `[sourceId, employeeCode, fullName, email, triggerDate, scheduledDisposalDate, isDisposed, processedAt, retentionType]` | `200` |
+| `GET /dpo/consent-withdrawals` | `DPO` | Query: `page`, `size` | `PageResponse<ConsentWithdrawalResponse>`: danh sách yêu cầu rút đồng thuận | `200` |
+
+#### 2.5.3. Quyền của Chủ thể Dữ liệu DPO (`/employee/data-requests`, `/dpo/data-requests`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `POST /employee/data-requests` | `EMPLOYEE` | Body: `requestType` (`ACCESS`, `RECTIFICATION`, `ERASURE`, `RESTRICTION`, `PORTABILITY`, `OBJECTION`), `detail` (String) | `DataSubjectRequestResponse`: `id`, `userId`, `employeeCode`, `fullName`, `requestType`, `detail`, `status` (`PENDING`), `handledById`, `handledByName`, `response`, `respondedAt`, `createdAt`, `updatedAt` | `200` |
+| `GET /employee/data-requests` | `EMPLOYEE` | Query: `page`, `size` | `PageResponse<DataSubjectRequestResponse>`: danh sách yêu cầu cá nhân | `200` |
+| `GET /employee/data-requests/{id}` | `EMPLOYEE` | Path: `id` | `DataSubjectRequestResponse`: chi tiết yêu cầu cá nhân | `200` |
+| `GET /dpo/data-requests` | `DPO` | Query: `status` (optional), `page`, `size` | `PageResponse<DataSubjectRequestResponse>`: toàn bộ yêu cầu chủ thể dữ liệu | `200` |
+| `GET /dpo/data-requests/{id}` | `DPO` | Path: `id` | `DataSubjectRequestResponse`: chi tiết yêu cầu DPO xem | `200` |
+| `PATCH /dpo/data-requests/{id}` | `DPO` | Path: `id`. Body: `status` (`IN_PROGRESS`, `COMPLETED`, `REJECTED`), `response` (String) | `DataSubjectRequestResponse`: yêu cầu sau khi DPO phản hồi | `200` |
+
+#### 2.5.4. Thông báo Nội bộ (`/notifications`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `GET /notifications` | Authenticated | Query: `page`, `size`, `sort` (default `createdAt,desc`) | `PageResponse<NotificationResponse>`: `[id, userId, eventType, title, body, referenceType, referenceId, readAt, createdAt]` | `200` |
+| `GET /notifications/unread-count` | Authenticated | Bearer token | `Map<String, Long>`: `{"unreadCount": count}` | `200` |
+| `PATCH /notifications/{id}/read` | Authenticated | Path: `id` | `NotificationResponse`: bản ghi thông báo sau khi đánh dấu đã đọc (`readAt != null`) | `200` |
+| `POST /notifications/read-all` | Authenticated | Body: empty | `null` (`ApiResponse<Void>`) | `200` |
+
+#### 2.5.5. Nhật ký Kiểm toán & Báo cáo (`/admin/audit-logs`, `/admin/reports`)
+
+| Method & Path | Phân quyền | Query / Path / Body | Response `data` (Field-by-field) | HTTP |
+|---|---|---|---|---|
+| `GET /admin/audit-logs` | `ADMIN` | Query: `from`, `to`, `actorId`, `action`, `entityType`, `page`, `size` | `PageResponse<AuditLogItemResponse>`: `[id, actorId, actorEmail, action, entityType, entityId, beforeState, afterState, ipAddress, createdAt]` | `200` |
+| `GET /admin/reports/export` | `HR_MANAGER`, `ADMIN` | Query: `fromDate`, `toDate`, `department`, `status`, `keyword` | Binary XLSX file (MIME: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`). Header: `Content-Disposition: attachment; filename="attendance_report_*.xlsx"` | `200` |
+
+### 2.6. Hợp đồng Sự kiện Bất đồng bộ (WebSocket STOMP Events)
+
+Hệ thống sử dụng WebSocket giao thức STOMP để truyền phát sự kiện thời gian thực 2 chiều:
+* **Connection Handshake:** Endpoint `/ws` và `/ws-attendance` (hỗ trợ SockJS fallback cho trình duyệt).
+* **Destination Prefix:** Application prefix `/app`; Simple Broker prefixes: `/topic` (broadcast), `/queue` (user/kiosk specific).
+* **Bảo mật:** Client gửi `Authorization: Bearer <JWT>` (Web Portal) hoặc `X-Kiosk-Id` & `X-Kiosk-Secret` (Kiosk) trong STOMP `CONNECT` frame headers.
+
+#### 2.6.1. Chi tiết Event Topics
+
+| Topic | Producer & Mục đích | Consumer | Cấu trúc Payload Event (Field-by-field) |
+|---|---|---|---|
+| `/topic/live-attendance` | `StompEventBroadcaster`: Phát sự kiện điểm danh tức thì khi có lượt quẹt thẻ thành công (Check-in/Check-out). | Web Portal Live Attendance Dashboard | `AttendancePunchEvent`:<br>- `eventType`: `"ATTENDANCE_PUNCH"`<br>- `recordId`: Long<br>- `employeeId`: Long<br>- `employeeCode`: String<br>- `fullName`: String<br>- `department`: String<br>- `punchTimestamp`: OffsetDateTime (`YYYY-MM-DDTHH:mm:ss+07:00`)<br>- `punchType`: Enum `PunchType` (`CHECK_IN`, `CHECK_OUT`)<br>- `verificationMethod`: Enum `VerificationMethod` (`FACE`, `PIN`, `OFFLINE_SYNC`)<br>- `status`: Enum `AttendanceStatus` (`PRESENT`, `LATE`)<br>- `lateMinutes`: int (số phút muộn)<br>- `kioskId`: String |
+| `/topic/kiosk-gallery` | `StompEventBroadcaster`: Phát thông báo cập nhật gallery sinh trắc khi khuôn mặt được ghi danh mới hoặc bị thu hồi/xóa. | Edge Kiosks đang trực tuyến | `GalleryUpdateEvent`:<br>- `action`: String (`"UPSERT"` hoặc `"DELETE"`)<br>- `employeeId`: Long<br>- `employeeCode`: String<br>- `fullName`: String<br>- `vector512`: `List<Float>` (512 chiều face embedding khi `UPSERT`, `null` khi `DELETE`)<br>- `reason`: String<br>- `updatedAt`: OffsetDateTime |
+| `/topic/enrollment/{otp}` | `StompEventBroadcaster`: Thông báo cho Web Portal khi nhân viên hoàn tất chụp khuôn mặt thành công tại Kiosk theo phiên OTP. | Web Portal (modal chờ kích hoạt sinh trắc) | `EnrollmentSuccessEvent`:<br>- `otp`: String (mã OTP phiên ghi danh)<br>- `employeeId`: Long<br>- `employeeCode`: String<br>- `fullName`: String<br>- `activatedAt`: OffsetDateTime<br>- `message`: String |
 
 ---
 
@@ -248,11 +354,44 @@ Mọi lỗi nghiệp vụ trả Problem Details với mã `code`; validation có
 * **RBAC:** `ADMIN`, `HR_MANAGER`, `EMPLOYEE`, `DPO` được kiểm tra theo endpoint; backend là nguồn áp đặt quyền cuối cùng.
 * **WebSocket:** Client gửi credential trong STOMP CONNECT headers; destination được kiểm soát theo thông tin xác thực đó.
 
-### 4.2. Cơ chế Chống Trùng lặp Giao dịch (Idempotency)
+### 4.2. Cơ chế Chống Trùng lặp Giao dịch & Kế hoạch Mở rộng Idempotency (Roadmap)
 
-* Hợp đồng hiện **không yêu cầu hoặc xử lý** header `Idempotency-Key` chung.
-* Đồng bộ offline Kiosk là ngoại lệ nghiệp vụ: record mang `localId`; server chống trùng khi đồng bộ lô.
-* Client không tự retry POST/PATCH sau timeout nếu chưa xác định kết quả thao tác trước đó.
+#### 4.2.1. Hiện trạng triển khai (Current Baseline)
+* **Quy ước hiện tại:** Hệ thống chưa bắt buộc header `Idempotency-Key` trên toàn bộ các endpoint REST.
+* **Cơ chế chống trùng nghiệp vụ sẵn có:**
+  * Đồng bộ ngoại tuyến Kiosk (`POST /api/v1/kiosk/sync-batch`): Phía Kiosk gửi kèm `localQueueId`; Backend áp dụng kiểm tra khóa duy nhất `(kiosk_id, local_queue_id)` để đảm bảo bản ghi không bị nhân bản khi retry mạng.
+  * Điểm danh trực tiếp (`POST /api/v1/kiosk/punch`): Kiểm tra thời gian cooldown giữa các lần quẹt liên tiếp (`COOLDOWN_ACTIVE`).
+  * Chuyển đổi trạng thái đơn và kỳ công: Được kiểm soát trạng thái tuần tự; request trùng trả về HTTP `409 Conflict` (`EXCUSE_ALREADY_PROCESSED`, `PERIOD_LOCKED`).
+
+#### 4.2.2. Kế hoạch Mở rộng Header `Idempotency-Key` (Target Architecture)
+Nhằm phòng ngừa triệt để hiện tượng Retry Storm và nhân đôi giao dịch khi mạng chập chờn, Backend Service thiết lập đặc tả chuẩn hóa `Idempotency-Key` mở rộng theo chuẩn quốc tế:
+
+1. **Quy chuẩn Header & Phạm vi Áp dụng:**
+   * Header: `Idempotency-Key: <string>` (khuyến nghị định dạng UUID v4 do Client sinh cho mỗi ý định giao dịch duy nhất).
+   * Các endpoint trọng yếu áp dụng:
+     * `POST /api/v1/kiosk/punch`: Điểm danh trực tiếp tại Kiosk.
+     * `POST /api/v1/admin/payroll-periods/{period}/lock`: Chốt kỳ công nhân sự.
+     * `POST /api/v1/employee/excuse-requests`: Nộp đơn giải trình công.
+     * `POST /api/v1/admin/employees`: Khởi tạo hồ sơ nhân viên mới.
+2. **Nguyên lý Xử lý Nguyên tử (Atomic Claim):**
+   * Sử dụng bảng lưu trữ chuyên trách `idempotency_records` với khóa chính duy nhất `(idempotency_key, resource_path)`.
+   * Thao tác claim chìa khóa được thực hiện bằng một lệnh duy nhất (`INSERT ... ON CONFLICT DO NOTHING`), triệt tiêu race condition (TOCTOU).
+   * Vòng đời trạng thái khóa:
+     * `IN_PROGRESS`: Yêu cầu đang được xử lý trong transaction hiện tại.
+     * `SUCCEEDED`: Giao dịch hoàn tất thành công; lưu trữ mã trạng thái HTTP và nội dung response JSON đã trả về.
+     * `FAILED`: Giao dịch thất bại do lỗi hệ thống nội bộ; cho phép client retry lại sau khi khắc phục.
+3. **Bảo vệ Tính toàn vẹn Dữ liệu (Payload Guard):**
+   * Server tính toán `request_hash = SHA-256(request_body)`.
+   * Nếu client tái sử dụng cùng một `Idempotency-Key` nhưng gửi kèm nội dung body khác với lần đầu: Server lập tức từ chối và trả về HTTP `422 Unprocessable Entity` với mã lỗi `IDEMPOTENCY_KEY_PAYLOAD_MISMATCH`.
+4. **Ứng xử với Yêu cầu Trùng lặp Đang thực thi (In-flight Duplicate Policy):**
+   * Khi nhận request mang `Idempotency-Key` đang có trạng thái `IN_PROGRESS`: Server trả về ngay lập tức HTTP `409 Conflict` kèm mã `TRANSACTION_IN_PROGRESS`, yêu cầu client chờ đợi hoặc truy vấn lại kết quả.
+5. **Thời gian Lưu giữ (TTL Retention Window):**
+   * Bản ghi idempotency được lưu giữ tối thiểu 48 giờ (vượt qua toàn bộ chuỗi retry và hàng đợi timeout tối đa của client). Job dọn dẹp nền định kỳ thu hồi các bản ghi đã hết hạn.
+
+#### 4.2.3. Lộ trình Triển khai Kỹ thuật (Implementation Roadmap)
+* **Giai đoạn 1 (Schema & Core Module):** Tạo migration Flyway bổ sung bảng `idempotency_records` và xây dựng module `IdempotencyService` độc lập.
+* **Giai đoạn 2 (Backend Interceptor/Aspect):** Cung cấp annotation `@Idempotent` tích hợp vào Spring AOP để tự động kiểm tra, lưu cache phản hồi cho các Controller trọng yếu.
+* **Giai đoạn 3 (Client Adoption):** Cập nhật `apiClient` trên Web Portal và Kiosk Service tự động sinh header `Idempotency-Key` trước khi gửi các request thay đổi trạng thái (POST/PATCH).
 
 ### 4.3. Giới hạn Tần suất (Rate Limiting) & Timeout
 
