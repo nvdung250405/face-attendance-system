@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, Sparkles, KeyRound } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal } from '@/components/consent'
+import { PinManagementModal } from '@/components/account'
 import { PersonalAttendanceCalendar } from '@/components/calendar'
 import { consentService } from '@/services/consentService'
 import { logoutService } from '@/services/logoutService'
@@ -20,6 +21,7 @@ export const EmployeeDashboardView: React.FC = () => {
     const session = consentService.getStoredConsentSession()
     return Boolean(session?.otp || user?.status === 'PENDING_CONSENT')
   })
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -159,6 +161,14 @@ export const EmployeeDashboardView: React.FC = () => {
             <p className="text-xs text-text-tertiary">
               Dùng để chấm công khi không thể nhận diện khuôn mặt
             </p>
+            <button
+              type="button"
+              onClick={() => setIsPinModalOpen(true)}
+              data-testid="open-pin-modal-btn"
+              className="text-xs text-brand-primary hover:underline font-medium inline-block pt-1 cursor-pointer"
+            >
+              {user?.hasPin ? 'Đổi mã PIN dự phòng' : 'Thiết lập mã PIN ngay'}
+            </button>
           </div>
         </div>
       </div>
@@ -173,6 +183,12 @@ export const EmployeeDashboardView: React.FC = () => {
         onSuccess={() => {
           // Callback sau khi kích hoạt thành công
         }}
+      />
+
+      {/* Modal Thiết lập / Đổi Mã PIN Dự phòng */}
+      <PinManagementModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
       />
     </div>
   )

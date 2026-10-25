@@ -23,9 +23,14 @@ export class CredentialService {
    */
   async changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse> {
     try {
+      const payload = {
+        currentPassword: data.currentPassword || data.oldPassword,
+        newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword || data.newPassword,
+      }
       const response = await apiClient.post<ApiResponse<ChangePasswordResponse>>(
         '/api/v1/auth/change-password',
-        data
+        payload
       )
       return (
         response.data.data || {
