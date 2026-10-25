@@ -185,7 +185,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
         >
           <thead>
             <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th className="py-3 px-4">Giờ Quẹt</th>
+              <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Giờ Quẹt</th>
               <th className="py-3 px-4">Mã NV</th>
               <th className="py-3 px-4">Họ và Tên</th>
               <th className="py-3 px-4">Phòng Ban</th>
@@ -194,7 +194,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
               <th className="py-3 px-4">Trạng Thái</th>
               <th className="py-3 px-4">Trạm Kiosk</th>
               {onEditRecord && (
-                <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] z-20">
                   Thao Tác
                 </th>
               )}
@@ -234,7 +234,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                   <tr
                     key={record.recordId}
                     data-testid={`attendance-row-${record.recordId}`}
-                    className={`transition-colors duration-500 ${
+                    className={`transition-colors duration-500 group ${
                       isHighlighted
                         ? "bg-emerald-50/90 ring-2 ring-emerald-400 ring-inset animate-pulse"
                         : "hover:bg-indigo-50/25"

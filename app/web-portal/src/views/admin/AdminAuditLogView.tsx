@@ -365,7 +365,7 @@ export const AdminAuditLogView: React.FC = () => {
               <table className="w-full text-left text-sm" data-testid="audit-logs-table">
                 <thead>
                   <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-4">Mã #</th>
+                    <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã #</th>
                     <th className="py-3 px-4">Thời Điểm</th>
                     <th className="py-3 px-4">Hành Động</th>
                     <th className="py-3 px-4">Người Thực Hiện</th>
@@ -397,7 +397,7 @@ export const AdminAuditLogView: React.FC = () => {
                         data-testid={`audit-row-${log.id}`}
                         className="hover:bg-slate-50/80 transition-colors"
                       >
-                        <td className="py-3 px-4 font-mono font-semibold text-xs text-text-secondary">
+                        <td className="py-3 px-4 font-mono font-semibold text-xs text-text-secondary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                           #{log.id}
                         </td>
                         <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
@@ -456,7 +456,7 @@ export const AdminAuditLogView: React.FC = () => {
             <table className="w-full text-left text-sm" data-testid="dpo-consents-table">
               <thead>
                 <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Mã NV</th>
+                  <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
                   <th className="py-3 px-4">Họ và Tên</th>
                   <th className="py-3 px-4">Phiên Bản Consent</th>
                   <th className="py-3 px-4">Thời Điểm Ký Điện Tử</th>
@@ -485,9 +485,9 @@ export const AdminAuditLogView: React.FC = () => {
                     <tr
                       key={item.id}
                       data-testid={`dpo-consent-row-${item.id}`}
-                      className="hover:bg-slate-50/80 transition-colors"
+                      className="hover:bg-slate-50/80 group transition-colors"
                     >
-                      <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary">
+                      <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                         {item.employeeCode}
                       </td>
                       <td className="py-3 px-4 font-semibold text-xs text-text-primary">
@@ -543,7 +543,7 @@ export const AdminAuditLogView: React.FC = () => {
               <table className="w-full text-left text-sm" data-testid="retention-schedule-table">
                 <thead>
                   <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-4">Mã NV</th>
+                    <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
                     <th className="py-3 px-4">Họ và Tên</th>
                     <th className="py-3 px-4">Thời Điểm Rút / Nghỉ Việc</th>
                     <th className="py-3 px-4">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
@@ -572,9 +572,9 @@ export const AdminAuditLogView: React.FC = () => {
                       <tr
                         key={item.id}
                         data-testid={`retention-row-${item.id}`}
-                        className="hover:bg-slate-50/80 transition-colors"
+                        className="hover:bg-slate-50/80 group transition-colors"
                       >
-                        <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary">
+                        <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                           {item.employeeCode}
                         </td>
                         <td className="py-3 px-4 font-semibold text-xs text-text-primary">

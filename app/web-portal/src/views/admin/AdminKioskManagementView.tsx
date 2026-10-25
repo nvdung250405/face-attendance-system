@@ -339,7 +339,7 @@ export const AdminKioskManagementView: React.FC = () => {
           <table className="w-full text-left text-sm" data-testid="kiosk-management-table">
             <thead>
               <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4">Mã Trạm</th>
+                <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã Trạm</th>
                 <th className="py-3 px-4">Tên Trạm Kiosk</th>
                 <th className="py-3 px-4">Vị Trí Lắp Đặt</th>
                 <th className="py-3 px-4">Địa Chỉ IP / Phiên Bản</th>
@@ -370,7 +370,7 @@ export const AdminKioskManagementView: React.FC = () => {
                         <Monitor size={24} />
                       </div>
                       <p className="font-semibold text-text-secondary">Chưa có trạm Kiosk nào được đăng ký</p>
-                      <p className="text-xs text-slate-400">Bấm &quot;Đăng ký Kiosk Mới&quot; để thiết lập trạm đầu tiên.</p>
+                      <p className="text-xs text-slate-600">Bấm &quot;Đăng ký Kiosk Mới&quot; để thiết lập trạm đầu tiên.</p>
                     </div>
                   </td>
                 </tr>
@@ -386,9 +386,9 @@ export const AdminKioskManagementView: React.FC = () => {
                     <tr
                       key={kiosk.kioskId}
                       data-testid={`kiosk-row-${kiosk.kioskId}`}
-                      className="hover:bg-slate-50/80 transition-colors"
+                      className="hover:bg-slate-50/80 group transition-colors"
                     >
-                      <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary">
+                      <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                         {kiosk.kioskId}
                       </td>
                       <td className="py-3 px-4 font-semibold text-text-primary text-xs">
@@ -397,7 +397,7 @@ export const AdminKioskManagementView: React.FC = () => {
                       <td className="py-3 px-4 text-xs text-text-secondary">
                         {kiosk.location}
                       </td>
-                      <td className="py-3 px-4 text-xs font-mono text-text-muted">
+                      <td className="py-3 px-4 text-xs font-mono text-slate-600">
                         <div>{kiosk.ipAddress || '—'}</div>
                         <div className="text-[11px] text-text-secondary">{kiosk.appVersion || '—'}</div>
                       </td>
@@ -425,7 +425,7 @@ export const AdminKioskManagementView: React.FC = () => {
                         </div>
                       </td>
                       {!isReadOnly && (
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <td className="py-3 px-4 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">
                           <Button
                             type="button"
                             variant="secondary"
