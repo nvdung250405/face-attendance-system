@@ -9,6 +9,7 @@ import { logoutService } from '../logoutService'
 import { notificationService } from '../notificationService'
 import { complianceAdminService } from '../complianceAdminService'
 import { reportExportService } from '../reportExportService'
+import { attendanceService } from '../attendanceService'
 import { safeLocalStorage, safeSessionStorage, STORAGE_KEYS } from '../storage'
 import { useAuthStore } from '@/store/authStore'
 
@@ -315,6 +316,22 @@ describe('Bộ Client Dịch vụ Vòng đời (TASK-WEB-023, BLD-WEB-022, APD-W
       expect(safeSessionStorage.getItem('secretToken')).toBeNull()
     })
 
+    it('updateKiosk resetSecretToken nhận đúng trường newSecretToken từ backend', async () => {
+      const mockRotateRes = {
+        id: 1,
+        kioskCode: 'KSK-01',
+        name: 'Trạm Cổng',
+        location: 'Tầng 1',
+        status: 'ONLINE',
+        newSecretToken: 'ksk_rotated_live_secret_token_777',
+      }
+      vi.spyOn(apiClient, 'post').mockResolvedValueOnce({ data: { success: true, data: mockRotateRes } })
+
+      const res = await complianceAdminService.updateKiosk(1, { resetSecretToken: true })
+      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/admin/kiosks/1/rotate-secret')
+      expect(res.secretToken).toBe('ksk_rotated_live_secret_token_777')
+    })
+
     it('getKioskHealth, getDpoConsents và getDpoRetentionSchedule hoạt động', async () => {
       vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
         data: { success: true, data: { kioskId: 'KSK-01', status: 'ONLINE', isStale: false } },
@@ -376,6 +393,38 @@ describe('Bộ Client Dịch vụ Vòng đời (TASK-WEB-023, BLD-WEB-022, APD-W
       expect(appendChildSpy).toHaveBeenCalled()
       expect(removeChildSpy).toHaveBeenCalled()
       expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:http://localhost/mock-uuid')
+    })
+  })
+
+  // 10. AttendanceService
+  describe('10. AttendanceService', () => {
+    it('getPersonalAttendance adapt chính xác checkInTime/checkOutTime thành checkIn/checkOut', async () => {
+      const mockBackendData = {
+        month: 10,
+        year: 2026,
+        totalWorkDays: 1,
+        totalOnTimeDays: 1,
+        totalLateDays: 0,
+        records: [
+          {
+            date: '2026-10-25',
+            checkInTime: '08:15:00',
+            checkOutTime: '17:30:00',
+            status: 'ON_TIME',
+            lateMinutes: 0,
+            checkInLogId: 101,
+            checkOutLogId: 102,
+          },
+        ],
+      }
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({ data: { success: true, data: mockBackendData } })
+
+      const res = await attendanceService.getPersonalAttendance({ month: 10, year: 2026 })
+      expect(apiClient.get).toHaveBeenCalledWith('/api/v1/employee/attendance', { params: { month: 10, year: 2026 } })
+      expect(res.records[0].checkIn).toBe('08:15:00')
+      expect(res.records[0].checkOut).toBe('17:30:00')
+      expect(res.records[0].checkInLogId).toBe(101)
+      expect(res.records[0].checkOutLogId).toBe(102)
     })
   })
 })
