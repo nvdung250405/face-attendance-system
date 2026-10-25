@@ -92,7 +92,20 @@ export class AttendanceService {
         '/api/v1/employee/attendance',
         { params }
       )
-      return response.data.data
+      const data = response.data.data
+      if (data && Array.isArray(data.records)) {
+        return {
+          ...data,
+          records: data.records.map((r: any) => ({
+            ...r,
+            checkIn: r.checkIn || (r.checkInTime ? String(r.checkInTime) : null),
+            checkOut: r.checkOut || (r.checkOutTime ? String(r.checkOutTime) : null),
+            checkInLogId: r.checkInLogId ?? null,
+            checkOutLogId: r.checkOutLogId ?? null,
+          })),
+        }
+      }
+      return data
     } catch (error) {
       throw normalizeApiError(error)
     }

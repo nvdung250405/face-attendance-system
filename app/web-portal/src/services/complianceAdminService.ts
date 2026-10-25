@@ -180,7 +180,7 @@ export class ComplianceAdminService {
         const rotData = rotateRes.data.data
         return {
           ...adaptKioskItem(rotData),
-          secretToken: String(rotData.secretToken || ''),
+          secretToken: String(rotData.newSecretToken || rotData.secretToken || ''),
         }
       }
 
