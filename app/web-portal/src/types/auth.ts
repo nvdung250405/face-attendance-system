@@ -48,6 +48,8 @@ export interface TokenResponse {
 }
 
 export interface ChangePasswordRequest {
-  oldPassword: string
+  currentPassword?: string
+  oldPassword?: string
   newPassword: string
+  confirmPassword?: string
 }
