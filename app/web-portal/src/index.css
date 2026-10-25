@@ -11,7 +11,7 @@
   --color-brand-hover: #4338ca;
   --color-brand-light: #eef2ff;
 
-  --color-bg-app: #f8fafc;
+  --color-bg-app: #f3f6fa;
   --color-surface-card: #ffffff;
   --color-border-subtle: #e2e8f0;
 
@@ -35,7 +35,7 @@
   --spacing-drawer: 420px;
 
   /* Bo góc chuẩn */
-  --radius-card: 14px;
+  --radius-card: 12px;
   --radius-button: 8px;
 
   /* Hiệu ứng chuyển động */

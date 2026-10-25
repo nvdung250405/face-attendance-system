@@ -1,8 +1,20 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { Button, Badge, Input, Modal, Card, CardHeader, CardTitle, CardContent, CardFooter, cn } from '../index'
+import * as CommonPrimitives from '../index'
+import * as UiPrimitives from '@/components/ui'
 
 describe('UI Primitives (Generic Subdomain UI Library)', () => {
+  describe('Đồng bộ kiến trúc Primitives (Single Source of Truth)', () => {
+    it('toàn bộ primitives từ @/components/common khớp 100% với @/components/ui', () => {
+      expect(CommonPrimitives.Button).toBe(UiPrimitives.Button)
+      expect(CommonPrimitives.Badge).toBe(UiPrimitives.Badge)
+      expect(CommonPrimitives.Input).toBe(UiPrimitives.Input)
+      expect(CommonPrimitives.Card).toBe(UiPrimitives.Card)
+      expect(CommonPrimitives.Modal).toBe(UiPrimitives.Modal)
+      expect(CommonPrimitives.TableSkeleton).toBe(UiPrimitives.TableSkeleton)
+    })
+  })
   describe('cn utility', () => {
     it('kết hợp class và merge xung đột tailwind chính xác', () => {
       const isHidden = false
