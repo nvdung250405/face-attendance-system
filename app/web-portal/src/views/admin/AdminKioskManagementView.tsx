@@ -417,9 +417,10 @@ export const AdminKioskManagementView: React.FC = () => {
                           {stale && (
                             <span
                               data-testid={`ping-stale-badge-${kiosk.kioskId}`}
-                              className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded"
+                              title="Không nhận được nhịp tim ping từ trạm trong hơn 5 phút"
+                              className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded cursor-help"
                             >
-                              MẤT PING &gt; 5P
+                              MẤT TÍN HIỆU &gt; 5P
                             </span>
                           )}
                         </div>

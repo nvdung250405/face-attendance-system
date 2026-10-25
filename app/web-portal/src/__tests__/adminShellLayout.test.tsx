@@ -211,6 +211,16 @@ describe('Khung Bố cục Admin Shell Responsive (TST-WEB-005, TASK-WEB-009, UX
       expect(stompEl.textContent).toContain('Trực tuyến')
     })
 
+    it('Chỉ báo STOMP có tooltip giải thích trực quan và vai trò người dùng được việt hóa', () => {
+      renderShell('HR_MANAGER')
+
+      const stompEl = screen.getByTestId('stomp-status')
+      expect(stompEl.getAttribute('title')).toBe('Kết nối trực tiếp thời gian thực ổn định')
+
+      const header = screen.getByTestId('top-header')
+      expect(header.textContent).toContain('Quản lý Nhân sự')
+    })
+
     it('Avatar button hiển thị với aria-expanded và id header-avatar', () => {
       renderShell()
 

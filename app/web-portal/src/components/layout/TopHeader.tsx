@@ -56,6 +56,13 @@ const IconBell = ({ hasUnread, unreadCount }: { hasUnread: boolean; unreadCount?
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const ROLE_DISPLAY_NAMES: Record<string, string> = {
+  ADMIN: 'Quản trị viên',
+  HR_MANAGER: 'Quản lý Nhân sự',
+  DPO: 'Cán bộ DPO',
+  EMPLOYEE: 'Nhân viên',
+}
+
 export interface TopHeaderProps {
   sidebarWidth: number
 }
@@ -162,6 +169,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
       {/* ── STOMP Indicator ── */}
       <div
         data-testid="stomp-status"
+        title={
+          stompStatus === 'CONNECTED'
+            ? 'Kết nối trực tiếp thời gian thực ổn định'
+            : stompStatus === 'CONNECTING'
+              ? 'Đang kết nối lại thời gian thực...'
+              : 'Mất kết nối thời gian thực'
+        }
         className={`hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ${
           stompStatus === 'CONNECTED'
             ? 'bg-emerald-50/90 text-emerald-700 border-emerald-200/80 shadow-xs'
@@ -217,7 +231,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
               {user?.fullName ?? 'Người dùng'}
             </div>
             <div className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider leading-tight mt-0.5">
-              {user?.role}
+              {ROLE_DISPLAY_NAMES[user?.role || ''] || user?.role}
             </div>
           </div>
           <span className="text-slate-400">
