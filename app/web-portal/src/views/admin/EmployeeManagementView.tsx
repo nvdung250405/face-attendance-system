@@ -451,7 +451,7 @@ export const EmployeeManagementView: React.FC = () => {
           >
             <thead>
               <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4">Mã NV</th>
+                <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
                 <th className="py-3 px-4">Họ và tên</th>
                 <th className="py-3 px-4">Email</th>
                 <th className="py-3 px-4">Phòng ban</th>
@@ -485,10 +485,10 @@ export const EmployeeManagementView: React.FC = () => {
                     <tr
                       key={emp.id}
                       data-testid={`employee-row-${emp.id}`}
-                      className="table-row-hover transition-colors"
+                      className="table-row-hover group transition-colors"
                     >
                       {/* Mã NV */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-text-primary">
+                      <td className="py-3.5 px-4 font-mono font-bold text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                         {emp.employeeCode}
                       </td>
 
