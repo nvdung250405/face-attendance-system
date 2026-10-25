@@ -30,6 +30,13 @@ import {
 import { excuseService } from '@/services/excuseService'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
 
+const STATUS_LABELS: Record<string, string> = {
+  ALL: 'toàn bộ',
+  PENDING: 'chờ duyệt',
+  APPROVED: 'đã duyệt',
+  REJECTED: 'đã từ chối',
+}
+
 export const AdminExcuseManagementView: React.FC = () => {
   const [requests, setRequests] = useState<ExcuseRequestItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -302,7 +309,7 @@ export const AdminExcuseManagementView: React.FC = () => {
             <h3 className="text-sm font-bold text-text-primary">Không có đơn giải trình nào</h3>
             <p className="text-xs text-text-secondary">
               Không có đơn nào thuộc trạng thái{' '}
-              {selectedStatus === 'ALL' ? 'toàn bộ' : selectedStatus}.
+              {STATUS_LABELS[selectedStatus] || selectedStatus}.
             </p>
           </div>
         ) : (
@@ -310,20 +317,20 @@ export const AdminExcuseManagementView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-border-subtle text-text-secondary font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Mã đơn</th>
+                  <th className="py-3 px-4 sticky left-0 z-10 bg-slate-50">Mã đơn</th>
                   <th className="py-3 px-4">Nhân sự</th>
                   <th className="py-3 px-4">Ngày nộp</th>
                   <th className="py-3 px-4">Giờ quẹt ban đầu</th>
                   <th className="py-3 px-4">Giờ đề xuất</th>
                   <th className="py-3 px-4 max-w-xs">Lý do giải trình</th>
                   <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                  <th className="py-3 px-4 text-right sticky right-0 z-10 bg-slate-50">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle text-text-primary">
                 {requests.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-brand-primary">#{item.id}</td>
+                  <tr key={item.id} className="group hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-brand-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50">#{item.id}</td>
                     <td className="py-3 px-4">
                       <div className="font-semibold text-text-primary">{item.fullName}</div>
                       <div className="text-2xs text-text-secondary flex items-center gap-1">
@@ -373,7 +380,7 @@ export const AdminExcuseManagementView: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right sticky right-0 z-10 bg-white group-hover:bg-slate-50">
                       {item.status === 'PENDING' ? (
                         <div className="inline-flex items-center gap-1.5 justify-end">
                           <Button
