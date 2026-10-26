@@ -2,6 +2,8 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.request.AssignShiftRequest;
+import com.fas.api.dto.request.BatchAssignShiftRequest;
+import com.fas.api.dto.response.BatchAssignShiftResponse;
 import com.fas.api.dto.response.EmployeeShiftResponse;
 import com.fas.service.ShiftManagementService;
 import jakarta.validation.Valid;
@@ -41,6 +43,19 @@ public class EmployeeShiftController {
     public ApiResponse<EmployeeShiftResponse> assignShift(@Valid @RequestBody AssignShiftRequest request) {
         EmployeeShiftResponse response = shiftManagementService.assignShift(request);
         return ApiResponse.ok("EMPLOYEE_SHIFT_ASSIGNED", "Phân công ca làm việc cho nhân viên thành công", response);
+    }
+
+    /**
+     * Phân công ca làm việc hàng loạt cho danh sách nhân viên (POST /api/v1/admin/employee-shifts/batch - API-BE-037).
+     *
+     * @param request dữ liệu phân công ca hàng loạt
+     * @return báo cáo tổng hợp kết quả phân công ca kèm HTTP 200 OK
+     */
+    @PostMapping("/batch")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<BatchAssignShiftResponse> assignShiftBatch(@Valid @RequestBody BatchAssignShiftRequest request) {
+        BatchAssignShiftResponse response = shiftManagementService.assignShiftBatch(request);
+        return ApiResponse.ok("BATCH_SHIFTS_ASSIGNED", "Phân công ca làm việc hàng loạt hoàn tất", response);
     }
 
     /**

@@ -1,7 +1,10 @@
 package com.fas.service;
 
 import com.fas.api.dto.request.AssignShiftRequest;
+import com.fas.api.dto.request.BatchAssignShiftRequest;
 import com.fas.api.dto.request.CreateShiftRequest;
+import com.fas.api.dto.response.BatchAssignShiftResponse;
+import java.util.ArrayList;
 import com.fas.api.dto.request.UpdateShiftRequest;
 import com.fas.api.dto.response.EmployeeShiftResponse;
 import com.fas.api.dto.response.ShiftEvaluationResult;
@@ -228,6 +231,91 @@ public class ShiftManagementService {
         logger.info("Phân ca thành công: ID={}, User={}, Shift={}, Range=[{}, {}]",
                 saved.getId(), user.getEmployeeCode(), shift.getShiftCode(), from, to);
         return toEmployeeShiftResponse(saved);
+    }
+
+    /**
+     * Phân công ca làm việc hàng loạt cho danh sách nhân viên
+     * ({@code POST /api/v1/admin/employee-shifts/batch} - API-BE-037, TASK-BE-042).
+     *
+     * @param request dữ liệu yêu cầu phân ca hàng loạt
+     * @return báo cáo tổng kết chi tiết từng nhân sự
+     */
+    @Transactional
+    public BatchAssignShiftResponse assignShiftBatch(BatchAssignShiftRequest request) {
+        Shift shift = findShiftById(request.shiftId());
+        if (!Boolean.TRUE.equals(shift.getIsActive())) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
+                    "Không thể phân ca đã bị vô hiệu hóa.");
+        }
+
+        LocalDate from = request.effectiveFrom();
+        LocalDate to = request.effectiveTo();
+        if (to != null && from.isAfter(to)) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
+                    "Ngày bắt đầu hiệu lực phải nhỏ hơn hoặc bằng ngày kết thúc.");
+        }
+
+        List<EmployeeShiftResponse> successfulAssignments = new ArrayList<>();
+        List<BatchAssignShiftResponse.BatchAssignmentFailure> failures = new ArrayList<>();
+
+        for (Long userId : request.userIds()) {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    failures.add(new BatchAssignShiftResponse.BatchAssignmentFailure(
+                            userId, "N/A", "N/A", "Không tìm thấy nhân sự với ID: " + userId));
+                    continue;
+                }
+
+                if (user.getStatus() == EmployeeStatus.TERMINATED || user.getStatus() == EmployeeStatus.SUSPENDED) {
+                    failures.add(new BatchAssignShiftResponse.BatchAssignmentFailure(
+                            userId, user.getEmployeeCode(), user.getFullName(),
+                            "Nhân sự không ở trạng thái hoạt động (" + user.getStatus() + ")"));
+                    continue;
+                }
+
+                // Kiểm tra chồng lấn khoảng hiệu lực đối với các phân ca hiện có của nhân sự
+                List<EmployeeShift> existingAssignments = employeeShiftRepository.findByUserId(user.getId());
+                boolean overlap = false;
+                for (EmployeeShift existing : existingAssignments) {
+                    if (isOverlapping(from, to, existing.getEffectiveFrom(), existing.getEffectiveTo())) {
+                        String existingRange = existing.getEffectiveFrom() + " đến "
+                                + (existing.getEffectiveTo() != null ? existing.getEffectiveTo() : "vô thời hạn");
+                        failures.add(new BatchAssignShiftResponse.BatchAssignmentFailure(
+                                userId, user.getEmployeeCode(), user.getFullName(),
+                                "Chồng lấn với ca " + existing.getShift().getShiftCode() + " (" + existingRange + ")"));
+                        overlap = true;
+                        break;
+                    }
+                }
+                if (overlap) {
+                    continue;
+                }
+
+                EmployeeShift employeeShift = EmployeeShift.builder()
+                        .user(user)
+                        .shift(shift)
+                        .effectiveFrom(from)
+                        .effectiveTo(to)
+                        .build();
+
+                EmployeeShift saved = employeeShiftRepository.save(employeeShift);
+                successfulAssignments.add(toEmployeeShiftResponse(saved));
+            } catch (Exception ex) {
+                logger.error("Lỗi khi phân ca cho userId={}: {}", userId, ex.getMessage());
+                failures.add(new BatchAssignShiftResponse.BatchAssignmentFailure(
+                        userId, "N/A", "N/A", "Lỗi xử lý: " + ex.getMessage()));
+            }
+        }
+
+        int total = request.userIds().size();
+        int successCount = successfulAssignments.size();
+        int failedCount = failures.size();
+
+        logger.info("Hoàn tất phân ca hàng loạt: Tổng={}, Thành công={}, Thất bại={}, Ca={}",
+                total, successCount, failedCount, shift.getShiftCode());
+
+        return new BatchAssignShiftResponse(total, successCount, failedCount, successfulAssignments, failures);
     }
 
     /**

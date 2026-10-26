@@ -1,6 +1,8 @@
 package com.fas.api.controller;
 
 import com.fas.api.dto.request.AssignShiftRequest;
+import com.fas.api.dto.request.BatchAssignShiftRequest;
+import com.fas.api.dto.response.BatchAssignShiftResponse;
 import com.fas.api.dto.response.EmployeeShiftResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
@@ -253,6 +255,71 @@ class EmployeeShiftControllerTest {
                     .andExpect(jsonPath("$.data", hasSize(2)))
                     .andExpect(jsonPath("$.data[0].employeeCode").value("NV-1042"))
                     .andExpect(jsonPath("$.data[1].shiftCode").value("CA-CHIEU"));
+        }
+    }
+
+    @Nested
+    @DisplayName("4. Phân công ca làm việc hàng loạt (POST /api/v1/admin/employee-shifts/batch)")
+    class BatchAssignShiftTests {
+
+        @Test
+        @DisplayName("Phân ca hàng loạt thành công trả về 200 OK và báo cáo chi tiết")
+        void assignShiftBatch_Success_Returns200() throws Exception {
+            BatchAssignShiftRequest request = new BatchAssignShiftRequest(
+                    List.of(101L, 102L),
+                    1L,
+                    LocalDate.of(2026, 11, 1),
+                    LocalDate.of(2026, 11, 30)
+            );
+
+            EmployeeShiftResponse item1 = new EmployeeShiftResponse(
+                    501L, 101L, "NV-101", "Nguyễn Văn Nam", 1L, "CA-SANG", "Ca sáng",
+                    LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30)
+            );
+
+            BatchAssignShiftResponse response = new BatchAssignShiftResponse(
+                    2, 1, 1,
+                    List.of(item1),
+                    List.of(new BatchAssignShiftResponse.BatchAssignmentFailure(
+                            102L, "NV-102", "Trần Văn Bình", "Trùng ca hiện có"
+                    ))
+            );
+
+            when(shiftManagementService.assignShiftBatch(any(BatchAssignShiftRequest.class))).thenReturn(response);
+
+            mockMvc.perform(post("/api/v1/admin/employee-shifts/batch")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.code").value("BATCH_SHIFTS_ASSIGNED"))
+                    .andExpect(jsonPath("$.data.total").value(2))
+                    .andExpect(jsonPath("$.data.successCount").value(1))
+                    .andExpect(jsonPath("$.data.failedCount").value(1))
+                    .andExpect(jsonPath("$.data.successfulAssignments", hasSize(1)))
+                    .andExpect(jsonPath("$.data.failures", hasSize(1)))
+                    .andExpect(jsonPath("$.data.failures[0].employeeCode").value("NV-102"));
+
+            verify(shiftManagementService).assignShiftBatch(any(BatchAssignShiftRequest.class));
+        }
+
+        @Test
+        @DisplayName("Validation thất bại khi userIds rỗng -> trả về 400 Bad Request")
+        void assignShiftBatch_EmptyUserIds_Returns400() throws Exception {
+            BatchAssignShiftRequest request = new BatchAssignShiftRequest(
+                    List.of(),
+                    1L,
+                    LocalDate.of(2026, 11, 1),
+                    LocalDate.of(2026, 11, 30)
+            );
+
+            mockMvc.perform(post("/api/v1/admin/employee-shifts/batch")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+
+            verify(shiftManagementService, never()).assignShiftBatch(any());
         }
     }
 }
