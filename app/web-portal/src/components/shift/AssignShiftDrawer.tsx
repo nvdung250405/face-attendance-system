@@ -25,6 +25,7 @@ export interface AssignShiftDrawerProps {
   onSubmit: (e: React.FormEvent) => void
   employees: EmployeeItem[]
   shifts: ShiftItem[]
+  isLoadingEmployees?: boolean
 }
 
 export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
@@ -39,6 +40,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
   onSubmit,
   employees,
   shifts,
+  isLoadingEmployees = false,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -129,15 +131,24 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
                 onChange={(e) =>
                   onChangeFormData((prev) => ({ ...prev, employeeId: Number(e.target.value) }))
                 }
+                disabled={isLoadingEmployees || employees.length === 0}
                 data-testid="select-assign-employee"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white disabled:opacity-60 cursor-pointer"
               >
-                <option value={0}>-- Chọn nhân sự --</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.fullName} ({emp.employeeCode}) - {emp.department}
-                  </option>
-                ))}
+                {isLoadingEmployees ? (
+                  <option value={0}>Đang tải danh sách nhân sự...</option>
+                ) : employees.length === 0 ? (
+                  <option value={0}>Không có nhân sự khả dụng</option>
+                ) : (
+                  <>
+                    <option value={0}>-- Chọn nhân sự ({employees.length} nhân sự) --</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.fullName} ({emp.employeeCode}) - {emp.department || 'Chưa phân ban'}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
 

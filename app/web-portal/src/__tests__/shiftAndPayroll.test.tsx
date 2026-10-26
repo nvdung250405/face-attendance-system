@@ -525,5 +525,89 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       expect(screen.getByTestId('payroll-locked-active-alert')).toBeTruthy()
       expect(screen.getByText(/Kỳ công 9\/2026 ĐÃ ĐƯỢC CHỐT/i)).toBeTruthy()
     })
+
+    it('13. adminEmployeeService.getAllEmployees tuân thủ giới hạn size=100 và gom đủ nhân sự khi có nhiều trang', async () => {
+      const page1Emp: EmployeeItem = {
+        id: 201,
+        employeeCode: 'NV-201',
+        fullName: 'Trần Văn A',
+        email: 'a@company.com',
+        department: 'Sản xuất',
+        role: 'EMPLOYEE',
+        status: 'ACTIVE',
+        hasBiometric: false,
+        hasPin: false,
+        createdAt: '2026-01-01T00:00:00Z',
+      }
+      const page2Emp: EmployeeItem = {
+        id: 202,
+        employeeCode: 'NV-202',
+        fullName: 'Lê Thị B',
+        email: 'b@company.com',
+        department: 'Kho vận',
+        role: 'EMPLOYEE',
+        status: 'ACTIVE',
+        hasBiometric: false,
+        hasPin: false,
+        createdAt: '2026-01-01T00:00:00Z',
+      }
+
+      vi.spyOn(adminEmployeeService, 'getEmployees').mockImplementation(async (criteria) => {
+        // Kiểm tra kích thước không vượt quá @Max(100) backend
+        expect(criteria?.size).toBeLessThanOrEqual(100)
+        if (criteria?.page === 0) {
+          return {
+            content: [page1Emp],
+            totalElements: 2,
+            totalPages: 2,
+            page: 0,
+            size: 100,
+            first: true,
+            last: false,
+          }
+        }
+        return {
+          content: [page2Emp],
+          totalElements: 2,
+          totalPages: 2,
+          page: 1,
+          size: 100,
+          first: false,
+          last: true,
+        }
+      })
+
+      const all = await adminEmployeeService.getAllEmployees()
+      expect(all).toHaveLength(2)
+      expect(all[0].employeeCode).toBe('NV-201')
+      expect(all[1].employeeCode).toBe('NV-202')
+    })
+
+    it('14. Khi mở Drawer phân ca, danh sách nhân viên hiển thị đầy đủ tên, mã và phòng ban', async () => {
+      vi.spyOn(adminEmployeeService, 'getAllEmployees').mockResolvedValue(mockEmployees)
+
+      renderShiftManagementView()
+
+      await waitFor(() => {
+        expect(screen.getByText('Quản Lý Ca Làm Việc & Phân Ca')).toBeTruthy()
+      })
+
+      // Chuyển sang tab Lịch Phân Ca
+      const assignmentsTabBtn = screen.getByTestId('tab-assignments-btn')
+      fireEvent.click(assignmentsTabBtn)
+
+      // Bấm nút Mở Phân Ca Nhân Sự
+      const openAssignBtn = screen.getByTestId('open-assign-shift-drawer-btn')
+      fireEvent.click(openAssignBtn)
+
+      // Kiểm tra Drawer phân ca xuất hiện
+      await waitFor(() => {
+        expect(screen.getByTestId('assign-shift-drawer')).toBeTruthy()
+      })
+
+      // Kiểm tra select nhân sự có chứa option của nhân viên kèm phòng ban
+      const employeeSelect = screen.getByTestId('select-assign-employee')
+      expect(employeeSelect.textContent).toContain('Nguyễn Văn Nam (NV-101) - Phòng Kỹ thuật')
+    })
   })
 })
