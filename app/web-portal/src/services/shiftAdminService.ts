@@ -6,7 +6,7 @@
  */
 
 import { apiClient } from './apiClient'
-import { normalizeApiError, type NormalizedApiError } from './errorNormalizer'
+import { normalizeApiError } from './errorNormalizer'
 import type {
   ApiResponse,
   ShiftItem,
@@ -56,6 +56,21 @@ interface BackendEmployeeShiftResponse {
   effectiveStartDate?: string
   effectiveEndDate?: string | null
   createdAt?: string
+}
+
+interface BackendBatchFailure {
+  userId: number
+  employeeCode?: string
+  fullName?: string
+  reason: string
+}
+
+interface BackendBatchAssignResponse {
+  total: number
+  successCount: number
+  failedCount: number
+  failures: BackendBatchFailure[]
+  assignments: BackendEmployeeShiftResponse[]
 }
 
 export class ShiftAdminService {
@@ -269,47 +284,43 @@ export class ShiftAdminService {
     employeeMap?: Map<number, string>,
     onProgress?: (completed: number, total: number) => void
   ): Promise<BatchAssignResult> {
-    const total = data.employeeIds.length
-    const assignments: EmployeeShiftAssignment[] = []
-    const failures: BatchAssignResult['failures'] = []
+    try {
+      const payload = {
+        userIds: data.employeeIds,
+        shiftId: data.shiftId,
+        effectiveFrom: data.effectiveStartDate,
+        effectiveTo: data.effectiveEndDate || null,
+      }
 
-    let completed = 0
+      onProgress?.(0, data.employeeIds.length)
 
-    // Thực thi theo từng batch nhỏ (5 nhân sự/batch) để kiểm soát áp lực mạng và backend
-    const BATCH_CONCURRENCY = 5
-    for (let i = 0; i < total; i += BATCH_CONCURRENCY) {
-      const slice = data.employeeIds.slice(i, i + BATCH_CONCURRENCY)
-      const promises = slice.map(async (empId) => {
-        try {
-          const res = await this.assignShift({
-            employeeId: empId,
-            shiftId: data.shiftId,
-            effectiveStartDate: data.effectiveStartDate,
-            effectiveEndDate: data.effectiveEndDate,
-          })
-          assignments.push(res)
-        } catch (err) {
-          const error = err as NormalizedApiError
-          const empName = employeeMap?.get(empId) || `ID #${empId}`
-          failures.push({
-            employeeId: empId,
-            employeeName: empName,
-            reason: error.message || 'Lỗi không xác định khi phân ca',
-          })
-        } finally {
-          completed++
-          onProgress?.(completed, total)
-        }
-      })
-      await Promise.all(promises)
-    }
+      const response = await apiClient.post<ApiResponse<BackendBatchAssignResponse>>(
+        '/api/v1/admin/employee-shifts/batch',
+        payload
+      )
 
-    return {
-      total,
-      successCount: assignments.length,
-      failedCount: failures.length,
-      failures,
-      assignments,
+      const result = response.data.data
+      onProgress?.(result.total, result.total)
+
+      const failures = (result.failures || []).map((f) => ({
+        employeeId: f.userId,
+        employeeName: f.fullName || employeeMap?.get(f.userId) || `ID #${f.userId}`,
+        reason: f.reason,
+      }))
+
+      const assignments = (result.assignments || []).map((item) =>
+        this.mapEmployeeShiftResponse(item)
+      )
+
+      return {
+        total: result.total,
+        successCount: result.successCount,
+        failedCount: result.failedCount,
+        failures,
+        assignments,
+      }
+    } catch (error) {
+      throw normalizeApiError(error)
     }
   }
 

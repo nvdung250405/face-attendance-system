@@ -1,7 +1,9 @@
 package com.fas.service;
 
 import com.fas.api.dto.request.AssignShiftRequest;
+import com.fas.api.dto.request.BatchAssignShiftRequest;
 import com.fas.api.dto.request.CreateShiftRequest;
+import com.fas.api.dto.response.BatchAssignShiftResponse;
 import com.fas.api.dto.request.UpdateShiftRequest;
 import com.fas.api.dto.response.EmployeeShiftResponse;
 import com.fas.api.dto.response.ShiftEvaluationResult;
@@ -468,6 +470,109 @@ class ShiftManagementServiceTest {
 
             // [1, null] và [oct10, null] -> giao
             assertThat(shiftService.isOverlapping(oct1, null, oct10, null)).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("5. Phân công ca làm việc hàng loạt (assignShiftBatch)")
+    class BatchAssignShiftServiceTests {
+
+        @Test
+        @DisplayName("Phân ca hàng loạt xử lý từng nhân viên và tổng hợp danh sách thành công / thất bại")
+        void assignShiftBatch_PartialSuccessAndFailures() {
+            Shift shift = Shift.builder()
+                    .id(1L)
+                    .shiftCode("CA-SANG")
+                    .shiftName("Ca Sáng")
+                    .startTime(LocalTime.of(8, 0))
+                    .endTime(LocalTime.of(17, 30))
+                    .gracePeriodMinutes(15)
+                    .isActive(true)
+                    .build();
+
+            User user1 = User.builder()
+                    .id(101L)
+                    .employeeCode("NV-101")
+                    .fullName("Nguyễn Văn Nam")
+                    .status(EmployeeStatus.ACTIVE)
+                    .build();
+
+            User user2 = User.builder()
+                    .id(102L)
+                    .employeeCode("NV-102")
+                    .fullName("Trần Văn Bình")
+                    .status(EmployeeStatus.ACTIVE)
+                    .build();
+
+            when(shiftRepository.findById(1L)).thenReturn(Optional.of(shift));
+            when(userRepository.findById(101L)).thenReturn(Optional.of(user1));
+            when(userRepository.findById(102L)).thenReturn(Optional.of(user2));
+
+            // User 1 không có phân ca nào trước đó
+            when(employeeShiftRepository.findByUserId(101L)).thenReturn(Collections.emptyList());
+
+            // User 2 đã có phân ca trùng lặp
+            EmployeeShift existingShift = EmployeeShift.builder()
+                    .id(99L)
+                    .user(user2)
+                    .shift(shift)
+                    .effectiveFrom(LocalDate.of(2026, 11, 1))
+                    .effectiveTo(LocalDate.of(2026, 11, 30))
+                    .build();
+            when(employeeShiftRepository.findByUserId(102L)).thenReturn(List.of(existingShift));
+
+            when(employeeShiftRepository.save(any(EmployeeShift.class))).thenAnswer(invocation -> {
+                EmployeeShift saved = invocation.getArgument(0);
+                return EmployeeShift.builder()
+                        .id(501L)
+                        .user(saved.getUser())
+                        .shift(saved.getShift())
+                        .effectiveFrom(saved.getEffectiveFrom())
+                        .effectiveTo(saved.getEffectiveTo())
+                        .build();
+            });
+
+            BatchAssignShiftRequest request = new BatchAssignShiftRequest(
+                    List.of(101L, 102L),
+                    1L,
+                    LocalDate.of(2026, 11, 1),
+                    LocalDate.of(2026, 11, 15)
+            );
+
+            BatchAssignShiftResponse response = shiftService.assignShiftBatch(request);
+
+            assertThat(response.total()).isEqualTo(2);
+            assertThat(response.successCount()).isEqualTo(1);
+            assertThat(response.failedCount()).isEqualTo(1);
+            assertThat(response.successfulAssignments()).hasSize(1);
+            assertThat(response.successfulAssignments().get(0).employeeCode()).isEqualTo("NV-101");
+            assertThat(response.failures()).hasSize(1);
+            assertThat(response.failures().get(0).employeeCode()).isEqualTo("NV-102");
+            assertThat(response.failures().get(0).reason()).contains("Chồng lấn với ca");
+        }
+
+        @Test
+        @DisplayName("Phân ca hàng loạt thất bại nếu ca làm việc bị vô hiệu hóa")
+        void assignShiftBatch_ShiftInactive_ThrowsValidationFailed() {
+            Shift inactiveShift = Shift.builder()
+                    .id(1L)
+                    .shiftCode("CA-CU")
+                    .shiftName("Ca Cũ")
+                    .isActive(false)
+                    .build();
+
+            when(shiftRepository.findById(1L)).thenReturn(Optional.of(inactiveShift));
+
+            BatchAssignShiftRequest request = new BatchAssignShiftRequest(
+                    List.of(101L),
+                    1L,
+                    LocalDate.of(2026, 11, 1),
+                    LocalDate.of(2026, 11, 30)
+            );
+
+            assertThatThrownBy(() -> shiftService.assignShiftBatch(request))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Không thể phân ca đã bị vô hiệu hóa");
         }
     }
 }

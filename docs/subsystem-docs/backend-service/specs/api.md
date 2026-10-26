@@ -117,7 +117,7 @@ Các ID dưới đây được duy trì để giữ liên kết hai chiều vớ
 | REST | `GET`, `POST`, `PATCH` | `/api/v1/admin/employees`, `/{id}`, `/{id}/status` | `HR_MANAGER`, `ADMIN` | Liệt kê, tạo, sửa và đổi trạng thái nhân sự. |
 | REST | `POST` | `/api/v1/admin/employees/{id}/credentials/reset` | `HR_MANAGER`, `ADMIN` | Cấp mật khẩu tạm một lần. |
 | REST | `GET`, `POST`, `PATCH` | `/api/v1/admin/shifts`, `/{id}`, `/{id}/activate`, `/{id}/deactivate` | `HR_MANAGER`, `ADMIN` | Quản lý danh mục ca. |
-| REST | `GET`, `POST`, `DELETE` | `/api/v1/admin/employee-shifts`, `/{id}` | `HR_MANAGER`, `ADMIN` | Tra cứu, phân ca và gỡ phân ca. |
+| REST | `GET`, `POST`, `DELETE` | `/api/v1/admin/employee-shifts`, `/batch`, `/{id}` | `HR_MANAGER`, `ADMIN` | Tra cứu, phân ca (đơn lẻ / hàng loạt) và gỡ phân ca. |
 | REST | `GET`, `PATCH`, `POST` | `/api/v1/admin/excuse-requests`, `/{id}`, `/{id}/approve`, `/{id}/reject` | `HR_MANAGER`, `ADMIN` | Xử lý đơn giải trình. |
 | REST | `GET` | `/api/v1/admin/audit-logs` | `ADMIN` | Tra cứu nhật ký kiểm toán. |
 | REST | `GET`, `POST`, `PATCH` | `/api/v1/admin/kiosks`, `/{id}`, `/{id}/rotate-secret`, `/{id}/health` | `ADMIN` | Đăng ký, quản trị và kiểm tra Kiosk. |
@@ -199,6 +199,7 @@ Các ID dưới đây được duy trì để giữ liên kết hai chiều vớ
 | `POST /admin/shifts/{id}/activate` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: empty | `ShiftResponse`: `isActive = true` | `200` |
 | `POST /admin/shifts/{id}/deactivate` | `HR_MANAGER`, `ADMIN` | Path: `id`. Body: empty | `ShiftResponse`: `isActive = false` | `200` |
 | `POST /admin/employee-shifts` | `HR_MANAGER`, `ADMIN` | Body: `userId`, `shiftId`, `effectiveFrom` (`YYYY-MM-DD`), `effectiveTo` (`YYYY-MM-DD` hoặc `null`) | `EmployeeShiftResponse`: `id`, `userId`, `employeeCode`, `fullName`, `shiftId`, `shiftCode`, `shiftName`, `effectiveFrom`, `effectiveTo` | `200` |
+| `POST /admin/employee-shifts/batch` | `HR_MANAGER`, `ADMIN` | Body: `userIds` (`List<Long>`), `shiftId`, `effectiveFrom` (`YYYY-MM-DD`), `effectiveTo` (`YYYY-MM-DD` hoặc `null`) | `BatchAssignShiftResponse`: `total`, `successCount`, `failedCount`, `failures`: `[{userId, employeeCode, fullName, reason}]`, `assignments`: `List<EmployeeShiftResponse>` | `200` |
 | `GET /admin/employee-shifts` | `HR_MANAGER`, `ADMIN` | Query: `userId`, `shiftId`, `effectiveDate`, `page`, `size` | `PageResponse<EmployeeShiftResponse>`: danh sách phân ca theo bộ lọc | `200` |
 | `DELETE /admin/employee-shifts/{id}` | `HR_MANAGER`, `ADMIN` | Path: `id` | `null` (`ApiResponse<Void>`) | `200` |
 | `GET /employee/shifts/my` | `EMPLOYEE` | Query: `from` (`YYYY-MM-DD`), `to` (`YYYY-MM-DD`) | `List<EmployeeShiftResponse>`: lịch phân ca của cá nhân | `200` |
