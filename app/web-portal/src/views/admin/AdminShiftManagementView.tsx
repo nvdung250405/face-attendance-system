@@ -68,6 +68,7 @@ export const AdminShiftManagementView: React.FC = () => {
 
   // Danh sách nhân sự phục vụ phân ca
   const [employees, setEmployees] = useState<EmployeeItem[]>([])
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState<boolean>(false)
 
   // Bộ lọc lịch phân ca
   const [searchEmployeeKeyword, setSearchEmployeeKeyword] = useState<string>('')
@@ -139,13 +140,23 @@ export const AdminShiftManagementView: React.FC = () => {
     }
   }, [])
 
-  // Tải danh sách nhân sự
-  const loadEmployees = useCallback(async () => {
+  // Tải danh sách nhân sự (sử dụng getAllEmployees chuẩn size=100 tuân thủ @Max(100) backend)
+  const loadEmployees = useCallback(async (): Promise<EmployeeItem[]> => {
     try {
-      const result = await adminEmployeeService.getEmployees({ page: 0, size: 200 })
-      setEmployees(result.content || [])
-    } catch {
-      // Bỏ qua nếu lỗi nạp danh sách gợi ý nhân sự
+      setIsLoadingEmployees(true)
+      const list = await adminEmployeeService.getAllEmployees()
+      setEmployees(list)
+      return list
+    } catch (err) {
+      const error = err as NormalizedApiError
+      console.error('Không thể tải danh sách nhân sự:', error)
+      setNotification({
+        type: 'warning',
+        message: 'Không thể nạp danh sách nhân sự phục vụ phân ca. Vui lòng thử lại.',
+      })
+      return []
+    } finally {
+      setIsLoadingEmployees(false)
     }
   }, [])
 
@@ -156,12 +167,15 @@ export const AdminShiftManagementView: React.FC = () => {
         const [shiftRes, assignRes, empRes] = await Promise.allSettled([
           shiftAdminService.getShifts(),
           shiftAdminService.getEmployeeShifts(),
-          adminEmployeeService.getEmployees({ page: 0, size: 200 }),
+          adminEmployeeService.getAllEmployees(),
         ])
         if (ignore) return
         if (shiftRes.status === 'fulfilled') setShifts(shiftRes.value || [])
         if (assignRes.status === 'fulfilled') setAssignments(assignRes.value || [])
-        if (empRes.status === 'fulfilled') setEmployees(empRes.value?.content || [])
+        if (empRes.status === 'fulfilled') setEmployees(empRes.value || [])
+        if (empRes.status === 'rejected') {
+          console.error('Lỗi khi nạp dữ liệu nhân sự ban đầu:', empRes.reason)
+        }
       } finally {
         if (!ignore) {
           setIsLoadingShifts(false)
@@ -292,7 +306,7 @@ export const AdminShiftManagementView: React.FC = () => {
 
   // ── Thao tác Phân ca & Kiểm tra Chồng lấn ──────────────────────────────────
 
-  const handleOpenAssignDrawer = () => {
+  const handleOpenAssignDrawer = async () => {
     if (isAdjustmentLocked) {
       setNotification({
         type: 'warning',
@@ -300,12 +314,13 @@ export const AdminShiftManagementView: React.FC = () => {
       })
       return
     }
-    if (employees.length === 0) {
-      void loadEmployees()
+    let currentEmployees = employees
+    if (currentEmployees.length === 0) {
+      currentEmployees = await loadEmployees()
     }
     const today = formatLocalDateISO(new Date())
     setAssignFormData({
-      employeeId: employees[0]?.id || 0,
+      employeeId: currentEmployees[0]?.id || 0,
       shiftId: shifts[0]?.id || 0,
       effectiveStartDate: today,
       effectiveEndDate: today,
@@ -950,6 +965,7 @@ export const AdminShiftManagementView: React.FC = () => {
         onSubmit={handleSaveAssign}
         employees={employees}
         shifts={shifts}
+        isLoadingEmployees={isLoadingEmployees}
       />
     </div>
   )

@@ -52,6 +52,35 @@ export class AdminEmployeeService {
   /**
    * Lấy chi tiết hồ sơ nhân sự theo ID (GET /api/v1/admin/employees/{id})
    */
+  /**
+   * Tra cứu toàn bộ nhân sự (tự động nạp phân trang với kích thước trang chuẩn size=100 tuân thủ @Max(100) backend)
+   * Phục vụ các bộ chọn nhân sự toàn hệ thống như Phân ca làm việc.
+   */
+  async getAllEmployees(criteria?: Omit<EmployeeSearchCriteria, 'page' | 'size'>): Promise<EmployeeItem[]> {
+    try {
+      const pageSize = 100
+      const firstPage = await this.getEmployees({ ...criteria, page: 0, size: pageSize })
+      const all: EmployeeItem[] = [...(firstPage.content || [])]
+      const totalPages = firstPage.totalPages ?? 1
+
+      if (totalPages > 1) {
+        const pagePromises = []
+        for (let p = 1; p < totalPages; p++) {
+          pagePromises.push(this.getEmployees({ ...criteria, page: p, size: pageSize }))
+        }
+        const remainingResults = await Promise.all(pagePromises)
+        for (const res of remainingResults) {
+          if (res.content) {
+            all.push(...res.content)
+          }
+        }
+      }
+      return all
+    } catch (error) {
+      throw normalizeApiError(error)
+    }
+  }
+
   async getEmployeeById(id: number): Promise<EmployeeItem> {
     try {
       const response = await apiClient.get<ApiResponse<EmployeeItem>>(`/api/v1/admin/employees/${id}`)
