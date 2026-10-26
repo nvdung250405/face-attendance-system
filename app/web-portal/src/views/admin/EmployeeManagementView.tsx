@@ -431,14 +431,18 @@ export const EmployeeManagementView: React.FC = () => {
 
         {/* Nút đặt lại bộ lọc */}
         {hasActiveFilters && (
-          <button
-            type="button"
-            data-testid="employee-clear-filters-btn"
-            onClick={handleResetFilters}
-            className="text-xs font-semibold text-brand-primary hover:text-brand-hover hover:underline self-center shrink-0 px-2 py-1"
-          >
-            Đặt lại
-          </button>
+          <div className="flex items-center sm:pl-2 sm:border-l sm:border-slate-200">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              data-testid="employee-clear-filters-btn"
+              onClick={handleResetFilters}
+              className="text-xs font-semibold text-slate-700 hover:text-slate-900 shrink-0 cursor-pointer"
+            >
+              Đặt lại
+            </Button>
+          </div>
         )}
       </div>
 
