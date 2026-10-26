@@ -90,6 +90,20 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Quy chuẩn toàn cục: Chuẩn hóa con trỏ chuột cho toàn bộ phần tử tương tác */
+  button,
+  [role="button"],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  select:disabled {
+    cursor: not-allowed;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     ::before,

@@ -227,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id="sidebar-toggle"
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
           onClick={onToggleCollapse}
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 hover:bg-white/8 hover:text-white transition-all duration-150"
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 hover:bg-white/8 hover:text-white transition-all duration-150 cursor-pointer"
         >
           <span className="shrink-0">
             {collapsed ? (

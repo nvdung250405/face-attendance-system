@@ -145,7 +145,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             onClick={handlePrevWeek}
             data-testid="prev-week-btn"
             title="Tuần trước"
-            className="p-2 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-colors shadow-2xs"
+            className="p-2 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-colors shadow-2xs cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -154,7 +154,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             type="button"
             onClick={handleCurrentWeek}
             data-testid="current-week-btn"
-            className="px-3 py-1.5 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors shadow-2xs"
+            className="px-3 py-1.5 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors shadow-2xs cursor-pointer"
           >
             Tuần này
           </button>
@@ -164,7 +164,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             onClick={handleNextWeek}
             data-testid="next-week-btn"
             title="Tuần sau"
-            className="p-2 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-colors shadow-2xs"
+            className="p-2 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-colors shadow-2xs cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -306,7 +306,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                                       onClick={() => onRemoveAssignment(activeAssignment)}
                                       title="Hủy phân ca"
                                       data-testid={`remove-weekly-shift-${activeAssignment.id}`}
-                                      className="opacity-0 group-hover/card:opacity-100 p-1 rounded-md text-emerald-700 hover:text-rose-600 hover:bg-rose-50 transition-all shrink-0"
+                                      className="opacity-0 group-hover/card:opacity-100 p-1 rounded-md text-emerald-700 hover:text-rose-600 hover:bg-rose-50 transition-all shrink-0 cursor-pointer"
                                     >
                                       <Trash2 className="w-3 h-3" />
                                     </button>
@@ -337,7 +337,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                                     onClick={() => onQuickAssign(emp.id, d.dateStr)}
                                     data-testid={`quick-assign-btn-${emp.id}-${d.dateStr}`}
                                     title={`Phân ca nhanh ngày ${d.displayStr} cho ${emp.fullName}`}
-                                    className="opacity-20 hover:opacity-100 p-2 rounded-lg border border-dashed border-border-subtle hover:border-brand-primary text-text-tertiary hover:text-brand-primary hover:bg-brand-50/50 transition-all"
+                                    className="opacity-20 hover:opacity-100 p-2 rounded-lg border border-dashed border-border-subtle hover:border-brand-primary text-text-tertiary hover:text-brand-primary hover:bg-brand-50/50 transition-all cursor-pointer"
                                   >
                                     <Plus className="w-3.5 h-3.5" />
                                   </button>

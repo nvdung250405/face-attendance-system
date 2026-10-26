@@ -605,7 +605,7 @@ export const AdminShiftManagementView: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('shifts')}
           data-testid="tab-shifts-btn"
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 cursor-pointer ${
             activeTab === 'shifts'
               ? 'text-indigo-600 border-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -624,7 +624,7 @@ export const AdminShiftManagementView: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('assignments')}
           data-testid="tab-assignments-btn"
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 cursor-pointer ${
             activeTab === 'assignments'
               ? 'text-indigo-600 border-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -759,7 +759,7 @@ export const AdminShiftManagementView: React.FC = () => {
                   type="button"
                   onClick={() => setAssignmentViewMode('table')}
                   data-testid="view-mode-table"
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     assignmentViewMode === 'table'
                       ? 'bg-white text-brand-primary shadow-2xs font-bold'
                       : 'text-text-secondary hover:text-text-primary'
@@ -772,7 +772,7 @@ export const AdminShiftManagementView: React.FC = () => {
                   type="button"
                   onClick={() => setAssignmentViewMode('weekly')}
                   data-testid="view-mode-weekly"
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     assignmentViewMode === 'weekly'
                       ? 'bg-white text-brand-primary shadow-2xs font-bold'
                       : 'text-text-secondary hover:text-text-primary'
