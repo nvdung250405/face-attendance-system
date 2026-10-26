@@ -23,7 +23,6 @@ import {
   Radio,
   SlidersHorizontal,
   X,
-  Play,
   Pause,
 } from 'lucide-react'
 import { Button } from '@/components/common'
