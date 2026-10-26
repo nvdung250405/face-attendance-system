@@ -326,6 +326,9 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       fireEvent.click(screen.getByTestId('open-assign-shift-drawer-btn'))
       expect(screen.getByTestId('assign-shift-drawer')).toBeTruthy()
 
+      // Chuyển sang chế độ Từng Cá Nhân
+      fireEvent.click(screen.getByTestId('mode-single-btn'))
+
       // Chọn nhân viên 101 và khoảng ngày trùng (2026-10-10 đến 2026-10-25)
       fireEvent.change(screen.getByTestId('select-assign-employee'), { target: { value: '101' } })
       fireEvent.change(screen.getByTestId('select-assign-shift'), { target: { value: '2' } })
@@ -357,6 +360,9 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       await waitFor(() => expect(screen.getByText('Nguyễn Văn Nam')).toBeTruthy())
 
       fireEvent.click(screen.getByTestId('open-assign-shift-drawer-btn'))
+
+      // Chuyển sang chế độ Từng Cá Nhân
+      fireEvent.click(screen.getByTestId('mode-single-btn'))
 
       // Cố ý chọn ngày trùng lấn
       fireEvent.change(screen.getByTestId('select-assign-employee'), { target: { value: '101' } })
@@ -605,9 +611,183 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
         expect(screen.getByTestId('assign-shift-drawer')).toBeTruthy()
       })
 
-      // Kiểm tra select nhân sự có chứa option của nhân viên kèm phòng ban
+      // Kiểm tra chuyển sang tab single thì thấy select nhân sự
+      const singleModeBtn = screen.getByTestId('mode-single-btn')
+      fireEvent.click(singleModeBtn)
+
       const employeeSelect = screen.getByTestId('select-assign-employee')
       expect(employeeSelect.textContent).toContain('Nguyễn Văn Nam (NV-101) - Phòng Kỹ thuật')
+    })
+
+    it('15. Phân ca theo Phòng ban (Department-Level): Chọn phòng ban và tự động gom toàn bộ nhân sự (TASK-WEB-034)', async () => {
+      const mockDeptEmployees: EmployeeItem[] = [
+        {
+          id: 101,
+          employeeCode: 'NV-101',
+          fullName: 'Nguyễn Văn Nam',
+          email: 'nam@company.com',
+          department: 'Phòng Kỹ thuật',
+          role: 'EMPLOYEE',
+          status: 'ACTIVE',
+          hasBiometric: true,
+          hasPin: true,
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 102,
+          employeeCode: 'NV-102',
+          fullName: 'Trần Văn Bình',
+          email: 'binh@company.com',
+          department: 'Phòng Kỹ thuật',
+          role: 'EMPLOYEE',
+          status: 'ACTIVE',
+          hasBiometric: true,
+          hasPin: true,
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 103,
+          employeeCode: 'NV-103',
+          fullName: 'Lê Thị Cúc',
+          email: 'cuc@company.com',
+          department: 'Phòng Kinh doanh',
+          role: 'EMPLOYEE',
+          status: 'ACTIVE',
+          hasBiometric: true,
+          hasPin: true,
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+      ]
+
+      vi.spyOn(adminEmployeeService, 'getAllEmployees').mockResolvedValue(mockDeptEmployees)
+      const batchSpy = vi.spyOn(shiftAdminService, 'assignShiftBatch').mockResolvedValue({
+        total: 2,
+        successCount: 2,
+        failedCount: 0,
+        failures: [],
+        assignments: [],
+      })
+
+      renderShiftManagementView()
+
+      await waitFor(() => {
+        expect(screen.getByText('Quản Lý Ca Làm Việc & Phân Ca')).toBeTruthy()
+      })
+
+      // Mở modal phân ca
+      fireEvent.click(screen.getByTestId('tab-assignments-btn'))
+      fireEvent.click(screen.getByTestId('open-assign-shift-drawer-btn'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('assign-shift-drawer')).toBeTruthy()
+      })
+
+      // Mặc định ở chế độ Theo Phòng Ban
+      expect(screen.getByTestId('select-assign-department')).toBeTruthy()
+
+      // Chọn Phòng Kỹ thuật
+      fireEvent.change(screen.getByTestId('select-assign-department'), {
+        target: { value: 'Phòng Kỹ thuật' },
+      })
+
+      // Kiểm tra quy mô áp dụng hiển thị 2 nhân sự
+      expect(screen.getByTestId('dept-employees-count').textContent).toContain('2 nhân sự')
+
+      // Chọn ca làm việc
+      fireEvent.change(screen.getByTestId('select-assign-shift'), { target: { value: '1' } })
+
+      // Bấm nút Phân ca cho phòng ban
+      const submitBtn = screen.getByTestId('submit-assign-shift-btn')
+      fireEvent.click(submitBtn)
+
+      // Kiểm tra assignShiftBatch được gọi với đúng 2 nhân viên thuộc Phòng Kỹ thuật (101, 102)
+      await waitFor(() => {
+        expect(batchSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            employeeIds: [101, 102],
+            shiftId: 1,
+          }),
+          expect.any(Map),
+          expect.any(Function)
+        )
+      })
+    })
+
+    it('16. Phân ca Chọn Hàng Loạt (Multi-Select): Lọc và chọn danh sách nhân sự (TASK-WEB-034)', async () => {
+      const mockMultiEmployees: EmployeeItem[] = [
+        {
+          id: 101,
+          employeeCode: 'NV-101',
+          fullName: 'Nguyễn Văn Nam',
+          email: 'nam@company.com',
+          department: 'Phòng Kỹ thuật',
+          role: 'EMPLOYEE',
+          status: 'ACTIVE',
+          hasBiometric: true,
+          hasPin: true,
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 102,
+          employeeCode: 'NV-102',
+          fullName: 'Trần Văn Bình',
+          email: 'binh@company.com',
+          department: 'Phòng Kỹ thuật',
+          role: 'EMPLOYEE',
+          status: 'ACTIVE',
+          hasBiometric: true,
+          hasPin: true,
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+      ]
+
+      vi.spyOn(adminEmployeeService, 'getAllEmployees').mockResolvedValue(mockMultiEmployees)
+      const batchSpy = vi.spyOn(shiftAdminService, 'assignShiftBatch').mockResolvedValue({
+        total: 1,
+        successCount: 1,
+        failedCount: 0,
+        failures: [],
+        assignments: [],
+      })
+
+      renderShiftManagementView()
+
+      fireEvent.click(screen.getByTestId('tab-assignments-btn'))
+      fireEvent.click(screen.getByTestId('open-assign-shift-drawer-btn'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('assign-shift-drawer')).toBeTruthy()
+      })
+
+      // Chuyển sang chế độ Chọn Hàng Loạt
+      fireEvent.click(screen.getByTestId('mode-multi-btn'))
+
+      // Kiểm tra có ô tìm kiếm
+      expect(screen.getByTestId('search-multi-employee-input')).toBeTruthy()
+
+      // Chọn 1 nhân viên qua checkbox
+      const checkbox101 = screen.getByTestId('checkbox-employee-101')
+      fireEvent.click(checkbox101)
+
+      // Kiểm tra badge hiển thị "Đã chọn 1 / 2 nhân sự"
+      expect(screen.getByTestId('multi-selected-count').textContent).toContain('Đã chọn 1 / 2')
+
+      // Chọn ca làm việc
+      fireEvent.change(screen.getByTestId('select-assign-shift'), { target: { value: '1' } })
+
+      // Bấm nút Phân ca hàng loạt
+      fireEvent.click(screen.getByTestId('submit-assign-shift-btn'))
+
+      await waitFor(() => {
+        expect(batchSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            employeeIds: [101],
+            shiftId: 1,
+          }),
+          expect.any(Map),
+          expect.any(Function)
+        )
+      })
     })
   })
 })

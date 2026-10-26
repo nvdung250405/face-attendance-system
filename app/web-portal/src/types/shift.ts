@@ -65,3 +65,21 @@ export interface OverlapConflictInfo {
   readonly suggestedEndDate?: string
   readonly message?: string
 }
+export interface BatchAssignShiftRequest {
+  employeeIds: number[]
+  shiftId: number
+  effectiveStartDate: string
+  effectiveEndDate: string
+}
+
+export interface BatchAssignResult {
+  total: number
+  successCount: number
+  failedCount: number
+  failures: Array<{
+    employeeId: number
+    employeeName?: string
+    reason: string
+  }>
+  assignments: EmployeeShiftAssignment[]
+}
