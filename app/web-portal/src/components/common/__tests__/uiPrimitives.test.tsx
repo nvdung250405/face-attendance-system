@@ -24,6 +24,12 @@ describe('UI Primitives (Generic Subdomain UI Library)', () => {
   })
 
   describe('Button component (4 Trạng thái: Default, Loading, Error, Disabled)', () => {
+    it('áp dụng cursor-pointer để con trỏ chuột đổi thành bàn tay khi tương tác', () => {
+      render(<Button variant="primary">Kiểm tra con trỏ</Button>)
+      const btn = screen.getByRole('button', { name: /Kiểm tra con trỏ/i })
+      expect(btn.className).toContain('cursor-pointer')
+    })
+
     it('1. Trạng thái Default: render nút bấm đúng variant và text, kích hoạt onClick', () => {
       const handleClick = vi.fn()
       render(<Button variant="primary" onClick={handleClick}>Xác nhận</Button>)

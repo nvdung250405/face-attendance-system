@@ -237,7 +237,7 @@ export const AdminExcuseManagementView: React.FC = () => {
           type="button"
           onClick={() => setSelectedStatus('PENDING')}
           data-testid="tab-pending"
-          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
             selectedStatus === 'PENDING'
               ? 'border-brand-primary text-brand-primary'
               : 'border-transparent text-text-secondary hover:text-text-primary'
@@ -256,7 +256,7 @@ export const AdminExcuseManagementView: React.FC = () => {
           type="button"
           onClick={() => setSelectedStatus('APPROVED')}
           data-testid="tab-approved"
-          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
             selectedStatus === 'APPROVED'
               ? 'border-brand-primary text-brand-primary'
               : 'border-transparent text-text-secondary hover:text-text-primary'
@@ -270,7 +270,7 @@ export const AdminExcuseManagementView: React.FC = () => {
           type="button"
           onClick={() => setSelectedStatus('REJECTED')}
           data-testid="tab-rejected"
-          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
             selectedStatus === 'REJECTED'
               ? 'border-brand-primary text-brand-primary'
               : 'border-transparent text-text-secondary hover:text-text-primary'
@@ -284,7 +284,7 @@ export const AdminExcuseManagementView: React.FC = () => {
           type="button"
           onClick={() => setSelectedStatus('ALL')}
           data-testid="tab-all"
-          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
             selectedStatus === 'ALL'
               ? 'border-brand-primary text-brand-primary'
               : 'border-transparent text-text-secondary hover:text-text-primary'
