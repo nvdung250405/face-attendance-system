@@ -99,6 +99,7 @@ export const AdminShiftManagementView: React.FC = () => {
   const [assignFormError, setAssignFormError] = useState<string | null>(null)
   const [overlapConflict, setOverlapConflict] = useState<OverlapConflictInfo | null>(null)
   const [isSubmittingAssign, setIsSubmittingAssign] = useState<boolean>(false)
+  const [batchProgressText, setBatchProgressText] = useState<string | null>(null)
 
   // Thông báo phản hồi chung (Alert banner)
   const [notification, setNotification] = useState<{
@@ -450,6 +451,83 @@ export const AdminShiftManagementView: React.FC = () => {
       }
     } finally {
       setIsSubmittingAssign(false)
+    }
+  }
+
+  // Phân ca hàng loạt theo phòng ban hoặc danh sách chọn (TASK-WEB-034)
+  const handleBatchAssign = async (params: {
+    mode: 'department' | 'multi' | 'single'
+    employeeIds: number[]
+    shiftId: number
+    effectiveStartDate: string
+    effectiveEndDate: string
+    departmentName?: string
+  }) => {
+    setAssignFormError(null)
+    setOverlapConflict(null)
+
+    if (params.employeeIds.length === 0) {
+      setAssignFormError('Vui lòng chọn ít nhất 1 nhân sự để phân ca.')
+      return
+    }
+    if (!params.shiftId) {
+      setAssignFormError('Vui lòng chọn ca làm việc áp dụng.')
+      return
+    }
+    if (!params.effectiveStartDate || !params.effectiveEndDate) {
+      setAssignFormError('Vui lòng nhập đầy đủ ngày bắt đầu và kết thúc hiệu lực.')
+      return
+    }
+    if (params.effectiveStartDate > params.effectiveEndDate) {
+      setAssignFormError('Ngày bắt đầu không được lớn hơn ngày kết thúc.')
+      return
+    }
+
+    try {
+      setIsSubmittingAssign(true)
+      setBatchProgressText(`Chuẩn bị phân ca cho ${params.employeeIds.length} nhân sự...`)
+
+      const empMap = new Map<number, string>()
+      employees.forEach((e) => empMap.set(e.id, `${e.fullName} (${e.employeeCode})`))
+
+      const result = await shiftAdminService.assignShiftBatch(
+        {
+          employeeIds: params.employeeIds,
+          shiftId: params.shiftId,
+          effectiveStartDate: params.effectiveStartDate,
+          effectiveEndDate: params.effectiveEndDate,
+        },
+        empMap,
+        (completed, total) => {
+          setBatchProgressText(`Đang xử lý phân ca... ${completed}/${total} nhân sự`)
+        }
+      )
+
+      if (result.successCount > 0) {
+        let msg = `Đã phân ca thành công cho ${result.successCount}/${result.total} nhân sự.`
+        if (result.failedCount > 0) {
+          msg += ` (${result.failedCount} nhân sự bị trùng ca hoặc lỗi).`
+          setNotification({ type: 'warning', message: msg })
+        } else {
+          setNotification({ type: 'success', message: msg })
+        }
+        setIsAssignDrawerOpen(false)
+        await loadAssignments()
+      } else {
+        const failureDetails = result.failures
+          .slice(0, 3)
+          .map((f) => `${f.employeeName}: ${f.reason}`)
+          .join('; ')
+        setAssignFormError(
+          `Không thể phân ca cho nhân sự nào. Chi tiết: ${failureDetails}${result.failures.length > 3 ? '...' : ''}`
+        )
+      }
+    } catch (err) {
+      const error = err as NormalizedApiError
+      setAssignFormError(error.message || 'Phân ca hàng loạt thất bại.')
+    } finally {
+      setIsSubmittingAssign(false)
+      setBatchProgressText(null)
     }
   }
 
@@ -963,9 +1041,11 @@ export const AdminShiftManagementView: React.FC = () => {
         onApplySuggestedSlot={handleApplySuggestedSlot}
         isSubmitting={isSubmittingAssign}
         onSubmit={handleSaveAssign}
+        onSubmitBatch={handleBatchAssign}
         employees={employees}
         shifts={shifts}
         isLoadingEmployees={isLoadingEmployees}
+        progressText={batchProgressText}
       />
     </div>
   )

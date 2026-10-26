@@ -6,7 +6,7 @@
  */
 
 import { apiClient } from './apiClient'
-import { normalizeApiError } from './errorNormalizer'
+import { normalizeApiError, type NormalizedApiError } from './errorNormalizer'
 import type {
   ApiResponse,
   ShiftItem,
@@ -14,6 +14,8 @@ import type {
   UpdateShiftRequest,
   EmployeeShiftAssignment,
   AssignShiftRequest,
+  BatchAssignShiftRequest,
+  BatchAssignResult,
 } from '@/types'
 
 export interface ShiftQueryCriteria {
@@ -255,6 +257,59 @@ export class ShiftAdminService {
       return this.mapEmployeeShiftResponse(response.data.data)
     } catch (error) {
       throw normalizeApiError(error)
+    }
+  }
+
+  /**
+   * Phân ca hàng loạt cho nhiều nhân sự (Batch Assignment)
+   * Hỗ trợ cập nhật tiến trình phân ca và tổng hợp báo cáo thành công / thất bại.
+   */
+  async assignShiftBatch(
+    data: BatchAssignShiftRequest,
+    employeeMap?: Map<number, string>,
+    onProgress?: (completed: number, total: number) => void
+  ): Promise<BatchAssignResult> {
+    const total = data.employeeIds.length
+    const assignments: EmployeeShiftAssignment[] = []
+    const failures: BatchAssignResult['failures'] = []
+
+    let completed = 0
+
+    // Thực thi theo từng batch nhỏ (5 nhân sự/batch) để kiểm soát áp lực mạng và backend
+    const BATCH_CONCURRENCY = 5
+    for (let i = 0; i < total; i += BATCH_CONCURRENCY) {
+      const slice = data.employeeIds.slice(i, i + BATCH_CONCURRENCY)
+      const promises = slice.map(async (empId) => {
+        try {
+          const res = await this.assignShift({
+            employeeId: empId,
+            shiftId: data.shiftId,
+            effectiveStartDate: data.effectiveStartDate,
+            effectiveEndDate: data.effectiveEndDate,
+          })
+          assignments.push(res)
+        } catch (err) {
+          const error = err as NormalizedApiError
+          const empName = employeeMap?.get(empId) || `ID #${empId}`
+          failures.push({
+            employeeId: empId,
+            employeeName: empName,
+            reason: error.message || 'Lỗi không xác định khi phân ca',
+          })
+        } finally {
+          completed++
+          onProgress?.(completed, total)
+        }
+      })
+      await Promise.all(promises)
+    }
+
+    return {
+      total,
+      successCount: assignments.length,
+      failedCount: failures.length,
+      failures,
+      assignments,
     }
   }
 
