@@ -448,9 +448,12 @@ export const AdminAttendanceView: React.FC = () => {
               type="button"
               onClick={flushPendingRecords}
               data-testid="flush-pending-btn"
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 animate-bounce"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50/90 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all shadow-2xs cursor-pointer"
             >
-              <Play className="w-3.5 h-3.5" />
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600" />
+              </span>
               <span>+{pendingLiveCount} bản ghi mới</span>
             </button>
           )}
@@ -498,7 +501,6 @@ export const AdminAttendanceView: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Thẻ 1: Lượt điểm danh */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/80" />
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Lượt quẹt hôm nay
@@ -517,7 +519,6 @@ export const AdminAttendanceView: React.FC = () => {
 
         {/* Thẻ 2: Đúng giờ */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80" />
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
               Đúng giờ
@@ -536,7 +537,6 @@ export const AdminAttendanceView: React.FC = () => {
 
         {/* Thẻ 3: Đi muộn */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500/80" />
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
               Đi muộn
@@ -555,7 +555,6 @@ export const AdminAttendanceView: React.FC = () => {
 
         {/* Thẻ 4: Nhận diện khuôn mặt */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/80" />
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
               Xác thực khuôn mặt

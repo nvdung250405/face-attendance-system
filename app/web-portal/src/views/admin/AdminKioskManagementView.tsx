@@ -246,7 +246,6 @@ export const AdminKioskManagementView: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Tổng số trạm */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/80" />
           <div className="flex items-center justify-between">
             <div className="w-9 h-9 rounded-xl ring-1 ring-indigo-500/20 bg-indigo-50/70 text-indigo-600 flex items-center justify-center shadow-xs">
               <Server size={18} />
@@ -263,7 +262,6 @@ export const AdminKioskManagementView: React.FC = () => {
 
         {/* Trực tuyến */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80" />
           <div className="flex items-center justify-between">
             <div className="w-9 h-9 rounded-xl ring-1 ring-emerald-500/20 bg-emerald-50/70 text-emerald-600 flex items-center justify-center shadow-xs">
               <Wifi size={18} />
@@ -282,7 +280,6 @@ export const AdminKioskManagementView: React.FC = () => {
 
         {/* Mất Ping > 5p */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500/80" />
           <div className="flex items-center justify-between">
             <div className="w-9 h-9 rounded-xl ring-1 ring-amber-500/20 bg-amber-50/70 text-amber-600 flex items-center justify-center shadow-xs">
               <AlertTriangle size={18} />
@@ -301,7 +298,6 @@ export const AdminKioskManagementView: React.FC = () => {
 
         {/* Ngoại tuyến */}
         <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500/80" />
           <div className="flex items-center justify-between">
             <div className="w-9 h-9 rounded-xl ring-1 ring-rose-500/20 bg-rose-50/70 text-rose-600 flex items-center justify-center shadow-xs">
               <WifiOff size={18} />

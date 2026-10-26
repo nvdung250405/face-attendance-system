@@ -4,7 +4,7 @@
  */
 
 import React from 'react'
-import { Calendar, X, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react'
+import { Calendar, X, AlertTriangle, Clock, ArrowRight, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type {
   ShiftItem,
@@ -94,7 +94,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
                 className="p-4 rounded-xl bg-indigo-50/80 border border-indigo-200 text-indigo-950 space-y-2.5 animate-in fade-in"
               >
                 <div className="flex items-center gap-2 font-bold text-xs text-indigo-900">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  <Clock className="w-4 h-4 text-indigo-600" />
                   <span>Gợi Ý Khoảng Trống Khả Dụng Tiếp Theo</span>
                 </div>
                 <p className="text-2xs text-indigo-800 leading-relaxed">
@@ -112,7 +112,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
                     data-testid="apply-suggested-slot-btn"
                     className="w-full py-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Check className="w-3.5 h-3.5" />
                     <span>Áp Dụng Khoảng Trống Này</span>
                   </button>
                 )}
