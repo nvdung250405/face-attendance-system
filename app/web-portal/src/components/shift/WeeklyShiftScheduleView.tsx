@@ -145,7 +145,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             onClick={handlePrevWeek}
             data-testid="prev-week-btn"
             title="Tuần trước"
-            className="p-2 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-colors shadow-2xs cursor-pointer"
+            className="p-2 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-semibold transition-colors shadow-xs cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -154,7 +154,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             type="button"
             onClick={handleCurrentWeek}
             data-testid="current-week-btn"
-            className="px-3 py-1.5 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors shadow-2xs cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors shadow-xs cursor-pointer"
           >
             Tuần này
           </button>
@@ -164,7 +164,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             onClick={handleNextWeek}
             data-testid="next-week-btn"
             title="Tuần sau"
-            className="p-2 rounded-xl border border-border-subtle bg-white hover:bg-slate-50 text-text-secondary hover:text-text-primary transition-colors shadow-2xs cursor-pointer"
+            className="p-2 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-semibold transition-colors shadow-xs cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

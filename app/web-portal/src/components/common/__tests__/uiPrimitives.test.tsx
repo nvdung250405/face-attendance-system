@@ -30,6 +30,21 @@ describe('UI Primitives (Generic Subdomain UI Library)', () => {
       expect(btn.className).toContain('cursor-pointer')
     })
 
+    it('nút secondary và outline có đường viền border-slate-300 và shadow-xs rõ ràng', () => {
+      render(
+        <div>
+          <Button variant="secondary" data-testid="btn-sec">Nút Secondary</Button>
+          <Button variant="outline" data-testid="btn-out">Nút Outline</Button>
+        </div>
+      )
+      const sec = screen.getByTestId('btn-sec')
+      const out = screen.getByTestId('btn-out')
+      expect(sec.className).toContain('border-slate-300')
+      expect(sec.className).toContain('shadow-xs')
+      expect(out.className).toContain('border-slate-300')
+      expect(out.className).toContain('shadow-xs')
+    })
+
     it('1. Trạng thái Default: render nút bấm đúng variant và text, kích hoạt onClick', () => {
       const handleClick = vi.fn()
       render(<Button variant="primary" onClick={handleClick}>Xác nhận</Button>)

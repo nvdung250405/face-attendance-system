@@ -682,16 +682,18 @@ export const AdminAttendanceView: React.FC = () => {
         </div>
 
         {hasActiveFilters && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleResetFilters}
-            data-testid="reset-filters-btn"
-            leftIcon={<X className="w-3.5 h-3.5" />}
-            className="h-10 px-3 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 shadow-2xs shrink-0"
-          >
-            Xóa lọc
-          </Button>
+          <div className="flex items-center md:pl-2 md:border-l md:border-slate-200">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleResetFilters}
+              data-testid="reset-filters-btn"
+              leftIcon={<X className="w-3.5 h-3.5" />}
+              className="h-10 px-3 text-xs font-semibold text-rose-700 bg-rose-50/80 border-rose-200 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800 shadow-2xs shrink-0 cursor-pointer"
+            >
+              Xóa lọc
+            </Button>
+          </div>
         )}
       </div>
 

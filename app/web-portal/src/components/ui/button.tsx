@@ -25,11 +25,11 @@ const buttonVariants = cva(
         danger:
           'bg-status-danger text-white hover:bg-rose-700 focus-visible:ring-status-danger shadow-xs border-transparent',
         outline:
-          'border border-border-subtle bg-white text-text-primary hover:bg-slate-50 hover:text-slate-900',
+          'border border-slate-300 bg-white text-slate-700 font-semibold shadow-xs hover:bg-slate-50 hover:border-slate-400 hover:text-slate-900 active:scale-[0.98]',
         secondary:
-          'bg-slate-100 text-text-primary hover:bg-slate-200 active:scale-[0.98]',
+          'border border-slate-300 bg-slate-50/80 text-slate-700 font-semibold shadow-xs hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 active:bg-slate-200 active:scale-[0.98]',
         ghost:
-          'text-text-secondary hover:bg-slate-100 hover:text-text-primary',
+          'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]',
         link:
           'text-brand-primary underline-offset-4 hover:underline',
       },
