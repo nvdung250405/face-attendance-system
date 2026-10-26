@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Sparkles, KeyRound } from 'lucide-react'
+import { ShieldCheck, KeyRound } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal } from '@/components/consent'
 import { PinManagementModal } from '@/components/account'
@@ -107,7 +107,7 @@ export const EmployeeDashboardView: React.FC = () => {
             data-testid="open-consent-modal-btn"
             className="btn-primary flex items-center gap-2 shrink-0 self-start md:self-auto text-xs"
           >
-            <Sparkles className="w-4 h-4" />
+            <ShieldCheck className="w-4 h-4" />
             <span>Ký cam kết ngay</span>
           </button>
         </div>

@@ -40,8 +40,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
     >
       {/* ── Thẻ 1: Tổng Nhân Sự ── */}
       <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-400" />
-        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-indigo-500/5 blur-2xl group-hover:bg-indigo-500/15 transition-colors pointer-events-none" />
+        
         
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -65,8 +64,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
 
       {/* ── Thẻ 2: Đã Có Mặt (Tỷ lệ %) ── */}
       <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400" />
-        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-emerald-500/5 blur-2xl group-hover:bg-emerald-500/15 transition-colors pointer-events-none" />
+        
         
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
@@ -100,8 +98,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
 
       {/* ── Thẻ 3: Đi Muộn ── */}
       <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400" />
-        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-amber-500/5 blur-2xl group-hover:bg-amber-500/15 transition-colors pointer-events-none" />
+        
         
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
@@ -127,8 +124,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ stats, isLoading = f
 
       {/* ── Thẻ 4: Chưa Đến / Vắng Mặt ── */}
       <div className="card-surface p-5.5 space-y-3.5 relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 border border-slate-200/80 bg-white rounded-2xl group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-rose-600 to-rose-400" />
-        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-rose-500/5 blur-2xl group-hover:bg-rose-500/15 transition-colors pointer-events-none" />
+        
         
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">

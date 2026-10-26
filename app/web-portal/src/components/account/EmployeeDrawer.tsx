@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from 'react'
-import { X, AlertCircle, RefreshCw, Sparkles } from 'lucide-react'
+import { X, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -194,8 +194,8 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
             </label>
             {mode === 'create' && (
               <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-medium inline-flex items-center gap-1">
-                <Sparkles size={12} className="text-emerald-600" />
-                Hệ thống tự cấp
+                <CheckCircle2 size={12} className="text-emerald-600" />
+                Tự động tạo
               </span>
             )}
           </div>
