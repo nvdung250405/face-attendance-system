@@ -166,8 +166,7 @@ face-attendance-system/
 │       ├── package.json
 │       └── vite.config.ts
 │
-├── infrastructure/
-│   └── docker/                      # docker-compose.yml, docker-compose.dev.yml
+├── docker-compose.yml               # Cấu hình cụm dịch vụ phân tán (PostgreSQL, Backend, Web Portal)
 └── docs/                            # Toàn bộ Bộ tài liệu Kỹ thuật (PI, PP, SRS, DDS, TP)
 ```
 
