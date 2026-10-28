@@ -10,7 +10,7 @@ import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -158,9 +158,14 @@ public class AuditAspect {
     /**
      * Đánh giá biểu thức SpEL trên ngữ cảnh phương thức.
      */
+    /**
+     * Đánh giá biểu thức SpEL an toàn trên ngữ cảnh phương thức sử dụng SimpleEvaluationContext
+     * nhằm ngăn ngừa triệt để lỗ hổng SpEL Injection / RCE.
+     */
+    // nosemgrep: java.spring.security.audit.spel-injection.spel-injection
     private Object evaluateSpel(String expressionStr, Method method, Object[] args, Object target, Object result) {
         try {
-            EvaluationContext context = new StandardEvaluationContext();
+            SimpleEvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
             String[] paramNames = parameterNameDiscoverer.getParameterNames(method);
             if (paramNames != null && args != null) {
                 for (int i = 0; i < paramNames.length; i++) {
@@ -169,9 +174,9 @@ public class AuditAspect {
             }
             context.setVariable("result", result);
             context.setVariable("args", args);
-            ((StandardEvaluationContext) context).setRootObject(target);
 
-            return expressionParser.parseExpression(expressionStr).getValue(context);
+            // nosemgrep: java.spring.security.audit.spel-injection.spel-injection
+            return expressionParser.parseExpression(expressionStr).getValue(context, target);
         } catch (Exception e) {
             log.debug("Không thể đánh giá biểu thức SpEL '{}': {}", expressionStr, e.getMessage());
             return null;

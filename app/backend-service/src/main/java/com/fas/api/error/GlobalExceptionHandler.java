@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
@@ -160,6 +163,36 @@ public class GlobalExceptionHandler {
     /**
      * Xử lý ngoại lệ nghiệp vụ có kiểm soát (ApiException).
      */
+    /**
+     * Xử lý lỗi multipart request (thiếu boundary hoặc định dạng multipart không hợp lệ).
+     */
+    @ExceptionHandler(MultipartException.class)
+    public ProblemDetail handleMultipartException(MultipartException ex, HttpServletRequest request) {
+        logger.warn("Lỗi multipart request tại {}: {}", request.getRequestURI(), ex.getMessage());
+        return problemDetail(ApiErrorCode.VALIDATION_FAILED, "Dữ liệu multipart không hợp lệ hoặc thiếu boundary.", List.of(), request);
+    }
+
+    /**
+     * Xử lý thuộc tính sắp xếp hoặc tham số truy vấn không hợp lệ của Spring Data.
+     */
+    @ExceptionHandler({PropertyReferenceException.class, InvalidDataAccessApiUsageException.class})
+    public ProblemDetail handlePropertyReference(Exception ex, HttpServletRequest request) {
+        logger.warn("Thuộc tính sắp xếp không hợp lệ tại {}: {}", request.getRequestURI(), ex.getMessage());
+        String propName = (ex instanceof PropertyReferenceException pre) ? pre.getPropertyName() : "sort";
+        String reason = "Thuộc tính sắp xếp '%s' không hợp lệ hoặc không tồn tại trên thực thể dữ liệu".formatted(propName);
+        return problemDetail(ApiErrorCode.VALIDATION_FAILED, INVALID_PARAMS_DETAIL,
+                List.of(new InvalidParam(propName, reason)), request);
+    }
+
+    /**
+     * Xử lý đối số phương thức không hợp lệ (IllegalArgumentException).
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        logger.warn("Tham số không hợp lệ tại {}: {}", request.getRequestURI(), ex.getMessage());
+        return problemDetail(ApiErrorCode.VALIDATION_FAILED, ex.getMessage() != null ? ex.getMessage() : INVALID_PARAMS_DETAIL, List.of(), request);
+    }
+
     @ExceptionHandler(ApiException.class)
     public ProblemDetail handleApiException(ApiException ex, HttpServletRequest request) {
         logger.warn("Lỗi nghiệp vụ tại {}: code={}, message={}", request.getRequestURI(), ex.getErrorCode(), ex.getMessage());
