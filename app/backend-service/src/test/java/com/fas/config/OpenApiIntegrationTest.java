@@ -46,7 +46,12 @@ class OpenApiIntegrationTest {
                 .andExpect(jsonPath("$.info.version").value("1.0.0"))
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"))
-                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"));
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
+                .andDo(result -> {
+                    String json = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+                    java.nio.file.Files.createDirectories(java.nio.file.Path.of("target"));
+                    java.nio.file.Files.writeString(java.nio.file.Path.of("target/openapi.json"), json, java.nio.charset.StandardCharsets.UTF_8);
+                });
     }
 
     @Test

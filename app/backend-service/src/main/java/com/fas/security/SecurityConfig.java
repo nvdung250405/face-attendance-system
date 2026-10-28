@@ -83,6 +83,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public org.springframework.security.web.firewall.RequestRejectedHandler requestRejectedHandler() {
+        return new org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler(org.springframework.http.HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }

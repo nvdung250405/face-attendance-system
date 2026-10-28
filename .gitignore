@@ -132,3 +132,7 @@ $RECYCLE.BIN/
 # Scratch & Temporary
 scratch/
 review.md
+
+# Schemathesis Cache
+.schemathesis/
+.hypothesis/

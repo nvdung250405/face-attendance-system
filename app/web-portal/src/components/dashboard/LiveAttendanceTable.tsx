@@ -80,6 +80,8 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
     return true;
   });
 
+  const isFiltering = Boolean(filterKeyword || filterDepartment || filterStatus);
+
   return (
     <div
       className="card-surface overflow-hidden space-y-0 rounded-2xl border border-slate-200/80 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04)]"
@@ -92,7 +94,9 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
             Sự Kiện Điểm Danh Trực Tiếp
           </h2>
           <span className="text-xs text-slate-500 font-medium">
-            ({records.length} sự kiện gần nhất)
+            {isFiltering
+              ? `(${filteredRecords.length} / ${records.length} sự kiện)`
+              : `(${records.length} sự kiện gần nhất)`}
           </span>
         </div>
 
@@ -111,7 +115,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                 placeholder="Tìm theo Mã NV, Họ tên..."
                 value={filterKeyword}
                 onChange={(e) => setFilterKeyword(e.target.value)}
-                className="bg-white border border-slate-200 rounded-lg pl-8.5 pr-7 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-44 sm:w-52 transition-all"
+                className="bg-white border border-slate-200 rounded-lg pl-8.5 pr-7 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-48 sm:w-60 focus:w-68 transition-all"
               />
               {filterKeyword && (
                 <button

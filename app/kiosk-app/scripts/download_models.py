@@ -12,6 +12,7 @@ Tuân thủ:
 import argparse
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -54,12 +55,19 @@ def download_file(url: str, dest_path: Path, description: str) -> bool:
     print(f"    Nguồn: {url}")
     print(f"    Đích:  {dest_path}")
 
+    # Kiểm tra giao thức URL bảo mật (chỉ cho phép HTTPS)
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme.lower() != "https":
+        print(f"[-] Lỗi bảo mật: Chỉ cho phép tải qua giao thức HTTPS an toàn, URL nhận được: {url}")
+        return False
+
     temp_path = dest_path.with_suffix(".tmp")
     try:
         req = urllib.request.Request(
             url,
             headers={"User-Agent": "FAS-Kiosk-Downloader/1.0"},
         )
+        # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
         with urllib.request.urlopen(req, timeout=30) as response, open(temp_path, "wb") as out_file:
             content_length = response.headers.get("Content-Length")
             total_size = int(content_length) if content_length else 0
