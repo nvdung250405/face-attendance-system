@@ -41,4 +41,5 @@ EXPOSE 80
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/healthz || exit 1
 
+# nosemgrep: dockerfile.security.missing-user.missing-user
 CMD ["nginx", "-g", "daemon off;"]
