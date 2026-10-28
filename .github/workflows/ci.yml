@@ -221,6 +221,7 @@ jobs:
           scanners: 'vuln,secret'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
+          trivy-opts: '--offline-scan'
           skip-dirs: '**/node_modules,**/.venv,**/target,**/dist'
           exit-code: '1'
 
