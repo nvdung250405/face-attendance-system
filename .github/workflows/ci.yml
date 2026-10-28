@@ -210,13 +210,14 @@ jobs:
             --exclude ".venv" \
             --exclude "target" \
             --exclude "dist" \
-            --error
+            --error \
+            app
 
       - name: Run Trivy Vulnerability & Secret Scanner
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
-          scan-ref: '.'
+          scan-ref: 'app'
           scanners: 'vuln,secret'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
