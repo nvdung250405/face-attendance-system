@@ -159,7 +159,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ sidebarWidth }) => {
       <div className="flex-1 min-w-0">
         <nav aria-label="breadcrumb">
           <ol className="flex items-center gap-2 text-xs font-medium">
-            <li className="text-slate-400 hover:text-slate-600 transition-colors">FAS Portal</li>
+            <li className="text-slate-500 hover:text-slate-700 transition-colors">FAS Portal</li>
             <li className="text-slate-300">/</li>
             <li className="text-slate-900 font-bold truncate text-sm">{currentPage}</li>
           </ol>

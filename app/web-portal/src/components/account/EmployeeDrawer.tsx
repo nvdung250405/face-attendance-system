@@ -151,7 +151,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
       {/* Header Modal */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
         <div>
-          <h2 className="text-base font-bold text-text-primary">
+          <h2 id="employee-drawer-title" className="text-base font-bold text-text-primary">
             {mode === 'create' ? 'Tạo mới hồ sơ nhân sự' : 'Chỉnh sửa hồ sơ nhân sự'}
           </h2>
           <p className="text-xs text-text-secondary mt-0.5">
@@ -335,7 +335,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
               Hệ thống yêu cầu duy trì ít nhất 1 Quản trị viên (ADMIN) đang hoạt động. Không thể chuyển sang vai trò khác.
             </p>
           ) : (
-            <p className="text-[11px] text-text-muted mt-1 leading-normal">
+            <p className="text-[11px] text-slate-600 mt-1 leading-normal">
               {role === 'EMPLOYEE' && 'Quyền nhân viên: Xem bảng công cá nhân, đăng ký sinh trắc & gửi yêu cầu dữ liệu.'}
               {role === 'HR_MANAGER' && 'Quyền quản lý nhân sự: Quản lý danh mục nhân viên, điểm danh trực tiếp, ca kíp & kỳ công.'}
               {role === 'ADMIN' && 'Quyền quản trị toàn quyền: Toàn quyền truy cập mọi tính năng và cấu hình trạm Kiosk.'}
@@ -394,6 +394,7 @@ export const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({
     >
       <DialogContent
         data-testid="employee-drawer"
+        aria-labelledby="employee-drawer-title"
         hideCloseButton
         className="p-0 max-w-lg border-0 bg-transparent shadow-none"
       >

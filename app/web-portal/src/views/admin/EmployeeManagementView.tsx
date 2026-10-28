@@ -297,7 +297,7 @@ export const EmployeeManagementView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="page-title">Hồ sơ nhân sự</h1>
-          <p className="page-subtitle">
+          <p className="page-subtitle text-slate-600">
             Quản lý danh sách nhân viên, thông tin tài khoản và phân quyền hệ thống
           </p>
         </div>
@@ -545,7 +545,7 @@ export const EmployeeManagementView: React.FC = () => {
 
                       {/* Cột Hành động Dính bên phải (UXD-WEB-006) */}
                       <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5">
+                        <div className="inline-flex items-center gap-2">
                           {/* Nút sửa */}
                           <button
                             type="button"
@@ -553,7 +553,7 @@ export const EmployeeManagementView: React.FC = () => {
                             aria-label={`Sửa hồ sơ ${emp.fullName}`}
                             onClick={() => handleOpenEdit(emp)}
                             disabled={isBusy}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                            className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                           >
                             <Edit2 size={16} strokeWidth={2} />
                           </button>
@@ -565,7 +565,7 @@ export const EmployeeManagementView: React.FC = () => {
                             aria-label={`Cấp lại mật khẩu cho ${emp.fullName}`}
                             onClick={() => handleResetCredentials(emp)}
                             disabled={isBusy}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                            className="p-2 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
                           >
                             <KeyRound size={16} strokeWidth={2} />
                           </button>
@@ -580,7 +580,7 @@ export const EmployeeManagementView: React.FC = () => {
                                 aria-label={`${isDeactivated ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
                                 onClick={() => handleToggleStatus(emp)}
                                 disabled={isBusy}
-                                className={`p-1.5 rounded-lg transition-colors ${
+                                className={`p-2 rounded-lg transition-colors ${
                                   isDeactivated
                                     ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
                                     : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
