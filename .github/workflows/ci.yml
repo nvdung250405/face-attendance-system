@@ -213,17 +213,18 @@ jobs:
             --error \
             app
 
+      - name: Install Trivy CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Run Trivy Vulnerability & Secret Scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: 'app'
-          scanners: 'vuln,secret'
-          severity: 'CRITICAL,HIGH'
-          ignore-unfixed: true
-          trivy-opts: '--offline-scan'
-          skip-dirs: '**/node_modules,**/.venv,**/target,**/dist'
-          exit-code: '1'
+        run: |
+          trivy fs app \
+            --offline-scan \
+            --scanners vuln,secret \
+            --severity CRITICAL,HIGH \
+            --skip-dirs "**/node_modules,**/.venv,**/target,**/dist" \
+            --exit-code 1
 
   # ----------------------------------------------------------------------------
   # 5. Job Tổng hợp Cổng kiểm định CI (ci-passed - github-docs.md 10.2)
