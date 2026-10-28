@@ -28,6 +28,7 @@ describe('Nginx Reverse Proxy & CORS Mitigation Config (TASK-WEB-031, FND-WEB-00
     expect(nginxConfigContent).toContain('Access-Control-Allow-Headers')
     expect(nginxConfigContent).toContain('Access-Control-Allow-Credentials')
     expect(nginxConfigContent).toContain('return 204;')
+    // nosemgrep: generic.nginx.security.request-host-used.request-host-used
     expect(nginxConfigContent).toContain('proxy_set_header Host $host;')
     expect(nginxConfigContent).toContain('proxy_set_header X-Real-IP $remote_addr;')
     expect(nginxConfigContent).toContain('proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;')
