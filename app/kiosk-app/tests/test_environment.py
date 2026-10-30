@@ -39,6 +39,7 @@ def test_kiosk_settings_configuration():
     assert settings.camera_frame_width >= 640
     assert settings.camera_frame_height >= 480
     assert settings.db_path.name == "kiosk_local.db"
+    assert isinstance(settings.is_default_secret, bool)
 
 
 def test_sqlite_wal_mode(tmp_path):
@@ -83,26 +84,28 @@ def test_qml_mvc_environment_readiness(qapp):
     assert enroll.currentStep == 1
 
     # Kiểm tra cấu trúc Views QML trong resources/qml
+    kiosk_root = Path(__file__).resolve().parent.parent
     expected_files = [
-        Path("resources.qrc"),
-        Path("resources/qml/main.qml"),
-        Path("resources/qml/theme/Theme.qml"),
-        Path("resources/qml/theme/qmldir"),
-        Path("resources/qml/components/LiveCanvas.qml"),
-        Path("resources/qml/components/OvalOverlay.qml"),
-        Path("resources/qml/components/StatusBadge.qml"),
-        Path("resources/qml/components/VirtualKeypad.qml"),
-        Path("resources/qml/components/PortraitHeaderBar.qml"),
-        Path("resources/qml/components/WelcomeCanvas.qml"),
-        Path("resources/qml/components/PortraitCameraPanel.qml"),
-        Path("resources/qml/components/PortraitResultCard.qml"),
-        Path("resources/qml/components/PortraitActionDock.qml"),
-        Path("resources/qml/dialogs/PinDialog.qml"),
-        Path("resources/qml/dialogs/EnrollmentDialog.qml"),
-        Path("resources/qml/dialogs/HelpDialog.qml"),
+        "resources.qrc",
+        "resources/qml/main.qml",
+        "resources/qml/theme/Theme.qml",
+        "resources/qml/theme/qmldir",
+        "resources/qml/components/LiveCanvas.qml",
+        "resources/qml/components/OvalOverlay.qml",
+        "resources/qml/components/StatusBadge.qml",
+        "resources/qml/components/VirtualKeypad.qml",
+        "resources/qml/components/PortraitHeaderBar.qml",
+        "resources/qml/components/WelcomeCanvas.qml",
+        "resources/qml/components/PortraitCameraPanel.qml",
+        "resources/qml/components/PortraitResultCard.qml",
+        "resources/qml/components/PortraitActionDock.qml",
+        "resources/qml/dialogs/PinDialog.qml",
+        "resources/qml/dialogs/EnrollmentDialog.qml",
+        "resources/qml/dialogs/HelpDialog.qml",
     ]
-    for file_path in expected_files:
-        assert file_path.exists(), f"Thiếu file: {file_path}"
-        assert file_path.stat().st_size > 0, f"File rỗng: {file_path}"
+    for rel_path in expected_files:
+        target = kiosk_root / rel_path
+        assert target.exists(), f"Thiếu file: {target}"
+        assert target.stat().st_size > 0, f"File rỗng: {target}"
 
 

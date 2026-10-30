@@ -35,6 +35,7 @@ class KioskConfig:
     kiosk_id: str = os.getenv("KIOSK_ID", "KIOSK-LOBBY-01")
     backend_url: str = os.getenv("VITE_API_BASE_URL", "http://localhost:8080/api/v1")
     stomp_ws_url: str = os.getenv("VITE_WS_BASE_URL", "ws://localhost:8080/ws")
+    DEFAULT_SECRET_TOKEN: str = "Kiosk_Internal_Secret_Token_2026"
     kiosk_secret_token: str = os.getenv(
         "KIOSK_SECRET_TOKEN", "Kiosk_Internal_Secret_Token_2026"
     )
@@ -94,6 +95,11 @@ class KioskConfig:
     logo_path: Path = KIOSK_DIR / "resources" / "assets" / "icons" / "logo.png"
     online_icon_path: Path = KIOSK_DIR / "resources" / "assets" / "icons" / "online.png"
     offline_icon_path: Path = KIOSK_DIR / "resources" / "assets" / "icons" / "offline.png"
+
+    @property
+    def is_default_secret(self) -> bool:
+        """Kiểm tra trạm có đang dùng token bí mật mặc định hay không."""
+        return self.kiosk_secret_token == self.DEFAULT_SECRET_TOKEN
 
 
 # Biến cấu hình toàn cục dùng trực tiếp

@@ -290,6 +290,11 @@ def main() -> int:
     logger.info("Kiosk ID:        %s", settings.kiosk_id)
     logger.info("Backend REST:    %s", settings.backend_url)
     logger.info("WebSocket STOMP: %s", settings.stomp_ws_url)
+    if settings.is_default_secret:
+        logger.warning(
+            "CẢNH BÁO BẢO MẬT: Trạm Kiosk đang dùng KIOSK_SECRET_TOKEN mặc định! "
+            "Trong môi trường Production, bắt buộc cấu hình token riêng biệt qua biến môi trường."
+        )
     logger.info(
         "Camera Index:    %d (%dx%d @ %d FPS)",
         settings.camera_device_index,
