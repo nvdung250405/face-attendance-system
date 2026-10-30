@@ -107,7 +107,7 @@ class EntityMappingAndConstraintTest {
         entityManager.persist(user);
 
         Kiosk kiosk = Kiosk.builder()
-                .id("KIOSK-HN-01")
+                .id("KIOSK-TEST-CONSTRAINT")
                 .locationName("Sảnh Tầng 1")
                 .secretTokenHash("$2a$12$dummykiosksecret")
                 .isActive(true)

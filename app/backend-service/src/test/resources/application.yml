@@ -30,12 +30,15 @@ fas:
     jwt-secret: 4a8f9c2d1e0b5a7c3e6d8f1a2b4c6e8d0f2a4b6c8e0d2f4a6b8c0d2e4f6a8b0c
     jwt-expiration-hours: 8
     encryption-master-key: 9f8e7d6c5b4a3a2b1c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+    cors:
+      allowed-origins: "*"
 
   kiosk:
     secret-token: Kiosk_Test_Token_2026
 
   attendance:
     cooldown-seconds: 120
+    stats-cache-seconds: 30
     grace-period-minutes: 15
 
   compliance:
