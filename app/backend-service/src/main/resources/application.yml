@@ -50,12 +50,15 @@ fas:
     jwt-secret: ${JWT_SECRET}
     jwt-expiration-hours: 1
     encryption-master-key: ${ENCRYPTION_MASTER_KEY}
+    cors:
+      allowed-origins: ${FAS_CORS_ALLOWED_ORIGINS:*}
 
   kiosk:
     secret-token: ${KIOSK_SECRET_TOKEN:Kiosk_Internal_Secret_Token_2026}
 
   attendance:
     cooldown-seconds: ${COOLDOWN_SECONDS:120}
+    stats-cache-seconds: ${STATS_CACHE_SECONDS:30}
     grace-period-minutes: 15
 
   compliance:

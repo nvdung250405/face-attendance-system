@@ -549,5 +549,51 @@ class AttendanceServiceTest {
             verify(attendanceLogRepository, never()).save(any());
         }
     }
+
+    @Nested
+    @DisplayName("Ca kiểm thử getAttendanceStats")
+    class GetAttendanceStatsTests {
+
+        @Test
+        @DisplayName("Thống kê KPI với ngày cụ thể thành công")
+        void getAttendanceStats_WithTargetDate_ReturnsValidKpis() {
+            java.time.LocalDate targetDate = java.time.LocalDate.of(2026, 10, 30);
+            java.time.Instant start = targetDate.atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant();
+            java.time.Instant end = targetDate.plusDays(1).atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant();
+
+            when(userRepository.countByStatus(EmployeeStatus.ACTIVE)).thenReturn(100L);
+            when(attendanceLogRepository.countDistinctUserByPunchTimestampBetween(start, end)).thenReturn(85L);
+            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end, AttendanceStatus.ON_TIME)).thenReturn(80L);
+            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end, AttendanceStatus.LATE)).thenReturn(5L);
+
+            var response = attendanceService.getAttendanceStats(targetDate);
+
+            assertThat(response).isNotNull();
+            assertThat(response.totalEmployees()).isEqualTo(100L);
+            assertThat(response.presentCount()).isEqualTo(85L);
+            assertThat(response.onTimeCount()).isEqualTo(80L);
+            assertThat(response.lateCount()).isEqualTo(5L);
+            assertThat(response.absentCount()).isEqualTo(15L);
+        }
+
+        @Test
+        @DisplayName("Thống kê KPI với targetDate null sẽ mặc định hôm nay")
+        void getAttendanceStats_WithNullDate_DefaultsToToday() {
+            when(userRepository.countByStatus(EmployeeStatus.ACTIVE)).thenReturn(0L);
+            when(userRepository.count()).thenReturn(50L);
+            when(attendanceLogRepository.countDistinctUserByPunchTimestampBetween(any(java.time.Instant.class), any(java.time.Instant.class))).thenReturn(40L);
+            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(any(java.time.Instant.class), any(java.time.Instant.class), eq(AttendanceStatus.ON_TIME))).thenReturn(38L);
+            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(any(java.time.Instant.class), any(java.time.Instant.class), eq(AttendanceStatus.LATE))).thenReturn(2L);
+
+            var response = attendanceService.getAttendanceStats(null);
+
+            assertThat(response).isNotNull();
+            assertThat(response.totalEmployees()).isEqualTo(50L);
+            assertThat(response.presentCount()).isEqualTo(40L);
+            assertThat(response.onTimeCount()).isEqualTo(38L);
+            assertThat(response.lateCount()).isEqualTo(2L);
+            assertThat(response.absentCount()).isEqualTo(10L);
+        }
+    }
 }
 

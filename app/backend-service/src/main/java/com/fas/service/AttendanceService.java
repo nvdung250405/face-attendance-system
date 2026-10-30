@@ -32,6 +32,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import com.fas.config.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -95,6 +98,7 @@ public class AttendanceService {
      * @param request dữ liệu lượt quẹt gửi từ Kiosk
      * @return kết quả lượt điểm danh đã xử lý
      */
+    @CacheEvict(value = CacheConfig.ATTENDANCE_STATS_CACHE, allEntries = true)
     @Transactional
     public PunchResult recordPunch(KioskPunchRequest request) {
         // 1. Thẩm định trạm Kiosk
@@ -263,6 +267,7 @@ public class AttendanceService {
      * @return bản ghi điểm danh sau khi đã điều chỉnh
      */
     @Auditable(action = "UPDATE_ATTENDANCE", entityType = "ATTENDANCE_LOG", entityId = "#logId")
+    @CacheEvict(value = CacheConfig.ATTENDANCE_STATS_CACHE, allEntries = true)
     @Transactional
     public AttendanceLogItem adjustAttendanceLog(Long logId, AdjustAttendanceRequest request) {
         AttendanceLog attendanceLog = attendanceLogRepository.findById(logId)
@@ -382,6 +387,7 @@ public class AttendanceService {
      * @param targetDate ngày cần thống kê (mặc định hôm nay theo giờ Việt Nam)
      * @return các chỉ số KPI thực tế
      */
+    @Cacheable(value = CacheConfig.ATTENDANCE_STATS_CACHE, key = "#targetDate != null ? #targetDate.toString() : 'TODAY'")
     @Transactional(readOnly = true)
     public com.fas.api.dto.response.AttendanceStatsResponse getAttendanceStats(LocalDate targetDate) {
         LocalDate date = targetDate != null ? targetDate : LocalDate.now(ApiResponse.VIETNAM_ZONE);
