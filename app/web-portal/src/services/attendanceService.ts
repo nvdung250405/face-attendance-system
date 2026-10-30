@@ -96,13 +96,20 @@ export class AttendanceService {
       if (data && Array.isArray(data.records)) {
         return {
           ...data,
-          records: data.records.map((r: any) => ({
-            ...r,
-            checkIn: r.checkIn || (r.checkInTime ? String(r.checkInTime) : null),
-            checkOut: r.checkOut || (r.checkOutTime ? String(r.checkOutTime) : null),
-            checkInLogId: r.checkInLogId ?? null,
-            checkOutLogId: r.checkOutLogId ?? null,
-          })),
+          records: data.records.map(
+            (
+              r: PersonalAttendanceDayRecord & {
+                checkInTime?: string | number | null
+                checkOutTime?: string | number | null
+              }
+            ) => ({
+              ...r,
+              checkIn: r.checkIn || (r.checkInTime ? String(r.checkInTime) : null),
+              checkOut: r.checkOut || (r.checkOutTime ? String(r.checkOutTime) : null),
+              checkInLogId: r.checkInLogId ?? null,
+              checkOutLogId: r.checkOutLogId ?? null,
+            })
+          ),
         }
       }
       return data

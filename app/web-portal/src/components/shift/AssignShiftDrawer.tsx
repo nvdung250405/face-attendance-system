@@ -8,7 +8,7 @@
  * 3. Phân ca Cá nhân (Single): Gán ca riêng lẻ từng nhân sự
  */
 
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Calendar,
   X,
@@ -95,20 +95,19 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
     return Array.from(set).sort()
   }, [employees])
 
-  // Khởi tạo phòng ban mặc định khi danh sách phòng ban thay đổi
-  useEffect(() => {
-    if (departments.length > 0 && !selectedDept) {
-      setSelectedDept(departments[0])
-    }
-  }, [departments, selectedDept])
+  // Phòng ban hiệu lực (mặc định lấy phòng ban đầu tiên nếu chưa chọn hoặc lựa chọn không còn hợp lệ)
+  const effectiveDept =
+    selectedDept && departments.includes(selectedDept)
+      ? selectedDept
+      : (departments[0] || '')
 
   // Nhân sự thuộc phòng ban đang chọn
   const departmentEmployees = useMemo(() => {
-    if (!selectedDept) return []
+    if (!effectiveDept) return []
     return employees.filter(
-      (emp) => emp.department?.trim() === selectedDept && emp.status !== 'TERMINATED'
+      (emp) => emp.department?.trim() === effectiveDept && emp.status !== 'TERMINATED'
     )
-  }, [employees, selectedDept])
+  }, [employees, effectiveDept])
 
   // Danh sách nhân sự đã lọc trong tab Multi-select
   const filteredMultiEmployees = useMemo(() => {
@@ -164,7 +163,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
         shiftId: formData.shiftId,
         effectiveStartDate: formData.effectiveStartDate,
         effectiveEndDate: formData.effectiveEndDate,
-        departmentName: selectedDept,
+        departmentName: effectiveDept,
       })
       return
     }
@@ -315,7 +314,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
                     </span>
                   </label>
                   <select
-                    value={selectedDept}
+                    value={effectiveDept}
                     onChange={(e) => setSelectedDept(e.target.value)}
                     data-testid="select-assign-department"
                     disabled={isLoadingEmployees || departments.length === 0}
@@ -336,7 +335,7 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
                 </div>
 
                 {/* Tóm tắt nhân sự thuộc phòng ban */}
-                {selectedDept && (
+                {effectiveDept && (
                   <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-1.5 text-xs">
                     <div className="flex items-center justify-between font-semibold text-slate-700">
                       <span className="flex items-center gap-1.5 text-indigo-700">
@@ -579,9 +578,9 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = ({
           {/* Footer Modal */}
           <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-between gap-3 bg-slate-50/70 shrink-0">
             <div className="text-xs text-slate-500 font-medium">
-              {mode === 'department' && selectedDept && (
+              {mode === 'department' && effectiveDept && (
                 <span>
-                  Áp dụng: <strong className="text-indigo-700">{departmentEmployees.length} nhân sự</strong> ({selectedDept})
+                  Áp dụng: <strong className="text-indigo-700">{departmentEmployees.length} nhân sự</strong> ({effectiveDept})
                 </span>
               )}
               {mode === 'multi' && (
