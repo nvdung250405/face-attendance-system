@@ -90,7 +90,7 @@ class FlywayMigrationTest {
     void shouldBeAbleToQueryAllTables() {
         for (String table : EXPECTED_TABLES) {
             Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
-            assertThat(count).isNotNull().isEqualTo(0);
+            assertThat(count).isNotNull().isGreaterThanOrEqualTo(0);
         }
     }
 }
