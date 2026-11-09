@@ -31,17 +31,31 @@ flowchart TD
 | [**`e2e/desktop/run_flaui_e2e.py`**](e2e/desktop/run_flaui_e2e.py) | Desktop UIA3 | Điều khiển giao diện Kiosk thật qua FlaUI CLI: giả lập phím F2, F1, Esc, Space | `python tests/e2e/desktop/run_flaui_e2e.py` |
 | [**`visual/test_visual_regression.py`**](visual/test_visual_regression.py) | Visual Regression | Kiểm tra 17 màn hình chuẩn Kiosk, Zero-Leak Gate (không lộ dữ liệu demo) | `pytest tests/visual/test_visual_regression.py -v` |
 | [**`visual/test_scaling_matrix.py`**](visual/test_scaling_matrix.py) | Scaling Matrix | Kiểm định tính co giãn trên 8 độ phân giải (FHD, 4K, Landscape, Ultrawide, Mobile) | `pytest tests/visual/test_scaling_matrix.py -v` |
-| [**`visual/run_ui_review.py`**](visual/run_ui_review.py) | Snapshot Runner | Tự động kết xuất lại toàn bộ 17 ảnh chụp chuẩn vào `reports/screenshots/baselines/` | `python tests/visual/run_ui_review.py` |
+| [**`visual/run_ui_review.py`**](visual/run_ui_review.py) | Snapshot Runner | Tự động kết xuất lại toàn bộ 17 ảnh chụp chuẩn vào `tests/reports/screenshots/baselines/` | `python tests/visual/run_ui_review.py` |
 | [**`integration/`**](integration/) | API Integration | Kiểm định tính tương thích thực tế giữa Backend REST/STOMP và các ứng dụng | `pytest tests/integration/ -v` |
 
 ---
 
-## 3. Quy tắc Đầu ra & Chính sách Báo cáo
+## 3. Quy tắc Đầu ra & Chính sách Đóng Gói (Self-Contained Outputs)
 
-* **Ranh giới đầu ra**: Toàn bộ dữ liệu kết xuất từ các bài kiểm thử này (ảnh chụp màn hình, báo cáo audit JSON, kết quả đo độ phủ) **tuyệt đối không được ghi vào `docs/` hay `app/`**, mà được lưu trữ thống nhất tại:
-  - Ảnh chụp giao diện chuẩn & vết E2E: [`reports/screenshots/`](../reports/screenshots/)
-  - Báo cáo kiểm toán trợ năng & chất lượng selector: [`reports/audit/`](../reports/audit/)
-  - Kết quả kiểm thử JUnit XML / Coverage: [`reports/test-results/`](../reports/test-results/)
+Tuân thủ nguyên tắc đóng gói toàn diện: **Toàn bộ đầu ra, báo cáo và dữ liệu kiểm thử sinh ra đều nằm gói gọn 100% bên trong không gian `tests/`**, không rò rỉ ra thư mục gốc:
+
+```text
+tests/
+├── README.md                      # Metadata manifest của Testing Hub
+├── e2e/                           # Kịch bản kiểm thử tích hợp & desktop E2E
+├── visual/                        # Kiểm thử visual regression & ma trận scaling
+└── reports/                       # <<< TOÀN BỘ ARTIFACTS TEST NẰM Ở ĐÂY
+    ├── README.md                  # Metadata manifest chi tiết của reports
+    ├── audit/
+    │   └── flaui_audit_report.json
+    ├── screenshots/
+    │   ├── baselines/             # 17 ảnh chụp giao diện chuẩn Kiosk
+    │   └── e2e/                   # 4 ảnh chụp minh chứng luồng E2E FlaUI
+    ├── diffs/                     # Ảnh sai lệch kết xuất khi test fail (.gitignore)
+    └── test-results/              # Kết quả JUnit XML / Coverage (.gitignore)
+```
+
 * **Chính sách Git**:
-  - Mã nguồn kiểm thử `tests/` được theo dõi đầy đủ trong Git.
-  - Các tệp phiên kiểm thử tạm (`*.session.json`) và ảnh sai lệch (`diffs/`) được `.gitignore` tự động bỏ qua.
+  - Mã nguồn kiểm thử `tests/` cùng ảnh chuẩn `tests/reports/screenshots/baselines/` và `tests/reports/audit/` được lưu vết trong Git.
+  - Các tệp phiên tạm (`tests/.tmp/`), session FlaUI (`*.session.json`) và ảnh diff sai lệch (`diffs/`) được `.gitignore` tự động bỏ qua.

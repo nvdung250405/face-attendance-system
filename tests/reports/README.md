@@ -1,18 +1,19 @@
-# Kho Báo cáo Thực thi & Vết Kiểm toán (`reports/`)
+# Kho Báo cáo Thực thi & Vết Kiểm toán (`tests/reports/`)
 
-> **Mã phân vùng:** `WORKSPACE-REPORTS`  
-> **Cấp độ không gian:** Parent Artifacts Hub  
-> **Đường dẫn:** `reports/`  
-> **Không gian cha:** [`README.md`](../README.md) (Thư mục Gốc)  
+> **Mã phân vùng:** `WORKSPACE-TESTS-REPORTS`  
+> **Cấp độ không gian:** Sub-Workspace Artifacts Hub  
+> **Đường dẫn:** `tests/reports/`  
+> **Không gian cha:** [`tests/README.md`](../README.md) (Testing Hub)  
 > **Trách nhiệm cốt lõi (Single Responsibility):** Quản lý tập trung toàn bộ dữ liệu đầu ra sinh ra trong quá trình kiểm thử, bao gồm kho ảnh mẫu giao diện (Golden Baselines), ảnh vết thực thi E2E tự động, báo cáo kiểm toán trợ năng (FlaUI UIA3 Audit), và kết quả đo độ phủ mã nguồn (Coverage).
 
 ---
 
 ## 1. Mục đích & Vai trò Kho Lưu trữ
 
-Thư mục `reports/` là ranh giới cô lập giữa **Mã nguồn (`app/`)**, **Tài liệu (`docs/`)** và **Kết quả Thực thi (`reports/`)**:
+Thư mục `tests/reports/` là output đóng gói của không gian kiểm thử `tests/`:
 * Trả lại cho `docs/` sự tinh gọn (chỉ chứa văn bản, đặc tả, biểu đồ kiến trúc; không bị phình to bởi tệp nhị phân).
 * Trả lại cho `app/` sự trong sạch (chỉ chứa mã nguồn ứng dụng và unit tests; không chứa báo cáo tự động).
+* Trả lại cho Root sự ngăn nắp (không có thư mục `reports/` rò rỉ ra ngoài Root).
 
 ---
 
@@ -30,8 +31,8 @@ Thư mục `reports/` là ranh giới cô lập giữa **Mã nguồn (`app/`)**,
 ## 3. Chính sách Dữ liệu & Quy tắc Git (Data & Git Policy)
 
 * **Tài nguyên theo dõi (Tracked)**:
-  - Bộ 17 ảnh mẫu chuẩn tại `reports/screenshots/baselines/` (đóng vai trò Golden Baseline để CI/CD so sánh pixel diff).
-  - Tệp báo cáo kiểm toán `reports/audit/flaui_audit_report.json` làm chứng chỉ nghiệm thu chất lượng UI.
+  - Bộ 17 ảnh mẫu chuẩn tại `tests/reports/screenshots/baselines/` (đóng vai trò Golden Baseline để CI/CD so sánh pixel diff).
+  - Tệp báo cáo kiểm toán `tests/reports/audit/flaui_audit_report.json` làm chứng chỉ nghiệm thu chất lượng UI.
 * **Tài nguyên bỏ qua (Ignored 100%)**:
-  - Thư mục ảnh sai lệch tạm thời: `reports/screenshots/diffs/`.
-  - Kết quả kiểm thử động tạm thời: `reports/test-results/` (được `.gitignore` tự động bỏ qua để không gây xung đột git khi chạy test cục bộ).
+  - Thư mục ảnh sai lệch tạm thời: `tests/reports/screenshots/diffs/`.
+  - Kết quả kiểm thử động tạm thời: `tests/reports/test-results/` (được `.gitignore` tự động bỏ qua để không gây xung đột git khi chạy test cục bộ).

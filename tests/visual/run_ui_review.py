@@ -42,7 +42,7 @@ engine.load(str(qml_dir / "main.qml"))
 root_window = engine.rootObjects()[0]
 root_window.show()
 
-output_dir = workspace_root / "reports" / "screenshots" / "baselines"
+output_dir = Path(__file__).resolve().parents[1] / "reports" / "screenshots" / "baselines"
 output_dir.mkdir(parents=True, exist_ok=True)
 
 
