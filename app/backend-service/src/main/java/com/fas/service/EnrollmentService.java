@@ -1,9 +1,11 @@
 package com.fas.service;
 
 import com.fas.api.dto.ApiResponse;
+import com.fas.api.dto.event.GalleryUpdateEvent;
 import com.fas.api.dto.request.ConsentRequest;
 import com.fas.api.dto.request.KioskEnrollFaceRequest;
 import com.fas.api.dto.request.KioskVerifyOtpRequest;
+import com.fas.api.dto.request.PoseTemplateDto;
 import com.fas.api.dto.response.ConsentResult;
 import com.fas.api.dto.response.EnrollmentResult;
 import com.fas.api.dto.response.GalleryItem;
@@ -18,6 +20,7 @@ import com.fas.data.entity.EnrollmentSession;
 import com.fas.data.entity.Kiosk;
 import com.fas.data.entity.User;
 import com.fas.data.enums.EmployeeStatus;
+import com.fas.data.enums.PoseType;
 import com.fas.data.repository.BiometricTemplateRepository;
 import com.fas.data.repository.EnrollmentSessionRepository;
 import com.fas.data.repository.KioskRepository;
@@ -34,8 +37,13 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -235,13 +243,12 @@ public class EnrollmentService {
 
         validateKiosk(request.kioskId());
 
-        VerifiedSession tokenData = verifiedSessions.get(request.sessionToken());
+        VerifiedSession tokenData = request.sessionToken() != null ? verifiedSessions.remove(request.sessionToken()) : null;
         if (tokenData == null) {
             throw new ApiException(ApiErrorCode.OTP_INVALID, "Phiên xác minh OTP không tồn tại hoặc đã hết hiệu lực");
         }
 
         if (Duration.between(tokenData.verifiedAt(), Instant.now()).toMinutes() > SESSION_TOKEN_TTL_MINUTES) {
-            verifiedSessions.remove(request.sessionToken());
             throw new ApiException(ApiErrorCode.OTP_EXPIRED, "Phiên xác minh OTP tại Kiosk đã quá hạn 15 phút");
         }
 
@@ -259,46 +266,95 @@ public class EnrollmentService {
             throw new ApiException(ApiErrorCode.OTP_INVALID, "Mã OTP không khớp với phiên xác minh");
         }
 
-        List<Float> vector512 = request.vector512();
-        if (vector512 == null || vector512.size() != BiometricCryptoService.VECTOR_DIMENSION) {
-            throw new ApiException(ApiErrorCode.INVALID_VECTOR_DIMENSION, "Vector phải có đúng 512 chiều");
+        // Phân định chế độ Multi-Template vs Legacy Single-Vector
+        boolean hasTemplates = request.templates() != null && !request.templates().isEmpty();
+        boolean hasLegacyVector = request.vector512() != null && !request.vector512().isEmpty();
+
+        if (!hasTemplates && !hasLegacyVector) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
+                    "Yêu cầu đăng ký phải chứa danh sách templates hoặc vector512 đơn");
         }
 
-        float[] vectorArray = new float[BiometricCryptoService.VECTOR_DIMENSION];
-        for (int i = 0; i < BiometricCryptoService.VECTOR_DIMENSION; i++) {
-            Float val = vector512.get(i);
-            if (val == null || Float.isNaN(val) || Float.isInfinite(val)) {
-                throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Giá trị vector tại chiều " + i + " không hợp lệ");
+        Map<PoseType, List<Float>> vectorMap = new EnumMap<>(PoseType.class);
+
+        if (hasTemplates) {
+            // Chế độ Multi-Template: Bắt buộc đúng 3 phần tử
+            if (request.templates().size() != 3) {
+                throw new ApiException(ApiErrorCode.INVALID_TEMPLATE_SET,
+                        "Bộ mẫu sinh trắc học bắt buộc phải gồm đúng 3 tư thế phân biệt: FRONTAL, LEFT_TILT, RIGHT_TILT");
             }
-            vectorArray[i] = val;
-        }
 
-        // Mã hóa AES-256-GCM với IV 12 bytes ngẫu nhiên
-        BiometricCryptoService.EncryptedVector encrypted = biometricCryptoService.encryptVector(vectorArray);
+            Set<PoseType> poseTypes = EnumSet.noneOf(PoseType.class);
+            for (PoseTemplateDto templateDto : request.templates()) {
+                if (templateDto == null || templateDto.poseType() == null || templateDto.poseType().isBlank()) {
+                    throw new ApiException(ApiErrorCode.INVALID_TEMPLATE_SET,
+                            "Tư thế khuôn mặt không được để trống");
+                }
+
+                PoseType poseType;
+                try {
+                    poseType = PoseType.valueOf(templateDto.poseType().trim().toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException ex) {
+                    throw new ApiException(ApiErrorCode.INVALID_TEMPLATE_SET,
+                            "Tư thế khuôn mặt không hợp lệ: " + templateDto.poseType());
+                }
+
+                if (!poseTypes.add(poseType)) {
+                    throw new ApiException(ApiErrorCode.INVALID_TEMPLATE_SET,
+                            "Bộ mẫu sinh trắc học chứa tư thế trùng lặp: " + poseType);
+                }
+
+                List<Float> vector = templateDto.vector512();
+                validateVectorDimensionAndNorm(vector, "tư thế " + poseType);
+                vectorMap.put(poseType, vector);
+            }
+
+            if (poseTypes.size() != 3 || !poseTypes.contains(PoseType.FRONTAL)
+                    || !poseTypes.contains(PoseType.LEFT_TILT)
+                    || !poseTypes.contains(PoseType.RIGHT_TILT)) {
+                throw new ApiException(ApiErrorCode.INVALID_TEMPLATE_SET,
+                        "Bộ mẫu sinh trắc học bắt buộc phải gồm đúng 3 tư thế phân biệt: FRONTAL, LEFT_TILT, RIGHT_TILT");
+            }
+        } else {
+            // Chế độ tương thích ngược: Single-Vector lưu với nhãn FRONTAL
+            List<Float> legacyVector = request.vector512();
+            validateVectorDimensionAndNorm(legacyVector, "đơn");
+            vectorMap.put(PoseType.FRONTAL, legacyVector);
+        }
 
         User user = session.getUser();
         if (user == null || user.getStatus() == EmployeeStatus.TERMINATED) {
             throw new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Nhân sự không tồn tại hoặc đã thôi việc");
         }
 
-        // Vô hiệu hóa mẫu khuôn mặt đang active trước đó nếu có
-        Optional<BiometricTemplate> currentActiveTemplate = biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId());
-        currentActiveTemplate.ifPresent(template -> {
-            template.setIsActive(false);
-            biometricTemplateRepository.save(template);
-            logger.info("Vô hiệu hóa mẫu sinh trắc học cũ: templateId={}, userId={}", template.getId(), user.getId());
-        });
+        // Vô hiệu hóa nguyên tử toàn bộ mẫu khuôn mặt cũ của nhân viên
+        int deactivatedCount = biometricTemplateRepository.deactivateAllByUserId(user.getId());
+        logger.info("Vô hiệu hóa {} mẫu sinh trắc học cũ của userId={}", deactivatedCount, user.getId());
 
-        // Lưu mẫu khuôn mặt mới đã mã hóa
-        BiometricTemplate newTemplate = BiometricTemplate.builder()
-                .user(user)
-                .encryptedVector(encrypted.cipherText())
-                .encryptionIv(encrypted.iv())
-                .algorithm("ARCFACE_512D")
-                .version(1)
-                .isActive(true)
-                .build();
-        BiometricTemplate savedTemplate = biometricTemplateRepository.save(newTemplate);
+        // Mã hóa độc lập AES-256-GCM và lưu từng mẫu
+        List<BiometricTemplate> savedTemplates = new ArrayList<>(vectorMap.size());
+        for (Map.Entry<PoseType, List<Float>> entry : vectorMap.entrySet()) {
+            PoseType pose = entry.getKey();
+            List<Float> vecList = entry.getValue();
+
+            float[] vectorArray = new float[BiometricCryptoService.VECTOR_DIMENSION];
+            for (int i = 0; i < BiometricCryptoService.VECTOR_DIMENSION; i++) {
+                vectorArray[i] = vecList.get(i);
+            }
+
+            BiometricCryptoService.EncryptedVector encrypted = biometricCryptoService.encryptVector(vectorArray);
+
+            BiometricTemplate newTemplate = BiometricTemplate.builder()
+                    .user(user)
+                    .poseType(pose)
+                    .encryptedVector(encrypted.cipherText())
+                    .encryptionIv(encrypted.iv())
+                    .algorithm("ARCFACE_512D")
+                    .version(1)
+                    .isActive(true)
+                    .build();
+            savedTemplates.add(biometricTemplateRepository.save(newTemplate));
+        }
 
         // Đánh dấu phiên OTP đã sử dụng
         session.setIsUsed(true);
@@ -308,24 +364,36 @@ public class EnrollmentService {
         user.setStatus(EmployeeStatus.ACTIVE);
         userRepository.save(user);
 
-        // Thu hồi sessionToken
-        verifiedSessions.remove(request.sessionToken());
+        // Chuẩn bị thông tin phát sóng STOMP
+        OffsetDateTime nowVietnam = OffsetDateTime.now(ApiResponse.VIETNAM_ZONE);
+        List<Float> frontalVector = vectorMap.get(PoseType.FRONTAL);
+        List<GalleryUpdateEvent.TemplateItem> stompTemplates = vectorMap.entrySet().stream()
+                .map(e -> new GalleryUpdateEvent.TemplateItem(e.getKey().name(), e.getValue()))
+                .toList();
 
         // Phát sóng nạp nóng vector mới tới toàn bộ trạm Kiosk qua STOMP topic /topic/kiosk-gallery
-        OffsetDateTime nowVietnam = OffsetDateTime.now(ApiResponse.VIETNAM_ZONE);
         stompEventBroadcaster.broadcastGalleryVectorAdded(
                 user.getId(),
                 user.getEmployeeCode(),
                 user.getFullName(),
-                vector512,
+                frontalVector,
+                stompTemplates,
                 nowVietnam
         );
+
+        List<String> poseNames = vectorMap.keySet().stream()
+                .map(Enum::name)
+                .toList();
 
         // Phát sóng sự kiện hoàn tất đăng ký tới Cổng Web của nhân viên qua STOMP topic /topic/enrollment/{otp}
         try {
             stompEventBroadcaster.broadcastEnrollmentSuccess(
                     request.otp(),
                     user.getId(),
+                    user.getEmployeeCode(),
+                    user.getFullName(),
+                    savedTemplates.size(),
+                    poseNames,
                     "Đăng ký khuôn mặt thành công! Tài khoản của bạn đã được kích hoạt.",
                     nowVietnam);
         } catch (Exception ex) {
@@ -333,15 +401,47 @@ public class EnrollmentService {
                     user.getId(), ex.getMessage());
         }
 
-        logger.info("Đăng ký khuôn mặt thành công: userId={}, templateId={}, employeeCode={}",
-                user.getId(), savedTemplate.getId(), user.getEmployeeCode());
+        Long primaryTemplateId = savedTemplates.stream()
+                .filter(t -> t.getPoseType() == PoseType.FRONTAL)
+                .findFirst()
+                .map(BiometricTemplate::getId)
+                .orElseGet(() -> savedTemplates.get(0).getId());
+
+        logger.info("Đăng ký {} mẫu khuôn mặt thành công: userId={}, primaryTemplateId={}, employeeCode={}",
+                savedTemplates.size(), user.getId(), primaryTemplateId, user.getEmployeeCode());
 
         return new EnrollmentResult(
                 user.getId(),
-                savedTemplate.getId(),
+                primaryTemplateId,
                 EmployeeStatus.ACTIVE,
-                nowVietnam
+                nowVietnam,
+                user.getEmployeeCode(),
+                savedTemplates.size(),
+                poseNames
         );
+    }
+
+    private void validateVectorDimensionAndNorm(List<Float> vector, String context) {
+        if (vector == null || vector.size() != BiometricCryptoService.VECTOR_DIMENSION) {
+            throw new ApiException(ApiErrorCode.INVALID_VECTOR_DIMENSION,
+                    "Vector " + context + " phải có đúng " + BiometricCryptoService.VECTOR_DIMENSION + " chiều");
+        }
+
+        double sumOfSquares = 0.0;
+        for (int i = 0; i < BiometricCryptoService.VECTOR_DIMENSION; i++) {
+            Float val = vector.get(i);
+            if (val == null || Float.isNaN(val) || Float.isInfinite(val)) {
+                throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
+                        "Giá trị vector " + context + " tại chiều " + i + " không hợp lệ");
+            }
+            sumOfSquares += (double) val * val;
+        }
+
+        double norm = Math.sqrt(sumOfSquares);
+        if (Math.abs(norm - 1.0) > 1e-4) {
+            throw new ApiException(ApiErrorCode.INVALID_VECTOR_DIMENSION,
+                    "Vector " + context + " chưa được chuẩn hóa L2 = 1.0 ± 1e-4 (norm=" + norm + ")");
+        }
     }
 
     /**
@@ -380,11 +480,16 @@ public class EnrollmentService {
                         ? OffsetDateTime.ofInstant(template.getCreatedAt(), ApiResponse.VIETNAM_ZONE)
                         : OffsetDateTime.now(ApiResponse.VIETNAM_ZONE);
 
+                String poseTypeStr = template.getPoseType() != null
+                        ? template.getPoseType().name()
+                        : "FRONTAL";
+
                 items.add(new GalleryItem(
                         user.getId(),
                         user.getEmployeeCode(),
                         user.getFullName(),
                         user.getDepartment(),
+                        poseTypeStr,
                         vectorList,
                         updatedAt
                 ));

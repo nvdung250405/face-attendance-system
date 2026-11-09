@@ -1,6 +1,7 @@
 package com.fas.data.repository;
 
 import com.fas.data.entity.BiometricTemplate;
+import com.fas.data.enums.PoseType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,11 +18,21 @@ import java.util.Optional;
 @Repository
 public interface BiometricTemplateRepository extends JpaRepository<BiometricTemplate, Long> {
 
-    Optional<BiometricTemplate> findByUserIdAndIsActiveTrue(Long userId);
+    List<BiometricTemplate> findByUserIdAndIsActiveTrue(Long userId);
+
+    Optional<BiometricTemplate> findFirstByUserIdAndIsActiveTrue(Long userId);
+
+    Optional<BiometricTemplate> findByUserIdAndPoseTypeAndIsActiveTrue(Long userId, PoseType poseType);
+
+    boolean existsByUserIdAndIsActiveTrue(Long userId);
 
     List<BiometricTemplate> findByIsActiveTrue();
 
     List<BiometricTemplate> findByUserId(Long userId);
+
+    @Modifying
+    @Query("UPDATE BiometricTemplate bt SET bt.isActive = false WHERE bt.user.id = :userId AND bt.isActive = true")
+    int deactivateAllByUserId(@Param("userId") Long userId);
 
     @Modifying
     @Query("DELETE FROM BiometricTemplate bt WHERE bt.user.id = :userId")

@@ -209,7 +209,7 @@ class AuditQueryServiceTest {
                     .thenReturn(page);
 
             // Mẫu sinh trắc học đã bị xóa
-            when(biometricTemplateRepository.findByUserIdAndIsActiveTrue(70L)).thenReturn(Optional.empty());
+            when(biometricTemplateRepository.existsByUserIdAndIsActiveTrue(70L)).thenReturn(false);
             when(biometricTemplateRepository.findByUserId(70L)).thenReturn(Collections.emptyList());
 
             PageResponse<RetentionScheduleItem> response = auditQueryService.queryRetentionSchedule(PageRequest.of(0, 10));

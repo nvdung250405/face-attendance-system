@@ -3,6 +3,7 @@ package com.fas.api.websocket;
 import com.fas.api.dto.event.AttendancePunchEvent;
 import com.fas.api.dto.event.GalleryUpdateEvent;
 import com.fas.api.dto.response.AttendanceLogItem;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
@@ -10,12 +11,13 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
- * Bộ Phát sóng Sự kiện STOMP (SOL-BE-006, BLD-BE-014, FR-BE-007).
+ * Bộ Phát sóng Sự kiện STOMP (SOL-BE-006, BLD-BE-014, FR-BE-007, FEAT-ENROLL-001 R3).
  *
- * <p>Đẩy bản tin JSON tới hai topic nghiệp vụ ngay khi Backend hoàn tất xử lý:
+ * <p>Đẩy bản tin JSON tới các topic nghiệp vụ ngay khi Backend hoàn tất xử lý:
  * <ul>
  *   <li>{@code /topic/live-attendance} — sự kiện điểm danh cho Live Dashboard của Cổng Web.</li>
  *   <li>{@code /topic/kiosk-gallery} — lệnh nạp/gỡ vector cho mọi trạm Kiosk đang trực tuyến.</li>
+ *   <li>{@code /topic/enrollment/{otp}} — sự kiện kích hoạt khuôn mặt thành công cho Cổng Web.</li>
  * </ul>
  * Các dịch vụ nghiệp vụ gọi lớp này sau khi giao dịch CSDL đã hoàn tất.
  */
@@ -37,7 +39,20 @@ public class StompEventBroadcaster {
         messagingTemplate.convertAndSend(TOPIC_LIVE_ATTENDANCE, AttendancePunchEvent.of(record));
     }
 
-    /** Phát sóng lệnh nạp nóng vector của nhân viên mới đăng ký khuôn mặt về các trạm Kiosk. */
+    /** Phát sóng lệnh nạp nóng vector mới kèm gói đa mẫu về các trạm Kiosk (FEAT-ENROLL-001 R3). */
+    public void broadcastGalleryVectorAdded(
+            Long employeeId,
+            String employeeCode,
+            String fullName,
+            List<Float> vector512,
+            List<GalleryUpdateEvent.TemplateItem> templates,
+            OffsetDateTime updatedAt) {
+        messagingTemplate.convertAndSend(
+                TOPIC_KIOSK_GALLERY,
+                GalleryUpdateEvent.added(employeeId, employeeCode, fullName, vector512, templates, updatedAt));
+    }
+
+    /** Phát sóng lệnh nạp nóng vector đơn (tương thích ngược). */
     public void broadcastGalleryVectorAdded(
             Long employeeId,
             String employeeCode,
@@ -57,23 +72,51 @@ public class StompEventBroadcaster {
     }
 
     /**
-     * Phát sóng sự kiện hoàn tất đăng ký khuôn mặt tới topic {@code /topic/enrollment/{otp}}
-     * để Cổng Web của nhân viên tự động cập nhật trạng thái kích hoạt (API-BE-014).
+     * Phát sóng sự kiện hoàn tất đăng ký khuôn mặt đa mẫu tới topic {@code /topic/enrollment/{otp}}
+     * (FEAT-ENROLL-001 R3, R5).
      */
-    public void broadcastEnrollmentSuccess(String otp, Long employeeId, String message, OffsetDateTime activatedAt) {
+    public void broadcastEnrollmentSuccess(
+            String otp,
+            Long employeeId,
+            String employeeCode,
+            String fullName,
+            int templateCount,
+            List<String> poses,
+            String message,
+            OffsetDateTime activatedAt) {
         messagingTemplate.convertAndSend(
                 TOPIC_ENROLLMENT_PREFIX + otp,
-                new EnrollmentSuccessEvent("ENROLLMENT_SUCCESS", otp, employeeId, message, activatedAt));
+                new EnrollmentSuccessEvent("ENROLLMENT_SUCCESS", otp, employeeId, employeeCode, fullName,
+                        templateCount, poses, message, activatedAt));
+    }
+
+    /** Phát sóng sự kiện hoàn tất đăng ký khuôn mặt (tương thích ngược 4 tham số). */
+    public void broadcastEnrollmentSuccess(String otp, Long employeeId, String message, OffsetDateTime activatedAt) {
+        broadcastEnrollmentSuccess(otp, employeeId, null, null, 1, List.of("FRONTAL"), message, activatedAt);
     }
 
     /**
      * Payload sự kiện kích hoạt tài khoản thành công trên topic {@code /topic/enrollment/{otp}}.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record EnrollmentSuccessEvent(
             String status,
             String otp,
             Long employeeId,
+            String employeeCode,
+            String fullName,
+            Integer templateCount,
+            List<String> poses,
             String message,
             OffsetDateTime activatedAt) {
+
+        public EnrollmentSuccessEvent(
+                String status,
+                String otp,
+                Long employeeId,
+                String message,
+                OffsetDateTime activatedAt) {
+            this(status, otp, employeeId, null, null, 1, List.of("FRONTAL"), message, activatedAt);
+        }
     }
 }

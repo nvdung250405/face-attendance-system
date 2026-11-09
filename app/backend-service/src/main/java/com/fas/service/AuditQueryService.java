@@ -147,7 +147,7 @@ public class AuditQueryService {
             String scheduledDateStr = termDate != null ? termDate.plusDays(20).toString() : "N/A";
 
             // Kiểm tra mẫu sinh trắc học còn tồn tại không
-            boolean hasTemplates = biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId()).isPresent()
+            boolean hasTemplates = biometricTemplateRepository.existsByUserIdAndIsActiveTrue(user.getId())
                     || !biometricTemplateRepository.findByUserId(user.getId()).isEmpty();
             boolean isDisposed = !hasTemplates;
 

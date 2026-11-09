@@ -1,5 +1,6 @@
 package com.fas.data.entity;
 
+import com.fas.data.enums.PoseType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,11 +26,16 @@ public class BiometricTemplate {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "encrypted_vector", nullable = false)
+    @Column(name = "encrypted_vector", nullable = false, columnDefinition = "BYTEA")
     private byte[] encryptedVector;
 
-    @Column(name = "encryption_iv", nullable = false)
+    @Column(name = "encryption_iv", nullable = false, columnDefinition = "BYTEA")
     private byte[] encryptionIv;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pose_type", nullable = false, length = 20)
+    @Builder.Default
+    private PoseType poseType = PoseType.FRONTAL;
 
     @Column(nullable = false, length = 32)
     @Builder.Default

@@ -5,6 +5,7 @@ import com.fas.api.dto.request.KioskPunchRequest;
 import com.fas.api.dto.request.KioskSyncBatchRequest;
 import com.fas.api.dto.request.KioskVerifyOtpRequest;
 import com.fas.api.dto.request.OfflinePunchRecord;
+import com.fas.api.dto.request.PoseTemplateDto;
 import com.fas.api.dto.response.BatchSyncResult;
 import com.fas.api.dto.response.EnrollmentResult;
 import com.fas.api.dto.response.GalleryItem;
@@ -444,9 +445,34 @@ class KioskAttendanceControllerTest {
                     .andExpect(jsonPath("$.code").value("GALLERY_FETCHED"))
                     .andExpect(jsonPath("$.data.galleryVersion").value(18))
                     .andExpect(jsonPath("$.data.totalCount").value(1))
-                    .andExpect(jsonPath("$.data.items[0].employeeCode").value("NV-1042"));
+                    .andExpect(jsonPath("$.data.items[0].employeeCode").value("NV-1042"))
+                    .andExpect(jsonPath("$.data.items[0].poseType").value("FRONTAL"));
 
             verify(enrollmentService).getGallery();
+        }
+
+        @Test
+        @DisplayName("Tải gallery đa mẫu thành công -> trả về 3 mẫu với poseType tương ứng")
+        void getGallery_MultiTemplate_ReturnsAllPoses() throws Exception {
+            List<Float> vector = new ArrayList<>(Collections.nCopies(512, 0.05f));
+            List<GalleryItem> items = List.of(
+                    new GalleryItem(1042L, "NV-1042", "Ngô Văn Dũng", "Phòng Kỹ thuật", "FRONTAL", vector, OffsetDateTime.now()),
+                    new GalleryItem(1042L, "NV-1042", "Ngô Văn Dũng", "Phòng Kỹ thuật", "LEFT_TILT", vector, OffsetDateTime.now()),
+                    new GalleryItem(1042L, "NV-1042", "Ngô Văn Dũng", "Phòng Kỹ thuật", "RIGHT_TILT", vector, OffsetDateTime.now())
+            );
+            GalleryResponse response = new GalleryResponse(19, 3, items);
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
+            when(enrollmentService.getGallery()).thenReturn(response);
+
+            mockMvc.perform(get("/api/v1/kiosk/gallery")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.totalCount").value(3))
+                    .andExpect(jsonPath("$.data.items[0].poseType").value("FRONTAL"))
+                    .andExpect(jsonPath("$.data.items[1].poseType").value("LEFT_TILT"))
+                    .andExpect(jsonPath("$.data.items[2].poseType").value("RIGHT_TILT"));
         }
 
         @Test
@@ -633,6 +659,83 @@ class KioskAttendanceControllerTest {
                     .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
 
             verifyNoInteractions(enrollmentService);
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Nạp 3 mẫu đa tư thế thành công -> trả về 200 OK FACE_ENROLLED")
+        void enrollFace_MultiTemplate_Success_Returns200() throws Exception {
+            List<Float> vector = new ArrayList<>(Collections.nCopies(512, 0.0f));
+            vector.set(0, 1.0f);
+
+            List<PoseTemplateDto> templates = List.of(
+                    new PoseTemplateDto("FRONTAL", vector),
+                    new PoseTemplateDto("LEFT_TILT", vector),
+                    new PoseTemplateDto("RIGHT_TILT", vector)
+            );
+
+            KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
+                    "839201",
+                    "tmp_session_token",
+                    "KIOSK-HN-01",
+                    templates
+            );
+
+            EnrollmentResult result = new EnrollmentResult(
+                    1042L,
+                    55L,
+                    EmployeeStatus.ACTIVE,
+                    OffsetDateTime.now(),
+                    "NV-1042",
+                    3,
+                    List.of("FRONTAL", "LEFT_TILT", "RIGHT_TILT")
+            );
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
+            when(enrollmentService.enrollFace(any(KioskEnrollFaceRequest.class))).thenReturn(result);
+
+            mockMvc.perform(post("/api/v1/kiosk/enroll-face")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.code").value("FACE_ENROLLED"))
+                    .andExpect(jsonPath("$.data.employeeId").value(1042))
+                    .andExpect(jsonPath("$.data.templateCount").value(3))
+                    .andExpect(jsonPath("$.data.poses").isArray());
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Bộ mẫu không hợp lệ -> trả về 400 Bad Request INVALID_TEMPLATE_SET")
+        void enrollFace_InvalidTemplateSet_Returns400() throws Exception {
+            List<Float> vector = new ArrayList<>(Collections.nCopies(512, 0.0f));
+            vector.set(0, 1.0f);
+
+            List<PoseTemplateDto> templates = List.of(
+                    new PoseTemplateDto("FRONTAL", vector),
+                    new PoseTemplateDto("LEFT_TILT", vector)
+            );
+
+            KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
+                    "839201",
+                    "tmp_session_token",
+                    "KIOSK-HN-01",
+                    templates
+            );
+
+            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
+            when(enrollmentService.enrollFace(any(KioskEnrollFaceRequest.class)))
+                    .thenThrow(new ApiException(ApiErrorCode.INVALID_TEMPLATE_SET,
+                            "Bộ mẫu sinh trắc học bắt buộc phải gồm đúng 3 tư thế phân biệt: FRONTAL, LEFT_TILT, RIGHT_TILT"));
+
+            mockMvc.perform(post("/api/v1/kiosk/enroll-face")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", KIOSK_SECRET)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_TEMPLATE_SET"));
         }
     }
 }

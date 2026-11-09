@@ -136,7 +136,7 @@ public class AuthService {
         log.info("Người dùng '{}' (ID={}, Role={}) đăng nhập thành công", user.getEmail(), user.getId(), user.getRole());
 
         boolean hasBiometric = biometricTemplateRepository != null &&
-                biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId()).isPresent();
+                biometricTemplateRepository.existsByUserIdAndIsActiveTrue(user.getId());
         boolean hasPin = org.springframework.util.StringUtils.hasText(user.getPinHash());
 
         AuthenticatedUser authenticatedUser = new AuthenticatedUser(
@@ -172,7 +172,7 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản"));
 
         boolean hasBiometric = biometricTemplateRepository != null &&
-                biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId()).isPresent();
+                biometricTemplateRepository.existsByUserIdAndIsActiveTrue(user.getId());
         boolean hasPin = org.springframework.util.StringUtils.hasText(user.getPinHash());
 
         return new AuthenticatedUser(

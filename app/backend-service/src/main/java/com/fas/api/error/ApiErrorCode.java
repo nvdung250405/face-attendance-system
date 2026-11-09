@@ -17,6 +17,7 @@ public enum ApiErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ"),
     DATA_INTEGRITY_VIOLATION(HttpStatus.BAD_REQUEST, "Lỗi toàn vẹn dữ liệu"),
     INVALID_VECTOR_DIMENSION(HttpStatus.BAD_REQUEST, "Sai kích thước vector"),
+    INVALID_TEMPLATE_SET(HttpStatus.BAD_REQUEST, "Bộ mẫu đa tư thế không hợp lệ hoặc thiếu tư thế chuẩn"),
     OTP_INVALID(HttpStatus.BAD_REQUEST, "Mã OTP không đúng"),
     OTP_EXPIRED(HttpStatus.BAD_REQUEST, "Mã OTP đã hết hạn"),
     OTP_LOCKED(HttpStatus.LOCKED, "Xác thực OTP tạm khóa do thử sai quá nhiều lần"),

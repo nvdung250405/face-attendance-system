@@ -158,10 +158,11 @@ class RepositoryIntegrationTest {
     }
 
     @Test
-    @DisplayName("DBL-BE-003: Quản lý và xóa mẫu sinh trắc học theo userId")
+    @DisplayName("DBL-BE-003: Quản lý, truy vấn đa mẫu và vô hiệu hóa theo userId")
     void testBiometricTemplateRepository() {
         biometricTemplateRepository.save(BiometricTemplate.builder()
                 .user(sampleUser)
+                .poseType(PoseType.FRONTAL)
                 .encryptedVector(new byte[]{1, 2})
                 .encryptionIv(new byte[]{3, 4})
                 .algorithm("ARCFACE_512D")
@@ -169,11 +170,36 @@ class RepositoryIntegrationTest {
                 .isActive(true)
                 .build());
 
-        Optional<BiometricTemplate> template = biometricTemplateRepository.findByUserIdAndIsActiveTrue(sampleUser.getId());
-        assertThat(template).isPresent();
+        biometricTemplateRepository.save(BiometricTemplate.builder()
+                .user(sampleUser)
+                .poseType(PoseType.LEFT_TILT)
+                .encryptedVector(new byte[]{5, 6})
+                .encryptionIv(new byte[]{7, 8})
+                .algorithm("ARCFACE_512D")
+                .version(1)
+                .isActive(true)
+                .build());
 
-        biometricTemplateRepository.deleteByUserId(sampleUser.getId());
+        // 1. Kiểm tra findByUserIdAndIsActiveTrue trả về List (tránh NonUniqueResultException khi có đa mẫu)
+        List<BiometricTemplate> templates = biometricTemplateRepository.findByUserIdAndIsActiveTrue(sampleUser.getId());
+        assertThat(templates).hasSize(2);
+
+        // 2. Kiểm tra existsByUserIdAndIsActiveTrue
+        assertThat(biometricTemplateRepository.existsByUserIdAndIsActiveTrue(sampleUser.getId())).isTrue();
+
+        // 3. Kiểm tra findFirstByUserIdAndIsActiveTrue
+        Optional<BiometricTemplate> first = biometricTemplateRepository.findFirstByUserIdAndIsActiveTrue(sampleUser.getId());
+        assertThat(first).isPresent();
+
+        // 4. Kiểm tra vô hiệu hóa nguyên tử deactivateAllByUserId
+        int deactivated = biometricTemplateRepository.deactivateAllByUserId(sampleUser.getId());
+        assertThat(deactivated).isEqualTo(2);
         assertThat(biometricTemplateRepository.findByUserIdAndIsActiveTrue(sampleUser.getId())).isEmpty();
+        assertThat(biometricTemplateRepository.existsByUserIdAndIsActiveTrue(sampleUser.getId())).isFalse();
+
+        // 5. Kiểm tra deleteByUserId
+        biometricTemplateRepository.deleteByUserId(sampleUser.getId());
+        assertThat(biometricTemplateRepository.findByUserId(sampleUser.getId())).isEmpty();
     }
 
     @Test

@@ -217,7 +217,7 @@ class AccountManagementServiceTest {
             when(userRepository.findById(2L)).thenReturn(Optional.of(existingUser));
             when(userRepository.existsByEmail("new.email@company.com")).thenReturn(false);
             when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
-            when(biometricTemplateRepository.findByUserIdAndIsActiveTrue(2L)).thenReturn(Optional.empty());
+            when(biometricTemplateRepository.existsByUserIdAndIsActiveTrue(2L)).thenReturn(false);
 
             UpdateEmployeeRequest request = new UpdateEmployeeRequest(
                     "Trần Thị Bích",
@@ -241,7 +241,7 @@ class AccountManagementServiceTest {
         void updateEmployeeProfile_SameEmail_Success() {
             when(userRepository.findById(2L)).thenReturn(Optional.of(existingUser));
             when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
-            when(biometricTemplateRepository.findByUserIdAndIsActiveTrue(2L)).thenReturn(Optional.empty());
+            when(biometricTemplateRepository.existsByUserIdAndIsActiveTrue(2L)).thenReturn(false);
 
             UpdateEmployeeRequest request = new UpdateEmployeeRequest(
                     "Trần Thị B",
@@ -340,7 +340,7 @@ class AccountManagementServiceTest {
             when(userRepository.findByRoleAndStatusForUpdate(Role.ADMIN, EmployeeStatus.ACTIVE))
                     .thenReturn(List.of(adminToDemote, secondAdmin));
             when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
-            when(biometricTemplateRepository.findByUserIdAndIsActiveTrue(1L)).thenReturn(Optional.empty());
+            when(biometricTemplateRepository.existsByUserIdAndIsActiveTrue(1L)).thenReturn(false);
 
             UpdateEmployeeRequest request = new UpdateEmployeeRequest(
                     "Admin One",
@@ -625,8 +625,8 @@ class AccountManagementServiceTest {
                     .build();
 
             when(userRepository.findById(5L)).thenReturn(Optional.of(user));
-            when(biometricTemplateRepository.findByUserIdAndIsActiveTrue(5L))
-                    .thenReturn(Optional.of(BiometricTemplate.builder().id(99L).build()));
+            when(biometricTemplateRepository.existsByUserIdAndIsActiveTrue(5L))
+                    .thenReturn(true);
 
             EmployeeItem item = accountManagementService.getEmployeeById(5L);
 
