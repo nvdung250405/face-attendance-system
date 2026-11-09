@@ -1,0 +1,177 @@
+# ==============================================================================
+# Centralized Realtime Interface Contract: STOMP 1.2 Protocol over WebSocket
+# Stage: 3. Architecture & Centralized Contracts (workflows/full-sdlc.md)
+# System: Enterprise Face Attendance System (FAS)
+# Verification: python scripts/verify_contracts.py --dir contracts
+# ==============================================================================
+
+protocol: "STOMP"
+version: "1.2"
+transport: "WebSocket"
+endpoint: "/ws-attendance"
+
+info:
+  title: "Enterprise Face Attendance Realtime STOMP Interface"
+  description: |
+    Defines destinations, message payloads, and channel semantics for real-time
+    attendance broadcasting, guided enrollment onboarding synchronization, and
+    edge biometric gallery distribution across Web Portal and Edge Kiosks.
+  version: "1.0.0"
+
+connection:
+  heartbeat:
+    client_send_interval_ms: 10000
+    server_send_interval_ms: 10000
+  headers:
+    connect:
+      required:
+        - "accept-version"
+        - "host"
+      optional:
+        - "Authorization" # Bearer JWT token for authenticated WebSocket connection
+  security:
+    type: "bearer_token"
+    passcode_header: "Authorization"
+
+destinations:
+  # Server -> Client Broadcast Channels
+  outbound:
+    - address: "/topic/live-attendance"
+      summary: "Broadcast stream of validated attendance punches to Web Portal Live Dashboard"
+      command: "SUBSCRIBE"
+      ack_mode: "auto"
+      message_payload:
+        $ref: "#/components/schemas/LiveAttendanceEvent"
+
+    - address: "/topic/enrollment/{otp}"
+      summary: "Dynamic channel notifying Web Portal of successful 3-pose face enrollment by OTP"
+      command: "SUBSCRIBE"
+      ack_mode: "auto"
+      message_payload:
+        $ref: "#/components/schemas/EnrollmentCompletedEvent"
+
+    - address: "/topic/kiosk-gallery"
+      summary: "Broadcast encrypted vector updates and gallery sync signals to active Edge Kiosks"
+      command: "SUBSCRIBE"
+      ack_mode: "auto"
+      message_payload:
+        $ref: "#/components/schemas/KioskGallerySyncEvent"
+
+  # System Error Handling
+  error:
+    command: "ERROR"
+    headers:
+      required:
+        - "message"
+    payload:
+      $ref: "#/components/schemas/StompErrorPayload"
+
+components:
+  schemas:
+    LiveAttendanceEvent:
+      type: "object"
+      required:
+        - "punchId"
+        - "employeeId"
+        - "employeeCode"
+        - "fullName"
+        - "departmentName"
+        - "kioskId"
+        - "punchTime"
+        - "evaluationStatus"
+        - "authMethod"
+      properties:
+        punchId:
+          type: "string"
+          format: "uuid"
+        employeeId:
+          type: "string"
+          format: "uuid"
+        employeeCode:
+          type: "string"
+          example: "EMP-00128"
+        fullName:
+          type: "string"
+          example: "Nguyen Van A"
+        departmentName:
+          type: "string"
+          example: "Ky thuat & R&D"
+        kioskId:
+          type: "string"
+          example: "KSK-01"
+        punchTime:
+          type: "string"
+          format: "date-time"
+        evaluationStatus:
+          type: "string"
+          enum: ["ON_TIME", "LATE", "EARLY_LEAVE", "ANOMALOUS"]
+        authMethod:
+          type: "string"
+          enum: ["FACE", "PIN"]
+        confidenceScore:
+          type: "number"
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.885
+
+    EnrollmentCompletedEvent:
+      type: "object"
+      required:
+        - "otp"
+        - "employeeId"
+        - "templateCount"
+        - "poses"
+        - "completedAt"
+      properties:
+        otp:
+          type: "string"
+          example: "847291"
+        employeeId:
+          type: "string"
+          format: "uuid"
+        templateCount:
+          type: "integer"
+          enum: [3]
+          example: 3
+        poses:
+          type: "array"
+          items:
+            type: "string"
+            enum: ["FRONTAL", "LEFT_TILT", "RIGHT_TILT"]
+        completedAt:
+          type: "string"
+          format: "date-time"
+
+    KioskGallerySyncEvent:
+      type: "object"
+      required:
+        - "syncAction"
+        - "employeeId"
+        - "version"
+        - "timestamp"
+      properties:
+        syncAction:
+          type: "string"
+          enum: ["UPSERT_TEMPLATES", "DELETE_TEMPLATES", "FULL_RESYNC"]
+        employeeId:
+          type: "string"
+          format: "uuid"
+        version:
+          type: "integer"
+        timestamp:
+          type: "string"
+          format: "date-time"
+
+    StompErrorPayload:
+      type: "object"
+      required:
+        - "code"
+        - "description"
+      properties:
+        code:
+          type: "string"
+          example: "UNAUTHORIZED_TOPIC"
+        description:
+          type: "string"
+          example: "Client lacks permissions to subscribe to the requested destination."
+

@@ -1,105 +1,100 @@
----
-title: Master Documentation Portal
-version: 3.0
-status: Approved
-owner: Solution Architect & SDLC Governance Lead
-type: hub
-scope: PROJECT
-updated: 2026-10-12
----
+# Master Documentation Portal: Enterprise Touchless Face Attendance System (FAS)
 
-# Danh mục Điều hướng Toàn bộ Bộ tài liệu SDLC (Master Documentation Portal)
-
-> - **Hệ thống**: Hệ thống Chấm công Khuôn mặt Doanh nghiệp (`face-attendance-system`)  
-> - **Tiêu chuẩn Kiến trúc & Quản trị**: Tuân thủ chuẩn 2 tầng (System-Level & Subsystem-Level) quy định tại [`sdlc-docs.md`](sdlc-docs.md) v3.x và [`meta.md`](meta.md) v4.0.  
-> - **Quy tắc Đặc tả**: 100% tài liệu trừu tượng hóa, không chứa đường dẫn mã nguồn nội bộ hoặc tên hàm/lớp triển khai cụ thể; mỗi phần tử kỹ thuật có mã định danh duy nhất phục vụ truy vết hai chiều (Bi-directional Traceability).
-> - **Cấu trúc Thư mục Hợp nhất**: Cấp hệ thống và cấp phân hệ được chuẩn hóa thành 2 thư mục cốt lõi `specs/` (hợp nhất SRS & DDS) và `plans/`.
+> **Hệ thống**: Hệ thống Chấm công Doanh nghiệp Bằng Nhận Diện Khuôn Mặt (`face-attendance-system`)  
+> **Quy chuẩn Quản trị & Vòng đời**: Chuẩn hóa 100% theo **Universal SDLC Skills Pack** (`workflows/full-sdlc.md` & `references/artifact-contracts.md`).  
+> **Kiến trúc Hợp đồng**: Centralized Machine-Executable Contracts (`contracts/`).  
+> **Tuân thủ Pháp lý**: Luật Bảo vệ Dữ liệu Cá nhân 2025 (Luật số 91/2025/QH15) & Nghị định 356/2025/NĐ-CP.
 
 ---
 
-## 🏛️ Lớp Quản trị & Quy ước Toàn hệ thống (Governance Layer)
+## 🏛️ Bản Đồ Điều Hướng Vòng Đời Toàn Hệ Thống (SDLC 3-Phase Lifecycle)
 
-| Tài liệu | Mã Leaf | Mục đích Quản trị & Nội dung Chính |
-| :--- | :---: | :--- |
-| [**`docs/meta.md`**](meta.md) | `META` | Quy chuẩn định danh (29 prefixes), 6 canonical schemas, Document Tree, Registry, Traceability và Quality Gates. |
-| [**`docs/sdlc-docs.md`**](sdlc-docs.md) | `SDLC-GUIDE` | Đặc tả quy chuẩn cấu trúc tài liệu, nguyên tắc thiết kế và hướng dẫn vòng đời phát triển phần mềm v3.x. |
+```mermaid
+flowchart TD
+    subgraph P1 ["Phase 1: Foundation, Scope & Centralized Architecture"]
+        D["1. Discovery<br/>docs/discovery/fas/opportunity-brief.md"]
+        R["2. Requirements & Traceability<br/>docs/prd.md<br/>docs/specs/SRS.md, RTM.md"]
+        A["3. Architecture & Contracts<br/>docs/architecture.md<br/>contracts/{openapi,stomp,data-contract}<br/>docs/adr/ADR-001..005"]
+        S["4. Security & Governance<br/>docs/security/threat-model-fas.md<br/>AGENTS.md"]
+        D --> R --> A --> S
+    end
 
----
+    subgraph P2 ["Phase 2: Capability Delivery (Feature Loop)"]
+        F["docs/features/<feature-id>/<br/>8 Core Vertical Feature Slices<br/>{spec.md, tasks.md, acceptance-report.md}"]
+    end
 
-## 🌐 Tầng 1: Tài liệu Cấp Hệ thống (System-Level Documentation)
+    subgraph P3 ["Phase 3: Integration, Release & Operations"]
+        RL["5. Release & Checklist<br/>docs/releases/v1.0.0.md<br/>docs/releases/release-checklist.md"]
+        OP["6. Operations & Runbooks<br/>docs/runbooks/{kiosk,backend,dr}.md"]
+        AN["7. Telemetry & Analytics<br/>docs/analytics/tracking-plan.md"]
+        RL --> OP --> AN
+    end
 
-Tài liệu Cấp Hệ thống xác lập khuôn khổ định hướng chiến lược, bối cảnh bài toán, tiêu chuẩn công nghệ nền tảng, kiến trúc tổng thể, đặc tả yêu cầu toàn diện và kế hoạch phối hợp liên phân hệ.
-
-### 1.1. Khởi tạo, Bối cảnh & Công nghệ Nền tảng
-| Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
-| :--- | :---: | :---: | :--- |
-| [**`system-docs/info.md`**](system-docs/info.md) | `INFO` | `RQ-`, `SRC-`, `INF-`, `ANL-`, `GAP-` | Kho khảo sát thực tế, bằng chứng kỹ thuật, phân tích tính khả thi và bối cảnh pháp lý Nghị định 13/2023. |
-| [**`system-docs/tech-tool-stack.md`**](system-docs/tech-tool-stack.md) | `STACK` | `STK-` | Danh mục công nghệ chuẩn hóa: Python 3.14/PySide6, Java 21 LTS/Spring Boot 3.4.x, React 19/Tailwind 4, PostgreSQL 16, SQLite WAL, ONNX. |
-| [**`system-docs/pi.md`**](system-docs/pi.md) | `PI` | `PD-` | Mục tiêu chiến lược, phạm vi sản phẩm (SOW), tiêu chí thành công (KPIs) và quyết định khởi tạo dự án. |
-
-### 1.2. Bộ Đặc tả Kỹ thuật Hệ thống Hợp nhất (`system-docs/specs/`)
-| Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
-| :--- | :---: | :---: | :--- |
-| [**`system-docs/specs/spec.md`**](system-docs/specs/spec.md) | `SYS-SPEC` | `ACT-`, `EXT-`, `SRS-`, `FR-SYS-`, `NFR-SYS-`, `ARC-`, `SOL-SYS-`, `DD-SYS-` | Spec Core: Kiến trúc tổng thể hệ thống, phân rã 3 phân hệ, tác nhân/hệ thống ngoài, 10 yêu cầu xuyên suốt, 28 yêu cầu chức năng, 10 tiêu chuẩn chất lượng, 31 giải pháp kỹ thuật và 28 quyết định kiến trúc then chốt (`DD-SYS-001..028`). |
-
-### 1.3. Kế hoạch Quản lý & Vận hành Hệ thống (`system-docs/plans/`)
-| Tài liệu | Mã Leaf | ID Prefix | Tóm tắt Nội dung Kỹ thuật |
-| :--- | :---: | :---: | :--- |
-| [**`system-docs/plans/project-plan.md`**](system-docs/plans/project-plan.md) | `PLN-PRJ` | `APC-SYS-`, `PRJ-`, `ROL-`, `RSK-` | Kế hoạch tổ chức, WBS 5 Phase, 5 mốc nghiệm thu (Milestones), quyết định môi trường lab và ma trận rủi ro hệ thống. |
-| [**`system-docs/plans/foundation-setup-plan.md`**](system-docs/plans/foundation-setup-plan.md) | `PLN-FND` | `APC-SYS-`, `FND-SYS-` | Kế hoạch chuẩn bị hạ tầng Monorepo, mạng Docker `fas-network`, script điều khiển `manage-services.ps1`, seed CSDL và môi trường thực thi chung. |
-| [**`system-docs/plans/deploy-plan.md`**](system-docs/plans/deploy-plan.md) | `PLN-DPL` | `APC-SYS-`, `DPL-SYS-` | Kế hoạch đóng gói, phát hành, triển khai môi trường và kịch bản dự phòng khôi phục. |
-| [**`system-docs/plans/test-plan.md`**](system-docs/plans/test-plan.md) | `PLN-TST` | `APC-SYS-`, `TST-SYS-` | Kế hoạch kiểm thử tích hợp, ma trận kiểm định chất lượng toàn trình và tiêu chí nghiệm thu. |
+    P1 --> P2 --> P3
+```
 
 ---
 
-## 🚀 Tầng 2: Tài liệu Cấp Phân hệ (Subsystem-Level Documentation)
+## 🌐 1. Phase 1: Nền Tảng, Phạm Vi Sản Phẩm & Kiến Trúc Tập Trung
 
-Tài liệu Cấp Phân hệ đi sâu vào từng phân hệ độc lập trong thư mục `subsystem-docs/`, cụ thể hóa trách nhiệm kỹ thuật và chi tiết thi công qua 2 thư mục `specs/` và `plans/`.
-
-### 2.1. Phân hệ Trạm Điểm danh Kiosk Desktop — [`kiosk-app`](subsystem-docs/kiosk-app/README.md)
-*Trạm điểm danh cận biên chạy độc lập trên phần cứng tại chỗ, giao diện cảm ứng dọc 9:16 ($1080\times 1920\text{ px}$), tích hợp AI thị giác máy tính YuNet/MiniFASNet/ArcFace và CSDL đệm ngoại tuyến SQLite WAL.*
-
-| Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
-| :--- | :--- | :---: | :---: | :--- |
-| **Hub** | [**`kiosk-app/README.md`**](subsystem-docs/kiosk-app/README.md) | `KSK-HUB` | — | Tổng quan phân hệ Kiosk và cẩm nang điều hướng tài liệu. |
-| **Spec Core** | [**`specs/spec.md`**](subsystem-docs/kiosk-app/specs/spec.md) | `KSK-SPEC` | `ACT-`, `EXT-`, `FR-KSK-`, `NFR-KSK-`, `SOL-KSK-`, `DD-KSK-` | Mô hình 4 luồng PySide6, pipeline AI, 17 FR, 11 NFR, 11 giải pháp và 6 quyết định kỹ thuật (`DD-KSK-001..006`). |
-| **Dữ liệu Cục bộ** | [**`specs/data.md`**](subsystem-docs/kiosk-app/specs/data.md) | `KSK-DATA` | `DATA-KSK-`, `DTD-KSK-` | Hàng đợi SQLite WAL (`kiosk_local.db`), ma trận vector RAM NumPy và mã hóa DPAPI 2-phase rotation. |
-| **Giao diện Truyền thông** | [**`specs/spec.md` §3**](subsystem-docs/kiosk-app/specs/spec.md) | `KSK-API` | `API-KSK-`, `APD-KSK-` | Hợp đồng HTTP REST API (`punch`, `sync-batch`, `gallery`), kết nối WebSocket STOMP và worker đồng bộ bù. |
-| **Giao diện Người dùng** | [**`specs/ui-ux.md`**](subsystem-docs/kiosk-app/specs/ui-ux.md) | `KSK-UIUX` | `UI-KSK-`, `UXD-KSK-` | Thiết kế màn hình cảm ứng dọc 9:16, Oval 4 màu thích ứng, bàn phím số ảo PIN Pad và luồng Onboarding OTP. |
-| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/kiosk-app/plans/foundation-setup-plan.md) | `KSK-FSP` | `FND-KSK-` | Thiết lập môi trường Python 3.14, PySide6/OpenCV, kiểm định ONNX, watchdog camera biên và khung test hợp đồng MockTransport. |
-| **Kế hoạch Xây dựng** | [**`plans/build-plan.md`**](subsystem-docs/kiosk-app/plans/build-plan.md) | `KSK-BLD` | `BLD-KSK-` | Kế hoạch xây dựng tổng thể phân hệ Kiosk theo các Wave và chuẩn hóa Task. |
-| **Kế hoạch Task** | [**`plans/task-plan.md`**](subsystem-docs/kiosk-app/plans/task-plan.md) | `KSK-TSK` | `TASK-KSK-` | Phân rã thi công chi tiết từng Task theo DAG và thứ tự phụ thuộc. |
-| **Kế hoạch Kiểm thử** | [**`plans/test-plan.md`**](subsystem-docs/kiosk-app/plans/test-plan.md) | `KSK-TST` | `TST-KSK-` | Ma trận kiểm thử đơn vị, chống giả mạo PAD, đồng bộ ngoại tuyến và kiểm thử ngâm tải RAM 8h. |
+| Nhánh Tài Liệu | Đường Dẫn Canonical | Tóm Tắt Nội Dung Kỹ Thuật & Nghiệp Vụ |
+| :--- | :--- | :--- |
+| **Khám Phá Bài Toán (Discovery)** | [**`docs/discovery/fas/opportunity-brief.md`**](discovery/fas/opportunity-brief.md) | Vấn nạn quẹt thẻ hộ, ùn tắc đầu ca do vân tay, rủi ro pháp lý của việc tải ảnh chân dung và 4 giả thuyết cốt lõi đã kiểm chứng. |
+| **Yêu Cầu Sản Phẩm (PRD)** | [**`docs/prd.md`**](prd.md) | Tài liệu Yêu cầu Sản phẩm Toàn diện: 4 nhóm tác nhân, 8 Epics lớn, mục tiêu định lượng (SLA $\le 350\text{ ms}$, $\text{FNIR} \le 5\%$), tuân thủ Luật 2025. |
+| **Đặc Tả Kỹ Thuật (SRS)** | [**`docs/specs/SRS.md`**](specs/SRS.md) | 22 yêu cầu chức năng (FR) và 10 tiêu chuẩn phi chức năng (NFR) lượng hóa có thể kiểm chứng. |
+| **Ma Trận Truy Vết (RTM)** | [**`docs/specs/RTM.md`**](specs/RTM.md) | Ma trận liên kết hai chiều giữa SRS $\leftrightarrow$ 8 Features $\leftrightarrow$ Thiết kế Hợp đồng $\leftrightarrow$ Minh chứng Test. |
+| **Tổng Quan Kiến Trúc** | [**`docs/architecture.md`**](architecture.md) | Kiến trúc tổng thể C4 Context & Container, component breakdown, data ownership, triết lý Zero-Photo-Upload và Guided Multi-Pose. |
+| **Hợp Đồng Máy Đọc** | [**`contracts/README.md`**](../contracts/README.md) | Thư mục hợp đồng tập trung: [`openapi.yaml`](../contracts/openapi.yaml) (44 REST endpoints), [`stomp-websocket.yaml`](../contracts/stomp-websocket.yaml) (STOMP broker), [`data-contract.json`](../contracts/data-contract.json) (Domain models). |
+| **Bản Ghi Quyết Định (ADR)** | [**`docs/adr/README.md`**](adr/README.md) | 5 quyết định kiến trúc then chốt: [ADR-001](adr/ADR-001-zero-photo-upload-multi-pose.md) (Zero-Photo-Upload), [ADR-002](adr/ADR-002-edge-sqlite-wal-offline-sync.md) (SQLite WAL), [ADR-003](adr/ADR-003-central-aes-256-gcm-crypto.md) (AES-256-GCM), [ADR-004](adr/ADR-004-stomp-websocket-realtime-feed.md) (STOMP), [ADR-005](adr/ADR-005-pin-fallback-and-lockout.md) (PIN Pad). |
+| **Mô Hình Đe Dọa An Ninh** | [**`docs/security/threat-model-fas.md`**](security/threat-model-fas.md) | Phân tích rủi ro an ninh toàn diện theo phương pháp STRIDE-A: Chống giả mạo MiniFASNet, bảo vệ vector 512D, chống brute-force PIN. |
+| **Hiến Chương Dự Án** | [**`AGENTS.md`**](../AGENTS.md) | Bản đồ công nghệ hệ thống (Python 3.14, Spring Boot 3.4, React 19) và danh bạ công cụ thực thi cho AI Agent. |
 
 ---
 
-### 2.2. Phân hệ Máy chủ Doanh nghiệp — [`backend-service`](subsystem-docs/backend-service/README.md)
-*Trung tâm xử lý nghiệp vụ, quản lý phiên xác thực JWT, mã hóa vector sinh trắc học AES-256-GCM, phát sóng thời gian thực WebSocket STOMP và CSDL trung tâm PostgreSQL 16.*
+## 🚀 2. Phase 2: Thi Công & Nghiệm Thu 8 Tính Năng Cốt Lõi (`docs/features/`)
 
-| Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
-| :--- | :--- | :---: | :---: | :--- |
-| **Hub** | [**`backend-service/README.md`**](subsystem-docs/backend-service/README.md) | `BE-HUB` | — | Tổng quan phân hệ Backend và cẩm nang điều hướng tài liệu. |
-| **Spec Core** | [**`specs/spec.md`**](subsystem-docs/backend-service/specs/spec.md) | `BE-SPEC` | `FR-BE-`, `NFR-BE-`, `SOL-BE-`, `DD-BE-` | Kiến trúc phân tầng Spring Boot 3.4.x, Java 21 LTS, 25 FR, 5 NFR, 28 giải pháp nghiệp vụ và 26 quyết định kỹ thuật (`DD-BE-001..026`). |
-| **Lưu trữ CSDL** | [**`specs/data.md`**](subsystem-docs/backend-service/specs/data.md) | `BE-DATA` | `DATA-BE-`, `DTD-BE-` | Lược đồ CSDL PostgreSQL 16, Flyway migrations (`V1`..`V5`), AES-256-GCM crypto và Caffeine cache TTL 120s. |
-| **Hợp đồng API** | [**`specs/api.md`**](subsystem-docs/backend-service/specs/api.md) | `BE-API` | `API-BE-`, `APD-BE-` | 44 REST endpoints, 3 STOMP topics, RFC 7807 Error Dictionary và chi tiết schema từng trường. |
-| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/backend-service/plans/foundation-setup-plan.md) | `BE-FSP` | `FND-BE-` | Môi trường Java 21, Maven, Spring Boot, Actuator probes, tài liệu OpenAPI 3.0, Dockerfile multi-stage và test fixtures ghép nối. |
-| **Kế hoạch Xây dựng** | [**`plans/build-plan.md`**](subsystem-docs/backend-service/plans/build-plan.md) | `BE-BLD` | `BLD-BE-` | Kế hoạch xây dựng & tích hợp tổng thể phân hệ Backend theo Wave. |
-| **Kế hoạch Task** | [**`plans/task-plan.md`**](subsystem-docs/backend-service/plans/task-plan.md) | `BE-TSK` | `TASK-BE-` | Phân rã nhiệm vụ thi công chi tiết theo DAG và thứ tự phụ thuộc. |
-| **Kế hoạch Kiểm thử** | [**`plans/test-plan.md`**](subsystem-docs/backend-service/plans/test-plan.md) | `BE-TST` | `TST-BE-` | Kiểm thử tích hợp JUnit 5, MockMvc, Testcontainers PostgreSQL 16 và Karate API. |
+Mỗi tính năng là một lát cắt dọc độc lập gồm bộ 3 tài liệu: `spec.md` (Đặc tả Stories/BDD AC), `tasks.md` (Danh mục công việc DAG), `acceptance-report.md` (Báo cáo nghiệm thu thực nghiệm kèm log test):
+
+| Mã Tính Năng | Tên Đặc Tả Tính Năng | Phân Hệ Liên Quan | Bộ Tài Liệu Canonical | Trách Nhiệm Kỹ Thuật Cốt Lõi |
+| :--- | :--- | :--- | :--- | :--- |
+| **`FEAT-ENROLL-001`** | **Đăng ký Khuôn mặt Đa Tư Thế** | Web $\leftrightarrow$ Kiosk $\leftrightarrow$ Backend | [Spec](features/FEAT-ENROLL-001/spec.md) \| [Tasks](features/FEAT-ENROLL-001/tasks.md) \| [Report](features/FEAT-ENROLL-001/acceptance-report.md) | Ký Informed Consent, OTP 48h, chụp 3 tư thế (Front, Left, Right), mã hóa 3 vector AES-256-GCM. |
+| **`FEAT-ATTEND-001`** | **Điểm danh Không Chạm & So khớp Biên** | Kiosk $\leftrightarrow$ Backend $\leftrightarrow$ Web | [Spec](features/FEAT-ATTEND-001/spec.md) \| [Tasks](features/FEAT-ATTEND-001/tasks.md) \| [Report](features/FEAT-ATTEND-001/acceptance-report.md) | Quét mặt $\le 350\text{ ms}$ trên CPU, MiniFASNet $S \ge 0.85$, so khớp RAM BLAS 1:N, Cooldown 120s. |
+| **`FEAT-FALLBACK-001`** | **Xác thực Dự phòng bằng Mã PIN** | Kiosk $\leftrightarrow$ Backend $\leftrightarrow$ Web | [Spec](features/FEAT-FALLBACK-001/spec.md) \| [Tasks](features/FEAT-FALLBACK-001/tasks.md) \| [Report](features/FEAT-FALLBACK-001/acceptance-report.md) | Bàn phím số ảo PIN Pad trên màn hình cảm ứng Kiosk, băm BCrypt tập trung, khóa 15 phút sau 5 lần sai. |
+| **`FEAT-OFFLINE-001`** | **Lưu đệm & Đồng bộ Ngoại tuyến** | Kiosk $\leftrightarrow$ Backend | [Spec](features/FEAT-OFFLINE-001/spec.md) \| [Tasks](features/FEAT-OFFLINE-001/tasks.md) \| [Report](features/FEAT-OFFLINE-001/acceptance-report.md) | Đệm SQLite WAL (`kiosk_local.db`) khi mất mạng ($\text{RPO} = 0$), worker tự động gửi bù theo lô $\le 50$ records. |
+| **`FEAT-SHIFT-001`** | **Quản lý Ca kíp & Đánh giá Công** | Web $\leftrightarrow$ Backend | [Spec](features/FEAT-SHIFT-001/spec.md) \| [Tasks](features/FEAT-SHIFT-001/tasks.md) \| [Report](features/FEAT-SHIFT-001/acceptance-report.md) | Cấu hình ca làm việc, thời gian ân hạn 15 phút, chống chồng lấn ca, phân loại `ON_TIME`, `LATE`, `EARLY_LEAVE`. |
+| **`FEAT-LIVE-001`** | **Giám sát Sĩ số Trực tiếp STOMP** | Backend $\leftrightarrow$ Web | [Spec](features/FEAT-LIVE-001/spec.md) \| [Tasks](features/FEAT-LIVE-001/tasks.md) \| [Report](features/FEAT-LIVE-001/acceptance-report.md) | Kênh STOMP `/topic/live-attendance`, độ trễ $\le 200\text{ ms}$, hiệu ứng chớp sáng Green Flash 1.5s và 5 thẻ KPI. |
+| **`FEAT-EXCUSE-001`** | **Giải trình Công & Khóa Kỳ Công** | Web $\leftrightarrow$ Backend | [Spec](features/FEAT-EXCUSE-001/spec.md) \| [Tasks](features/FEAT-EXCUSE-001/tasks.md) \| [Report](features/FEAT-EXCUSE-001/acceptance-report.md) | Nộp giải trình trong 30 ngày, HR xét duyệt trực tuyến, khóa cứng kỳ công `LOCKED`, xuất Excel an toàn chống CSV Injection. |
+| **`FEAT-COMPLY-001`** | **Quản trị Quyền Dữ liệu & Tiêu hủy 20 Ngày** | Web $\leftrightarrow$ Backend | [Spec](features/FEAT-COMPLY-001/spec.md) \| [Tasks](features/FEAT-COMPLY-001/tasks.md) \| [Report](features/FEAT-COMPLY-001/acceptance-report.md) | Hard Delete 100% vector sau 20 ngày nhân viên thôi việc, thực thi quyền rút Consent trong 7 ngày, nhật ký DPO bất biến. |
 
 ---
 
-### 2.3. Phân hệ Cổng Web Quản trị & Người dùng — [`web-portal`](subsystem-docs/web-portal/README.md)
-*Cổng thông tin kép SPA React 19/Tailwind CSS 4 phục vụ quản lý nhân sự theo dõi chấm công thời gian thực và nhân viên ký cam kết kích hoạt sinh trắc học theo Nghị định 13/2023.*
+## 🛠️ 3. Phase 3: Tích Hợp Hệ Thống, Vận Hành & Phát Hành
 
-| Nhánh Tài liệu | Tập tin | Mã Leaf | ID Prefix | Nội dung Trọng tâm |
-| :--- | :--- | :---: | :---: | :--- |
-| **Hub** | [**`web-portal/README.md`**](subsystem-docs/web-portal/README.md) | `WEB-HUB` | — | Tổng quan phân hệ Web Portal và cẩm nang điều hướng tài liệu. |
-| **Spec Core** | [**`specs/spec.md`**](subsystem-docs/web-portal/specs/spec.md) | `WEB-SPEC` | `FR-WEB-`, `NFR-WEB-`, `SOL-WEB-`, `DD-WEB-` | Kiến trúc SPA React 19, TypeScript, Vite 8, phân quyền Dual-Role, 14 FR, 4 NFR, 12 giải pháp và 20 quyết định kỹ thuật (`DD-WEB-001..020`). |
-| **Dữ liệu Client** | [**`specs/data.md`**](subsystem-docs/web-portal/specs/data.md) | `WEB-DATA` | `DATA-WEB-`, `DTD-WEB-` | Safe Storage Adapters (LocalStorage, SessionStorage), TypeScript contracts và TanStack Query cache. |
-| **Giao tiếp Mạng** | [**`specs/spec.md` §3**](subsystem-docs/web-portal/specs/spec.md) | `WEB-API` | `API-WEB-`, `APD-WEB-` | Axios client với Mutex Token Refresh Queue chống Race Condition khi gặp 401, STOMP hooks. |
-| **Giao diện Người dùng** | [**`specs/ui-ux.md`**](subsystem-docs/web-portal/specs/ui-ux.md) | `WEB-UIUX` | `UI-WEB-`, `UXD-WEB-` | Design Tokens Indigo Clean SaaS, layout Admin Shell, modal ký cam kết Nghị định 13/2023 và Calendar Grid. |
-| **Kế hoạch Nền tảng** | [**`plans/foundation-setup-plan.md`**](subsystem-docs/web-portal/plans/foundation-setup-plan.md) | `WEB-FSP` | `FND-WEB-` | Thiết lập Node.js 24+, Vite, React 19, Tailwind CSS, đóng gói SPA Nginx Alpine, Reverse Proxy chống CORS và mock client contract harness. |
-| **Kế hoạch Xây dựng** | [**`plans/build-plan.md`**](subsystem-docs/web-portal/plans/build-plan.md) | `WEB-BLD` | `BLD-WEB-` | Kế hoạch xây dựng & tích hợp tổng thể phân hệ Web Portal qua 5 Wave. |
-| **Kế hoạch Task** | [**`plans/task-plan.md`**](subsystem-docs/web-portal/plans/task-plan.md) | `WEB-TSK` | `TASK-WEB-` | Phân rã nhiệm vụ thi công chi tiết theo DAG và thứ tự phụ thuộc. |
-| **Kế hoạch Kiểm thử** | [**`plans/test-plan.md`**](subsystem-docs/web-portal/plans/test-plan.md) | `WEB-TST` | `TST-WEB-` | Kiểm thử Vitest, React Testing Library, MSW và Playwright E2E đa viewport. |
+| Nhánh Tài Liệu | Đường Dẫn Canonical | Tóm Tắt Nội Dung Kỹ Thuật |
+| :--- | :--- | :--- |
+| **Ghi Chú Phát Hành** | [**`docs/releases/v1.0.0.md`**](releases/v1.0.0.md) | Điểm nổi bật phiên bản v1.0.0, danh mục tính năng hoàn tất, yêu cầu môi trường triển khai. |
+| **Checklist Nghiệm Thu** | [**`docs/releases/release-checklist.md`**](releases/release-checklist.md) | 24 tiêu chí nghiệm thu an toàn trước golive (Quality gate, Security scan, DB migration, Rollback rehearsal). |
+| **Vận Hành Trạm Kiosk** | [**`docs/runbooks/kiosk-app.md`**](runbooks/kiosk-app.md) | Hướng dẫn chẩn đoán lỗi camera, xử lý đệm ngoại tuyến SQLite WAL, khắc phục rò rỉ RAM. |
+| **Vận Hành Máy Chủ** | [**`docs/runbooks/backend-service.md`**](runbooks/backend-service.md) | Quản lý kết nối PostgreSQL HikariCP, giám sát WebSocket STOMP, kích hoạt cron job thủ công. |
+| **Khôi Phục Thảm Họa** | [**`docs/runbooks/disaster-recovery.md`**](runbooks/disaster-recovery.md) | Quy trình sao lưu và khôi phục CSDL PostgreSQL khi gặp sự cố, kịch bản tạo mới CSDL Kiosk. |
+| **Cẩm Nang Người Dùng** | [**`docs/user-guide.md`**](user-guide.md) | Hướng dẫn trải nghiệm nhân viên: Ký đồng thuận dữ liệu, lấy mã OTP, đăng ký khuôn mặt tại Kiosk, điểm danh và nộp giải trình. |
+| **Đo Lường & Đo Kiểm** | [**`docs/analytics/tracking-plan.md`**](analytics/tracking-plan.md) | Danh mục sự kiện telemetry đo lường tỷ lệ nhận diện thành công, thời gian quét trung bình và tỷ lệ dùng mã PIN. |
+
+---
+
+## ⚡ 4. Các Lệnh Điều Khiển & Kiểm Định Tự Động
+
+- **Kiểm định hợp đồng máy đọc tập trung**:
+  ```powershell
+  python scripts/verify_contracts.py --dir contracts
+  ```
+- **Quản lý dịch vụ ứng dụng**:
+  ```powershell
+  .\scripts\manage-services.ps1 status
+  .\scripts\manage-services.ps1 start
+  .\scripts\manage-services.ps1 logs
+  ```
+- **Chạy toàn bộ kiểm thử đơn vị & tích hợp**:
+  - Edge Kiosk: `pytest app/kiosk-app/tests/`
+  - Central Backend: `./mvnw test`
+  - Web Portal: `npm --prefix app/web-portal run test`
