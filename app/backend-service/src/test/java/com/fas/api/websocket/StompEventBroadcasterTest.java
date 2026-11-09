@@ -1,5 +1,6 @@
 package com.fas.api.websocket;
 
+import com.fas.api.dto.event.GalleryUpdateEvent;
 import com.fas.api.dto.response.AttendanceLogItem;
 import com.fas.data.enums.AttendanceStatus;
 import com.fas.data.enums.PunchType;
@@ -162,6 +163,56 @@ class StompEventBroadcasterTest {
                 .contains("\"updatedAt\":\"2026-10-03T09:00:00+07:00\"")
                 .doesNotContain("vector512")
                 .doesNotContain("employeeCode");
+    }
+
+    @Test
+    @DisplayName("FEAT-ENROLL-001: Lệnh thêm vector đa mẫu được phát sóng lên /topic/kiosk-gallery")
+    void broadcastsGalleryVectorAdded_MultiTemplate() {
+        BlockingQueue<String> received = subscribe(StompEventBroadcaster.TOPIC_KIOSK_GALLERY);
+
+        List<Float> frontalVec = List.of(0.0412f, -0.0521f, 0.0189f);
+        List<GalleryUpdateEvent.TemplateItem> templates = List.of(
+                new GalleryUpdateEvent.TemplateItem("FRONTAL", frontalVec),
+                new GalleryUpdateEvent.TemplateItem("LEFT_TILT", List.of(-0.012f, 0.034f, 0.056f)),
+                new GalleryUpdateEvent.TemplateItem("RIGHT_TILT", List.of(0.078f, -0.090f, 0.012f))
+        );
+
+        String payload = awaitPayload(received, () -> broadcaster.broadcastGalleryVectorAdded(
+                1042L, "NV-1042", "Ngô Văn Dũng", frontalVec, templates,
+                OffsetDateTime.parse("2026-10-03T08:41:05.320+07:00")));
+
+        assertThat(payload)
+                .contains("\"action\":\"ADD_VECTOR\"")
+                .contains("\"employeeId\":1042")
+                .contains("\"employeeCode\":\"NV-1042\"")
+                .contains("\"vector512\":[0.0412,-0.0521,0.0189]")
+                .contains("\"templates\":[")
+                .contains("\"poseType\":\"FRONTAL\"")
+                .contains("\"poseType\":\"LEFT_TILT\"")
+                .contains("\"poseType\":\"RIGHT_TILT\"")
+                .contains("\"updatedAt\":\"2026-10-03T08:41:05.32+07:00\"");
+    }
+
+    @Test
+    @DisplayName("FEAT-ENROLL-001: Sự kiện hoàn tất đăng ký đa mẫu phát sóng lên /topic/enrollment/{otp}")
+    void broadcastsEnrollmentSuccess_MultiTemplate() {
+        String otp = "839201";
+        BlockingQueue<String> received = subscribe(StompEventBroadcaster.TOPIC_ENROLLMENT_PREFIX + otp);
+
+        String payload = awaitPayload(received, () -> broadcaster.broadcastEnrollmentSuccess(
+                otp, 1042L, "NV-1042", "Ngô Văn Dũng", 3,
+                List.of("FRONTAL", "LEFT_TILT", "RIGHT_TILT"),
+                "Đăng ký thành công 3 góc khuôn mặt!",
+                OffsetDateTime.parse("2026-10-03T08:41:05.320+07:00")));
+
+        assertThat(payload)
+                .contains("\"status\":\"ENROLLMENT_SUCCESS\"")
+                .contains("\"otp\":\"839201\"")
+                .contains("\"employeeId\":1042")
+                .contains("\"employeeCode\":\"NV-1042\"")
+                .contains("\"templateCount\":3")
+                .contains("\"poses\":[\"FRONTAL\",\"LEFT_TILT\",\"RIGHT_TILT\"]")
+                .contains("\"message\":\"Đăng ký thành công 3 góc khuôn mặt!\"");
     }
 
     /**

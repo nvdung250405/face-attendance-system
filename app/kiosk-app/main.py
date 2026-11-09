@@ -19,7 +19,7 @@ if str(src_dir) not in sys.path:
 
 import cv2
 import numpy as np
-from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import QObject, QSize, Slot
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -58,6 +58,7 @@ def _load_gallery_from_backend(http_client: KioskHttpClient, gallery_matcher: Ga
         records = []
         for item in items:
             emp_id = int(item.get("employeeId"))
+            pose = item.get("poseType") or item.get("pose_type") or "FRONTAL"
             vec = np.asarray(item.get("vector512") or [], dtype=np.float32)
             if vec.shape[0] != 512:
                 logger.warning("Bỏ qua nhân viên %d trong gallery: vector %dD", emp_id, vec.shape[0])
@@ -66,8 +67,9 @@ def _load_gallery_from_backend(http_client: KioskHttpClient, gallery_matcher: Ga
                 {
                     "employee_id": emp_id,
                     "vector": vec,
+                    "pose_type": pose,
                     "name": item.get("fullName", ""),
-                    "code": item.get("employeeCode", ""),
+                    "code": item.get("employeeCode", f"NV-{emp_id}"),
                     "dept": item.get("department", ""),
                 }
             )
@@ -192,11 +194,6 @@ def parse_arguments() -> argparse.Namespace:
     """Xử lý các đối số dòng lệnh khi khởi chạy trạm Kiosk."""
     parser = argparse.ArgumentParser(description="Hệ thống Trạm Điểm danh Kiosk Desktop (FAS)")
     parser.add_argument(
-        "--windowed",
-        action="store_true",
-        help="Khởi chạy ở chế độ cửa sổ thay vì chế độ toàn màn hình (Full-screen)",
-    )
-    parser.add_argument(
         "--no-camera",
         action="store_true",
         help="Không khởi chạy luồng camera vật lý (dùng để kiểm thử giao diện)",
@@ -219,6 +216,22 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
         metavar="FLOAT",
         help="Ngưỡng đánh giá thực thể sống Liveness (mặc định: 0.85)",
+    )
+    parser.add_argument(
+        "--dev",
+        action="store_true",
+        help="Bật chế độ phát triển (Development): hiển thị phím tắt dev, gợi ý mã thử nghiệm và công cụ mô phỏng",
+    )
+    parser.add_argument(
+        "--prod",
+        action="store_true",
+        help="Bắt buộc chạy chế độ sản xuất chính thức (Production clean): ẩn hoàn toàn gợi ý thử nghiệm và phím tắt giả lập",
+    )
+    parser.add_argument(
+        "--env",
+        choices=["production", "development", "dev", "prod"],
+        default=None,
+        help="Ghi đè môi trường vận hành (production hoặc development). Mặc định đọc từ biến môi trường APP_ENV",
     )
     parser.add_argument(
         "--demo",
@@ -302,13 +315,23 @@ def main() -> int:
         settings.camera_frame_height,
         settings.camera_fps,
     )
+    # Xác định môi trường vận hành (Production clean vs Development)
+    if args.prod:
+        is_dev_mode = False
+    elif args.dev or args.demo:
+        is_dev_mode = True
+    elif args.env:
+        is_dev_mode = args.env.lower() in ("development", "dev")
+    else:
+        is_dev_mode = settings.is_development
+
     if args.demo:
         args.no_liveness = True
         logger.info("Chế độ vận hành: [DEMO DEV] (Tự động bật --no-liveness để kiểm thử linh hoạt)")
-    elif args.no_liveness:
-        logger.info("Chế độ vận hành: [NO-LIVENESS DEV] (Đã tắt kiểm tra thực thể sống Liveness)")
+    elif is_dev_mode:
+        logger.info("Chế độ vận hành: [DEVELOPMENT MODE] (Hiển thị công cụ thử nghiệm, phím tắt mô phỏng)")
     else:
-        logger.info("Chế độ vận hành: [PRODUCTION CLEAN] (Dữ liệu thực, kiểm soát sinh trắc chuẩn)")
+        logger.info("Chế độ vận hành: [PRODUCTION CLEAN] (Dữ liệu thực, giao diện sạch sẽ, kiểm soát sinh trắc chuẩn)")
 
     if args.no_liveness:
         logger.info("Ngưỡng Liveness: [ĐÃ BỎ QUA (--no-liveness)]")
@@ -367,6 +390,7 @@ def main() -> int:
         sync_worker=sync_worker,
         stability_threshold=8,
         enrollment_controller=enrollment_controller,
+        is_dev_mode=is_dev_mode,
     )
 
     # 6b. Nạp danh mục vector khuôn mặt từ Backend vào RAM Gallery khi khởi động
@@ -420,17 +444,29 @@ def main() -> int:
     def _on_enrollment_completed(payload: dict) -> None:
         try:
             emp_id = payload.get("employeeId")
-            embs = payload.get("faceEmbeddings", [])
-            if emp_id and embs and gallery_matcher is not None:
-                mean_vec = np.mean(np.array(embs, dtype=np.float32), axis=0)
-                norm = float(np.linalg.norm(mean_vec))
-                if norm > 1e-6:
-                    mean_vec = mean_vec / norm
-                gallery_matcher.add_or_update_employee(int(emp_id), mean_vec)
+            if not emp_id or gallery_matcher is None:
+                return
+
+            templates = payload.get("templates")
+            if templates and isinstance(templates, list):
+                gallery_matcher.add_or_update_employee(int(emp_id), templates)
                 logger.info(
-                    "✅ Đã tự động cập nhật nhân viên ID %d vào Gallery RAM sau khi hoàn tất đăng ký!",
+                    "✅ Đã tự động cập nhật %d template cho NV %d vào Gallery RAM sau khi hoàn tất đăng ký!",
+                    len(templates),
                     int(emp_id),
                 )
+            else:
+                embs = payload.get("faceEmbeddings", [])
+                if embs:
+                    mean_vec = np.mean(np.array(embs, dtype=np.float32), axis=0)
+                    norm = float(np.linalg.norm(mean_vec))
+                    if norm > 1e-6:
+                        mean_vec = mean_vec / norm
+                    gallery_matcher.add_or_update(int(emp_id), mean_vec, pose_type="FRONTAL")
+                    logger.info(
+                        "✅ Đã tự động cập nhật nhân viên ID %d vào Gallery RAM sau khi hoàn tất đăng ký!",
+                        int(emp_id),
+                    )
         except Exception as exc:
             logger.warning("Không thể lưu nhân viên mới vào Gallery RAM: %s", exc)
 
@@ -456,24 +492,36 @@ def main() -> int:
         logger.error("Không thể nạp tệp giao diện QML tại %s", main_qml_path)
         return -1
 
-    # Điều chỉnh kích thước toàn màn hình nếu không có cờ --windowed
+    # Cấu hình cửa sổ Kiosk gắn cứng chuẩn tỷ lệ dọc 9:16 vừa vặn màn hình (bỏ chế độ toàn màn hình)
     root_window = engine.rootObjects()[0]
-    if not args.windowed:
-        root_window.showFullScreen()
-    else:
-        # Cấu hình cửa sổ chế độ windowed chuẩn tỷ lệ 9:16 vừa vặn màn hình desktop
-        primary_screen = app.primaryScreen()
-        if primary_screen:
-            avail = primary_screen.availableGeometry()
-            # Chiều cao app chiếm ~90% không gian khả dụng (để vừa vặn thanh taskbar)
-            target_h = min(1920, int(avail.height() * 0.90))
-            # Chiều rộng app bằng đúng tỷ lệ 9:16 tương ứng với chiều cao màn hình chính
-            target_w = int(target_h * (1080 / 1920))
-            # Căn giữa cửa sổ ứng dụng ngay trung tâm màn hình desktop
+    primary_screen = app.primaryScreen()
+    if primary_screen:
+        avail = primary_screen.availableGeometry()
+        if avail.width() <= avail.height():
+            # Màn hình phần cứng Kiosk dọc thực tế (Portrait Stand: 1080x1920)
+            target_w = avail.width()
+            target_h = avail.height()
+            pos_x = avail.x()
+            pos_y = avail.y()
+        else:
+            # Màn hình ngang (Laptop / Desktop PC): Khóa cửa sổ dọc 9:16 chiếm ~92% chiều cao khả dụng
+            target_h = min(1920, int(avail.height() * 0.92))
+            target_w = int(target_h * (1080.0 / 1920.0))
             pos_x = avail.x() + (avail.width() - target_w) // 2
             pos_y = avail.y() + (avail.height() - target_h) // 2
-            root_window.setGeometry(pos_x, pos_y, target_w, target_h)
-        root_window.show()
+
+        root_window.setGeometry(pos_x, pos_y, target_w, target_h)
+        # Gắn cứng kích thước cửa sổ cố định, không cho phép kéo dãn hay bung toàn màn hình
+        root_window.setMinimumSize(QSize(target_w, target_h))
+        root_window.setMaximumSize(QSize(target_w, target_h))
+        logger.info(
+            "Gắn cứng kích thước cửa sổ Kiosk chuẩn dọc 9:16: %dx%d (tọa độ: %d, %d)",
+            target_w,
+            target_h,
+            pos_x,
+            pos_y,
+        )
+    root_window.show()
 
     logger.info("-" * 60)
     logger.info("Giao diện Kiosk QML Desktop đã hiển thị thành công qua Scene Graph.")

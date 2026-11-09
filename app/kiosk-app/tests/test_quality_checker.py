@@ -1,14 +1,14 @@
-"""Bộ kiểm thử đơn vị cho EnrollmentQualityChecker (Kiểm chuẩn chất lượng hình học và sinh trắc học - TC-KIOSK-17).
+"""Bộ kiểm thử đơn vị cho EnrollmentQualityChecker (Kiểm chuẩn chất lượng hình học và sinh trắc học - TC-KIOSK-17, FEAT-ENROLL-001).
 
 Tài liệu tham chiếu:
 - TP-KIOSK-01 (Mục 6.2 - TC-KIOSK-17)
 - BP-KIOSK-01 (Mục 1.2, 4.3 & FR-09)
-- DDS.md (Mục 3.3 - Đăng ký mẫu khuôn mặt qua OTP & ISO/IEC 30107-3)
+- FEAT-ENROLL-001 spec.md (US-ENROLL-003, AC-ENROLL-006, AC-ENROLL-007)
 """
 
 import numpy as np
 
-from core.vision.quality_checker import EnrollmentQualityChecker
+from core.vision.quality_checker import EnrollmentQualityChecker, PoseType
 
 
 class TestEnrollmentQualityChecker:
@@ -98,3 +98,114 @@ class TestEnrollmentQualityChecker:
         assert rep_spoof.is_passed is False
         assert rep_spoof.liveness_passed is False
         assert "sống" in rep_spoof.feedback_message
+
+    def test_multi_pose_evaluation_criteria(self):
+        """Kiểm thử thẩm định chất lượng và điều hướng góc theo từng tư thế PoseType."""
+        checker = EnrollmentQualityChecker(
+            max_angle_deg=5.0,
+            max_pitch_deg=15.0,
+            max_roll_deg=15.0,
+            min_face_size=120,
+            min_sharpness=30.0,
+            min_liveness=0.90,
+        )
+        sharp_crop = np.random.randint(0, 256, (140, 140, 3), dtype=np.uint8)
+
+        # 1. FRONTAL đạt chuẩn (|Yaw| <= 5°)
+        rep_front = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(0.5, -2.0, 1.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.FRONTAL,
+        )
+        assert rep_front.is_passed is True
+        assert rep_front.target_pose == PoseType.FRONTAL
+
+        # 2. LEFT_TILT đạt chuẩn (10° <= Yaw <= 25°)
+        rep_left_ok = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(18.0, 0.0, 2.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.LEFT_TILT,
+        )
+        assert rep_left_ok.is_passed is True
+        assert rep_left_ok.target_pose == PoseType.LEFT_TILT
+
+        # 3. LEFT_TILT chưa đủ góc (Yaw = 6.0°)
+        rep_left_low = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(6.0, 0.0, 0.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.LEFT_TILT,
+        )
+        assert rep_left_low.is_passed is False
+        assert "nghiêng mặt thêm sang trái" in rep_left_low.feedback_message
+
+        # 4. LEFT_TILT quá góc (Yaw = 32.0°)
+        rep_left_high = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(32.0, 0.0, 0.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.LEFT_TILT,
+        )
+        assert rep_left_high.is_passed is False
+        assert "nghiêng quá nhiều sang trái" in rep_left_high.feedback_message
+
+        # 5. RIGHT_TILT đạt chuẩn (-25° <= Yaw <= -10°)
+        rep_right_ok = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(-18.0, 0.0, -2.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.RIGHT_TILT,
+        )
+        assert rep_right_ok.is_passed is True
+
+        # 6. RIGHT_TILT chưa đủ góc (Yaw = -6.0°)
+        rep_right_low = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(-6.0, 0.0, 0.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.RIGHT_TILT,
+        )
+        assert rep_right_low.is_passed is False
+        assert "nghiêng mặt thêm sang phải" in rep_right_low.feedback_message
+
+        # 7. RIGHT_TILT quá góc (Yaw = -32.0°)
+        rep_right_high = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(-32.0, 0.0, 0.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.RIGHT_TILT,
+        )
+        assert rep_right_high.is_passed is False
+        assert "nghiêng quá nhiều sang phải" in rep_right_high.feedback_message
+
+    def test_dead_zone_yaw_rejection(self):
+        """Kiểm tra vùng chết 5° ([5°, 10°] và [-10°, -5°]) bị từ chối ở cả 2 tư thế lân cận."""
+        checker = EnrollmentQualityChecker()
+        sharp_crop = np.random.randint(0, 256, (140, 140, 3), dtype=np.uint8)
+
+        # Yaw = 7.5° nằm giữa FRONTAL (<= 5°) và LEFT_TILT (>= 10°)
+        rep_front = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(7.5, 0.0, 0.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.FRONTAL,
+        )
+        rep_left = checker.evaluate(
+            bbox=(50, 50, 140, 140),
+            euler_angles=(7.5, 0.0, 0.0),
+            face_crop=sharp_crop,
+            liveness_score=0.95,
+            target_pose=PoseType.LEFT_TILT,
+        )
+        assert rep_front.is_passed is False
+        assert rep_left.is_passed is False

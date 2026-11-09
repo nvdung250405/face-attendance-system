@@ -31,6 +31,9 @@ else:
 class KioskConfig:
     """Tập hợp các tham số cấu hình tĩnh và động của trạm Kiosk."""
 
+    # 0. Môi trường vận hành ('production' hoặc 'development')
+    app_env: str = os.getenv("APP_ENV", os.getenv("KIOSK_ENV", "production")).strip().lower()
+
     # 1. Định danh & Kết nối máy chủ
     kiosk_id: str = os.getenv("KIOSK_ID", "KIOSK-LOBBY-01")
     backend_url: str = os.getenv("VITE_API_BASE_URL", "http://localhost:8080/api/v1")
@@ -49,7 +52,7 @@ class KioskConfig:
     # 3. Ngưỡng AI & Nghiệp vụ điểm danh
     liveness_threshold: float = float(os.getenv("LIVENESS_THRESHOLD", "0.85"))
     cosine_similarity_threshold: float = float(
-        os.getenv("COSINE_SIMILARITY_THRESHOLD", "0.50")
+        os.getenv("COSINE_SIMILARITY_THRESHOLD", "0.65")
     )
     stability_seconds: float = float(os.getenv("STABILITY_SECONDS", "0.60"))
     cooldown_seconds: int = int(os.getenv("COOLDOWN_SECONDS", "120"))
@@ -100,6 +103,16 @@ class KioskConfig:
     def is_default_secret(self) -> bool:
         """Kiểm tra trạm có đang dùng token bí mật mặc định hay không."""
         return self.kiosk_secret_token == self.DEFAULT_SECRET_TOKEN
+
+    @property
+    def is_production(self) -> bool:
+        """Kiểm tra môi trường hiện tại có phải là Production chuẩn hay không."""
+        return self.app_env in ("production", "prod")
+
+    @property
+    def is_development(self) -> bool:
+        """Kiểm tra môi trường hiện tại có phải là Development / Thử nghiệm hay không."""
+        return not self.is_production
 
 
 # Biến cấu hình toàn cục dùng trực tiếp

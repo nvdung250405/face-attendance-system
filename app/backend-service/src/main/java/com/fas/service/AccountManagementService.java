@@ -332,7 +332,7 @@ public class AccountManagementService {
      * Chuyển đổi entity User sang EmployeeItem DTO.
      */
     private EmployeeItem toEmployeeItem(User user) {
-        boolean hasBiometric = biometricTemplateRepository.findByUserIdAndIsActiveTrue(user.getId()).isPresent();
+        boolean hasBiometric = biometricTemplateRepository.existsByUserIdAndIsActiveTrue(user.getId());
         boolean hasPin = StringUtils.hasText(user.getPinHash());
 
         return new EmployeeItem(

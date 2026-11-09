@@ -75,20 +75,37 @@ class KioskStompWorker(QThread):
         emp_id = int(emp_id)
 
         if action == "ADD_VECTOR":
-            raw_vec = data.get("vector512")
-            if not raw_vec:
-                logger.warning("ADD_VECTOR thiếu trường vector512 cho nhân viên %d", emp_id)
-                return False
-
-            vec = np.asarray(raw_vec, dtype=np.float32)
             meta = {
                 "name": data.get("fullName", ""),
                 "code": data.get("employeeCode", f"NV-{emp_id}"),
                 "dept": data.get("department", ""),
             }
 
+            templates = data.get("templates")
+            if templates and isinstance(templates, list):
+                if self.gallery_matcher is not None:
+                    self.gallery_matcher.add_or_update_employee(emp_id, templates, metadata=meta)
+                    logger.info(
+                        "Đã nạp nóng đa mẫu (ADD_VECTOR) nhân viên %d vào RAM [version=%d]",
+                        emp_id,
+                        self.gallery_matcher.gallery_version,
+                    )
+                self.gallery_updated.emit("ADD_VECTOR", emp_id)
+                return True
+
+            raw_vec = data.get("vector512")
+            if not raw_vec:
+                logger.warning("ADD_VECTOR thiếu trường vector512 hoặc templates cho nhân viên %d", emp_id)
+                return False
+
+            vec = np.asarray(raw_vec, dtype=np.float32)
+            if vec.shape[0] != 512:
+                logger.warning("Vector không đúng 512D (%dD) cho nhân viên %d", vec.shape[0], emp_id)
+                return False
+
+            pose = data.get("poseType") or data.get("pose_type") or "FRONTAL"
             if self.gallery_matcher is not None:
-                self.gallery_matcher.add_or_update(emp_id, vec, metadata=meta)
+                self.gallery_matcher.add_or_update(emp_id, vec, pose_type=pose, metadata=meta)
                 logger.info(
                     "Đã nạp nóng (ADD_VECTOR) nhân viên %d vào RAM [version=%d]",
                     emp_id,

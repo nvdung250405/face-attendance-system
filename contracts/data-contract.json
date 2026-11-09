@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.face-attendance.local/schemas/domain-models.json",
+  "title": "FaceAttendanceDomainDataContract",
+  "description": "Canonical machine-executable data contract for core domain entities across Edge Kiosk, Central Backend and Web Portal.",
+  "type": "object",
+  "definitions": {
+    "BiometricTemplate": {
+      "type": "object",
+      "required": [
+        "templateId",
+        "employeeId",
+        "poseType",
+        "algorithm",
+        "vectorDimension",
+        "l2Normalized",
+        "encryption"
+      ],
+      "properties": {
+        "templateId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "employeeId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "poseType": {
+          "type": "string",
+          "enum": ["FRONTAL", "LEFT_TILT", "RIGHT_TILT"]
+        },
+        "algorithm": {
+          "type": "string",
+          "enum": ["ArcFace-512D"]
+        },
+        "vectorDimension": {
+          "type": "integer",
+          "const": 512
+        },
+        "l2Normalized": {
+          "type": "boolean",
+          "const": true
+        },
+        "encryption": {
+          "type": "object",
+          "required": ["cipher", "ivLengthBytes", "tagLengthBytes"],
+          "properties": {
+            "cipher": {
+              "type": "string",
+              "const": "AES-256-GCM"
+            },
+            "ivLengthBytes": {
+              "type": "integer",
+              "const": 12
+            },
+            "tagLengthBytes": {
+              "type": "integer",
+              "const": 16
+            }
+          }
+        }
+      }
+    },
+    "AttendanceRecord": {
+      "type": "object",
+      "required": [
+        "punchId",
+        "employeeId",
+        "kioskId",
+        "punchTime",
+        "authMethod",
+        "evaluationStatus"
+      ],
+      "properties": {
+        "punchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "employeeId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "kioskId": {
+          "type": "string"
+        },
+        "punchTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "authMethod": {
+          "type": "string",
+          "enum": ["FACE", "PIN"]
+        },
+        "confidenceScore": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "evaluationStatus": {
+          "type": "string",
+          "enum": ["ON_TIME", "LATE", "EARLY_LEAVE", "ANOMALOUS"]
+        },
+        "offlineSynced": {
+          "type": "boolean"
+        }
+      }
+    },
+    "InformedConsent": {
+      "type": "object",
+      "required": [
+        "consentId",
+        "employeeId",
+        "legalNoticeVersion",
+        "signedAt",
+        "ipAddress"
+      ],
+      "properties": {
+        "consentId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "employeeId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "legalNoticeVersion": {
+          "type": "string"
+        },
+        "signedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ipAddress": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "WITHDRAWN"]
+        }
+      }
+    }
+  }
+}
+

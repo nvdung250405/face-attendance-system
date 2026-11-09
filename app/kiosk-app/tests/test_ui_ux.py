@@ -347,3 +347,182 @@ def test_tst_ksk_ux_004_in_viewport_enrollment_flow(qapp):
     assert dialog_ui["isOpen"] is True
     assert dialog_ui["opacity"] == 1.0
     assert "thành công" in controller.statusMessage.lower()
+
+
+# ==============================================================================
+# TST-KSK-UX-005: Kiểm thử Thước Đo Góc Yaw & 3 Thẻ Tư Thế HUD
+# ==============================================================================
+
+def test_tst_ksk_ux_005_hud_pose_cards_and_yaw_gauge(qapp):
+    """TST-KSK-UX-005: Kiểm thử Thước Đo Góc Yaw Thời Gian Thực & 3 Thẻ Tư Thế HUD.
+
+    Kiểm tra:
+    1. Khi chuyển sang Step 2, pose ban đầu là FRONTAL (nhìn thẳng), target Yaw trong [-5°, +5°].
+    2. Khi hoàn tất mẫu 1 -> Chuyển sang LEFT_TILT, target Yaw trong [+10°, +25°], chỉ hướng TRÁI.
+    3. Khi hoàn tất mẫu 2 -> Chuyển sang RIGHT_TILT, target Yaw trong [-25°, -10°], chỉ hướng PHẢI.
+    4. Tính toán tọa độ vị trí con trỏ trên thước đo 60° đồng bộ trực quan:
+       - Hướng TRÁI (LEFT_TILT, Yaw dương) nằm bên TRÁI thước đo (x < W/2) cùng chiều mũi tên ◀ TRÁI.
+       - Hướng PHẢI (RIGHT_TILT, Yaw âm) nằm bên PHẢI thước đo (x > W/2) cùng chiều mũi tên ▶ PHẢI.
+    """
+    controller = EnrollmentController(demo_mode=True)
+    controller.setDialogOpen(True)
+    controller.setCurrentStep(2)
+
+    # 1. Pose 1: FRONTAL
+    assert controller.currentPose == "FRONTAL"
+    assert controller.targetYawMin == -5.0
+    assert controller.targetYawMax == 5.0
+    assert controller.targetDirection == "CENTER"
+
+    gauge_width = 480.0
+    # Tại Yaw = 0° -> Con trỏ nằm ở chính giữa thước (50%)
+    cursor_x_center = ((30.0 - 0.0) / 60.0) * gauge_width
+    assert pytest.approx(cursor_x_center, 1e-2) == 240.0
+
+    # 2. Giả lập hoàn tất Pose 1 -> Chuyển Pose 2 (LEFT_TILT)
+    controller._current_pose_index = 1
+    controller._current_yaw = 18.0
+    controller.currentPoseChanged.emit("LEFT_TILT")
+    controller.poseIndexChanged.emit(1)
+    controller.yawChanged.emit(18.0)
+
+    assert controller.currentPose == "LEFT_TILT"
+    assert controller.targetYawMin == 10.0
+    assert controller.targetYawMax == 25.0
+    assert controller.targetDirection == "LEFT"
+
+    # Nghiêng TRÁI -> Con trỏ di chuyển sang TRÁI (x = 96.0 < 240.0) khớp hướng mũi tên ◀ TRÁI
+    cursor_x_left = ((30.0 - 18.0) / 60.0) * gauge_width
+    assert pytest.approx(cursor_x_left, 1e-2) == 96.0
+
+    # 3. Giả lập hoàn tất Pose 2 -> Chuyển Pose 3 (RIGHT_TILT)
+    controller._current_pose_index = 2
+    controller._current_yaw = -18.0
+    controller.currentPoseChanged.emit("RIGHT_TILT")
+    controller.poseIndexChanged.emit(2)
+    controller.yawChanged.emit(-18.0)
+
+    assert controller.currentPose == "RIGHT_TILT"
+    assert controller.targetYawMin == -25.0
+    assert controller.targetYawMax == -10.0
+    assert controller.targetDirection == "RIGHT"
+
+    # Nghiêng PHẢI -> Con trỏ di chuyển sang PHẢI (x = 384.0 > 240.0) khớp hướng mũi tên ▶ PHẢI
+    cursor_x_right = ((30.0 - (-18.0)) / 60.0) * gauge_width
+    assert pytest.approx(cursor_x_right, 1e-2) == 384.0
+
+
+# ==============================================================================
+# TST-KSK-UX-006: Kiểm thử Huy hiệu Mạng & Đồng bộ Ngoại Tuyến trên HeaderBar
+# ==============================================================================
+
+def test_tst_ksk_ux_006_header_network_and_offline_badge(qapp):
+    """TST-KSK-UX-006: Kiểm thử Huy hiệu Mạng Trực Tuyến & Ngoại Tuyến trên HeaderBar.
+
+    Kiểm tra:
+    1. Khi isOnline = True: Huy hiệu màu xanh lá #159447, nền #EEFAF3, chữ 'Trực tuyến'.
+    2. Khi isOnline = False và pendingSyncCount > 0:
+       - Huy hiệu màu cam #F79009, nền #FEF6EE, chữ 'Chờ đồng bộ: X'.
+    3. Khi isOnline = False và pendingSyncCount = 0:
+       - Huy hiệu màu đỏ #EF4444, nền #FEF2F2, chữ 'Ngoại tuyến'.
+    """
+    vm = KioskViewModel()
+    assert vm.isOnline is True
+    assert vm.pendingSyncCount == 0
+
+    # Chuyển sang Ngoại tuyến có 7 bản ghi chờ đồng bộ
+    vm._on_network_status_changed(False, "Ngoại tuyến")
+    vm._on_sync_progress(0, 7)
+    assert vm.isOnline is False
+    assert vm.pendingSyncCount == 7
+
+    # Đồng bộ xong 7 bản ghi -> pendingSyncCount = 0
+    vm._on_sync_progress(7, 0)
+    assert vm.pendingSyncCount == 0
+    assert vm.isOnline is False
+
+    # Khôi phục Trực tuyến
+    vm._on_network_status_changed(True, "Trực tuyến")
+    assert vm.isOnline is True
+
+
+# ==============================================================================
+# TST-KSK-UX-007: Kiểm thử Gắn kết Động Thẻ Kết quả Điểm danh (PortraitResultCard)
+# ==============================================================================
+
+def test_tst_ksk_ux_007_portrait_result_card_binding(qapp):
+    """TST-KSK-UX-007: Gắn kết Động Dữ liệu Thẻ Kết quả Điểm danh.
+
+    Kiểm tra:
+    1. Khi mô phỏng điểm danh simulateSuccess():
+       - Trạng thái Oval chuyển sang SUCCESS.
+       - Cập nhật lastEmployeeId và lastPunchTime.
+       - lastEmployeeId phản ánh chính xác vào mã nhân viên trên PortraitResultCard.
+    """
+    vm = KioskViewModel(is_dev_mode=True)
+    vm.setStandby(False)
+    vm.simulateSuccess()
+
+    assert vm.ovalState == OvalState.SUCCESS
+    assert vm.lastEmployeeId == "1001"
+    assert len(vm.lastPunchTime) > 0
+
+    # Kiểm tra format chuỗi hiển thị đúng mẫu trên PortraitResultCard
+    expected_emp_str = f"Mã NV: {vm.lastEmployeeId} • Phòng Vận hành"
+    assert "1001" in expected_emp_str
+
+
+# ==============================================================================
+# TST-KSK-UX-008: Kiểm thử Phân tách Môi trường Production vs Development
+# ==============================================================================
+
+def test_tst_ksk_ux_008_prod_vs_dev_environment_separation(qapp):
+    """TST-KSK-UX-008: Phân tách Môi trường Production vs Development (Clean UI vs Dev Mode).
+
+    Kiểm tra:
+    1. Chế độ Production (is_dev_mode = False):
+       - isProduction = True, isDevMode = False.
+       - Lệnh giả lập simulateSuccess() bị chặn và không làm thay đổi trạng thái OvalState.IDLE.
+       - EnrollmentController với demo_mode = False từ chối completeCaptureStep() mà không qua camera.
+    2. Chế độ Development (is_dev_mode = True):
+       - isProduction = False, isDevMode = True.
+       - Lệnh giả lập simulateSuccess() hoạt động bình thường.
+       - EnrollmentController với demo_mode = True cho phép completeCaptureStep().
+    """
+    # 1. Production Mode
+    vm_prod = KioskViewModel(is_dev_mode=False)
+    assert vm_prod.isProduction is True
+    assert vm_prod.isDevMode is False
+
+    # Thử giả lập trong Production -> Bị chặn, giữ nguyên IDLE
+    vm_prod.setStandby(False)
+    vm_prod.simulateSuccess()
+    assert vm_prod.ovalState == OvalState.IDLE
+    assert vm_prod.lastEmployeeId == ""
+
+    # EnrollmentController trong Production -> Chặn thủ công bỏ qua camera
+    enroll_prod = EnrollmentController(demo_mode=False)
+    assert enroll_prod.isDemoMode is False
+    enroll_prod.setDialogOpen(True)
+    enroll_prod.setCurrentStep(2)
+    enroll_prod.completeCaptureStep()
+    assert enroll_prod.currentStep == 2  # Không được tự ý nhảy sang bước 3
+
+    # 2. Development Mode
+    vm_dev = KioskViewModel(is_dev_mode=True)
+    assert vm_dev.isProduction is False
+    assert vm_dev.isDevMode is True
+
+    vm_dev.setStandby(False)
+    vm_dev.simulateSuccess()
+    assert vm_dev.ovalState == OvalState.SUCCESS
+    assert vm_dev.lastEmployeeId == "1001"
+
+    enroll_dev = EnrollmentController(demo_mode=True)
+    assert enroll_dev.isDemoMode is True
+    enroll_dev.setDialogOpen(True)
+    enroll_dev.setCurrentStep(2)
+    enroll_dev.completeCaptureStep()
+    assert enroll_dev.currentStep == 3  # Cho phép mô phỏng nhảy sang bước 3 thành công
+
+

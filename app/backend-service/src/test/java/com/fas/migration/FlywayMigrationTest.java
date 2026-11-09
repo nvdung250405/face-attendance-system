@@ -93,4 +93,12 @@ class FlywayMigrationTest {
             assertThat(count).isNotNull().isGreaterThanOrEqualTo(0);
         }
     }
+
+    @Test
+    @DisplayName("FEAT-ENROLL-001: Cột pose_type và chỉ mục idx_biometric_user_pose_active được tạo bởi V8")
+    void poseTypeColumnAndIndexShouldExist() {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(pose_type) FROM biometric_templates", Integer.class);
+        assertThat(count).isNotNull().isGreaterThanOrEqualTo(0);
+    }
 }

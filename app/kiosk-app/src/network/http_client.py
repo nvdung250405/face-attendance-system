@@ -270,38 +270,48 @@ class KioskHttpClient:
         self,
         otp: str,
         session_token: str,
-        vector512: list[float] | np.ndarray,
+        vector512: list[float] | np.ndarray | None = None,
+        templates: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        """Nạp vector đặc trưng 512D mới lên máy chủ trung tâm (API-KSK-005).
+        """Nạp bộ vector đặc trưng đa tư thế lên máy chủ trung tâm (API-KSK-005, FEAT-ENROLL-001).
 
         Args:
             otp: Mã OTP đã xác minh.
             session_token: Token phiên nhận được từ verify_otp.
-            vector512: Vector 512D chuẩn hóa L2 = 1.0.
+            vector512: Vector 512D chuẩn hóa L2 = 1.0 (fallback tương thích ngược).
+            templates: Danh sách 3 mẫu đa tư thế [{"poseType": "...", "vector512": [...]}, ...].
 
         Returns:
-            dict[str, Any]: Dữ liệu hoàn tất đăng ký (employeeId, templateId, status).
+            dict[str, Any]: Dữ liệu hoàn tất đăng ký (employeeId, templateCount, status).
         """
         url = f"{self.base_url}/kiosk/enroll-face"
-        flat_vec = np.asarray(vector512, dtype=np.float32).flatten()
-        if flat_vec.shape[0] != 512:
-            raise ValueError(f"Vector phải có đúng 512 chiều, hiện tại: {flat_vec.shape[0]}D")
-
-        # Chuẩn hóa L2
-        norm = float(np.linalg.norm(flat_vec))
-        if norm > 1e-6:
-            flat_vec = flat_vec / norm
-
-        payload = {
+        payload: dict[str, Any] = {
             "otp": otp,
             "sessionToken": session_token,
-            "vector512": flat_vec.tolist(),
             "kioskId": self.kiosk_id,
         }
+
+        if templates is not None:
+            if len(templates) != 3:
+                raise ValueError("templates bắt buộc phải có đúng 3 phần tử (FRONTAL, LEFT_TILT, RIGHT_TILT)")
+            payload["templates"] = templates
+
+        if vector512 is not None:
+            flat_vec = np.asarray(vector512, dtype=np.float32).flatten()
+            if flat_vec.shape[0] != 512:
+                raise ValueError(f"Vector phải có đúng 512 chiều, hiện tại: {flat_vec.shape[0]}D")
+            norm = float(np.linalg.norm(flat_vec))
+            if norm > 1e-6:
+                flat_vec = flat_vec / norm
+            payload["vector512"] = flat_vec.tolist()
+
+        if templates is None and vector512 is None:
+            raise ValueError("Cần cung cấp ít nhất templates hoặc vector512")
+
         client = self._get_client()
         try:
             resp = client.post(url, json=payload, headers=self._get_headers(), timeout=self.timeout)
-            if resp.status_code == 200:
+            if resp.status_code in (200, 201):
                 data = resp.json()
                 logger.info("enroll_face thành công: session=%s", session_token[:8])
                 return data

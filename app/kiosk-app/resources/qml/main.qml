@@ -184,34 +184,44 @@ Window {
         Component.onCompleted: forceActiveFocus()
 
         Keys.onPressed: function(event) {
+            const isDev = (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.isDevMode)
+
             if (event.key === Qt.Key_Space) {
                 if (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.isEnrolling) {
-                    console.log("[ENROLL] Phím Space: Chụp nhanh / hoàn tất lấy mẫu đăng ký")
-                    enrollmentController.completeCaptureStep()
-                    event.accepted = true
+                    if (isDev) {
+                        console.log("[ENROLL] Phím Space: Chụp nhanh / hoàn tất lấy mẫu đăng ký (Dev mode)")
+                        enrollmentController.completeCaptureStep()
+                        event.accepted = true
+                    }
                     return
                 }
-                console.log("[TEST] Giả lập nhận diện thành công")
-                if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
-                    kioskViewModel.setStandby(false)
-                    kioskViewModel.simulateSuccess()
+                if (isDev) {
+                    console.log("[TEST] Giả lập nhận diện thành công (Dev mode)")
+                    if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                        kioskViewModel.setStandby(false)
+                        kioskViewModel.simulateSuccess()
+                    }
+                    window.viewState = "ACTIVE"
+                    event.accepted = true
                 }
-                window.viewState = "ACTIVE"
-                event.accepted = true
             } else if (event.key === Qt.Key_0) {
-                console.log("[TEST] Chuyển viewState -> STANDBY")
-                if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
-                    kioskViewModel.setStandby(true)
+                if (isDev) {
+                    console.log("[TEST] Chuyển viewState -> STANDBY (Dev mode)")
+                    if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                        kioskViewModel.setStandby(true)
+                    }
+                    window.viewState = "STANDBY"
+                    event.accepted = true
                 }
-                window.viewState = "STANDBY"
-                event.accepted = true
             } else if (event.key === Qt.Key_1) {
-                console.log("[TEST] Chuyển viewState -> ACTIVE")
-                if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
-                    kioskViewModel.setStandby(false)
+                if (isDev) {
+                    console.log("[TEST] Chuyển viewState -> ACTIVE (Dev mode)")
+                    if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                        kioskViewModel.setStandby(false)
+                    }
+                    window.viewState = "ACTIVE"
+                    event.accepted = true
                 }
-                window.viewState = "ACTIVE"
-                event.accepted = true
             } else if (event.key === Qt.Key_F1) {
                 helpDialog.open()
                 event.accepted = true
@@ -220,13 +230,6 @@ Window {
                 event.accepted = true
             } else if (event.key === Qt.Key_F3) {
                 enrollmentDialog.open()
-                event.accepted = true
-            } else if (event.key === Qt.Key_F11) {
-                if (window.visibility === Window.FullScreen) {
-                    window.showNormal()
-                } else {
-                    window.showFullScreen()
-                }
                 event.accepted = true
             } else if (event.key === Qt.Key_Escape) {
                 if (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.isEnrolling) {

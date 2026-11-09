@@ -44,6 +44,14 @@ Item {
         NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
     }
 
+    Connections {
+        target: (typeof pinController !== "undefined" && pinController) ? pinController : null
+
+        function onVerificationSucceeded() {
+            root.close()
+        }
+    }
+
     // 1. Backdrop Overlay tối 1080x1920
     Rectangle {
         anchors.fill: parent
@@ -99,11 +107,15 @@ Item {
                     pinController.backspace()
                 }
                 event.accepted = true
+            } else if (event.key === Qt.Key_Tab) {
+                root.activeField = (root.activeField === "empId") ? "pin" : "empId"
+                event.accepted = true
             } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                if (typeof pinController !== "undefined" && pinController) {
+                if (root.activeField === "empId") {
+                    root.activeField = "pin"
+                } else if (typeof pinController !== "undefined" && pinController) {
                     pinController.submitPin()
                 }
-                root.close()
                 event.accepted = true
             } else if (event.key === Qt.Key_Escape) {
                 root.close()
@@ -243,10 +255,13 @@ Item {
                 }
 
                 Text {
-                    text: (typeof pinController !== "undefined" && pinController && pinController.isLocked) ? pinController.statusMessage : "Mã PIN được bảo mật an toàn để chống truy cập trái phép."
+                    property string msg: (typeof pinController !== "undefined" && pinController && pinController.statusMessage) ? pinController.statusMessage : "Mã PIN được bảo mật an toàn để chống truy cập trái phép."
+                    property bool isWarning: (typeof pinController !== "undefined" && pinController) ? (pinController.isLocked || msg.indexOf("Sai") !== -1 || msg.indexOf("khóa") !== -1 || msg.indexOf("phải") !== -1) : false
+                    text: msg
                     font.family: Theme.fontFamily
                     font.pixelSize: 14
-                    color: (typeof pinController !== "undefined" && pinController && pinController.isLocked) ? "#EF4444" : Theme.textSecondary
+                    font.bold: isWarning
+                    color: isWarning ? "#EF4444" : Theme.textSecondary
                 }
             }
 
@@ -254,6 +269,8 @@ Item {
             VirtualKeypad {
                 Layout.fillWidth: true
                 Layout.topMargin: 4
+                enabled: (typeof pinController !== "undefined" && pinController) ? !pinController.isLocked : true
+                opacity: enabled ? 1.0 : 0.4
                 onDigitClicked: (digit) => {
                     if (root.activeField === "empId") {
                         root.setEmployeeCodeText(root.employeeCodeText() + digit)
@@ -304,7 +321,6 @@ Item {
                         if (typeof pinController !== "undefined" && pinController) {
                             pinController.submitPin()
                         }
-                        root.close()
                     }
                 }
             }

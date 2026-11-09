@@ -1,0 +1,4644 @@
+openapi: 3.1.0
+info:
+  title: Face Attendance System API
+  description: Tài liệu đặc tả REST API cho Hệ thống Điểm danh Khuôn mặt (Face Attendance
+    System)
+  contact:
+    name: Engineering Team
+    email: dev@fas.local
+  license:
+    name: Proprietary
+    url: https://fas.local/license
+  version: 1.0.0
+servers:
+- url: http://localhost
+  description: Generated server url
+security:
+- bearerAuth: []
+paths:
+  /api/v1/notifications/read-all:
+    post:
+      tags:
+      - notification-controller
+      operationId: markAllAsRead
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/kiosk/verify-pin:
+    post:
+      tags:
+      - kiosk-pin-controller
+      operationId: verifyPin
+      parameters:
+      - name: X-Kiosk-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Kiosk-Secret
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KioskVerifyPinRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePinVerificationResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/kiosk/verify-otp:
+    post:
+      tags:
+      - kiosk-attendance-controller
+      operationId: verifyOtp
+      parameters:
+      - name: X-Kiosk-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Kiosk-Secret
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KioskVerifyOtpRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseOtpVerificationResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/kiosk/sync-batch:
+    post:
+      tags:
+      - kiosk-attendance-controller
+      operationId: syncBatch
+      parameters:
+      - name: X-Kiosk-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Kiosk-Secret
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KioskSyncBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseBatchSyncResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/kiosk/punch:
+    post:
+      tags:
+      - kiosk-attendance-controller
+      operationId: recordPunch
+      parameters:
+      - name: X-Kiosk-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Kiosk-Secret
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KioskPunchRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePunchResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/kiosk/enroll-face:
+    post:
+      tags:
+      - kiosk-attendance-controller
+      operationId: enrollFace
+      parameters:
+      - name: X-Kiosk-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Kiosk-Secret
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KioskEnrollFaceRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseEnrollmentResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/pin:
+    get:
+      tags:
+      - employee-pin-controller
+      operationId: getPinStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePinOperationResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    post:
+      tags:
+      - employee-pin-controller
+      operationId: managePin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePinOperationResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/pin/reset:
+    post:
+      tags:
+      - credential-recovery-controller
+      operationId: resetPin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinResetRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePinOperationResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/excuse-requests:
+    get:
+      tags:
+      - employee-excuse-controller
+      operationId: getMyExcuseRequests
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseExcuseRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    post:
+      tags:
+      - employee-excuse-controller
+      operationId: submitExcuseRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitExcuseRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseExcuseRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/data-requests:
+    get:
+      tags:
+      - data-subject-request-controller
+      operationId: getMyRequests
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseDataSubjectRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    post:
+      tags:
+      - data-subject-request-controller
+      operationId: createRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDataSubjectRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseDataSubjectRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/consent:
+    post:
+      tags:
+      - consent-controller
+      operationId: signConsent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseConsentResult'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/consent/withdraw:
+    post:
+      tags:
+      - consent-withdrawal-controller
+      operationId: withdrawConsent
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseConsentWithdrawalResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - auth-controller
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseTokenResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - logout-controller
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/auth/login:
+    post:
+      tags:
+      - auth-controller
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseLoginResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/auth/change-password:
+    post:
+      tags:
+      - auth-controller
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/shifts:
+    get:
+      tags:
+      - shift-controller
+      operationId: getAllShifts
+      parameters:
+      - name: activeOnly
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseListShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    post:
+      tags:
+      - shift-controller
+      operationId: createShift
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShiftRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/shifts/{id}/deactivate:
+    post:
+      tags:
+      - shift-controller
+      operationId: deactivateShift
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/shifts/{id}/activate:
+    post:
+      tags:
+      - shift-controller
+      operationId: activateShift
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/payroll-periods/{period}/unlock:
+    post:
+      tags:
+      - payroll-period-controller
+      operationId: unlockPeriod
+      parameters:
+      - name: period
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnlockPeriodRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePayrollPeriodResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/payroll-periods/{period}/lock:
+    post:
+      tags:
+      - payroll-period-controller
+      operationId: lockPeriod
+      parameters:
+      - name: period
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePayrollPeriodResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/kiosks:
+    get:
+      tags:
+      - kiosk-admin-controller
+      operationId: listKiosks
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseKioskItemResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    post:
+      tags:
+      - kiosk-admin-controller
+      operationId: registerKiosk
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterKioskRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseRegisterKioskResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/kiosks/{id}/rotate-secret:
+    post:
+      tags:
+      - kiosk-admin-controller
+      operationId: rotateSecretToken
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseRotateKioskTokenResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/excuse-requests/{id}/reject:
+    post:
+      tags:
+      - admin-excuse-controller
+      operationId: rejectExcuseRequest
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectExcuseRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseExcuseRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/excuse-requests/{id}/approve:
+    post:
+      tags:
+      - admin-excuse-controller
+      operationId: approveExcuseRequest
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveExcuseRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseExcuseRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/employees:
+    get:
+      tags:
+      - attendance-admin-controller
+      operationId: getEmployees
+      parameters:
+      - name: criteria
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/EmployeeSearchCriteria'
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseEmployeeItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    post:
+      tags:
+      - admin-employee-controller
+      operationId: createEmployee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmployeeRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseCreateEmployeeResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/employees/{id}/credentials/reset:
+    post:
+      tags:
+      - credential-recovery-controller
+      operationId: resetCredentials
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseResetCredentialsResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/employee-shifts:
+    get:
+      tags:
+      - employee-shift-controller
+      operationId: getEmployeeShifts
+      parameters:
+      - name: userId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: shiftId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: fromDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: toDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseListEmployeeShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    post:
+      tags:
+      - employee-shift-controller
+      operationId: assignShift
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseEmployeeShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/employee-shifts/batch:
+    post:
+      tags:
+      - employee-shift-controller
+      operationId: assignShiftBatch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchAssignShiftRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseBatchAssignShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/notifications/{id}/read:
+    patch:
+      tags:
+      - notification-controller
+      operationId: markAsRead
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseNotificationResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/dpo/data-requests/{id}:
+    patch:
+      tags:
+      - data-subject-request-controller
+      operationId: updateRequestStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDataSubjectRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseDataSubjectRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/users/{id}/role:
+    patch:
+      tags:
+      - role-management-controller
+      operationId: updateUserRole
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRoleRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseUserRoleResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/shifts/{id}:
+    get:
+      tags:
+      - shift-controller
+      operationId: getShiftById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    patch:
+      tags:
+      - shift-controller
+      operationId: updateShift
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShiftRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseShiftResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/kiosks/{id}:
+    get:
+      tags:
+      - kiosk-admin-controller
+      operationId: getKioskById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseKioskItemResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    patch:
+      tags:
+      - kiosk-admin-controller
+      operationId: updateKiosk
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKioskRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseKioskItemResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/excuse-requests/{id}:
+    get:
+      tags:
+      - admin-excuse-controller
+      operationId: getExcuseRequestById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseExcuseRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+    patch:
+      tags:
+      - admin-excuse-controller
+      operationId: decideExcuseRequest
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecideExcuseRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseExcuseRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/employees/{id}:
+    patch:
+      tags:
+      - admin-employee-controller
+      operationId: updateEmployeeProfile
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployeeRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseEmployeeItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/employees/{id}/status:
+    patch:
+      tags:
+      - admin-employee-controller
+      operationId: updateEmployeeStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployeeStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseEmployeeItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/attendance/{id}:
+    patch:
+      tags:
+      - attendance-admin-controller
+      operationId: adjustAttendance
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustAttendanceRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseAttendanceLogItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/notifications:
+    get:
+      tags:
+      - notification-controller
+      operationId: getMyNotifications
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseNotificationResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/notifications/unread-count:
+    get:
+      tags:
+      - notification-controller
+      operationId: getUnreadCount
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseMapStringLong'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/kiosk/health:
+    get:
+      tags:
+      - kiosk-attendance-controller
+      operationId: checkHealth
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseMapStringString'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/kiosk/gallery:
+    get:
+      tags:
+      - kiosk-attendance-controller
+      operationId: getGallery
+      parameters:
+      - name: X-Kiosk-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Kiosk-Secret
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseGalleryResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/data-requests/{id}:
+    get:
+      tags:
+      - data-subject-request-controller
+      operationId: getMyRequestDetail
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseDataSubjectRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/consent/withdrawal:
+    get:
+      tags:
+      - consent-withdrawal-controller
+      operationId: getLatestWithdrawal
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseConsentWithdrawalResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/attendance:
+    get:
+      tags:
+      - attendance-employee-controller
+      operationId: getMonthlyPersonalAttendance
+      parameters:
+      - name: month
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePersonalAttendanceResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/employee/attendance/logs:
+    get:
+      tags:
+      - attendance-employee-controller
+      operationId: getPersonalAttendanceLogs
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseAttendanceLogItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/dpo/retention-schedule:
+    get:
+      tags:
+      - dpo-compliance-controller
+      operationId: getRetentionSchedule
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseRetentionScheduleItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/dpo/data-requests:
+    get:
+      tags:
+      - data-subject-request-controller
+      operationId: getDpoRequests
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - RECEIVED
+          - IN_PROGRESS
+          - FULFILLED
+          - REJECTED
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseDataSubjectRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/dpo/consents:
+    get:
+      tags:
+      - dpo-compliance-controller
+      operationId: getConsents
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseConsentRecordItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/dpo/consent-withdrawals:
+    get:
+      tags:
+      - consent-withdrawal-controller
+      operationId: getAllWithdrawals
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseConsentWithdrawalResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/auth/me:
+    get:
+      tags:
+      - auth-controller
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseAuthenticatedUser'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/reports/export:
+    get:
+      tags:
+      - report-export-controller
+      operationId: exportAttendanceReport
+      parameters:
+      - name: criteria
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/AttendanceSearchCriteria'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/payroll-periods:
+    get:
+      tags:
+      - payroll-period-controller
+      operationId: getPayrollPeriods
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponsePayrollPeriodResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/payroll-periods/{period}:
+    get:
+      tags:
+      - payroll-period-controller
+      operationId: getPayrollPeriod
+      parameters:
+      - name: period
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePayrollPeriodResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/kiosks/{id}/health:
+    get:
+      tags:
+      - kiosk-admin-controller
+      operationId: getKioskHealth
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseKioskHealthResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/excuse-requests:
+    get:
+      tags:
+      - admin-excuse-controller
+      operationId: getExcuseRequests
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - PENDING
+          - APPROVED
+          - REJECTED
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseExcuseRequestResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/audit-logs:
+    get:
+      tags:
+      - audit-log-controller
+      operationId: getAuditLogs
+      parameters:
+      - name: criteria
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuditLogFilterCriteria'
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseAuditLogItemResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/attendance:
+    get:
+      tags:
+      - attendance-admin-controller
+      operationId: getAttendanceLogs
+      parameters:
+      - name: criteria
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/AttendanceSearchCriteria'
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponsePageResponseAttendanceLogItem'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/attendance/stats:
+    get:
+      tags:
+      - attendance-admin-controller
+      operationId: getAttendanceStats
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponseAttendanceStatsResponse'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+  /api/v1/admin/employee-shifts/{id}:
+    delete:
+      tags:
+      - employee-shift-controller
+      operationId: unassignShift
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 7807 ProblemDetails / VALIDATION_FAILED)
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+        '403':
+          description: Không đủ quyền truy cập (ACCESS_DENIED)
+        '404':
+          description: Không tìm thấy tài nguyên (RESOURCE_NOT_FOUND)
+        '409':
+          description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+components:
+  schemas:
+    ApiResponseVoid:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    KioskVerifyPinRequest:
+      type: object
+      properties:
+        employeeCode:
+          type: string
+        pin:
+          type: string
+          pattern: \d{6}
+      required:
+      - employeeCode
+      - pin
+    ApiResponsePinVerificationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PinVerificationResult'
+        timestamp:
+          type: string
+          format: date-time
+    PinVerificationResult:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        department:
+          type: string
+    KioskVerifyOtpRequest:
+      type: object
+      properties:
+        otp:
+          type: string
+          pattern: \d{6}
+        kioskId:
+          type: string
+          maxLength: 64
+          minLength: 0
+      required:
+      - kioskId
+      - otp
+    ApiResponseOtpVerificationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/OtpVerificationResult'
+        timestamp:
+          type: string
+          format: date-time
+    OtpVerificationResult:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+        employeeId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        department:
+          type: string
+    KioskSyncBatchRequest:
+      type: object
+      properties:
+        kioskId:
+          type: string
+          maxLength: 64
+          minLength: 0
+        batchSize:
+          type: integer
+          format: int32
+          maximum: 50
+          minimum: 1
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfflinePunchRecord'
+          maxItems: 50
+          minItems: 0
+      required:
+      - batchSize
+      - kioskId
+      - records
+    OfflinePunchRecord:
+      type: object
+      properties:
+        localQueueId:
+          type: integer
+          format: int64
+        employeeId:
+          type: integer
+          format: int64
+        punchTimestamp:
+          type: string
+          format: date-time
+        verificationMethod:
+          type: string
+          pattern: VERIFICATION_FACE|VERIFICATION_PIN
+        confidenceScore:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+      required:
+      - employeeId
+      - localQueueId
+      - punchTimestamp
+      - verificationMethod
+    ApiResponseBatchSyncResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/BatchSyncResult'
+        timestamp:
+          type: string
+          format: date-time
+    BatchSyncResult:
+      type: object
+      properties:
+        syncedCount:
+          type: integer
+          format: int32
+        syncedLocalIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        failedLocalIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+    KioskPunchRequest:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int64
+        punchTimestamp:
+          type: string
+          format: date-time
+        verificationMethod:
+          type: string
+          pattern: VERIFICATION_FACE|VERIFICATION_PIN
+        confidenceScore:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+        kioskId:
+          type: string
+          maxLength: 64
+          minLength: 0
+      required:
+      - employeeId
+      - kioskId
+      - punchTimestamp
+      - verificationMethod
+    ApiResponsePunchResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PunchResult'
+        timestamp:
+          type: string
+          format: date-time
+    PunchResult:
+      type: object
+      properties:
+        recordId:
+          type: integer
+          format: int64
+        employeeId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        punchType:
+          type: string
+          enum:
+          - CHECK_IN
+          - CHECK_OUT
+        punchTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - ON_TIME
+          - LATE
+          - EARLY_LEAVE
+          - OVERTIME
+          - ANOMALOUS
+        lateMinutes:
+          type: integer
+          format: int32
+        department:
+          type: string
+    KioskEnrollFaceRequest:
+      type: object
+      properties:
+        otp:
+          type: string
+          pattern: \d{6}
+        sessionToken:
+          type: string
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoseTemplateDto'
+        vector512:
+          type: array
+          items:
+            type: number
+            format: float
+          maxItems: 512
+          minItems: 512
+        kioskId:
+          type: string
+          maxLength: 64
+          minLength: 0
+      required:
+      - kioskId
+      - otp
+      - sessionToken
+    PoseTemplateDto:
+      type: object
+      properties:
+        poseType:
+          type: string
+          pattern: FRONTAL|LEFT_TILT|RIGHT_TILT
+        vector512:
+          type: array
+          items:
+            type: number
+            format: float
+          maxItems: 512
+          minItems: 512
+        yaw:
+          type: number
+          format: float
+        pitch:
+          type: number
+          format: float
+        laplacian:
+          type: number
+          format: float
+        livenessScore:
+          type: number
+          format: float
+      required:
+      - poseType
+      - vector512
+    ApiResponseEnrollmentResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/EnrollmentResult'
+        timestamp:
+          type: string
+          format: date-time
+    EnrollmentResult:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int64
+        templateId:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+          - PENDING_CONSENT
+          - ACTIVE
+          - SUSPENDED
+          - TERMINATED
+        activatedAt:
+          type: string
+          format: date-time
+        employeeCode:
+          type: string
+        templateCount:
+          type: integer
+          format: int32
+        poses:
+          type: array
+          items:
+            type: string
+    ApiResponsePinOperationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PinOperationResult'
+        timestamp:
+          type: string
+          format: date-time
+    PinOperationResult:
+      type: object
+      properties:
+        hasPin:
+          type: boolean
+        message:
+          type: string
+    PinResetRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPin:
+          type: string
+          pattern: \d{6}
+        confirmPin:
+          type: string
+          pattern: \d{6}
+      required:
+      - confirmPin
+      - currentPassword
+      - newPin
+    SubmitExcuseRequest:
+      type: object
+      properties:
+        attendanceLogId:
+          type: integer
+          format: int64
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 0
+        requestedPunchTimestamp:
+          type: string
+          format: date-time
+      required:
+      - attendanceLogId
+      - reason
+    ApiResponseExcuseRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ExcuseRequestResponse'
+        timestamp:
+          type: string
+          format: date-time
+    ExcuseRequestResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        attendanceLogId:
+          type: integer
+          format: int64
+        originalPunchTimestamp:
+          type: string
+          format: date-time
+        requestedPunchTimestamp:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        status:
+          type: string
+          enum:
+          - PENDING
+          - APPROVED
+          - REJECTED
+        decidedById:
+          type: integer
+          format: int64
+        decidedByName:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+        rejectionReason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateDataSubjectRequest:
+      type: object
+      properties:
+        requestType:
+          type: string
+          enum:
+          - ACCESS
+          - CORRECTION
+        detail:
+          type: string
+          maxLength: 1000
+          minLength: 0
+      required:
+      - requestType
+    ApiResponseDataSubjectRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/DataSubjectRequestResponse'
+        timestamp:
+          type: string
+          format: date-time
+    DataSubjectRequestResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        requestType:
+          type: string
+          enum:
+          - ACCESS
+          - CORRECTION
+        detail:
+          type: string
+        status:
+          type: string
+          enum:
+          - RECEIVED
+          - IN_PROGRESS
+          - FULFILLED
+          - REJECTED
+        handledById:
+          type: integer
+          format: int64
+        handledByName:
+          type: string
+        response:
+          type: string
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ConsentRequest:
+      type: object
+      properties:
+        agreed:
+          type: boolean
+        consentVersion:
+          type: string
+          maxLength: 32
+          minLength: 0
+      required:
+      - agreed
+      - consentVersion
+    ApiResponseConsentResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ConsentResult'
+        timestamp:
+          type: string
+          format: date-time
+    ConsentResult:
+      type: object
+      properties:
+        otp:
+          type: string
+        qrCodeDataUrl:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        consentSignedAt:
+          type: string
+          format: date-time
+        notice:
+          type: string
+    ApiResponseConsentWithdrawalResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ConsentWithdrawalResponse'
+        timestamp:
+          type: string
+          format: date-time
+    ConsentWithdrawalResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        withdrawnAt:
+          type: string
+          format: date-time
+        clientIp:
+          type: string
+        biometricDisposalDueAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      required:
+      - refreshToken
+    ApiResponseTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/TokenResponse'
+        timestamp:
+          type: string
+          format: date-time
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          maxLength: 128
+          minLength: 0
+        password:
+          type: string
+          maxLength: 2147483647
+          minLength: 8
+      required:
+      - email
+      - password
+    ApiResponseLoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/LoginResponse'
+        timestamp:
+          type: string
+          format: date-time
+    AuthenticatedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - HR_MANAGER
+          - EMPLOYEE
+          - DPO
+        status:
+          type: string
+          enum:
+          - PENDING_CONSENT
+          - ACTIVE
+          - SUSPENDED
+          - TERMINATED
+        department:
+          type: string
+        hasBiometric:
+          type: boolean
+        hasPin:
+          type: boolean
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+        user:
+          $ref: '#/components/schemas/AuthenticatedUser'
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          maxLength: 2147483647
+          minLength: 8
+        confirmPassword:
+          type: string
+      required:
+      - confirmPassword
+      - currentPassword
+      - newPassword
+    CreateShiftRequest:
+      type: object
+      properties:
+        shiftCode:
+          type: string
+          maxLength: 32
+          minLength: 0
+        shiftName:
+          type: string
+          maxLength: 64
+          minLength: 0
+        startTime:
+          $ref: '#/components/schemas/LocalTime'
+        endTime:
+          $ref: '#/components/schemas/LocalTime'
+        gracePeriodMinutes:
+          type: integer
+          format: int32
+          maximum: 60
+          minimum: 0
+      required:
+      - endTime
+      - gracePeriodMinutes
+      - shiftCode
+      - shiftName
+      - startTime
+    LocalTime:
+      type: object
+      properties:
+        hour:
+          type: integer
+          format: int32
+        minute:
+          type: integer
+          format: int32
+        second:
+          type: integer
+          format: int32
+        nano:
+          type: integer
+          format: int32
+    ApiResponseShiftResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ShiftResponse'
+        timestamp:
+          type: string
+          format: date-time
+    ShiftResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        shiftCode:
+          type: string
+        shiftName:
+          type: string
+        startTime:
+          $ref: '#/components/schemas/LocalTime'
+        endTime:
+          $ref: '#/components/schemas/LocalTime'
+        gracePeriodMinutes:
+          type: integer
+          format: int32
+        isActive:
+          type: boolean
+    UnlockPeriodRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 0
+      required:
+      - reason
+    ApiResponsePayrollPeriodResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PayrollPeriodResponse'
+        timestamp:
+          type: string
+          format: date-time
+    PayrollPeriodResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        periodYear:
+          type: integer
+          format: int32
+        periodMonth:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - OPEN
+          - LOCKED
+        lockedById:
+          type: integer
+          format: int64
+        lockedByName:
+          type: string
+        lockedAt:
+          type: string
+          format: date-time
+        unlockedById:
+          type: integer
+          format: int64
+        unlockedByName:
+          type: string
+        unlockedAt:
+          type: string
+          format: date-time
+        unlockReason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RegisterKioskRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 64
+          minLength: 0
+        locationName:
+          type: string
+          maxLength: 128
+          minLength: 0
+      required:
+      - id
+      - locationName
+    ApiResponseRegisterKioskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/RegisterKioskResponse'
+        timestamp:
+          type: string
+          format: date-time
+    RegisterKioskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        locationName:
+          type: string
+        secretToken:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ApiResponseRotateKioskTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/RotateKioskTokenResponse'
+        timestamp:
+          type: string
+          format: date-time
+    RotateKioskTokenResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        newSecretToken:
+          type: string
+        rotatedAt:
+          type: string
+          format: date-time
+    RejectExcuseRequest:
+      type: object
+      properties:
+        rejectionReason:
+          type: string
+          maxLength: 500
+          minLength: 0
+      required:
+      - rejectionReason
+    ApproveExcuseRequest:
+      type: object
+      properties:
+        reviewNote:
+          type: string
+          maxLength: 500
+          minLength: 0
+    CreateEmployeeRequest:
+      type: object
+      properties:
+        employeeCode:
+          type: string
+          maxLength: 32
+          minLength: 0
+        fullName:
+          type: string
+          maxLength: 128
+          minLength: 0
+        email:
+          type: string
+          maxLength: 128
+          minLength: 0
+        department:
+          type: string
+          maxLength: 64
+          minLength: 0
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - HR_MANAGER
+          - EMPLOYEE
+          - DPO
+      required:
+      - email
+      - employeeCode
+      - fullName
+    ApiResponseCreateEmployeeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/CreateEmployeeResponse'
+        timestamp:
+          type: string
+          format: date-time
+    CreateEmployeeResponse:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - HR_MANAGER
+          - EMPLOYEE
+          - DPO
+        status:
+          type: string
+          enum:
+          - PENDING_CONSENT
+          - ACTIVE
+          - SUSPENDED
+          - TERMINATED
+        department:
+          type: string
+        temporaryPassword:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ApiResponseResetCredentialsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ResetCredentialsResponse'
+        timestamp:
+          type: string
+          format: date-time
+    ResetCredentialsResponse:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        email:
+          type: string
+        temporaryPassword:
+          type: string
+    AssignShiftRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        shiftId:
+          type: integer
+          format: int64
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+      required:
+      - effectiveFrom
+      - shiftId
+      - userId
+    ApiResponseEmployeeShiftResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/EmployeeShiftResponse'
+        timestamp:
+          type: string
+          format: date-time
+    EmployeeShiftResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        shiftId:
+          type: integer
+          format: int64
+        shiftCode:
+          type: string
+        shiftName:
+          type: string
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+    BatchAssignShiftRequest:
+      type: object
+      properties:
+        userIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        shiftId:
+          type: integer
+          format: int64
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+      required:
+      - effectiveFrom
+      - shiftId
+      - userIds
+    ApiResponseBatchAssignShiftResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/BatchAssignShiftResponse'
+        timestamp:
+          type: string
+          format: date-time
+    BatchAssignShiftResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int32
+        successCount:
+          type: integer
+          format: int32
+        failedCount:
+          type: integer
+          format: int32
+        successfulAssignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeShiftResponse'
+        failures:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchAssignmentFailure'
+    BatchAssignmentFailure:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        reason:
+          type: string
+    ApiResponseNotificationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/NotificationResponse'
+        timestamp:
+          type: string
+          format: date-time
+    NotificationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        eventType:
+          type: string
+          enum:
+          - ACCOUNT_CREATED
+          - SESSION_REVOKED
+          - PIN_LOCKED
+          - EXCUSE_REQUEST_DECIDED
+          - CONSENT_WITHDRAWN
+          - PAYROLL_PERIOD_LOCKED
+          - DATA_REQUEST_UPDATED
+        title:
+          type: string
+        body:
+          type: string
+        referenceType:
+          type: string
+        referenceId:
+          type: string
+        readAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    UpdateDataSubjectRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - RECEIVED
+          - IN_PROGRESS
+          - FULFILLED
+          - REJECTED
+        response:
+          type: string
+          maxLength: 1000
+          minLength: 0
+      required:
+      - status
+    UpdateUserRoleRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - HR_MANAGER
+          - EMPLOYEE
+          - DPO
+      required:
+      - role
+    ApiResponseUserRoleResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/UserRoleResponse'
+        timestamp:
+          type: string
+          format: date-time
+    UserRoleResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - HR_MANAGER
+          - EMPLOYEE
+          - DPO
+    UpdateShiftRequest:
+      type: object
+      properties:
+        shiftName:
+          type: string
+          maxLength: 64
+          minLength: 0
+        startTime:
+          $ref: '#/components/schemas/LocalTime'
+        endTime:
+          $ref: '#/components/schemas/LocalTime'
+        gracePeriodMinutes:
+          type: integer
+          format: int32
+          maximum: 60
+          minimum: 0
+        isActive:
+          type: boolean
+      required:
+      - endTime
+      - gracePeriodMinutes
+      - shiftName
+      - startTime
+    UpdateKioskRequest:
+      type: object
+      properties:
+        locationName:
+          type: string
+          maxLength: 128
+          minLength: 0
+        isActive:
+          type: boolean
+    ApiResponseKioskItemResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/KioskItemResponse'
+        timestamp:
+          type: string
+          format: date-time
+    KioskItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        locationName:
+          type: string
+        isActive:
+          type: boolean
+        lastPingAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        isOnline:
+          type: boolean
+    DecideExcuseRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - PENDING
+          - APPROVED
+          - REJECTED
+        reviewNote:
+          type: string
+          maxLength: 500
+          minLength: 0
+        rejectionReason:
+          type: string
+          maxLength: 500
+          minLength: 0
+      required:
+      - status
+    UpdateEmployeeRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          maxLength: 128
+          minLength: 0
+        email:
+          type: string
+          maxLength: 128
+          minLength: 0
+        department:
+          type: string
+          maxLength: 64
+          minLength: 0
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - HR_MANAGER
+          - EMPLOYEE
+          - DPO
+    ApiResponseEmployeeItem:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/EmployeeItem'
+        timestamp:
+          type: string
+          format: date-time
+    EmployeeItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - HR_MANAGER
+          - EMPLOYEE
+          - DPO
+        status:
+          type: string
+          enum:
+          - PENDING_CONSENT
+          - ACTIVE
+          - SUSPENDED
+          - TERMINATED
+        hasBiometric:
+          type: boolean
+        hasPin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    UpdateEmployeeStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - PENDING_CONSENT
+          - ACTIVE
+          - SUSPENDED
+          - TERMINATED
+        reason:
+          type: string
+          maxLength: 255
+          minLength: 0
+      required:
+      - status
+    AdjustAttendanceRequest:
+      type: object
+      properties:
+        punchTimestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - ON_TIME
+          - LATE
+          - EARLY_LEAVE
+          - OVERTIME
+          - ANOMALOUS
+        lateMinutes:
+          type: integer
+          format: int32
+        reason:
+          type: string
+      required:
+      - reason
+    ApiResponseAttendanceLogItem:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AttendanceLogItem'
+        timestamp:
+          type: string
+          format: date-time
+    AttendanceLogItem:
+      type: object
+      properties:
+        recordId:
+          type: integer
+          format: int64
+        employeeId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        department:
+          type: string
+        punchTimestamp:
+          type: string
+          format: date-time
+        punchType:
+          type: string
+          enum:
+          - CHECK_IN
+          - CHECK_OUT
+        verificationMethod:
+          type: string
+          enum:
+          - VERIFICATION_FACE
+          - VERIFICATION_PIN
+          - MANUAL_HR
+          - FACE_MATCH
+          - FALLBACK_PIN
+          - HR_OVERRIDE
+        status:
+          type: string
+          enum:
+          - ON_TIME
+          - LATE
+          - EARLY_LEAVE
+          - OVERTIME
+          - ANOMALOUS
+        lateMinutes:
+          type: integer
+          format: int32
+        kioskId:
+          type: string
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    ApiResponsePageResponseNotificationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseNotificationResponse'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseNotificationResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponseMapStringLong:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseMapStringString:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseGalleryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/GalleryResponse'
+        timestamp:
+          type: string
+          format: date-time
+    GalleryItem:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        department:
+          type: string
+        poseType:
+          type: string
+        vector512:
+          type: array
+          items:
+            type: number
+            format: float
+        updatedAt:
+          type: string
+          format: date-time
+    GalleryResponse:
+      type: object
+      properties:
+        galleryVersion:
+          type: integer
+          format: int32
+        totalCount:
+          type: integer
+          format: int32
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GalleryItem'
+    ApiResponsePageResponseExcuseRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseExcuseRequestResponse'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseExcuseRequestResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExcuseRequestResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponsePageResponseDataSubjectRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseDataSubjectRequestResponse'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseDataSubjectRequestResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSubjectRequestResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponsePersonalAttendanceResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PersonalAttendanceResponse'
+        timestamp:
+          type: string
+          format: date-time
+    DailyAttendanceItem:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        checkInTime:
+          $ref: '#/components/schemas/LocalTime'
+        checkOutTime:
+          $ref: '#/components/schemas/LocalTime'
+        status:
+          type: string
+          enum:
+          - ON_TIME
+          - LATE
+          - EARLY_LEAVE
+          - OVERTIME
+          - ANOMALOUS
+        lateMinutes:
+          type: integer
+          format: int32
+        checkInLogId:
+          type: integer
+          format: int64
+        checkOutLogId:
+          type: integer
+          format: int64
+    PersonalAttendanceResponse:
+      type: object
+      properties:
+        month:
+          type: integer
+          format: int32
+        year:
+          type: integer
+          format: int32
+        totalWorkDays:
+          type: integer
+          format: int32
+        totalOnTimeDays:
+          type: integer
+          format: int32
+        totalLateDays:
+          type: integer
+          format: int32
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyAttendanceItem'
+    ApiResponsePageResponseAttendanceLogItem:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseAttendanceLogItem'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseAttendanceLogItem:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceLogItem'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponsePageResponseRetentionScheduleItem:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseRetentionScheduleItem'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseRetentionScheduleItem:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/RetentionScheduleItem'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    RetentionScheduleItem:
+      type: object
+      properties:
+        sourceId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        triggerDate:
+          type: string
+        scheduledDisposalDate:
+          type: string
+        isDisposed:
+          type: boolean
+        processedAt:
+          type: string
+          format: date-time
+        retentionType:
+          type: string
+    ApiResponsePageResponseConsentRecordItem:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseConsentRecordItem'
+        timestamp:
+          type: string
+          format: date-time
+    ConsentRecordItem:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        consentVersion:
+          type: string
+        consentSignedAt:
+          type: string
+          format: date-time
+        clientIp:
+          type: string
+        isUsed:
+          type: boolean
+    PageResponseConsentRecordItem:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentRecordItem'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponsePageResponseConsentWithdrawalResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseConsentWithdrawalResponse'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseConsentWithdrawalResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentWithdrawalResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponseAuthenticatedUser:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AuthenticatedUser'
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListShiftResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShiftResponse'
+        timestamp:
+          type: string
+          format: date-time
+    AttendanceSearchCriteria:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          maximum: 100
+          minimum: 1
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        department:
+          type: string
+          maxLength: 64
+          minLength: 0
+        status:
+          type: string
+          enum:
+          - ON_TIME
+          - LATE
+          - EARLY_LEAVE
+          - OVERTIME
+          - ANOMALOUS
+        keyword:
+          type: string
+          maxLength: 128
+          minLength: 0
+    ApiResponsePageResponsePayrollPeriodResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponsePayrollPeriodResponse'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponsePayrollPeriodResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollPeriodResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponsePageResponseKioskItemResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseKioskItemResponse'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseKioskItemResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/KioskItemResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponseKioskHealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/KioskHealthResponse'
+        timestamp:
+          type: string
+          format: date-time
+    KioskHealthResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        locationName:
+          type: string
+        isActive:
+          type: boolean
+        lastPingAt:
+          type: string
+          format: date-time
+        isHealthy:
+          type: boolean
+        warningMessage:
+          type: string
+    EmployeeSearchCriteria:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          maximum: 100
+          minimum: 1
+        status:
+          type: string
+          enum:
+          - PENDING_CONSENT
+          - ACTIVE
+          - SUSPENDED
+          - TERMINATED
+        department:
+          type: string
+          maxLength: 64
+          minLength: 0
+        keyword:
+          type: string
+          maxLength: 128
+          minLength: 0
+    ApiResponsePageResponseEmployeeItem:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseEmployeeItem'
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseEmployeeItem:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeItem'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponseListEmployeeShiftResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeShiftResponse'
+        timestamp:
+          type: string
+          format: date-time
+    AuditLogFilterCriteria:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        actorId:
+          type: integer
+          format: int64
+        action:
+          type: string
+        entityType:
+          type: string
+    ApiResponsePageResponseAuditLogItemResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageResponseAuditLogItemResponse'
+        timestamp:
+          type: string
+          format: date-time
+    AuditLogItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        actorId:
+          type: integer
+          format: int64
+        actorEmail:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        beforeState:
+          type: string
+        afterState:
+          type: string
+        ipAddress:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    PageResponseAuditLogItemResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogItemResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ApiResponseAttendanceStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AttendanceStatsResponse'
+        timestamp:
+          type: string
+          format: date-time
+    AttendanceStatsResponse:
+      type: object
+      properties:
+        totalEmployees:
+          type: integer
+          format: int64
+        presentCount:
+          type: integer
+          format: int64
+        onTimeCount:
+          type: integer
+          format: int64
+        lateCount:
+          type: integer
+          format: int64
+        absentCount:
+          type: integer
+          format: int64
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: Nhập Bearer Token nhận được từ /api/v1/auth/login
+      name: bearerAuth
+      scheme: bearer
+      bearerFormat: JWT

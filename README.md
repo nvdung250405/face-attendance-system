@@ -14,6 +14,35 @@
 
 ---
 
+## 🚀 Hướng dẫn Khởi chạy Nhanh (Quickstart)
+
+Khởi động nhanh toàn bộ cụm dịch vụ Full-stack qua Docker và PowerShell:
+
+```powershell
+# 1. Khởi động PostgreSQL, Backend Spring Boot, Web Portal
+.\scripts\manage-services.ps1 start
+
+# 2. Bơm dữ liệu mẫu kiểm thử
+.\scripts\manage-services.ps1 seed
+
+# 3. Khởi chạy Trạm Kiosk Desktop
+python app/kiosk-app/main.py --dev
+```
+
+### 🧭 Bản Đồ Điều Hướng Không Gian Làm Việc (Workspace Manifests)
+Mỗi không gian làm việc trong dự án sở hữu một tệp `README.md` độc lập đóng vai trò bản kê thông tin (metadata manifest):
+* 📦 **Ứng dụng & Dịch vụ ([`app/README.md`](app/README.md))**: Danh mục các phân hệ thực thi Kiosk, Backend và Web Portal.
+  * 🖥️ **Trạm Kiosk ([`app/kiosk-app/README.md`](app/kiosk-app/README.md))**: Bảng cờ lệnh CLI (`--dev`, `--prod`, `--no-camera`, `--no-liveness`), phím tắt F1-F12, kiểm thử Edge AI.
+  * ⚙️ **Máy chủ Trung tâm ([`app/backend-service/README.md`](app/backend-service/README.md))**: Khởi chạy Spring Boot 3.4+, CSDL PostgreSQL, Flyway, cấu hình STOMP broker.
+  * 🌐 **Cổng Web ([`app/web-portal/README.md`](app/web-portal/README.md))**: React 18, Vite, live dashboard STOMP, kiểm thử giao diện.
+* 🧪 **Trung Tâm Kiểm Thử ([`tests/README.md`](tests/README.md))**: Kim tự tháp kiểm thử 5 tầng, FlaUI Windows Desktop E2E, ma trận co giãn màn hình, kiểm thử visual regression.
+* 🛠️ **DevOps & Tự Động Hóa ([`scripts/README.md`](scripts/README.md))**: Cẩm nang `manage-services.ps1`, Docker Compose, nạp dữ liệu mẫu và chuẩn bị AI model.
+* 📊 **Báo Cáo & Minh Chứng ([`reports/README.md`](reports/README.md))**: Báo cáo kiểm định FlaUI accessibility, ảnh chụp chuẩn baseline, logs kiểm thử tự động.
+* 📑 **Cổng Tài Liệu & Kiến Trúc ([`docs/README.md`](docs/README.md))**: Cổng tài liệu vòng đời kỹ nghệ SDLC (PRD, SRS, RTM, ADR-001..005, 8 Feature vertical slices, Runbooks).
+  * 👤 **Cẩm Nang Người Dùng ([`docs/user-guide.md`](docs/user-guide.md))**: Hướng dẫn nhân viên ký đồng thuận, nhận OTP và điểm danh khuôn mặt.
+
+---
+
 ## 2. Kiến trúc Phân tán 3 Tầng (3-Tier Distributed Architecture)
 
 ```mermaid
@@ -118,17 +147,19 @@ sequenceDiagram
 
 ## 5. Bộ Tài liệu Kỹ thuật Toàn diện (Documentation Suite)
 
-Bộ tài liệu được xây dựng chuẩn mực theo mô hình kỹ nghệ phần mềm quốc tế (ISO/IEC/IEEE 29119, IEEE 829, C4 Model, Architecture Decision Records):
+Tài liệu dự án tuân thủ chuẩn mực kỹ nghệ phần mềm quốc tế (ISO/IEC/IEEE 29119, C4 Model, Architecture Decision Records) và được quản lý tập trung tại [`docs/README.md`](docs/README.md):
 
-| Tài liệu | Tên gọi chuẩn | Mô tả & Nội dung chính |
+| Nhánh Tài Liệu | Đường Dẫn Canonical | Trách Nhiệm & Nội Dung Chính |
 | :--- | :--- | :--- |
-| **[`docs/README.md`](docs/README.md)** | Engineering Contract | Hướng dẫn cấu trúc tài liệu công nghệ phần mềm 6 pha chuẩn quốc tế. |
-| **[`docs/initiation/PI.md`](docs/initiation/PI.md)** | Project Initiation (PID) | Bối cảnh kinh doanh, ROI, TCO, Phân tích 5 chiều khả thi, SOW, Sơ đồ tổ chức RACI. |
-| **[`docs/initiation/tech-stack.md`](docs/initiation/tech-stack.md)** | Technology Strategy | Đặc tả danh mục công nghệ và công cụ chiến lược, luận cứ chọn PySide6/Spring/React. |
-| **[`docs/planning/PP.md`](docs/planning/PP.md)** | Project Plan (PMP) | Kế hoạch 5 Phase, WBS 3 phân hệ, Biểu đồ Gantt, CPM Đường găng, Quản lý rủi ro 3 chiều. |
-| **[`docs/requirements/SRS.md`](docs/requirements/SRS.md)** | Requirements Spec (Modular) | Master SRS Hub & 5 tài liệu phân rã chuyên sâu: `functional.md`, `use-cases.md`, `business-rules.md`, `non-functional.md`, `rtm.md`. |
-| **[`docs/design/DDS.md`](docs/design/DDS.md)** | Detailed Design Spec (Modular) | Master DDS Hub & 7 tài liệu thiết kế chuyên sâu: `adrs.md`, `components.md`, `infrastructure.md`, `api-contracts.md`, `database.md`, `behavioral.md`, `ui-ux.md`. |
-| **[`docs/testing/TP.md`](docs/testing/TP.md)** | Master Test Plan | Kim tự tháp kiểm thử, Bộ Test Cases chi tiết (TC-BIO, TC-FAS, TC-ENR, TC-NET, TC-WS), Ma trận TTM. |
+| **Cổng Tài Liệu Master** | [**`docs/README.md`**](docs/README.md) | Bản đồ điều hướng 3 pha SDLC (Foundation, Feature Loop, Release & Operations). |
+| **Khám Phá Bài Toán (Discovery)** | [**`docs/discovery/fas/opportunity-brief.md`**](docs/discovery/fas/opportunity-brief.md) | Vấn nạn quẹt thẻ hộ, ùn tắc đầu ca do vân tay và 4 giả thuyết cốt lõi đã kiểm chứng. |
+| **Yêu Cầu Sản Phẩm (PRD)** | [**`docs/prd.md`**](docs/prd.md) | PRD toàn diện: 4 nhóm tác nhân, 8 Epics lớn, SLA $\le 350\text{ ms}$, tuân thủ Luật Bảo vệ dữ liệu 2025. |
+| **Đặc Tả Kỹ Thuật (SRS & RTM)** | [**`docs/specs/SRS.md`**](docs/specs/SRS.md) \| [**`RTM.md`**](docs/specs/RTM.md) | 22 yêu cầu chức năng, 10 tiêu chuẩn phi chức năng và ma trận truy vết hai chiều. |
+| **Kiến Trúc & Hợp Đồng** | [**`docs/architecture.md`**](docs/architecture.md) \| [**`contracts/`**](contracts/README.md) | Kiến trúc C4, data contracts, OpenAPI REST, STOMP broker và triết lý Zero-Photo-Upload. |
+| **Bản Ghi Quyết Định (ADR)** | [**`docs/adr/README.md`**](docs/adr/README.md) | 5 quyết định kiến trúc: Zero-Photo-Upload, SQLite WAL, AES-256-GCM, STOMP, PIN Fallback. |
+| **Lát Cắt Tính Năng (8 Features)** | [**`docs/features/`**](docs/features/) | 8 vertical slices: `FEAT-ENROLL-001` đến `FEAT-COMPLY-001` (Spec, Tasks, Acceptance Report). |
+| **Vận Hành & Khôi Phục Thảm Họa** | [**`docs/runbooks/`**](docs/runbooks/) | Runbooks Kiosk, Backend và Disaster Recovery sao lưu/khôi phục CSDL. |
+| **Cẩm Nang Người Dùng** | [**`docs/user-guide.md`**](docs/user-guide.md) | Hướng dẫn trải nghiệm nhân viên: Ký đồng thuận, lấy mã OTP, đăng ký khuôn mặt tại Kiosk. |
 
 ---
 
@@ -136,38 +167,20 @@ Bộ tài liệu được xây dựng chuẩn mực theo mô hình kỹ nghệ p
 
 ```bash
 face-attendance-system/
-├── app/
-│   ├── kiosk-app/                   # Phân hệ Trạm Kiosk Desktop (Python 3.10+ / PySide6)
-│   │   ├── src/
-│   │   │   ├── ai/                  # MiniFASNet (Liveness) & ArcFace ONNX inference
-│   │   │   ├── gui/                 # PySide6 UI (Live preview, Virtual PIN Pad, OTP Dialog)
-│   │   │   ├── db/                  # SQLite offline queue & local cache
-│   │   │   └── network/             # REST client & WebSocket STOMP subscriber
-│   │   ├── requirements.txt
-│   │   └── main.py
-│   │
-│   ├── backend-service/             # Phân hệ Máy chủ Trung tâm (Java 21 LTS / Spring Boot 4.x)
-│   │   ├── src/main/java/com/attendance/
-│   │   │   ├── config/              # Security, WebSocket STOMP, Crypto config
-│   │   │   ├── controller/          # RESTful Endpoints (Kiosk, Employee, Compliance)
-│   │   │   ├── service/             # Attendance, Biometric AES-256, Onboarding OTP, Cron
-│   │   │   ├── repository/          # Spring Data JPA Entities & Repositories
-│   │   │   └── websocket/           # Event Push Handlers
-│   │   ├── Dockerfile               # Multi-stage Docker build
-│   │   └── pom.xml
-│   │
-│   └── web-portal/                  # Phân hệ Cổng Web Quản trị & Người dùng (ReactJS / Vite)
-│       ├── src/
-│       │   ├── components/          # Reusable UI widgets, Modals, Camera guides
-│       │   ├── pages/               # Dashboard (Live WS), Timesheet, Onboarding, Reports
-│       │   ├── hooks/               # useWebSocket, useAuth
-│       │   └── services/            # Axios API clients
-│       ├── Dockerfile               # Multi-stage Docker build (Nginx alpine)
-│       ├── package.json
-│       └── vite.config.ts
+├── app/                             # [app/README.md] Applications Hub: 3 phân hệ thực thi
+│   ├── kiosk-app/                   # [app/kiosk-app/README.md] Trạm Kiosk Desktop (PySide6 / Edge AI)
+│   ├── backend-service/             # [app/backend-service/README.md] Máy chủ Trung tâm (Spring Boot 3.4+)
+│   └── web-portal/                  # [app/web-portal/README.md] Cổng Web Quản trị & Tự phục vụ (React 18)
 │
-├── docker-compose.yml               # Cấu hình cụm dịch vụ phân tán (PostgreSQL, Backend, Web Portal)
-└── docs/                            # Toàn bộ Bộ tài liệu Kỹ thuật (PI, PP, SRS, DDS, TP)
+├── contracts/                       # [contracts/README.md] Hợp đồng giao tiếp máy đọc (OpenAPI, STOMP)
+├── docs/                            # [docs/README.md] Cổng tài liệu SDLC (PRD, SRS, ADR, Features, Runbooks)
+├── reports/                         # [reports/README.md] Báo cáo audit, ảnh chụp baseline, logs kiểm thử
+├── scripts/                         # [scripts/README.md] Bộ công cụ DevOps & điều phối (manage-services.ps1)
+├── tests/                           # [tests/README.md] Testing Hub 5 tầng: E2E FlaUI, Visual Regression
+│
+├── docker-compose.yml               # Cấu hình cụm container dịch vụ (PostgreSQL, Backend, Web Portal)
+├── AGENTS.md                        # Hiến chương dự án & Tool Isolation Boundary
+└── README.md                        # Monorepo Landing Page
 ```
 
 ---

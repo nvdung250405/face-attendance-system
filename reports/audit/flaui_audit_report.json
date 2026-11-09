@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "message": "Audit complete.",
+  "totalElements": 7,
+  "withAutomationId": 6,
+  "withoutAutomationId": 1,
+  "selectorDistribution": {
+    "stable": 6,
+    "acceptable": 1,
+    "fragile": 0,
+    "unresolvable": 0
+  },
+  "issues": []
+}

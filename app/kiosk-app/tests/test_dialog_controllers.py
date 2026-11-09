@@ -24,7 +24,7 @@ from presentation.controllers.enrollment_controller import EnrollmentController
 from presentation.controllers.pin_controller import PinController
 
 
-def _create_mock_detection(is_valid: bool = True) -> FaceDetectionResult:
+def _create_mock_detection(is_valid: bool = True, yaw: float = 0.0) -> FaceDetectionResult:
     landmarks = np.array(
         [[150, 150], [200, 150], [175, 180], [160, 220], [190, 220]],
         dtype=np.float32,
@@ -33,7 +33,7 @@ def _create_mock_detection(is_valid: bool = True) -> FaceDetectionResult:
         bbox=(280, 142, 80, 100) if is_valid else (10, 10, 30, 30),
         landmarks=landmarks,
         score=0.98,
-        euler_angles=(2.0, 0.0, 0.0),
+        euler_angles=(yaw, 0.0, 0.0),
         is_valid_size=is_valid,
         is_tilted=False,
     )
@@ -163,7 +163,11 @@ def test_enrollment_controller_process_frame_and_submit(qapp):
     """Kiểm tra thu thập 3 frame đạt chuẩn và kích hoạt hoàn tất đăng ký."""
     mock_client = MagicMock(spec=httpx.Client)
     detector = MagicMock()
-    detector.detect_face.return_value = _create_mock_detection(is_valid=True)
+    detector.detect_face.side_effect = [
+        _create_mock_detection(is_valid=True, yaw=0.0),
+        _create_mock_detection(is_valid=True, yaw=16.0),
+        _create_mock_detection(is_valid=True, yaw=-16.0),
+    ]
 
     extractor = MagicMock()
     extractor.align_face.return_value = np.zeros((112, 112, 3), dtype=np.uint8)
@@ -178,6 +182,7 @@ def test_enrollment_controller_process_frame_and_submit(qapp):
         liveness_gate=liveness_gate,
         client=mock_client,
         capture_interval=0.0,
+        pose_hold_duration=0.0,
     )
 
     # Giả lập đã qua bước 1
