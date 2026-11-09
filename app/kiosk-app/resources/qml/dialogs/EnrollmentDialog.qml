@@ -18,10 +18,10 @@ Item {
 
     function open() {
         if (typeof enrollmentController !== "undefined" && enrollmentController) {
-            enrollmentController.setDialogOpen(true)
             if (enrollmentController.currentStep === 3 || enrollmentController.currentStep === 2) {
                 enrollmentController.reset()
             }
+            enrollmentController.setDialogOpen(true)
             enrollmentController.clearOtp()
         }
         isOpen = true
@@ -56,8 +56,26 @@ Item {
     Connections {
         target: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController : null
 
+        function onDialogOpenChanged(openState) {
+            if (!openState) {
+                root.isOpen = false
+                root.opacity = 0.0
+            }
+        }
+
         function onCurrentStepChanged(step) {
-            if (step === 2 || step === 3) {
+            if (step === 1) {
+                if (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.isDialogOpen) {
+                    root.isOpen = true
+                    root.opacity = 1.0
+                    cardItem.forceActiveFocus()
+                } else {
+                    root.isOpen = false
+                    root.opacity = 0.0
+                }
+            } else if (step === 2) {
+                root.hideForCapture()
+            } else if (step === 3) {
                 root.showForCompletion()
             }
         }
@@ -417,8 +435,9 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (typeof enrollmentController !== "undefined" && enrollmentController) {
-                                if (enrollmentController.currentOtp.length === 0) {
-                                    // Tự động điền mã mẫu Figma để demo nhanh nếu người dùng chưa nhập
+                                const isDev = (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.isDevMode)
+                                if (isDev && enrollmentController.currentOtp.length === 0) {
+                                    // Tự động điền mã mẫu demo chỉ khi ở Dev Mode
                                     for (let i = 0; i < "482619".length; i++) {
                                         enrollmentController.appendOtpDigit("482619"[i])
                                     }
@@ -438,10 +457,11 @@ Item {
                     color: text.indexOf("lỗi") >= 0 || text.indexOf("không") >= 0 ? "#EF4444" : "#6B7280"
                 }
 
-                // Gợi ý demo nhanh
+                // Gợi ý demo nhanh (CHỈ hiển thị trong môi trường Development / Demo, ẩn hoàn toàn ở Production)
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 8
+                    visible: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.isDevMode : false
 
                     Text {
                         text: "Mã mẫu thử nghiệm:"
@@ -481,69 +501,270 @@ Item {
                 }
             }
 
-            // ================= 4. BƯỚC 2: CĂN CHỈNH CAMERA =================
+            // ================= 4. BƯỚC 2: CĂN CHỈNH CAMERA & ĐA TƯ THẾ =================
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 28
+                spacing: 20
                 visible: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.currentStep === 2 : false
 
-                Item { Layout.preferredHeight: 20 }
+                property string curPose: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.currentPose !== "undefined") ? enrollmentController.currentPose : "FRONTAL"
+                property real curYaw: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.currentYaw !== "undefined") ? enrollmentController.currentYaw : 0.0
+                property bool matched: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.isPoseMatched !== "undefined") ? enrollmentController.isPoseMatched : false
+                property real prog: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.0
 
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 160
-                    height: 160
-                    radius: 80
-                    color: "#EEF2FF"
-                    border.color: Theme.brandPurple
-                    border.width: 4
-                    clip: true
+                // 1. Row 3 Thẻ Tư Thế (3 Pose Cards)
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
 
-                    Image {
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectCrop
-                        source: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? "image://camera?id=" + kioskViewModel.frameTick : ""
-                        cache: false
+                    // Card 1: FRONTAL
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 58
+                        radius: 12
+                        color: parent.parent.prog >= 0.33 ? "#DEF7EC" : (parent.parent.curPose === "FRONTAL" ? "#EEF2FF" : "#F5F6F8")
+                        border.color: parent.parent.prog >= 0.33 ? "#31C48D" : (parent.parent.curPose === "FRONTAL" ? Theme.brandPurple : "#E5E7EB")
+                        border.width: parent.parent.curPose === "FRONTAL" ? 2 : 1
+
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            Text {
+                                text: parent.parent.parent.parent.prog >= 0.33 ? "✓" : "1"
+                                font.bold: true
+                                color: parent.parent.parent.parent.prog >= 0.33 ? "#0E9F6E" : (parent.parent.parent.parent.curPose === "FRONTAL" ? Theme.brandPurple : "#6B7280")
+                            }
+                            Text {
+                                text: "Nhìn thẳng"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 14
+                                font.bold: parent.parent.parent.parent.curPose === "FRONTAL"
+                                color: parent.parent.parent.parent.prog >= 0.33 ? "#0E9F6E" : (parent.parent.parent.parent.curPose === "FRONTAL" ? Theme.brandPurple : "#4B5563")
+                            }
+                        }
+                    }
+
+                    // Card 2: LEFT_TILT
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 58
+                        radius: 12
+                        color: parent.parent.prog >= 0.66 ? "#DEF7EC" : (parent.parent.curPose === "LEFT_TILT" ? "#EEF2FF" : "#F5F6F8")
+                        border.color: parent.parent.prog >= 0.66 ? "#31C48D" : (parent.parent.curPose === "LEFT_TILT" ? Theme.brandPurple : "#E5E7EB")
+                        border.width: parent.parent.curPose === "LEFT_TILT" ? 2 : 1
+
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            Text {
+                                text: parent.parent.parent.parent.prog >= 0.66 ? "✓" : "2"
+                                font.bold: true
+                                color: parent.parent.parent.parent.prog >= 0.66 ? "#0E9F6E" : (parent.parent.parent.parent.curPose === "LEFT_TILT" ? Theme.brandPurple : "#6B7280")
+                            }
+                            Text {
+                                text: "Nghiêng trái"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 14
+                                font.bold: parent.parent.parent.parent.curPose === "LEFT_TILT"
+                                color: parent.parent.parent.parent.prog >= 0.66 ? "#0E9F6E" : (parent.parent.parent.parent.curPose === "LEFT_TILT" ? Theme.brandPurple : "#4B5563")
+                            }
+                        }
+                    }
+
+                    // Card 3: RIGHT_TILT
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 58
+                        radius: 12
+                        color: parent.parent.prog >= 1.0 ? "#DEF7EC" : (parent.parent.curPose === "RIGHT_TILT" ? "#EEF2FF" : "#F5F6F8")
+                        border.color: parent.parent.prog >= 1.0 ? "#31C48D" : (parent.parent.curPose === "RIGHT_TILT" ? Theme.brandPurple : "#E5E7EB")
+                        border.width: parent.parent.curPose === "RIGHT_TILT" ? 2 : 1
+
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            Text {
+                                text: parent.parent.parent.parent.prog >= 1.0 ? "✓" : "3"
+                                font.bold: true
+                                color: parent.parent.parent.parent.prog >= 1.0 ? "#0E9F6E" : (parent.parent.parent.parent.curPose === "RIGHT_TILT" ? Theme.brandPurple : "#6B7280")
+                            }
+                            Text {
+                                text: "Nghiêng phải"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 14
+                                font.bold: parent.parent.parent.parent.curPose === "RIGHT_TILT"
+                                color: parent.parent.parent.parent.prog >= 1.0 ? "#0E9F6E" : (parent.parent.parent.parent.curPose === "RIGHT_TILT" ? Theme.brandPurple : "#4B5563")
+                            }
+                        }
                     }
                 }
 
-                Text {
+                // 2. Camera Preview Circle with Directional Turn Cue Overlay
+                Item {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Giữ thẳng đầu và nhìn trực diện vào camera"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 22
-                    font.bold: true
-                    color: "#111827"
+                    width: 200
+                    height: 200
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 170
+                        height: 170
+                        radius: 85
+                        color: "#EEF2FF"
+                        border.color: parent.parent.matched ? Theme.statusSuccess : Theme.brandPurple
+                        border.width: 4
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectCrop
+                            source: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? "image://camera?id=" + kioskViewModel.frameTick : ""
+                            cache: false
+                        }
+                    }
+
+                    // Animated Left Turn Arrow
+                    Text {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "◀"
+                        font.pixelSize: 30
+                        color: Theme.brandPurple
+                        visible: parent.parent.curPose === "LEFT_TILT"
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            PropertyAnimation { to: 0.3; duration: 600 }
+                            PropertyAnimation { to: 1.0; duration: 600 }
+                        }
+                    }
+
+                    // Animated Right Turn Arrow
+                    Text {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "▶"
+                        font.pixelSize: 30
+                        color: Theme.brandPurple
+                        visible: parent.parent.curPose === "RIGHT_TILT"
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            PropertyAnimation { to: 0.3; duration: 600 }
+                            PropertyAnimation { to: 1.0; duration: 600 }
+                        }
+                    }
                 }
 
+                // 3. Thanh Thước Đo Góc Yaw (Real-Time Yaw Angle Gauge)
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 6
+
+                    Rectangle {
+                        id: yawGauge
+                        width: 480
+                        height: 28
+                        radius: 14
+                        color: "#F3F4F6"
+                        border.color: "#E5E7EB"
+                        border.width: 1
+                        clip: true
+
+                        // Chuyển đổi góc Yaw sang tọa độ x trên màn hình:
+                        // Hướng TRÁI (Left Tilt, Yaw dương) nằm bên TRÁI thanh đo
+                        // Hướng PHẢI (Right Tilt, Yaw âm) nằm bên PHẢI thanh đo
+                        function yawToX(yaw) {
+                            return Math.min(width, Math.max(0, ((30.0 - yaw) / 60.0) * width))
+                        }
+
+                        // Vùng Mục Tiêu Đạt Chuẩn (Target Zone)
+                        Rectangle {
+                            id: targetZone
+                            height: parent.height
+                            color: Qt.rgba(0.063, 0.725, 0.506, 0.25)
+                            border.color: "#10B981"
+                            border.width: 1.5
+                            radius: 4
+
+                            property real targetLeftDeg: parent.parent.parent.curPose === "FRONTAL" ? 5.0 : (parent.parent.parent.curPose === "LEFT_TILT" ? 25.0 : -10.0)
+                            property real targetRightDeg: parent.parent.parent.curPose === "FRONTAL" ? -5.0 : (parent.parent.parent.curPose === "LEFT_TILT" ? 10.0 : -25.0)
+
+                            x: Math.min(yawGauge.yawToX(targetLeftDeg), yawGauge.yawToX(targetRightDeg))
+                            width: Math.max(16, Math.abs(yawGauge.yawToX(targetRightDeg) - yawGauge.yawToX(targetLeftDeg)))
+                        }
+
+                        // Vạch 0 độ chính giữa
+                        Rectangle {
+                            width: 2
+                            height: parent.height
+                            x: parent.width / 2 - 1
+                            color: "#9CA3AF"
+                        }
+
+                        // Con trỏ góc Yaw hiện tại (Dynamic Needle)
+                        Rectangle {
+                            width: 8
+                            height: parent.height - 4
+                            y: 2
+                            radius: 4
+                            color: parent.parent.parent.matched ? "#10B981" : (parent.parent.parent.curPose === "FRONTAL" && Math.abs(parent.parent.parent.curYaw) > 10.0 ? "#EF4444" : "#F59E0B")
+                            x: Math.min(parent.width - width, Math.max(0, yawGauge.yawToX(parent.parent.parent.curYaw) - width / 2))
+
+                            Behavior on x {
+                                NumberAnimation { duration: 60; easing.type: Easing.OutQuad }
+                            }
+                        }
+                    }
+
+                    // Nhãn góc độ
+                    RowLayout {
+                        Layout.preferredWidth: 480
+                        Text { text: "◀ TRÁI (Nghiêng trái)"; font.pixelSize: 11; font.bold: parent.parent.curPose === "LEFT_TILT"; color: parent.parent.curPose === "LEFT_TILT" ? "#10B981" : "#9CA3AF" }
+                        Item { Layout.fillWidth: true }
+                        Text {
+                            text: "Góc Yaw: " + (parent.parent.parent.curYaw >= 0 ? "+" : "") + parent.parent.parent.curYaw.toFixed(1) + "°"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: parent.parent.parent.matched ? "#10B981" : "#4B5563"
+                        }
+                        Item { Layout.fillWidth: true }
+                        Text { text: "PHẢI (Nghiêng phải) ▶"; font.pixelSize: 11; font.bold: parent.parent.curPose === "RIGHT_TILT"; color: parent.parent.curPose === "RIGHT_TILT" ? "#10B981" : "#9CA3AF" }
+                    }
+                }
+
+                // 4. Thông điệp chỉ dẫn tiếng Việt
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     text: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.statusMessage : ""
                     font.family: Theme.fontFamily
                     font.pixelSize: 16
-                    color: "#6B7280"
+                    font.bold: true
+                    color: parent.matched ? Theme.statusSuccess : Theme.textPrimary
+                    horizontalAlignment: Text.AlignHCenter
                 }
 
+                // 5. Thanh tiến độ thu thập ảnh
                 ProgressBar {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: 500
-                    Layout.preferredHeight: 12
-                    value: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.0
+                    Layout.preferredWidth: 480
+                    Layout.preferredHeight: 10
+                    value: parent.prog
                 }
 
-                // Nút mô phỏng hoàn tất ảnh chụp nếu test ngoại tuyến
+                // Nút mô phỏng hoàn tất ảnh chụp nếu test ngoại tuyến (CHỈ hiển thị ở Dev Mode)
                 Rectangle {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.preferredWidth: 320
-                    height: 52
+                    height: 48
                     radius: 12
                     color: "#F3F4F6"
+                    visible: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.isDevMode : false
 
                     Text {
                         anchors.centerIn: parent
-                        text: "Bấm để hoàn tất bước chụp ảnh"
+                        text: "Bấm để hoàn tất bước chụp ảnh (Demo)"
                         font.family: Theme.fontFamily
-                        font.pixelSize: 15
+                        font.pixelSize: 14
                         font.bold: true
                         color: Theme.brandPurple
                     }

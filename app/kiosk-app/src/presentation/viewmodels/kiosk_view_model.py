@@ -126,10 +126,12 @@ class KioskViewModel(QObject):
         sync_worker: OfflineSyncWorker | None = None,
         stability_threshold: int = 8,
         enrollment_controller: Any = None,
+        is_dev_mode: bool | None = None,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo KioskViewModel."""
         super().__init__(parent)
+        self._is_dev_mode: bool = is_dev_mode if is_dev_mode is not None else settings.is_development
         self.image_provider = image_provider
         self.detector = detector
         self.liveness_gate = liveness_gate
@@ -226,9 +228,22 @@ class KioskViewModel(QObject):
             else:
                 self.set_state(OvalState.IDLE, "Vui lòng nhìn vào khung hình để điểm danh")
 
+    @Property(bool, constant=True)
+    def isDevMode(self) -> bool:
+        """Kiểm tra có đang ở chế độ phát triển/thử nghiệm hay không."""
+        return self._is_dev_mode
+
+    @Property(bool, constant=True)
+    def isProduction(self) -> bool:
+        """Kiểm tra có đang ở chế độ sản xuất chính thức hay không."""
+        return not self._is_dev_mode
+
     @Slot()
     def simulateSuccess(self) -> None:
-        """Giả lập điểm danh thành công cho dev testing."""
+        """Giả lập điểm danh thành công cho dev testing (bị chặn ở Production)."""
+        if not self._is_dev_mode:
+            logger.warning("Bỏ qua simulateSuccess vì Kiosk đang chạy ở môi trường Production!")
+            return
         punch_time = datetime.now().strftime("%H:%M:%S")
         self._last_emp_id = 1001
         self._last_punch_time = punch_time

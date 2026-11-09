@@ -18,6 +18,7 @@ Rectangle {
     property string recognitionState: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.ovalState : "IDLE"
     property string instructionMessage: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel.message : "Vui lòng đứng trước camera để điểm danh"
     property bool isEnrolling: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.isEnrolling : false
+    property bool isCaptureMode: root.isEnrolling && (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.currentStep === 2)
     property string enrollmentStatus: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.statusMessage : ""
     property real enrollmentProgress: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.progressPercent : 0.0
 
@@ -30,6 +31,10 @@ Rectangle {
 
     Connections {
         target: (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController : null
+        function onDialogOpenChanged(openState) {
+            root.isEnrolling = openState
+            ovalCanvas.requestPaint()
+        }
         function onCurrentStepChanged() {
             root.isEnrolling = (typeof enrollmentController !== "undefined" && enrollmentController) ? enrollmentController.isEnrolling : false
             ovalCanvas.requestPaint()
@@ -95,7 +100,7 @@ Rectangle {
         border.color: Qt.rgba(1.0, 1.0, 1.0, 0.3)
         border.width: 1
         z: 2
-        visible: root.isEnrolling
+        visible: root.isCaptureMode
 
         RowLayout {
             anchors.centerIn: parent
@@ -122,6 +127,7 @@ Rectangle {
             cursorShape: Qt.PointingHandCursor
             onClicked: {
                 if (typeof enrollmentController !== "undefined" && enrollmentController) {
+                    enrollmentController.setDialogOpen(false)
                     enrollmentController.reset()
                 }
             }
@@ -339,6 +345,218 @@ Rectangle {
                         NumberAnimation { duration: 200 }
                     }
                 }
+            }
+        }
+    }
+
+    // 2.1. Thẻ 3 Tư Thế Nổi Phía Trên Khung Oval (HUD Pose Cards)
+    RowLayout {
+        anchors.top: parent.top
+        anchors.topMargin: 80
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: Math.min(680, parent.width - 64)
+        spacing: 12
+        visible: root.isCaptureMode
+        z: 10
+
+        property string curPose: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.currentPose !== "undefined") ? enrollmentController.currentPose : "FRONTAL"
+        property real prog: root.enrollmentProgress
+
+        // Card 1: FRONTAL
+        Rectangle {
+            Layout.fillWidth: true
+            height: 52
+            radius: 12
+            color: parent.prog >= 0.33 ? Qt.rgba(0.082, 0.580, 0.278, 0.85) : (parent.curPose === "FRONTAL" ? Qt.rgba(0.459, 0.404, 1.0, 0.90) : Qt.rgba(0.1, 0.1, 0.15, 0.60))
+            border.color: parent.curPose === "FRONTAL" ? "#FFFFFF" : Qt.rgba(1, 1, 1, 0.2)
+            border.width: parent.curPose === "FRONTAL" ? 2 : 1
+
+            RowLayout {
+                anchors.centerIn: parent
+                spacing: 6
+                Text { text: parent.parent.parent.prog >= 0.33 ? "✓" : "1."; color: "#FFFFFF"; font.bold: true; font.pixelSize: 14 }
+                Text { text: "Nhìn thẳng"; color: "#FFFFFF"; font.family: Theme.fontFamily; font.pixelSize: 14; font.bold: parent.parent.parent.curPose === "FRONTAL" }
+            }
+        }
+
+        // Card 2: LEFT_TILT
+        Rectangle {
+            Layout.fillWidth: true
+            height: 52
+            radius: 12
+            color: parent.prog >= 0.66 ? Qt.rgba(0.082, 0.580, 0.278, 0.85) : (parent.curPose === "LEFT_TILT" ? Qt.rgba(0.459, 0.404, 1.0, 0.90) : Qt.rgba(0.1, 0.1, 0.15, 0.60))
+            border.color: parent.curPose === "LEFT_TILT" ? "#FFFFFF" : Qt.rgba(1, 1, 1, 0.2)
+            border.width: parent.curPose === "LEFT_TILT" ? 2 : 1
+
+            RowLayout {
+                anchors.centerIn: parent
+                spacing: 6
+                Text { text: parent.parent.parent.prog >= 0.66 ? "✓" : "2."; color: "#FFFFFF"; font.bold: true; font.pixelSize: 14 }
+                Text { text: "Nghiêng trái"; color: "#FFFFFF"; font.family: Theme.fontFamily; font.pixelSize: 14; font.bold: parent.parent.parent.curPose === "LEFT_TILT" }
+            }
+        }
+
+        // Card 3: RIGHT_TILT
+        Rectangle {
+            Layout.fillWidth: true
+            height: 52
+            radius: 12
+            color: parent.prog >= 1.0 ? Qt.rgba(0.082, 0.580, 0.278, 0.85) : (parent.curPose === "RIGHT_TILT" ? Qt.rgba(0.459, 0.404, 1.0, 0.90) : Qt.rgba(0.1, 0.1, 0.15, 0.60))
+            border.color: parent.curPose === "RIGHT_TILT" ? "#FFFFFF" : Qt.rgba(1, 1, 1, 0.2)
+            border.width: parent.curPose === "RIGHT_TILT" ? 2 : 1
+
+            RowLayout {
+                anchors.centerIn: parent
+                spacing: 6
+                Text { text: parent.parent.parent.prog >= 1.0 ? "✓" : "3."; color: "#FFFFFF"; font.bold: true; font.pixelSize: 14 }
+                Text { text: "Nghiêng phải"; color: "#FFFFFF"; font.family: Theme.fontFamily; font.pixelSize: 14; font.bold: parent.parent.parent.curPose === "RIGHT_TILT" }
+            }
+        }
+    }
+
+    // 2.2. Mũi Tên Chỉ Hướng Bên Cạnh Khung Oval (Directional Turn Cues)
+    Item {
+        anchors.fill: parent
+        visible: root.isCaptureMode
+        z: 10
+
+        property string curPose: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.currentPose !== "undefined") ? enrollmentController.currentPose : "FRONTAL"
+
+        // Mũi tên chỉ hướng sang Trái (Left Turn Arrow)
+        Rectangle {
+            x: root.width / 2 - Theme.ovalWidth / 2 - 90
+            y: root.height * 0.40 - 45
+            width: 80
+            height: 90
+            radius: 16
+            color: Qt.rgba(0.459, 0.404, 1.0, 0.85)
+            visible: parent.curPose === "LEFT_TILT"
+
+            Column {
+                anchors.centerIn: parent
+                spacing: 4
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "◀"; font.pixelSize: 32; color: "#FFFFFF" }
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "TRÁI"; font.pixelSize: 13; font.bold: true; color: "#FFFFFF" }
+            }
+
+            SequentialAnimation on x {
+                loops: Animation.Infinite
+                NumberAnimation { to: root.width / 2 - Theme.ovalWidth / 2 - 105; duration: 600; easing.type: Easing.InOutQuad }
+                NumberAnimation { to: root.width / 2 - Theme.ovalWidth / 2 - 90; duration: 600; easing.type: Easing.InOutQuad }
+            }
+        }
+
+        // Mũi tên chỉ hướng sang Phải (Right Turn Arrow)
+        Rectangle {
+            x: root.width / 2 + Theme.ovalWidth / 2 + 10
+            y: root.height * 0.40 - 45
+            width: 80
+            height: 90
+            radius: 16
+            color: Qt.rgba(0.459, 0.404, 1.0, 0.85)
+            visible: parent.curPose === "RIGHT_TILT"
+
+            Column {
+                anchors.centerIn: parent
+                spacing: 4
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "▶"; font.pixelSize: 32; color: "#FFFFFF" }
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "PHẢI"; font.pixelSize: 13; font.bold: true; color: "#FFFFFF" }
+            }
+
+            SequentialAnimation on x {
+                loops: Animation.Infinite
+                NumberAnimation { to: root.width / 2 + Theme.ovalWidth / 2 + 25; duration: 600; easing.type: Easing.InOutQuad }
+                NumberAnimation { to: root.width / 2 + Theme.ovalWidth / 2 + 10; duration: 600; easing.type: Easing.InOutQuad }
+            }
+        }
+    }
+
+    // 2.3. Thước Đo Góc Yaw Thời Gian Thực Khi Đăng Ký (Real-time Yaw Gauge)
+    Rectangle {
+        id: yawGaugeStrip
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: instructionStrip.top
+        anchors.bottomMargin: 12
+        width: Math.min(520, parent.width - 48)
+        height: 32
+        radius: 16
+        color: Qt.rgba(0.1, 0.1, 0.15, 0.85)
+        border.color: Qt.rgba(1, 1, 1, 0.2)
+        border.width: 1
+        clip: true
+        visible: root.isCaptureMode
+        z: 10
+
+        property string curPose: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.currentPose !== "undefined") ? enrollmentController.currentPose : "FRONTAL"
+        property real curYaw: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.currentYaw !== "undefined") ? enrollmentController.currentYaw : 0.0
+        property bool matched: (typeof enrollmentController !== "undefined" && enrollmentController && typeof enrollmentController.isPoseMatched !== "undefined") ? enrollmentController.isPoseMatched : false
+
+        // Chuyển đổi góc Yaw sang tọa độ x trên màn hình:
+        // Hướng TRÁI (Left Tilt, Yaw dương) nằm bên TRÁI thanh đo (x = 0..33%) đồng bộ với mũi tên ◀ TRÁI
+        // Hướng PHẢI (Right Tilt, Yaw âm) nằm bên PHẢI thanh đo (x = 66..100%) đồng bộ với mũi tên ▶ PHẢI
+        // Giữa (Frontal, Yaw ~ 0°) nằm chính giữa (x = 50%)
+        function yawToX(yaw) {
+            return Math.min(width, Math.max(0, ((30.0 - yaw) / 60.0) * width))
+        }
+
+        // Vùng mục tiêu hợp lệ (Target Zone đồng bộ trực quan cùng phía với hướng TRÁI / PHẢI)
+        Rectangle {
+            height: parent.height
+            color: Qt.rgba(0.063, 0.725, 0.506, 0.30)
+            border.color: "#10B981"
+            border.width: 1.5
+            radius: 4
+
+            property real targetLeftDeg: parent.curPose === "FRONTAL" ? 5.0 : (parent.curPose === "LEFT_TILT" ? 25.0 : -10.0)
+            property real targetRightDeg: parent.curPose === "FRONTAL" ? -5.0 : (parent.curPose === "LEFT_TILT" ? 10.0 : -25.0)
+
+            x: Math.min(yawGaugeStrip.yawToX(targetLeftDeg), yawGaugeStrip.yawToX(targetRightDeg))
+            width: Math.max(16, Math.abs(yawGaugeStrip.yawToX(targetRightDeg) - yawGaugeStrip.yawToX(targetLeftDeg)))
+        }
+
+        // Vạch 0 độ chính giữa
+        Rectangle {
+            width: 2
+            height: parent.height
+            x: parent.width / 2 - 1
+            color: Qt.rgba(1, 1, 1, 0.45)
+        }
+
+        // Nhãn chỉ hướng TRÁI bên trái thanh đo
+        Text {
+            anchors.left: parent.left
+            anchors.leftMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            text: "◀ TRÁI"
+            font.family: Theme.fontFamily
+            font.pixelSize: 11
+            font.bold: true
+            color: parent.curPose === "LEFT_TILT" ? "#10B981" : Qt.rgba(1, 1, 1, 0.45)
+        }
+
+        // Nhãn chỉ hướng PHẢI bên phải thanh đo
+        Text {
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            text: "PHẢI ▶"
+            font.family: Theme.fontFamily
+            font.pixelSize: 11
+            font.bold: true
+            color: parent.curPose === "RIGHT_TILT" ? "#10B981" : Qt.rgba(1, 1, 1, 0.45)
+        }
+
+        // Con trỏ góc Yaw hiện tại (Di chuyển cùng chiều với hướng quay mặt)
+        Rectangle {
+            width: 8
+            height: parent.height - 4
+            y: 2
+            radius: 4
+            color: parent.matched ? "#10B981" : (parent.curPose === "FRONTAL" && Math.abs(parent.curYaw) > 10.0 ? "#EF4444" : "#F59E0B")
+            x: Math.min(parent.width - width, Math.max(0, yawGaugeStrip.yawToX(parent.curYaw) - width / 2))
+
+            Behavior on x {
+                NumberAnimation { duration: 60; easing.type: Easing.OutQuad }
             }
         }
     }

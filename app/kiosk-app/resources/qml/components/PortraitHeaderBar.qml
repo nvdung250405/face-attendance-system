@@ -67,12 +67,31 @@ Rectangle {
 
             ColumnLayout {
                 spacing: 2
-                Text {
-                    text: root.organizationName
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 24
-                    font.bold: true
-                    color: Theme.textPrimary
+                RowLayout {
+                    spacing: 8
+                    Text {
+                        text: root.organizationName
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 24
+                        font.bold: true
+                        color: Theme.textPrimary
+                    }
+                    Rectangle {
+                        visible: (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.isDevMode)
+                        height: 18
+                        width: 36
+                        radius: 5
+                        color: "#FEF3C7"
+                        border.color: "#F59E0B"
+                        border.width: 1
+                        Text {
+                            anchors.centerIn: parent
+                            text: "DEV"
+                            font.pixelSize: 9
+                            font.bold: true
+                            color: "#B45309"
+                        }
+                    }
                 }
                 Text {
                     text: "TRẠM ĐIỂM DANH"

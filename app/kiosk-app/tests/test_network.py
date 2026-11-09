@@ -324,3 +324,113 @@ def test_verify_pin_api():
     assert exc_locked.value.code == "PIN_LOCKED"
     assert exc_locked.value.locked_until == "2026-10-18T14:30:00Z"
 
+
+def test_enroll_face_multi_template_and_validation():
+    """Kiểm tra enroll_face với multi-template 3 tư thế, fallback vector512, và các điều kiện ValueError."""
+    captured_requests = []
+
+    def mock_handler(request: httpx.Request):
+        captured_requests.append(request)
+        if request.url.path.endswith("/kiosk/enroll-face"):
+            body = json.loads(request.content)
+            if "templates" in body or "vector512" in body:
+                return httpx.Response(
+                    200,
+                    json={
+                        "success": True,
+                        "data": {
+                            "status": "ACTIVE",
+                            "templateCount": len(body.get("templates", [])),
+                        },
+                    },
+                )
+        return httpx.Response(400, json={"message": "Bad Request"})
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    http_client = KioskHttpClient(client=client, kiosk_id="KIOSK-HN-01")
+
+    valid_templates = [
+        {
+            "poseType": "FRONTAL",
+            "vector512": [1.0] + [0.0] * 511,
+            "yaw": 0.0,
+            "pitch": 0.0,
+            "laplacian": 45.0,
+            "livenessScore": 0.95,
+        },
+        {
+            "poseType": "LEFT_TILT",
+            "vector512": [0.0, 1.0] + [0.0] * 510,
+            "yaw": 15.0,
+            "pitch": 0.0,
+            "laplacian": 42.0,
+            "livenessScore": 0.93,
+        },
+        {
+            "poseType": "RIGHT_TILT",
+            "vector512": [0.0, 0.0, 1.0] + [0.0] * 509,
+            "yaw": -15.0,
+            "pitch": 0.0,
+            "laplacian": 40.0,
+            "livenessScore": 0.91,
+        },
+    ]
+    raw_vector = [2.0] + [0.0] * 511
+
+    # 1. Thành công với cả templates và vector512 (dual compatibility)
+    res = http_client.enroll_face(
+        otp="123456",
+        session_token="tok_abc",
+        templates=valid_templates,
+        vector512=raw_vector,
+    )
+    assert res["success"] is True
+    assert res["data"]["status"] == "ACTIVE"
+    assert res["data"]["templateCount"] == 3
+
+    assert len(captured_requests) == 1
+    req_body = json.loads(captured_requests[0].content)
+    assert req_body["otp"] == "123456"
+    assert req_body["sessionToken"] == "tok_abc"
+    assert req_body["kioskId"] == "KIOSK-HN-01"
+    assert "templates" in req_body
+    assert len(req_body["templates"]) == 3
+    assert req_body["templates"][0]["poseType"] == "FRONTAL"
+    assert "vector512" in req_body
+    assert len(req_body["vector512"]) == 512
+    # Vector512 được chuẩn hóa L2 tự động (2.0 -> 1.0)
+    assert pytest.approx(req_body["vector512"][0]) == 1.0
+
+    # 2. ValueError khi len(templates) != 3 (2 templates)
+    with pytest.raises(
+        ValueError, match="templates bắt buộc phải có đúng 3 phần tử"
+    ):
+        http_client.enroll_face(
+            otp="123456",
+            session_token="tok_abc",
+            templates=valid_templates[:2],
+            vector512=raw_vector,
+        )
+
+    # 3. ValueError khi len(templates) != 3 (4 templates)
+    with pytest.raises(
+        ValueError, match="templates bắt buộc phải có đúng 3 phần tử"
+    ):
+        http_client.enroll_face(
+            otp="123456",
+            session_token="tok_abc",
+            templates=valid_templates + [valid_templates[0]],
+            vector512=raw_vector,
+        )
+
+    # 4. ValueError khi cả templates và vector512 đều None
+    with pytest.raises(
+        ValueError, match="Cần cung cấp ít nhất templates hoặc vector512"
+    ):
+        http_client.enroll_face(
+            otp="123456",
+            session_token="tok_abc",
+            templates=None,
+            vector512=None,
+        )
+

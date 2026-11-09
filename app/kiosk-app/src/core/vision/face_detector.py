@@ -5,6 +5,7 @@ Tài liệu tham chiếu:
 - DDS.md (Mục 3.2 - Bước 2: Phát hiện khuôn mặt & kiểm tra góc Euler)
 """
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -27,6 +28,85 @@ class FaceDetectionResult:
     euler_angles: tuple[float, float, float]  # (yaw, pitch, roll) tính theo độ (degrees)
     is_valid_size: bool  # True nếu diện tích đạt tối thiểu 120x120 px
     is_tilted: bool  # True nếu bất kỳ góc yaw, pitch, roll nào vượt quá 15 độ
+
+
+# Bí danh chuẩn hóa đồng bộ với đặc tả FEAT-ENROLL-001
+DetectedFace = FaceDetectionResult
+
+
+def estimate_euler_angles(landmarks: np.ndarray) -> tuple[float, float, float]:
+    """Ước lượng góc Euler (Yaw, Pitch, Roll) từ 5 điểm mốc đặc trưng với khử xoay Roll 2D.
+
+    Thuật toán tuân thủ FEAT-ENROLL-001 spec.md §2.2 & §5.3:
+    1. Tính góc Roll dựa trên độ dốc giữa 2 mắt bằng arctan2(dy, dx).
+    2. Khử xoay 2D (in-plane de-rotation) toàn bộ 5 landmarks quanh trung điểm 2 mắt theo -Roll.
+    3. Tính góc Yaw trên tọa độ đã khử xoay từ tỷ lệ lệch trục ngang của mũi so với 2 mắt.
+    4. Tính góc Pitch trên tọa độ đã khử xoay từ tỷ lệ khoảng cách mắt-mũi so với mũi-miệng.
+
+    Args:
+        landmarks: Mảng (5, 2) tọa độ [mắt phải, mắt trái, mũi, miệng phải, miệng trái].
+
+    Returns:
+        tuple[float, float, float]: (yaw, pitch, roll) tính theo độ.
+    """
+    right_eye = landmarks[0]
+    left_eye = landmarks[1]
+
+    # 1. Roll: Góc nghiêng đầu sang trái/phải dựa trên đường nối 2 mắt
+    dx_eye = float(left_eye[0] - right_eye[0])
+    dy_eye = float(left_eye[1] - right_eye[1])
+    roll = float(np.degrees(np.arctan2(dy_eye, dx_eye)))
+
+    # Trung điểm 2 mắt làm tâm xoay
+    eye_cx = (float(right_eye[0]) + float(left_eye[0])) / 2.0
+    eye_cy = (float(right_eye[1]) + float(left_eye[1])) / 2.0
+
+    # Khử xoay 2D (de-rotate) 5 landmarks quanh tâm mắt theo góc -roll
+    theta = math.radians(-roll)
+    cos_t = math.cos(theta)
+    sin_t = math.sin(theta)
+
+    rotated = np.zeros_like(landmarks, dtype=np.float64)
+    for i in range(5):
+        vx = float(landmarks[i, 0]) - eye_cx
+        vy = float(landmarks[i, 1]) - eye_cy
+        rotated[i, 0] = eye_cx + (vx * cos_t - vy * sin_t)
+        rotated[i, 1] = eye_cy + (vx * sin_t + vy * cos_t)
+
+    r_eye_rot = rotated[0]
+    l_eye_rot = rotated[1]
+    nose_rot = rotated[2]
+    mouth_r_rot = rotated[3]
+    mouth_l_rot = rotated[4]
+
+    # 2. Yaw: Tỷ lệ lệch trục ngang của mũi so với 2 mắt trên tọa độ đã de-rotate
+    dist_right = float(nose_rot[0] - r_eye_rot[0])
+    dist_left = float(l_eye_rot[0] - nose_rot[0])
+    total_span = dist_right + dist_left
+
+    if abs(total_span) > 1e-5:
+        yaw_ratio = (dist_right - dist_left) / total_span
+        yaw_ratio = max(-1.0, min(1.0, yaw_ratio))
+        yaw = float(yaw_ratio * 90.0)
+    else:
+        yaw = 0.0
+
+    # 3. Pitch: Tỷ lệ khoảng cách mắt-mũi so với mũi-miệng trên tọa độ đã de-rotate
+    eye_center_y = (float(r_eye_rot[1]) + float(l_eye_rot[1])) / 2.0
+    mouth_center_y = (float(mouth_r_rot[1]) + float(mouth_l_rot[1])) / 2.0
+
+    eye_nose_dist = float(nose_rot[1] - eye_center_y)
+    nose_mouth_dist = float(mouth_center_y - nose_rot[1])
+    total_vert = eye_nose_dist + nose_mouth_dist
+
+    if abs(total_vert) > 1e-5:
+        pitch_ratio = (eye_nose_dist - nose_mouth_dist) / total_vert
+        pitch_ratio = max(-1.0, min(1.0, pitch_ratio))
+        pitch = float(pitch_ratio * 90.0)
+    else:
+        pitch = 0.0
+
+    return (yaw, pitch, roll)
 
 
 class YuNetFaceDetector:
@@ -91,47 +171,15 @@ class YuNetFaceDetector:
     def _estimate_euler_angles(self, landmarks: np.ndarray) -> tuple[float, float, float]:
         """Ước lượng sơ bộ góc Euler (Yaw, Pitch, Roll) từ 5 điểm mốc đặc trưng.
 
+        Ủy nhiệm thuật toán khử xoay Roll 2D độc lập cho estimate_euler_angles().
+
         Args:
             landmarks: Mảng (5, 2) tọa độ [mắt phải, mắt trái, mũi, miệng phải, miệng trái].
 
         Returns:
             tuple[float, float, float]: (yaw, pitch, roll) tính theo độ.
         """
-        right_eye = landmarks[0]
-        left_eye = landmarks[1]
-        nose = landmarks[2]
-        mouth_right = landmarks[3]
-        mouth_left = landmarks[4]
-
-        # 1. Roll: Góc nghiêng đầu sang trái/phải dựa trên đường nối 2 mắt
-        dx_eye = float(left_eye[0] - right_eye[0])
-        dy_eye = float(left_eye[1] - right_eye[1])
-        roll = float(np.degrees(np.arctan2(dy_eye, max(1e-5, dx_eye))))
-
-        # 2. Yaw: Tỷ lệ lệch trục ngang của mũi so với trung điểm 2 mắt
-        dist_right = float(nose[0] - right_eye[0])
-        dist_left = float(left_eye[0] - nose[0])
-        total_span = dist_right + dist_left
-        if total_span > 1e-5:
-            yaw_ratio = (dist_right - dist_left) / total_span
-            yaw = float(yaw_ratio * 90.0)
-        else:
-            yaw = 0.0
-
-        # 3. Pitch: Tỷ lệ khoảng cách mắt-mũi so với mũi-miệng
-        eye_center_y = float((right_eye[1] + left_eye[1]) / 2.0)
-        mouth_center_y = float((mouth_right[1] + mouth_left[1]) / 2.0)
-
-        eye_nose_dist = float(nose[1] - eye_center_y)
-        nose_mouth_dist = float(mouth_center_y - nose[1])
-        total_vert = eye_nose_dist + nose_mouth_dist
-        if total_vert > 1e-5:
-            pitch_ratio = (eye_nose_dist - nose_mouth_dist) / total_vert
-            pitch = float(pitch_ratio * 90.0)
-        else:
-            pitch = 0.0
-
-        return (yaw, pitch, roll)
+        return estimate_euler_angles(landmarks)
 
     def detect(self, frame: np.ndarray) -> list[FaceDetectionResult]:
         """Thực hiện phát hiện khuôn mặt trên khung hình camera.
