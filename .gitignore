@@ -47,6 +47,7 @@ app/kiosk-app/.venv/
 .pytest_cache/
 .coverage
 htmlcov/
+.ruff_cache/
 
 # CSDL cục bộ SQLite của Kiosk
 *.sqlite3
@@ -102,8 +103,7 @@ target/
 # ------------------------------------------------------------------------------
 logs/
 *.log
-logs/backend/
-logs/kiosk/
+app/kiosk-app/logs/
 
 # ------------------------------------------------------------------------------
 # 6. IDEs & Hệ điều hành
@@ -150,10 +150,12 @@ review.md
 flaui_e2e_session.json
 
 # Thư mục tạm & Dữ liệu runtime cục bộ
+tests/.tmp/
 .tmp/
 data/*.db*
 data/*.sqlite3
 
-# Thư mục kết quả kiểm thử tạm (giữ lại baselines)
-reports/screenshots/diffs/
-reports/test-results/
+# Thư mục kết quả kiểm thử tạm (giữ lại baselines trong tests/reports)
+tests/reports/screenshots/diffs/
+tests/reports/test-results/
+tests/reports/.tmp/

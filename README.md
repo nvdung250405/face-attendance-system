@@ -35,9 +35,8 @@ Mỗi không gian làm việc trong dự án sở hữu một tệp `README.md` 
   * 🖥️ **Trạm Kiosk ([`app/kiosk-app/README.md`](app/kiosk-app/README.md))**: Bảng cờ lệnh CLI (`--dev`, `--prod`, `--no-camera`, `--no-liveness`), phím tắt F1-F12, kiểm thử Edge AI.
   * ⚙️ **Máy chủ Trung tâm ([`app/backend-service/README.md`](app/backend-service/README.md))**: Khởi chạy Spring Boot 3.4+, CSDL PostgreSQL, Flyway, cấu hình STOMP broker.
   * 🌐 **Cổng Web ([`app/web-portal/README.md`](app/web-portal/README.md))**: React 18, Vite, live dashboard STOMP, kiểm thử giao diện.
-* 🧪 **Trung Tâm Kiểm Thử ([`tests/README.md`](tests/README.md))**: Kim tự tháp kiểm thử 5 tầng, FlaUI Windows Desktop E2E, ma trận co giãn màn hình, kiểm thử visual regression.
+* 🧪 **Trung Tâm Kiểm Thử ([`tests/README.md`](tests/README.md))**: Kim tự tháp kiểm thử 5 tầng, FlaUI Windows Desktop E2E, visual regression và toàn bộ dữ liệu báo cáo đầu ra đóng gói tại [`tests/reports/`](tests/reports/README.md).
 * 🛠️ **DevOps & Tự Động Hóa ([`scripts/README.md`](scripts/README.md))**: Cẩm nang `manage-services.ps1`, Docker Compose, nạp dữ liệu mẫu và chuẩn bị AI model.
-* 📊 **Báo Cáo & Minh Chứng ([`reports/README.md`](reports/README.md))**: Báo cáo kiểm định FlaUI accessibility, ảnh chụp chuẩn baseline, logs kiểm thử tự động.
 * 📑 **Cổng Tài Liệu & Kiến Trúc ([`docs/README.md`](docs/README.md))**: Cổng tài liệu vòng đời kỹ nghệ SDLC (PRD, SRS, RTM, ADR-001..005, 8 Feature vertical slices, Runbooks).
   * 👤 **Cẩm Nang Người Dùng ([`docs/user-guide.md`](docs/user-guide.md))**: Hướng dẫn nhân viên ký đồng thuận, nhận OTP và điểm danh khuôn mặt.
 
@@ -174,9 +173,9 @@ face-attendance-system/
 │
 ├── contracts/                       # [contracts/README.md] Hợp đồng giao tiếp máy đọc (OpenAPI, STOMP)
 ├── docs/                            # [docs/README.md] Cổng tài liệu SDLC (PRD, SRS, ADR, Features, Runbooks)
-├── reports/                         # [reports/README.md] Báo cáo audit, ảnh chụp baseline, logs kiểm thử
 ├── scripts/                         # [scripts/README.md] Bộ công cụ DevOps & điều phối (manage-services.ps1)
 ├── tests/                           # [tests/README.md] Testing Hub 5 tầng: E2E FlaUI, Visual Regression
+│   └── reports/                     # [tests/reports/README.md] Toàn bộ artifacts, screenshots & audit JSON
 │
 ├── docker-compose.yml               # Cấu hình cụm container dịch vụ (PostgreSQL, Backend, Web Portal)
 ├── AGENTS.md                        # Hiến chương dự án & Tool Isolation Boundary

@@ -71,7 +71,7 @@ class KioskConfig:
     icons_dir: Path = KIOSK_DIR / "resources" / "assets" / "icons"
     sounds_dir: Path = KIOSK_DIR / "resources" / "assets" / "sounds"
     qml_dir: Path = KIOSK_DIR / "resources" / "qml"
-    logs_dir: Path = MONOREPO_ROOT / "logs" / "kiosk"
+    logs_dir: Path = KIOSK_DIR / "logs"
 
     # 6. Đường dẫn tệp trọng số mô hình ONNX
     yunet_model_path: Path = (

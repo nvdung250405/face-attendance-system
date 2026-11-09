@@ -18,13 +18,14 @@ from pathlib import Path
 
 FLAUI_EXE = r"C:\Users\Dung\.dotnet\tools\flaui.exe"
 PYTHON_EXE = r"C:\Users\Dung\AppData\Local\Programs\Python\Python314\python.exe"
-WORKSPACE_DIR = Path(__file__).resolve().parents[3]
+TESTS_DIR = Path(__file__).resolve().parents[2]
+WORKSPACE_DIR = TESTS_DIR.parent
 KIOSK_DIR = WORKSPACE_DIR / "app" / "kiosk-app"
-REPORTS_DIR = WORKSPACE_DIR / "reports"
+REPORTS_DIR = TESTS_DIR / "reports"
 SCREENSHOTS_DIR = REPORTS_DIR / "screenshots" / "e2e"
 AUDIT_DIR = REPORTS_DIR / "audit"
 AUDIT_REPORT_PATH = AUDIT_DIR / "flaui_audit_report.json"
-TMP_DIR = WORKSPACE_DIR / ".tmp"
+TMP_DIR = TESTS_DIR / ".tmp"
 SESSION_FILE = TMP_DIR / "flaui_e2e_session.json"
 
 

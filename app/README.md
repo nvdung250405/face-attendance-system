@@ -35,7 +35,7 @@ flowchart LR
 * **Ranh giới trách nhiệm**: Thư mục `app/` chỉ chứa mã nguồn ứng dụng và unit test của từng phân hệ. Tuyệt đối không chứa:
   - Hợp đồng máy đọc chung $\rightarrow$ nằm tại [`contracts/`](../contracts/).
   - Kiểm thử tích hợp đa dịch vụ, E2E và Visual regression $\rightarrow$ nằm tại [`tests/`](../tests/).
-  - Báo cáo kết quả chạy test và kho ảnh chụp $\rightarrow$ nằm tại [`reports/`](../reports/).
+  - Báo cáo kết quả chạy test và kho ảnh chụp $\rightarrow$ được đóng gói tại [`tests/reports/`](../tests/reports/README.md).
   - Kịch bản hạ tầng và DevOps $\rightarrow$ nằm tại [`scripts/`](../scripts/).
 * **Tài nguyên theo dõi (Tracked)**: Toàn bộ mã nguồn và tệp cấu hình của từng phân hệ.
 * **Tài nguyên bỏ qua (Ignored 100%)**: `node_modules/`, `target/`, `.venv/`, `.pytest_cache/`, `dist/`, các tệp cơ sở dữ liệu `*.db`.

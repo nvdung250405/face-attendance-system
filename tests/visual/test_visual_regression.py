@@ -13,8 +13,8 @@ import cv2
 import numpy as np
 import pytest
 
-WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
-REPORTS_DIR = WORKSPACE_ROOT / "reports"
+TESTS_ROOT = Path(__file__).resolve().parents[1]
+REPORTS_DIR = TESTS_ROOT / "reports"
 BASELINES_DIR = REPORTS_DIR / "screenshots" / "baselines"
 E2E_SCREENSHOTS_DIR = REPORTS_DIR / "screenshots" / "e2e"
 AUDIT_REPORT_PATH = REPORTS_DIR / "audit" / "flaui_audit_report.json"
