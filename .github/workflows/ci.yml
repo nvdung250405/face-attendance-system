@@ -396,9 +396,13 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Run Trivy Vulnerability Scanner (Online DB Sync)
+      - name: Download Trivy Vulnerability Database
+        run: trivy image --download-db-only
+
+      - name: Run Trivy Vulnerability Scanner (Offline Scan with Cached DB)
         run: |
           trivy fs app \
+            --offline-scan \
             --scanners vuln,secret \
             --severity CRITICAL,HIGH \
             --skip-dirs "**/node_modules,**/.venv,**/target,**/dist" \
