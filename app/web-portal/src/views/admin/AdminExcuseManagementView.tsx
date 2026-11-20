@@ -3,7 +3,7 @@
  * (FR-BE-015, API-BE-028, API-BE-029, APD-BE-016, UI-WEB-003, TASK-WEB-019).
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   FileQuestion,
   RotateCw,
@@ -16,18 +16,12 @@ import {
   Calendar,
   User,
   MessageSquare,
-  ShieldAlert,
 } from 'lucide-react'
 import { Button } from '@/components/common'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { ApproveExcuseModal, RejectExcuseModal } from '@/components/excuse'
 import { excuseService } from '@/services/excuseService'
+import { formatDateTime } from '@/utils/date'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -53,14 +47,21 @@ export const AdminExcuseManagementView: React.FC = () => {
 
   // State Modal Duyệt đơn
   const [approveTarget, setApproveTarget] = useState<ExcuseRequestItem | null>(null)
-  const [reviewNote, setReviewNote] = useState('')
   const [isProcessingApprove, setIsProcessingApprove] = useState(false)
 
   // State Modal Từ chối đơn
   const [rejectTarget, setRejectTarget] = useState<ExcuseRequestItem | null>(null)
-  const [rejectionReason, setRejectionReason] = useState('')
   const [rejectError, setRejectError] = useState<string | null>(null)
   const [isProcessingReject, setIsProcessingReject] = useState(false)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current)
+      }
+    }
+  }, [])
 
   const fetchExcuseRequests = useCallback(
     async (targetPage = 0, statusFilter = selectedStatus) => {
@@ -88,51 +89,25 @@ export const AdminExcuseManagementView: React.FC = () => {
   )
 
   useEffect(() => {
-    let ignore = false
-    const load = async () => {
-      try {
-        const queryStatus = selectedStatus === 'ALL' ? undefined : selectedStatus
-        const res = await excuseService.getAdminExcuseRequests({
-          status: queryStatus,
-          page: 0,
-          size: 15,
-        })
-        if (!ignore) {
-          setRequests(res.content || [])
-          setTotalPages(res.totalPages || 1)
-          setTotalElements(res.totalElements || 0)
-          setPage(0)
-        }
-      } catch (err: unknown) {
-        if (!ignore) {
-          const errorObj = err as { message?: string }
-          setErrorMessage(errorObj.message || 'Không thể tải danh sách đơn giải trình.')
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false)
-        }
-      }
-    }
-    load()
-    return () => {
-      ignore = true
-    }
-  }, [selectedStatus])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchExcuseRequests(0, selectedStatus)
+  }, [fetchExcuseRequests, selectedStatus])
 
   // Xử lý Phê duyệt đơn
-  const handleConfirmApprove = async () => {
+  const handleConfirmApprove = async (note?: string) => {
     if (!approveTarget) return
     setIsProcessingApprove(true)
     setErrorMessage(null)
 
     try {
-      await excuseService.approveExcuseRequest(approveTarget.id, reviewNote.trim() || undefined)
+      await excuseService.approveExcuseRequest(approveTarget.id, note)
       setSuccessMessage(`Đã phê duyệt đơn giải trình #${approveTarget.id} thành công!`)
       setApproveTarget(null)
-      setReviewNote('')
       fetchExcuseRequests(page, selectedStatus)
-      setTimeout(() => setSuccessMessage(null), 3000)
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current)
+      }
+      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err: unknown) {
       const errorObj = err as { message?: string }
       setErrorMessage(errorObj.message || 'Phê duyệt thất bại. Vui lòng kiểm tra lại.')
@@ -142,46 +117,27 @@ export const AdminExcuseManagementView: React.FC = () => {
   }
 
   // Xử lý Từ chối đơn
-  const handleConfirmReject = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleConfirmReject = async (reason: string) => {
     if (!rejectTarget) return
-
-    if (!rejectionReason.trim()) {
-      setRejectError('Vui lòng nhập lý do từ chối (bắt buộc).')
-      return
-    }
 
     setIsProcessingReject(true)
     setRejectError(null)
 
     try {
-      await excuseService.rejectExcuseRequest(rejectTarget.id, rejectionReason.trim())
+      await excuseService.rejectExcuseRequest(rejectTarget.id, reason)
       setSuccessMessage(`Đã từ chối đơn giải trình #${rejectTarget.id}.`)
       setRejectTarget(null)
-      setRejectionReason('')
       fetchExcuseRequests(page, selectedStatus)
-      setTimeout(() => setSuccessMessage(null), 3000)
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current)
+      }
+      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err: unknown) {
       const errorObj = err as { message?: string }
       setRejectError(errorObj.message || 'Từ chối thất bại. Vui lòng kiểm tra lại.')
+      throw err
     } finally {
       setIsProcessingReject(false)
-    }
-  }
-
-  const formatDateTime = (isoString?: string | null) => {
-    if (!isoString) return '--'
-    try {
-      const d = new Date(isoString)
-      return d.toLocaleString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-    } catch {
-      return isoString
     }
   }
 
@@ -362,22 +318,19 @@ export const AdminExcuseManagementView: React.FC = () => {
                     </td>
                     <td className="py-3 px-4">
                       {item.status === 'PENDING' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>Chờ duyệt</span>
-                        </span>
+                        <Badge variant="warning" dot>
+                          Chờ duyệt
+                        </Badge>
                       )}
                       {item.status === 'APPROVED' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-status-success border border-emerald-200">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Đã duyệt</span>
-                        </span>
+                        <Badge variant="success" dot>
+                          Đã duyệt
+                        </Badge>
                       )}
                       {item.status === 'REJECTED' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-50 text-status-danger border border-rose-200">
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Từ chối</span>
-                        </span>
+                        <Badge variant="danger" dot>
+                          Từ chối
+                        </Badge>
                       )}
                     </td>
                     <td className="py-3 px-4 text-right sticky right-0 z-10 bg-white group-hover:bg-slate-50">
@@ -389,7 +342,6 @@ export const AdminExcuseManagementView: React.FC = () => {
                             size="sm"
                             onClick={() => {
                               setApproveTarget(item)
-                              setReviewNote('')
                             }}
                             data-testid={`approve-btn-${item.id}`}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 py-1 px-2.5 text-xs"
@@ -403,7 +355,6 @@ export const AdminExcuseManagementView: React.FC = () => {
                             size="sm"
                             onClick={() => {
                               setRejectTarget(item)
-                              setRejectionReason('')
                               setRejectError(null)
                             }}
                             data-testid={`reject-btn-${item.id}`}
@@ -457,156 +408,21 @@ export const AdminExcuseManagementView: React.FC = () => {
       </div>
 
       {/* ── Modal Phê Duyệt Đơn ── */}
-      <Dialog
-        open={Boolean(approveTarget)}
-        onOpenChange={(open) => !open && setApproveTarget(null)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-text-primary">
-              <CheckCircle2 className="w-5 h-5 text-status-success" />
-              <span>Phê Duyệt Đơn Giải Trình #{approveTarget?.id}</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-text-secondary">
-              Nhân viên:{' '}
-              <span className="font-semibold text-text-primary">
-                {approveTarget?.fullName} ({approveTarget?.employeeCode})
-              </span>
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-2 text-xs">
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1 text-emerald-950">
-              <div className="font-semibold">Lý do giải trình của nhân viên:</div>
-              <p className="text-slate-700 italic">{approveTarget?.reason}</p>
-              {approveTarget?.requestedPunchTimestamp && (
-                <div className="pt-1 text-2xs text-emerald-800 font-mono">
-                  Mốc giờ đề xuất: {formatDateTime(approveTarget.requestedPunchTimestamp)}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor="approve-note" className="font-semibold text-text-primary">
-                Ghi chú phê duyệt <span className="text-text-secondary font-normal">(tùy chọn)</span>
-              </label>
-              <textarea
-                id="approve-note"
-                data-testid="approve-note-input"
-                rows={3}
-                maxLength={500}
-                value={reviewNote}
-                onChange={(e) => setReviewNote(e.target.value)}
-                placeholder="Nhập ghi chú cho nhân viên hoặc kiểm toán..."
-                className="w-full text-xs rounded-xl border border-border-subtle p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => setApproveTarget(null)}
-              disabled={isProcessingApprove}
-            >
-              Hủy
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={handleConfirmApprove}
-              isLoading={isProcessingApprove}
-              data-testid="confirm-approve-btn"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-            >
-              <Check className="w-4 h-4" />
-              <span>Xác nhận duyệt</span>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ApproveExcuseModal
+        target={approveTarget}
+        isProcessing={isProcessingApprove}
+        onConfirm={handleConfirmApprove}
+        onCancel={() => setApproveTarget(null)}
+      />
 
       {/* ── Modal Từ Chối Đơn ── */}
-      <Dialog
-        open={Boolean(rejectTarget)}
-        onOpenChange={(open) => !open && setRejectTarget(null)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <form onSubmit={handleConfirmReject}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base font-bold text-status-danger">
-                <ShieldAlert className="w-5 h-5 text-status-danger" />
-                <span>Từ Chối Đơn Giải Trình #{rejectTarget?.id}</span>
-              </DialogTitle>
-              <DialogDescription className="text-xs text-text-secondary">
-                Nhân viên:{' '}
-                <span className="font-semibold text-text-primary">
-                  {rejectTarget?.fullName} ({rejectTarget?.employeeCode})
-                </span>
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3 py-3 text-xs">
-              {rejectError && (
-                <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-status-danger">
-                  {rejectError}
-                </div>
-              )}
-
-              <div className="p-3 bg-slate-50 border border-border-subtle rounded-xl space-y-1">
-                <div className="font-semibold text-text-secondary">Lý do giải trình:</div>
-                <p className="text-text-primary italic">{rejectTarget?.reason}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="reject-reason" className="font-semibold text-text-primary">
-                    Lý do từ chối <span className="text-status-danger">*</span>
-                  </label>
-                  <span className="text-2xs text-text-muted">{rejectionReason.length}/500</span>
-                </div>
-                <textarea
-                  id="reject-reason"
-                  data-testid="reject-reason-input"
-                  rows={3}
-                  maxLength={500}
-                  required
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Nhập lý do từ chối (bắt buộc, ví dụ: Không có xác nhận quản lý, đã quá hạn...)"
-                  className="w-full text-xs rounded-xl border border-border-subtle p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setRejectTarget(null)}
-                disabled={isProcessingReject}
-              >
-                Hủy
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                isLoading={isProcessingReject}
-                data-testid="confirm-reject-btn"
-                className="bg-rose-600 hover:bg-rose-700 text-white gap-1"
-              >
-                <X className="w-4 h-4" />
-                <span>Xác nhận từ chối</span>
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <RejectExcuseModal
+        target={rejectTarget}
+        isProcessing={isProcessingReject}
+        error={rejectError}
+        onConfirm={handleConfirmReject}
+        onCancel={() => setRejectTarget(null)}
+      />
     </div>
   )
 }

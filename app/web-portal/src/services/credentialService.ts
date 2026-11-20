@@ -26,7 +26,6 @@ export class CredentialService {
       const payload = {
         currentPassword: data.currentPassword || data.oldPassword,
         newPassword: data.newPassword,
-        confirmPassword: data.confirmPassword || data.newPassword,
       }
       const response = await apiClient.post<ApiResponse<ChangePasswordResponse>>(
         '/api/v1/auth/change-password',
@@ -48,9 +47,12 @@ export class CredentialService {
    */
   async setupPin(data: SetupPinRequest): Promise<PinStatusResponse> {
     try {
+      const payload = {
+        pin: data.pin,
+      }
       const response = await apiClient.post<ApiResponse<PinStatusResponse>>(
         '/api/v1/employee/pin',
-        data
+        payload
       )
       return (
         response.data.data || {
@@ -69,9 +71,13 @@ export class CredentialService {
    */
   async resetPin(data: ResetPinRequest): Promise<PinStatusResponse> {
     try {
+      const payload = {
+        currentPassword: data.currentPassword,
+        newPin: data.newPin,
+      }
       const response = await apiClient.post<ApiResponse<PinStatusResponse>>(
         '/api/v1/employee/pin/reset',
-        data
+        payload
       )
       return (
         response.data.data || {

@@ -1,11 +1,13 @@
 /**
  * Màn hình Quản lý Danh mục Ca làm việc & Phân ca Nhân sự
- * (SOL-WEB-007, BLD-WEB-019, UXD-WEB-006, FR-WEB-008, TASK-WEB-025).
+ * (SOL-WEB-007, BLD-WEB-019, UXD-WEB-006, FR-WEB-008, TASK-WEB-025, ARCH-001).
  *
  * - Quản lý CRUD ca làm việc (Shift Catalog): Tạo mới, sửa giờ, ân hạn, đổi trạng thái.
  * - Phân ca nhân sự theo khoảng ngày hiệu lực (Shift Assignment).
  * - Phát hiện chồng lấn ca (409 SHIFT_OVERLAP) và hiển thị khoảng trống thời gian gợi ý.
  * - Lan tỏa cờ khóa điều chỉnh từ PayrollPeriodStore: Vô hiệu hóa phân ca khi kỳ công bị khóa.
+ * - ARCH-001: Phân rã God Component thành ShiftCatalogTable, ShiftAssignmentToolbar, ShiftAssignmentTable.
+ * - STAB-002: Khóa cờ togglingShiftId và deletingAssignmentId tránh race condition / double-click.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
@@ -16,19 +18,22 @@ import {
   AlertTriangle,
   CheckCircle2,
   X,
-  Trash2,
-  Edit2,
   Lock,
-  Search,
   RotateCw,
-  List,
-  CalendarDays,
 } from 'lucide-react'
 import { shiftAdminService } from '@/services/shiftAdminService'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
-import { WeeklyShiftScheduleView, ShiftFormDrawer, AssignShiftDrawer } from '@/components/shift'
+import {
+  WeeklyShiftScheduleView,
+  ShiftFormDrawer,
+  AssignShiftDrawer,
+  ShiftCatalogTable,
+  ShiftAssignmentToolbar,
+  ShiftAssignmentTable,
+} from '@/components/shift'
 import { Button } from '@/components/common'
+import { formatLocalDateISO } from '@/utils/date'
 import type {
   ShiftItem,
   CreateShiftRequest,
@@ -40,18 +45,8 @@ import type {
 } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
 
-/** Định dạng ngày theo múi giờ địa phương (YYYY-MM-DD) thay vì toISOString (UTC). */
-function formatLocalDateISO(d: Date): string {
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 export const AdminShiftManagementView: React.FC = () => {
-  // Trạng thái tab hiển thị: 'shifts' (Danh mục ca) | 'assignments' (Lịch phân ca)
   const [activeTab, setActiveTab] = useState<'shifts' | 'assignments'>('shifts')
-  // Chế độ xem lịch phân ca: 'table' (Bảng) | 'weekly' (Lịch tuần) - UI-WEB-007, UXD-WEB-006
   const [assignmentViewMode, setAssignmentViewMode] = useState<'table' | 'weekly'>('table')
 
   // Cờ khóa kỳ công từ store trung tâm
@@ -61,10 +56,17 @@ export const AdminShiftManagementView: React.FC = () => {
   // Danh mục ca
   const [shifts, setShifts] = useState<ShiftItem[]>([])
   const [isLoadingShifts, setIsLoadingShifts] = useState<boolean>(true)
+  const [togglingShiftId, setTogglingShiftId] = useState<number | null>(null)
+
+  // Map tra cứu ca O(1)
+  const shiftsMap = useMemo(() => {
+    return new Map<number, ShiftItem>(shifts.map((s) => [s.id, s]))
+  }, [shifts])
 
   // Danh sách phân ca
   const [assignments, setAssignments] = useState<EmployeeShiftAssignment[]>([])
   const [isLoadingAssignments, setIsLoadingAssignments] = useState<boolean>(false)
+  const [deletingAssignmentId, setDeletingAssignmentId] = useState<number | null>(null)
 
   // Danh sách nhân sự phục vụ phân ca
   const [employees, setEmployees] = useState<EmployeeItem[]>([])
@@ -78,7 +80,7 @@ export const AdminShiftManagementView: React.FC = () => {
   const [isShiftDrawerOpen, setIsShiftDrawerOpen] = useState<boolean>(false)
   const [editingShift, setEditingShift] = useState<ShiftItem | null>(null)
   const [shiftFormData, setShiftFormData] = useState<CreateShiftRequest & { isActive?: boolean }>({
-    shiftCode: '',
+    shiftCode: undefined,
     name: '',
     startTime: '08:00',
     endTime: '17:30',
@@ -141,16 +143,14 @@ export const AdminShiftManagementView: React.FC = () => {
     }
   }, [])
 
-  // Tải danh sách nhân sự (sử dụng getAllEmployees chuẩn size=100 tuân thủ @Max(100) backend)
+  // Tải danh sách nhân sự (WEB-F-10: ARCH-004 không dùng console.error)
   const loadEmployees = useCallback(async (): Promise<EmployeeItem[]> => {
     try {
       setIsLoadingEmployees(true)
       const list = await adminEmployeeService.getAllEmployees()
       setEmployees(list)
       return list
-    } catch (err) {
-      const error = err as NormalizedApiError
-      console.error('Không thể tải danh sách nhân sự:', error)
+    } catch {
       setNotification({
         type: 'warning',
         message: 'Không thể nạp danh sách nhân sự phục vụ phân ca. Vui lòng thử lại.',
@@ -162,33 +162,9 @@ export const AdminShiftManagementView: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    let ignore = false
-    const initData = async () => {
-      try {
-        const [shiftRes, assignRes, empRes] = await Promise.allSettled([
-          shiftAdminService.getShifts(),
-          shiftAdminService.getEmployeeShifts(),
-          adminEmployeeService.getAllEmployees(),
-        ])
-        if (ignore) return
-        if (shiftRes.status === 'fulfilled') setShifts(shiftRes.value || [])
-        if (assignRes.status === 'fulfilled') setAssignments(assignRes.value || [])
-        if (empRes.status === 'fulfilled') setEmployees(empRes.value || [])
-        if (empRes.status === 'rejected') {
-          console.error('Lỗi khi nạp dữ liệu nhân sự ban đầu:', empRes.reason)
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoadingShifts(false)
-          setIsLoadingAssignments(false)
-        }
-      }
-    }
-    void initData()
-    return () => {
-      ignore = true
-    }
-  }, [])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void Promise.allSettled([loadShifts(), loadAssignments(), loadEmployees()])
+  }, [loadShifts, loadAssignments, loadEmployees])
 
   // ── Thao tác Danh mục Ca ───────────────────────────────────────────────────
 
@@ -202,7 +178,7 @@ export const AdminShiftManagementView: React.FC = () => {
     }
     setEditingShift(null)
     setShiftFormData({
-      shiftCode: '',
+      shiftCode: undefined,
       name: '',
       startTime: '08:00',
       endTime: '17:30',
@@ -242,10 +218,6 @@ export const AdminShiftManagementView: React.FC = () => {
       setShiftFormError('Tên ca làm việc không được để trống.')
       return
     }
-    if (!editingShift && !shiftFormData.shiftCode.trim()) {
-      setShiftFormError('Mã ca làm việc không được để trống.')
-      return
-    }
     if (shiftFormData.startTime === shiftFormData.endTime) {
       setShiftFormError('Giờ kết thúc ca phải khác giờ bắt đầu ca.')
       return
@@ -265,11 +237,13 @@ export const AdminShiftManagementView: React.FC = () => {
         setNotification({ type: 'success', message: `Đã cập nhật ca ${editingShift.name} thành công!` })
       } else {
         const createData: CreateShiftRequest = {
-          shiftCode: shiftFormData.shiftCode.trim().toUpperCase(),
           name: shiftFormData.name.trim(),
           startTime: shiftFormData.startTime,
           endTime: shiftFormData.endTime,
           gracePeriodMinutes: Number(shiftFormData.gracePeriodMinutes),
+        }
+        if (shiftFormData.shiftCode && shiftFormData.shiftCode.trim()) {
+          createData.shiftCode = shiftFormData.shiftCode.trim().toUpperCase()
         }
         await shiftAdminService.createShift(createData)
         setNotification({ type: 'success', message: 'Đã tạo mới ca làm việc thành công!' })
@@ -284,6 +258,7 @@ export const AdminShiftManagementView: React.FC = () => {
     }
   }
 
+  // WEB-F-02 (STAB-002): Quản lý togglingShiftId khóa disabled tránh spam click
   const handleToggleShiftActive = async (shift: ShiftItem) => {
     if (isAdjustmentLocked) {
       setNotification({
@@ -293,6 +268,7 @@ export const AdminShiftManagementView: React.FC = () => {
       return
     }
     try {
+      setTogglingShiftId(shift.id)
       await shiftAdminService.updateShift(shift.id, { isActive: !shift.isActive })
       setNotification({
         type: 'success',
@@ -302,6 +278,8 @@ export const AdminShiftManagementView: React.FC = () => {
     } catch (err) {
       const error = err as NormalizedApiError
       setNotification({ type: 'error', message: error.message || 'Không thể đổi trạng thái ca.' })
+    } finally {
+      setTogglingShiftId(null)
     }
   }
 
@@ -331,7 +309,6 @@ export const AdminShiftManagementView: React.FC = () => {
     setIsAssignDrawerOpen(true)
   }
 
-  // Phân ca nhanh cho nhân viên từ Lịch tuần (TASK-WEB-028, UI-WEB-007)
   const handleQuickAssign = (employeeId: number, dateStr: string) => {
     if (isAdjustmentLocked) {
       setNotification({
@@ -351,7 +328,6 @@ export const AdminShiftManagementView: React.FC = () => {
     setIsAssignDrawerOpen(true)
   }
 
-  // Kiểm tra xung đột chồng lấn ca phía Client trước khi gọi API (SOL-WEB-007)
   const checkClientSideOverlap = (
     employeeId: number,
     startDateStr: string,
@@ -367,13 +343,11 @@ export const AdminShiftManagementView: React.FC = () => {
       const curStart = new Date(startStr).getTime()
       const curEnd = endStr ? new Date(endStr).getTime() : Infinity
 
-      // Giao thoa khoảng ngày: newStart <= curEnd && newEnd >= curStart
       if (newStart <= curEnd && newEnd >= curStart) {
         let suggestedStartFormatted: string | undefined
         let suggestedEndFormatted: string | undefined
 
         if (Number.isFinite(curEnd)) {
-          // Tính khoảng trống gợi ý khả dụng tiếp theo (ngày kế tiếp của curEnd)
           const nextDay = new Date(curEnd + 24 * 60 * 60 * 1000)
           const durationDays = Number.isFinite(newEnd)
             ? Math.max(0, Math.round((newEnd - newStart) / (24 * 60 * 60 * 1000)))
@@ -419,7 +393,6 @@ export const AdminShiftManagementView: React.FC = () => {
       return
     }
 
-    // 1. Kiểm tra chồng lấn phía client
     const clientConflict = checkClientSideOverlap(
       assignFormData.employeeId,
       assignFormData.effectiveStartDate,
@@ -431,7 +404,6 @@ export const AdminShiftManagementView: React.FC = () => {
       return
     }
 
-    // 2. Gửi request lên Backend
     try {
       setIsSubmittingAssign(true)
       await shiftAdminService.assignShift(assignFormData)
@@ -454,7 +426,6 @@ export const AdminShiftManagementView: React.FC = () => {
     }
   }
 
-  // Phân ca hàng loạt theo phòng ban hoặc danh sách chọn (TASK-WEB-034)
   const handleBatchAssign = async (params: {
     mode: 'department' | 'multi' | 'single'
     employeeIds: number[]
@@ -531,7 +502,6 @@ export const AdminShiftManagementView: React.FC = () => {
     }
   }
 
-  // Áp dụng khoảng trống thời gian gợi ý tự động
   const handleApplySuggestedSlot = () => {
     if (overlapConflict?.suggestedStartDate && overlapConflict?.suggestedEndDate) {
       setAssignFormData((prev) => ({
@@ -544,6 +514,7 @@ export const AdminShiftManagementView: React.FC = () => {
     }
   }
 
+  // WEB-F-01 (STAB-002): Quản lý deletingAssignmentId khóa disabled tránh double click DELETE
   const handleRemoveAssignment = async (assignment: EmployeeShiftAssignment) => {
     if (isAdjustmentLocked) {
       setNotification({
@@ -556,16 +527,18 @@ export const AdminShiftManagementView: React.FC = () => {
       return
     }
     try {
+      setDeletingAssignmentId(assignment.id)
       await shiftAdminService.removeShiftAssignment(assignment.id)
       setNotification({ type: 'success', message: 'Đã hủy phân ca thành công.' })
       await loadAssignments()
     } catch (err) {
       const error = err as NormalizedApiError
       setNotification({ type: 'error', message: error.message || 'Không thể hủy phân ca.' })
+    } finally {
+      setDeletingAssignmentId(null)
     }
   }
 
-  // Lọc lịch phân ca
   const filteredAssignments = useMemo(() => {
     const kw = searchEmployeeKeyword.trim().toLowerCase()
     return assignments.filter((a) => {
@@ -733,192 +706,33 @@ export const AdminShiftManagementView: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Nội dung Tab 1: Danh mục Ca làm việc ── */}
+      {/* ── Nội dung Tab 1: Danh mục Ca làm việc (ARCH-001 Subcomponent) ── */}
       {activeTab === 'shifts' && (
-        <div className="card-surface overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Mã Ca</th>
-                  <th className="py-3 px-4">Tên Ca Làm Việc</th>
-                  <th className="py-3 px-4">Giờ Bắt Đầu</th>
-                  <th className="py-3 px-4">Giờ Kết Thúc</th>
-                  <th className="py-3 px-4">Ân Hạn (Phút)</th>
-                  <th className="py-3 px-4">Trạng Thái</th>
-                  <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
-                    Thao Tác
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {isLoadingShifts ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-text-secondary">
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                        <span>Đang tải danh mục ca...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : shifts.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-text-secondary">
-                      Chưa có ca làm việc nào. Bấm "Thêm Ca Mới" để thiết lập.
-                    </td>
-                  </tr>
-                ) : (
-                  shifts.map((shift) => (
-                    <tr
-                      key={shift.id}
-                      data-testid={`shift-row-${shift.id}`}
-                      className="hover:bg-slate-50/80 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-mono font-bold text-brand-primary text-xs">
-                        {shift.shiftCode}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-text-primary text-xs">{shift.name || shift.shiftName}</td>
-                      <td className="py-3.5 px-4 text-text-secondary text-xs">
-                        <span className="inline-flex items-center gap-1 font-mono">
-                          <Clock className="w-3.5 h-3.5 text-text-tertiary" />
-                          <span>{shift.startTime}</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-text-secondary text-xs">
-                        <span className="inline-flex items-center gap-1 font-mono">
-                          <Clock className="w-3.5 h-3.5 text-text-tertiary" />
-                          <span>{shift.endTime}</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-text-secondary font-medium text-xs">
-                        {shift.gracePeriodMinutes} phút
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold ${
-                            shift.isActive
-                              ? 'bg-emerald-50 text-status-success border border-emerald-200/60'
-                              : 'bg-slate-100 text-slate-500'
-                          }`}
-                        >
-                          {shift.isActive ? 'Đang áp dụng' : 'Tạm dừng'}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-bg-app shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditShiftDrawer(shift)}
-                            disabled={isAdjustmentLocked}
-                            data-testid={`edit-shift-btn-${shift.id}`}
-                            title="Sửa thông tin ca"
-                            className="p-1.5 rounded-lg border border-slate-200 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors disabled:opacity-40"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleShiftActive(shift)}
-                            disabled={isAdjustmentLocked}
-                            data-testid={`toggle-shift-active-btn-${shift.id}`}
-                            className={`px-2.5 py-1 rounded-lg text-2xs font-semibold border transition-all ${
-                              shift.isActive
-                                ? 'border-amber-200 text-amber-700 hover:bg-amber-50'
-                                : 'border-emerald-200 text-status-success hover:bg-emerald-50'
-                            } disabled:opacity-40`}
-                          >
-                            {shift.isActive ? 'Tạm dừng' : 'Kích hoạt'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ShiftCatalogTable
+          shifts={shifts}
+          isLoadingShifts={isLoadingShifts}
+          isAdjustmentLocked={isAdjustmentLocked}
+          togglingShiftId={togglingShiftId}
+          onEditShift={handleOpenEditShiftDrawer}
+          onToggleShiftActive={handleToggleShiftActive}
+        />
       )}
 
-      {/* ── Nội dung Tab 2: Lịch Phân ca Nhân sự ── */}
+      {/* ── Nội dung Tab 2: Lịch Phân ca Nhân sự (ARCH-001 Subcomponents) ── */}
       {activeTab === 'assignments' && (
         <div className="space-y-4">
-          {/* Thanh công cụ lọc & Chuyển đổi chế độ xem */}
-          <div className="card-surface p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-              {/* Toggle Chế độ xem: Bảng vs Lịch tuần */}
-              <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-border-subtle shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setAssignmentViewMode('table')}
-                  data-testid="view-mode-table"
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    assignmentViewMode === 'table'
-                      ? 'bg-white text-brand-primary shadow-2xs font-bold'
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <List className="w-3.5 h-3.5" />
-                  <span>Dạng Bảng</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAssignmentViewMode('weekly')}
-                  data-testid="view-mode-weekly"
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    assignmentViewMode === 'weekly'
-                      ? 'bg-white text-brand-primary shadow-2xs font-bold'
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  <span>Lịch Tuần</span>
-                </button>
-              </div>
+          <ShiftAssignmentToolbar
+            assignmentViewMode={assignmentViewMode}
+            onChangeViewMode={setAssignmentViewMode}
+            searchEmployeeKeyword={searchEmployeeKeyword}
+            onChangeSearchKeyword={setSearchEmployeeKeyword}
+            filterShiftId={filterShiftId}
+            onChangeFilterShiftId={setFilterShiftId}
+            shifts={shifts}
+            filteredCount={filteredAssignments.length}
+            totalCount={assignments.length}
+          />
 
-              {/* Tìm kiếm theo tên / mã nhân viên */}
-              {assignmentViewMode === 'table' && (
-                <div className="relative w-full sm:w-64">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <Search className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchEmployeeKeyword}
-                    onChange={(e) => setSearchEmployeeKeyword(e.target.value)}
-                    data-testid="search-assigned-employee-input"
-                    placeholder="Mã NV hoặc Họ tên..."
-                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-              )}
-
-              {/* Lọc theo ca làm việc */}
-              {assignmentViewMode === 'table' && (
-                <select
-                  value={filterShiftId}
-                  onChange={(e) => setFilterShiftId(e.target.value)}
-                  data-testid="filter-assigned-shift-select"
-                  className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-auto"
-                >
-                  <option value="">Tất cả ca làm việc</option>
-                  {shifts.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.shiftCode})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {assignmentViewMode === 'table' && (
-              <span className="text-xs text-text-secondary self-end sm:self-auto font-medium">
-                Hiển thị <span className="font-semibold text-text-primary">{filteredAssignments.length}</span> / <span className="font-semibold text-text-primary">{assignments.length}</span> lịch phân ca
-              </span>
-            )}
-          </div>
-
-          {/* Nội dung theo chế độ xem (Bảng danh sách vs Lịch tuần) */}
           {assignmentViewMode === 'weekly' ? (
             <WeeklyShiftScheduleView
               shifts={shifts}
@@ -929,91 +743,14 @@ export const AdminShiftManagementView: React.FC = () => {
               onRemoveAssignment={handleRemoveAssignment}
             />
           ) : (
-            /* Bảng danh sách phân ca */
-            <div className="card-surface overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      <th className="py-3 px-4">Nhân Sự</th>
-                      <th className="py-3 px-4">Ca Áp Dụng</th>
-                      <th className="py-3 px-4">Khung Giờ</th>
-                      <th className="py-3 px-4">Ngày Bắt Đầu</th>
-                      <th className="py-3 px-4">Ngày Kết Thúc</th>
-                      <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
-                        Thao Tác
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-subtle">
-                    {isLoadingAssignments ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-text-secondary">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                            <span>Đang tải lịch phân ca...</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : filteredAssignments.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-text-secondary">
-                          Không có lịch phân ca nào phù hợp. Bấm "Phân Ca Nhân Sự" để tạo lịch mới.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredAssignments.map((item) => (
-                        <tr
-                          key={item.id}
-                          data-testid={`assignment-row-${item.id}`}
-                          className="hover:bg-slate-50/80 transition-colors"
-                        >
-                          <td className="py-3.5 px-4">
-                            <div>
-                              <span className="font-semibold text-text-primary block text-xs">{item.fullName}</span>
-                              <span className="text-2xs font-mono text-slate-400">
-                                {item.employeeCode}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4 text-xs">
-                            <span className="font-semibold text-text-secondary">{item.shiftName}</span>
-                            <span className="ml-1 text-2xs font-mono text-indigo-600 font-bold">
-                              ({item.shiftCode})
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-text-secondary text-xs font-mono">
-                            {shifts.find((s) => s.id === item.shiftId)
-                              ? `${shifts.find((s) => s.id === item.shiftId)?.startTime} - ${
-                                  shifts.find((s) => s.id === item.shiftId)?.endTime
-                                }`
-                              : 'Theo ca'}
-                          </td>
-                          <td className="py-3.5 px-4 font-mono text-text-secondary text-xs">
-                            {item.effectiveStartDate || item.effectiveFrom || '—'}
-                          </td>
-                          <td className="py-3.5 px-4 font-mono text-text-secondary text-xs">
-                            {item.effectiveEndDate || item.effectiveTo || 'Vô thời hạn'}
-                          </td>
-                          <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-bg-app shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveAssignment(item)}
-                              disabled={isAdjustmentLocked}
-                              data-testid={`remove-assignment-btn-${item.id}`}
-                              title="Hủy lịch phân ca"
-                              className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <ShiftAssignmentTable
+              filteredAssignments={filteredAssignments}
+              shiftsMap={shiftsMap}
+              isLoadingAssignments={isLoadingAssignments}
+              isAdjustmentLocked={isAdjustmentLocked}
+              deletingAssignmentId={deletingAssignmentId}
+              onRemoveAssignment={handleRemoveAssignment}
+            />
           )}
         </div>
       )}

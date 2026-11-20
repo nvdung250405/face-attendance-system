@@ -6,7 +6,7 @@
  * - Hỗ trợ thiết lập lần đầu và đặt lại mã PIN (yêu cầu mật khẩu tài khoản).
  */
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   Shield,
   Delete,
@@ -54,7 +54,19 @@ const PinManagementDialog: React.FC<{
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
+  const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
   const handleClose = () => {
+    if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     onClose()
   }
 
@@ -67,7 +79,8 @@ const PinManagementDialog: React.FC<{
         setPin(nextPin)
         if (nextPin.length === 6) {
           // Tự động chuyển sang bước xác nhận nhập lại
-          setTimeout(() => {
+          if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
+          stepTimerRef.current = setTimeout(() => {
             setStep('confirm_pin')
           }, 250)
         }
@@ -127,12 +140,10 @@ const PinManagementDialog: React.FC<{
         await credentialService.resetPin({
           currentPassword: accountPassword,
           newPin: pin,
-          confirmPin,
         })
       } else {
         await credentialService.setupPin({
           pin,
-          confirmPin,
         })
       }
 
@@ -142,7 +153,8 @@ const PinManagementDialog: React.FC<{
       useAuthStore.getState().updateUser({ hasPin: true })
 
       onSuccess?.()
-      setTimeout(() => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = setTimeout(() => {
         handleClose()
       }, 1500)
     } catch (err) {
@@ -165,16 +177,15 @@ const PinManagementDialog: React.FC<{
             <DialogTitle className="text-sm font-bold text-slate-900">
               {hasExistingPin ? 'Đặt Lại Mã PIN Dự Phòng' : 'Thiết Lập Mã PIN Dự Phòng'}
             </DialogTitle>
-            <p className="text-2xs text-slate-500">Dùng để chấm công khi Kiosk không nhận diện mặt</p>
           </div>
         </div>
         <button
           type="button"
           onClick={handleClose}
           aria-label="Đóng"
-          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       </DialogHeader>
 
@@ -202,11 +213,7 @@ const PinManagementDialog: React.FC<{
         {/* Bước 0: Xác thực mật khẩu tài khoản nếu đã có PIN trước đó */}
         {step === 'password' && (
           <form onSubmit={handlePasswordVerified} className="space-y-4">
-            <div className="p-3 rounded-xl bg-amber-50 text-amber-900 text-2xs leading-relaxed border border-amber-200">
-              Để bảo vệ an toàn danh tính, vui lòng nhập mật khẩu tài khoản trước khi đổi mã PIN dự phòng.
-            </div>
-
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-semibold text-text-secondary">Mật khẩu tài khoản</label>
               <input
                 type="password"
@@ -214,17 +221,20 @@ const PinManagementDialog: React.FC<{
                 onChange={(e) => setAccountPassword(e.target.value)}
                 data-testid="pin-verify-password-input"
                 placeholder="Nhập mật khẩu tài khoản..."
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                className="w-full px-3.5 py-2.5 min-h-[44px] text-sm rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-colors"
               />
+              <p className="text-[11px] text-slate-500">
+                Xác thực danh tính trước khi đổi mã PIN dự phòng.
+              </p>
             </div>
 
             <button
               type="submit"
               data-testid="submit-verify-password-btn"
-              className="w-full py-2.5 rounded-xl bg-brand-primary text-white text-xs font-bold hover:bg-brand-hover shadow-xs flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 min-h-[44px] rounded-xl bg-brand-primary text-white text-sm font-bold hover:bg-brand-hover shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>Tiếp tục</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         )}
@@ -233,15 +243,10 @@ const PinManagementDialog: React.FC<{
         {(step === 'enter_pin' || step === 'confirm_pin') && (
           <div className="space-y-4">
             {/* Chỉ báo bước */}
-            <div className="text-center space-y-1">
+            <div className="text-center">
               <span className="text-xs font-bold text-text-primary">
                 {step === 'enter_pin' ? 'Bước 1: Nhập 6 số PIN mới' : 'Bước 2: Xác nhận lại 6 số PIN'}
               </span>
-              <p className="text-2xs text-text-tertiary">
-                {step === 'enter_pin'
-                  ? 'Bấm các phím số bên dưới để nhập mã PIN'
-                  : 'Nhập lại chính xác mã PIN vừa đặt để hoàn tất'}
-              </p>
             </div>
 
             {/* Ô hiển thị 6 chấm mã PIN (PIN Dots) */}
@@ -325,7 +330,7 @@ const PinManagementDialog: React.FC<{
                     setStep('enter_pin')
                     setConfirmPin('')
                   }}
-                  className="flex-1 py-2 text-xs"
+                  className="flex-1 py-2 text-xs min-h-[44px]"
                 >
                   Nhập lại từ đầu
                 </Button>
@@ -335,7 +340,7 @@ const PinManagementDialog: React.FC<{
                   disabled={isLoading || confirmPin.length !== 6}
                   data-testid="submit-pin-confirm-btn"
                   isLoading={isLoading}
-                  className="flex-1 py-2 text-xs"
+                  className="flex-1 py-2 text-xs min-h-[44px]"
                 >
                   Xác Nhận PIN
                 </Button>
@@ -362,9 +367,9 @@ export const PinManagementModal: React.FC<PinManagementModalProps> = ({
       <DialogContent
         data-testid="pin-management-modal"
         hideCloseButton
-        className="max-w-sm p-6"
+        className="sm:max-w-sm sm:p-6"
       >
-        <PinManagementDialog onClose={onClose} onSuccess={onSuccess} />
+        <PinManagementDialog key={isOpen ? 'open' : 'closed'} onClose={onClose} onSuccess={onSuccess} />
       </DialogContent>
     </Dialog>
   )

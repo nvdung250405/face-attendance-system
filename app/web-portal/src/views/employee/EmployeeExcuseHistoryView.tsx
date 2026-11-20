@@ -8,16 +8,15 @@ import {
   FileQuestion,
   RotateCw,
   Plus,
-  Clock,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
   Calendar,
   MessageSquare,
 } from 'lucide-react'
 import { Button } from '@/components/common'
+import { Badge } from '@/components/ui/badge'
 import { excuseService } from '@/services/excuseService'
 import { SubmitExcuseModal } from '@/components/excuse/SubmitExcuseModal'
+import { formatDateTime } from '@/utils/date'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
 
 export const EmployeeExcuseHistoryView: React.FC = () => {
@@ -49,72 +48,30 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    let ignore = false
-    const load = async () => {
-      try {
-        const res = await excuseService.getMyExcuseRequests({ page: 0, size: 10 })
-        if (!ignore) {
-          setRequests(res.content || [])
-          setTotalPages(res.totalPages || 1)
-          setTotalElements(res.totalElements || 0)
-          setPage(0)
-        }
-      } catch (err: unknown) {
-        if (!ignore) {
-          const errorObj = err as { message?: string }
-          setErrorMessage(errorObj.message || 'Không thể tải danh sách đơn giải trình.')
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false)
-        }
-      }
-    }
-    load()
-    return () => {
-      ignore = true
-    }
-  }, [])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchMyExcuses(0)
+  }, [fetchMyExcuses])
 
   const renderStatusBadge = (status: ExcuseRequestStatus) => {
     switch (status) {
       case 'PENDING':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock className="w-3.5 h-3.5" />
-            <span>Chờ duyệt</span>
-          </span>
+          <Badge variant="warning" dot>
+            Chờ duyệt
+          </Badge>
         )
       case 'APPROVED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-status-success border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Đã duyệt</span>
-          </span>
+          <Badge variant="success" dot>
+            Đã duyệt
+          </Badge>
         )
       case 'REJECTED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-50 text-status-danger border border-rose-200">
-            <XCircle className="w-3.5 h-3.5" />
-            <span>Từ chối</span>
-          </span>
+          <Badge variant="danger" dot>
+            Từ chối
+          </Badge>
         )
-    }
-  }
-
-  const formatDateTime = (isoString?: string | null) => {
-    if (!isoString) return '--'
-    try {
-      const d = new Date(isoString)
-      return d.toLocaleString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-    } catch {
-      return isoString
     }
   }
 

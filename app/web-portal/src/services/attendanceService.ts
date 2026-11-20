@@ -5,6 +5,7 @@
 
 import { apiClient } from './apiClient'
 import { normalizeApiError } from './errorNormalizer'
+import { sanitizeFormula } from '@/utils/security'
 import type {
   ApiResponse,
   PaginatedResult,
@@ -17,17 +18,11 @@ import type {
 } from '@/types'
 
 /**
- * Làm sạch dữ liệu chống Formula Injection khi xuất file Excel/CSV (DD-WEB-017)
- * Tự động thêm dấu nháy đơn ' trước các ký tự nguy hiểm: =, +, -, @
+ * Làm sạch dữ liệu chống Formula Injection khi xuất file Excel/CSV (DD-WEB-017, SEC-001)
+ * Tái sử dụng sanitizeFormula tập trung từ utils/security.
  */
-export function sanitizeFormulaValue(value: unknown): string {
-  if (value === null || value === undefined) return ''
-  const str = String(value).trim()
-  if (/^[=+\-@]/.test(str)) {
-    return `'${str}`
-  }
-  return str
-}
+export const sanitizeFormulaValue = sanitizeFormula
+export { sanitizeFormula }
 
 export class AttendanceService {
   /**

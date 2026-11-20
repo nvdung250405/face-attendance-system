@@ -11,19 +11,20 @@ import { create } from 'zustand'
 import type { NotificationItem } from '@/types'
 
 export interface NotificationState {
-  userId: number | null
+  userId: number | string | null
   notifications: NotificationItem[]
   unreadCount: number
   isOpen: boolean
 
   // Actions
-  initUser: (userId: number | null) => void
+  initUser: (userId: number | string | null) => void
   setNotifications: (items: NotificationItem[], unreadCount?: number) => void
   addNotification: (item: NotificationItem) => void
   markAsRead: (id: number) => void
   markAllAsRead: () => void
   setIsOpen: (isOpen: boolean) => void
   clearStore: () => void
+  reset: () => void
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -36,7 +37,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
    * Khởi tạo hoặc chuyển đổi định danh người dùng.
    * Nếu đổi sang user khác hoặc logout (null), xóa sạch toàn bộ danh sách để đảm bảo tính riêng tư (DD-WEB-020).
    */
-  initUser: (userId: number | null) => {
+  initUser: (userId: number | string | null) => {
     const currentUserId = get().userId
     if (currentUserId !== userId) {
       set({
@@ -132,5 +133,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       unreadCount: 0,
       isOpen: false,
     })
+  },
+
+  /**
+   * Đặt lại trạng thái về ban đầu (alias cho clearStore)
+   */
+  reset: () => {
+    get().clearStore()
   },
 }))

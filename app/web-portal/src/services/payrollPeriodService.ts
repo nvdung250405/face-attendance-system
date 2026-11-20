@@ -8,6 +8,7 @@ import { apiClient } from './apiClient'
 import { normalizeApiError } from './errorNormalizer'
 import type {
   ApiResponse,
+  PaginatedResult,
   PayrollPeriodResponse,
   UnlockPeriodRequest,
 } from '@/types'
@@ -22,14 +23,13 @@ export class PayrollPeriodService {
    */
   async getPayrollPeriods(criteria?: PayrollPeriodQueryCriteria): Promise<PayrollPeriodResponse[]> {
     try {
-      const response = await apiClient.get<ApiResponse<unknown>>(
-        '/api/v1/admin/payroll-periods',
-        { params: criteria }
-      )
-      const raw = response.data.data
-      if (Array.isArray(raw)) return raw as PayrollPeriodResponse[]
-      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        return (raw as { content: PayrollPeriodResponse[] }).content
+      const response = await apiClient.get<
+        ApiResponse<PaginatedResult<PayrollPeriodResponse> | PayrollPeriodResponse[]>
+      >('/api/v1/admin/payroll-periods', { params: criteria })
+      const data = response.data.data
+      if (Array.isArray(data)) return data
+      if (data && typeof data === 'object' && 'content' in data && Array.isArray(data.content)) {
+        return data.content
       }
       return []
     } catch (error) {

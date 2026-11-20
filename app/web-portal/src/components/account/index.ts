@@ -1,5 +1,6 @@
 export * from './TemporaryPasswordModal'
 export * from './ChangePasswordModal'
 export * from './PinManagementModal'
+export * from './LogoutConfirmModal'
 export * from './EmployeeDrawer'
 export * from './passwordStrength'

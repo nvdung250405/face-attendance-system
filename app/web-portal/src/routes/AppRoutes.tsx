@@ -28,6 +28,8 @@ const AdminExcuseManagementView = lazy(() => import('@/views/admin/AdminExcuseMa
 const EmployeeExcuseHistoryView = lazy(() => import('@/views/employee/EmployeeExcuseHistoryView').then((m) => ({ default: m.EmployeeExcuseHistoryView })))
 const UnauthorizedView = lazy(() => import('@/views/UnauthorizedView').then((m) => ({ default: m.UnauthorizedView })))
 const NotFoundView = lazy(() => import('@/views/NotFoundView').then((m) => ({ default: m.NotFoundView })))
+const DesignSystemShowcaseView = lazy(() => import('@/views/dev/DesignSystemShowcaseView').then((m) => ({ default: m.DesignSystemShowcaseView })))
+const ErrorBoundaryTriggerView = lazy(() => import('@/views/dev/ErrorBoundaryTriggerView').then((m) => ({ default: m.ErrorBoundaryTriggerView })))
 
 export const RouteLoadingFallback: React.FC = () => (
   <div
@@ -43,9 +45,10 @@ export const RouteLoadingFallback: React.FC = () => (
 )
 
 export const RootRedirect: React.FC = () => {
-  const { isAuthenticated, user } = useAuthStore()
-  if (isAuthenticated && user) {
-    return <Navigate to={getDefaultPathForRole(user.role)} replace />
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const userRole = useAuthStore((state) => state.user?.role)
+  if (isAuthenticated && userRole) {
+    return <Navigate to={getDefaultPathForRole(userRole)} replace />
   }
   return <Navigate to="/login" replace />
 }
@@ -130,6 +133,23 @@ export const AppRoutes: React.FC = () => {
 
         {/* Trang lỗi & 404 */}
         <Route path="/unauthorized" element={<UnauthorizedView />} />
+
+        {/* Dev showcases chỉ gắn khi ở chế độ phát triển */}
+        {import.meta.env.DEV && (
+          <>
+            <Route path="/dev/primitives" element={<DesignSystemShowcaseView />} />
+            <Route path="/dev/error-boundary" element={<ErrorBoundaryTriggerView />} />
+            <Route
+              path="/dev/loading"
+              element={
+                <div className="min-h-screen bg-bg-app flex items-center justify-center p-4">
+                  <RouteLoadingFallback />
+                </div>
+              }
+            />
+          </>
+        )}
+
         <Route path="*" element={<NotFoundView />} />
       </Routes>
     </Suspense>

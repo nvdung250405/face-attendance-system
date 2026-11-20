@@ -2,41 +2,44 @@
  * AdminAttendanceView: Màn hình Bảng Chấm Công HR Trực Tiếp & Lịch Sử Toàn Công Ty
  * (UXD-WEB-004, UI-WEB-003, SOL-WEB-004, DD-WEB-007, DD-WEB-014, BLD-WEB-015, TASK-WEB-019).
  *
- * Tính năng chính:
- * 1. Bảng dữ liệu chấm công thời gian thực (Live Table) kết nối STOMP qua hook useLiveAttendance.
- * 2. Tự động chèn dòng mới lên đầu mảng (Optimistic Prepend) kèm hiệu ứng Green Flash trong 3 giây.
- * 3. Bộ lọc đa chiều: Từ khóa (Mã NV, Họ tên), Phòng ban, Trạng thái, Phương thức xác thực, Khoảng ngày.
- * 4. Công tắc chuyển đổi Chế độ Trực Tiếp (Live Stream Mode On/Off) chống giật màn hình khi duyệt lịch sử.
- * 5. Thanh chỉ số KPI nhanh (Tổng lượt điểm danh, Đúng giờ, Đi muộn, Tỷ lệ nhận diện khuôn mặt).
- * 6. Tích hợp tải lại dữ liệu thủ công và nút xuất báo cáo bảng công.
+ * Tối ưu hóa (EXP1-01, EXP1-09, EXP1-15, EXP3-02, EXP3-08, EXP3-11, EXP3-16, ARCH-02):
+ * 1. ARCH-02: Đóng gói STOMP buffer và WebSocket handling vào hook useLiveAttendanceBuffer.
+ * 2. ARCH-02: Tách thanh bộ lọc đa chiều thành AttendanceFilterToolbar và phân trang thành AttendancePaginationBar.
+ * 3. EXP1-01: Dùng filterPredicateRef tránh WebSocket re-subscription storm khi gõ phím.
+ * 4. EXP1-09: useMemo cho exportableRecords và chỉ render ExportReportModal khi mở.
+ * 5. EXP1-15, EXP3-08: Tái sử dụng fetchAttendanceData trực tiếp trong useEffect.
+ * 6. EXP3-02: Memoize các phép tính KPI, filter calculations và kiểm soát giới hạn phân trang.
+ * 7. EXP3-11: Khai báo status & verificationMethod theo Union Type chuẩn.
  */
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   History,
   RotateCw,
-  Search,
   Download,
   CheckCircle2,
   AlertTriangle,
   ScanFace,
   Radio,
   SlidersHorizontal,
-  X,
   Pause,
 } from 'lucide-react'
 import { Button } from '@/components/common'
+import { useDebounce } from '@/hooks'
 import { attendanceService } from '@/services/attendanceService'
 import { reportExportService } from '@/services/reportExportService'
-import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'
 import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
 import { ExportReportModal } from '@/components/report'
-import { AdjustAttendanceModal } from '@/components/attendance/AdjustAttendanceModal'
-import type { AttendanceRecord, AttendanceStatus, AttendanceStats } from '@/types'
+import {
+  AdjustAttendanceModal,
+  AttendanceFilterToolbar,
+  AttendancePaginationBar,
+  useLiveAttendanceBuffer,
+} from '@/components/attendance'
+import type { AttendanceRecord, AttendanceStatus, AttendanceStats, VerificationMethod } from '@/types'
 
 export const AdminAttendanceView: React.FC = () => {
   // Dữ liệu bảng chấm công & Thống kê
-  const [records, setRecords] = useState<AttendanceRecord[]>([])
   const [stats, setStats] = useState<AttendanceStats | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isExporting, setIsExporting] = useState<boolean>(false)
@@ -44,20 +47,12 @@ export const AdminAttendanceView: React.FC = () => {
   const [recordToAdjust, setRecordToAdjust] = useState<AttendanceRecord | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Hiệu ứng Green Flash trong 3 giây trên dòng mới nhất (BLD-WEB-015, DD-WEB-014)
-  const [highlightedRecordId, setHighlightedRecordId] = useState<number | null>(null)
-  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Chế độ nhận dữ liệu trực tiếp (Live Stream Mode)
-  const [isLiveEnabled, setIsLiveEnabled] = useState<boolean>(true)
-  const [pendingLiveCount, setPendingLiveCount] = useState<number>(0)
-  const pendingRecordsRef = useRef<AttendanceRecord[]>([])
-
-  // Bộ lọc tìm kiếm
+  // Bộ lọc tìm kiếm (EXP3-11: Union Types, STAB-004: useDebounce 350ms)
   const [keyword, setKeyword] = useState<string>('')
+  const debouncedKeyword = useDebounce(keyword, 350)
   const [department, setDepartment] = useState<string>('')
-  const [status, setStatus] = useState<string>('')
-  const [verificationMethod, setVerificationMethod] = useState<string>('')
+  const [status, setStatus] = useState<AttendanceStatus | ''>('')
+  const [verificationMethod, setVerificationMethod] = useState<VerificationMethod | ''>('')
   const [fromDate, setFromDate] = useState<string>('')
   const [toDate, setToDate] = useState<string>('')
 
@@ -66,87 +61,10 @@ export const AdminAttendanceView: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(50)
   const [totalElements, setTotalElements] = useState<number>(0)
 
-  // Tải dữ liệu từ REST API
-  const fetchAttendanceData = useCallback(async () => {
-    setErrorMessage(null)
-    try {
-      const [pageData, statsData] = await Promise.allSettled([
-        attendanceService.getAdminAttendance({
-          page,
-          size: pageSize,
-          keyword: keyword.trim() || undefined,
-          department: department || undefined,
-          status: (status as AttendanceStatus) || undefined,
-          fromDate: fromDate || undefined,
-          toDate: toDate || undefined,
-        }),
-        attendanceService.getAttendanceStats(),
-      ])
-
-      if (pageData.status === 'fulfilled' && pageData.value) {
-        setRecords(pageData.value.content || [])
-        setTotalElements(pageData.value.totalElements || 0)
-      } else if (pageData.status === 'rejected') {
-        const err = pageData.reason as { message?: string }
-        setErrorMessage(err.message || 'Không thể tải danh sách điểm danh.')
-      }
-
-      if (statsData.status === 'fulfilled' && statsData.value) {
-        setStats(statsData.value)
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [page, pageSize, keyword, department, status, fromDate, toDate])
-
-  useEffect(() => {
-    let ignore = false
-    const load = async () => {
-      try {
-        const [pageData, statsData] = await Promise.allSettled([
-          attendanceService.getAdminAttendance({
-            page,
-            size: pageSize,
-            keyword: keyword.trim() || undefined,
-            department: department || undefined,
-            status: (status as AttendanceStatus) || undefined,
-            fromDate: fromDate || undefined,
-            toDate: toDate || undefined,
-          }),
-          attendanceService.getAttendanceStats(),
-        ])
-
-        if (ignore) return
-
-        if (pageData.status === 'fulfilled' && pageData.value) {
-          setRecords(pageData.value.content || [])
-          setTotalElements(pageData.value.totalElements || 0)
-        } else if (pageData.status === 'rejected') {
-          const err = pageData.reason as { message?: string }
-          setErrorMessage(err.message || 'Không thể tải danh sách điểm danh.')
-        }
-
-        if (statsData.status === 'fulfilled' && statsData.value) {
-          setStats(statsData.value)
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      ignore = true
-    }
-  }, [page, pageSize, keyword, department, status, fromDate, toDate])
-
-  // Kiểm tra một bản ghi STOMP có khớp bộ lọc hiện hành hay không (đồng bộ với predicate REST)
+  // Kiểm tra một bản ghi STOMP có khớp bộ lọc hiện hành hay không (WEB-F-11: PERF-003 dùng debouncedKeyword)
   const recordMatchesFilters = useCallback(
     (rec: AttendanceRecord): boolean => {
-      const kw = keyword.trim().toLowerCase()
+      const kw = debouncedKeyword.trim().toLowerCase()
       if (kw) {
         const matches =
           (rec.employeeCode || '').toLowerCase().includes(kw) ||
@@ -162,118 +80,125 @@ export const AdminAttendanceView: React.FC = () => {
 
       return true
     },
-    [keyword, department, status, fromDate, toDate]
+    [debouncedKeyword, department, status, fromDate, toDate]
   )
 
-  // Xử lý sự kiện điểm danh thời gian thực từ trạm Kiosk qua STOMP
-  const handleStompRecordReceived = useCallback(
-    (newRecord: AttendanceRecord) => {
-      // 1. Tự động tăng bộ đếm thống kê (KPI hôm nay, độc lập với bộ lọc bảng)
-      setStats((prev) => {
-        if (!prev) return prev
-        const total = prev.totalEmployees ?? 0
-        const newPresent = prev.presentCount + 1
-        const newOnTime =
-          newRecord.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount
-        const newLate =
-          newRecord.status === 'LATE' ? prev.lateCount + 1 : prev.lateCount
-        return {
-          ...prev,
-          presentCount: newPresent,
-          onTimeCount: newOnTime,
-          lateCount: newLate,
-          absentCount: Math.max(0, total - newPresent),
-        }
-      })
-
-      // 2. Nếu có bộ lọc active và bản ghi không khớp -> bỏ qua hoàn toàn (không chèn bảng/không tăng totalElements)
-      if (!recordMatchesFilters(newRecord)) {
-        return
+  // Callback tăng KPI khi có lượt quẹt mới
+  const handleStatsIncrement = useCallback((newRecord: AttendanceRecord) => {
+    setStats((prev) => {
+      if (!prev) return prev
+      const total = prev.totalEmployees ?? 0
+      const newPresent = prev.presentCount + 1
+      const newOnTime =
+        newRecord.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount
+      const newLate =
+        newRecord.status === 'LATE' ? prev.lateCount + 1 : prev.lateCount
+      return {
+        ...prev,
+        presentCount: newPresent,
+        onTimeCount: newOnTime,
+        lateCount: newLate,
+        absentCount: Math.max(0, total - newPresent),
       }
+    })
+  }, [])
 
-      // 3. Nếu chế độ Live đang Bật -> Chèn trực tiếp lên đầu bảng (Optimistic Prepend)
-      if (isLiveEnabled) {
-        setRecords((prev) => {
-          const existingFiltered = prev.filter((r) => r.recordId !== newRecord.recordId)
-          return [newRecord, ...existingFiltered].slice(0, 100)
-        })
-        setTotalElements((prev) => prev + 1)
+  const handleRecordAdded = useCallback(() => {
+    setTotalElements((prev) => prev + 1)
+  }, [])
 
-        // Kích hoạt hiệu ứng Green Flash 3 giây trên dòng mới nhất (BLD-WEB-015)
-        setHighlightedRecordId(newRecord.recordId)
-        if (highlightTimerRef.current) {
-          clearTimeout(highlightTimerRef.current)
-        }
-        highlightTimerRef.current = setTimeout(() => {
-          setHighlightedRecordId((current) =>
-            current === newRecord.recordId ? null : current
-          )
-        }, 3000)
-      } else {
-        // Nếu Live Mode đang Tắt -> Lưu vào danh sách chờ
-        pendingRecordsRef.current = [newRecord, ...pendingRecordsRef.current]
-        setPendingLiveCount((c) => c + 1)
-      }
-    },
-    [isLiveEnabled, recordMatchesFilters]
-  )
-
-  // Kết nối WebSocket STOMP
-  const { isConnected } = useLiveAttendance({
-    onRecordReceived: handleStompRecordReceived,
+  // Hook buffer STOMP thời gian thực (ARCH-02)
+  const {
+    records,
+    setRecords,
+    isLiveEnabled,
+    pendingLiveCount,
+    flushPendingRecords,
+    handleToggleLiveMode,
+    highlightedRecordId,
+    isConnected,
+  } = useLiveAttendanceBuffer({
+    filterPredicate: recordMatchesFilters,
+    onStatsIncrement: handleStatsIncrement,
+    onRecordAdded: handleRecordAdded,
   })
 
-  // Dọn dẹp timer khi component unmount
+  // Tải dữ liệu từ REST API
+  const fetchAttendanceData = useCallback(async () => {
+    try {
+      const [pageData, statsData] = await Promise.allSettled([
+        attendanceService.getAdminAttendance({
+          page,
+          size: pageSize,
+          keyword: debouncedKeyword.trim() || undefined,
+          department: department || undefined,
+          status: status || undefined,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
+        }),
+        attendanceService.getAttendanceStats(),
+      ])
+
+      setErrorMessage(null)
+      if (pageData.status === 'fulfilled' && pageData.value) {
+        setRecords(pageData.value.content || [])
+        const total = pageData.value.totalElements || 0
+        setTotalElements(total)
+        const max = Math.max(0, Math.ceil(total / pageSize) - 1)
+        setPage((p) => (p > max ? max : p))
+      } else if (pageData.status === 'rejected') {
+        const err = pageData.reason as { message?: string }
+        setErrorMessage(err.message || 'Không thể tải danh sách điểm danh.')
+      }
+
+      if (statsData.status === 'fulfilled' && statsData.value) {
+        setStats(statsData.value)
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [page, pageSize, debouncedKeyword, department, status, fromDate, toDate, setRecords])
+
+  // Tái sử dụng fetchAttendanceData trực tiếp trong useEffect (EXP1-15, EXP3-08, PERF-03)
   useEffect(() => {
-    return () => {
-      if (highlightTimerRef.current) {
-        clearTimeout(highlightTimerRef.current)
-      }
-    }
-  }, [])
+    void fetchAttendanceData()
+  }, [fetchAttendanceData])
 
-  // Cập nhật các bản ghi đang chờ vào bảng khi bật lại Live Mode hoặc click badge
-  const flushPendingRecords = useCallback(() => {
-    if (pendingRecordsRef.current.length > 0) {
-      const pending = [...pendingRecordsRef.current]
-      pendingRecordsRef.current = []
-      setPendingLiveCount(0)
-
-      setRecords((prev) => {
-        const map = new Map<number, AttendanceRecord>()
-        for (const item of [...pending, ...prev]) {
-          map.set(item.recordId, item)
-        }
-        return Array.from(map.values()).slice(0, 100)
-      })
-
-      // Highlight bản ghi mới nhất trong 3 giây
-      if (pending[0]) {
-        setHighlightedRecordId(pending[0].recordId)
-        if (highlightTimerRef.current) {
-          clearTimeout(highlightTimerRef.current)
-        }
-        highlightTimerRef.current = setTimeout(() => {
-          setHighlightedRecordId(null)
-        }, 3000)
-      }
-    }
-  }, [])
-
-  const handleToggleLiveMode = () => {
-    if (!isLiveEnabled) {
-      flushPendingRecords()
-      setIsLiveEnabled(true)
-    } else {
-      setIsLiveEnabled(false)
-    }
-  }
-
-  // Lọc cục bộ theo phương thức xác thực nếu có
+  // Lọc cục bộ theo phương thức xác thực nếu có (EXP3-02: Memoized)
   const displayRecords = useMemo(() => {
     if (!verificationMethod) return records
     return records.filter((r) => r.verificationMethod === verificationMethod)
   }, [records, verificationMethod])
+
+  // Memoize danh sách bản ghi xuất báo cáo (EXP1-09)
+  const exportableRecords = useMemo(() => {
+    return records.map((r) => ({
+      recordId: r.recordId,
+      employeeCode: r.employeeCode,
+      fullName: r.fullName,
+      department: r.department,
+      punchTimestamp: r.punchTimestamp,
+      punchType: r.punchType,
+      status: r.status,
+      lateMinutes: r.lateMinutes,
+      kioskId: r.kioskId,
+      verificationMethod: r.verificationMethod,
+    }))
+  }, [records])
+
+  // Memoize tỷ lệ xác thực khuôn mặt (EXP3-02)
+  const faceRecognitionRatio = useMemo(() => {
+    if (records.length === 0) return '100%'
+    const faceCount = records.filter(
+      (r) => r.verificationMethod === 'VERIFICATION_FACE' || r.verificationMethod === 'FACE_MATCH'
+    ).length
+    return `${Math.round((faceCount / records.length) * 100)}%`
+  }, [records])
+
+  // Xử lý giới hạn trang an toàn (EXP3-02: Pagination boundary handling)
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(totalElements / pageSize))
+  }, [totalElements, pageSize])
 
   // Xuất báo cáo bảng công Excel/PDF (TASK-WEB-020, BLD-WEB-016, DD-WEB-017)
   const handleExportReport = async (options?: {
@@ -303,26 +228,13 @@ export const AdminAttendanceView: React.FC = () => {
       reportExportService.triggerDownload(result.blob, result.filename)
     } catch {
       // Fallback xuất client-side nếu backend không trả file (DD-WEB-017)
-      const clientItems = records.map((r) => ({
-        recordId: r.recordId,
-        employeeCode: r.employeeCode,
-        fullName: r.fullName,
-        department: r.department,
-        punchTimestamp: r.punchTimestamp,
-        punchType: r.punchType,
-        status: r.status,
-        lateMinutes: r.lateMinutes,
-        kioskId: r.kioskId,
-        verificationMethod: r.verificationMethod,
-      }))
-
       const clientOptions = {
         companyName: company,
         reportTitle: title,
         period: currentPeriod,
         generatedAt: new Date().toLocaleString('vi-VN'),
         departmentName: department || 'Toàn bộ phòng ban',
-        records: clientItems,
+        records: exportableRecords,
         stats: stats
           ? {
               totalEmployees: stats.totalEmployees,
@@ -356,26 +268,13 @@ export const AdminAttendanceView: React.FC = () => {
     reportTitle: string
     period: string
   }) => {
-    const clientItems = records.map((r) => ({
-      recordId: r.recordId,
-      employeeCode: r.employeeCode,
-      fullName: r.fullName,
-      department: r.department,
-      punchTimestamp: r.punchTimestamp,
-      punchType: r.punchType,
-      status: r.status,
-      lateMinutes: r.lateMinutes,
-      kioskId: r.kioskId,
-      verificationMethod: r.verificationMethod,
-    }))
-
     reportExportService.printReport({
       companyName: opts.companyName,
       reportTitle: opts.reportTitle,
       period: opts.period,
       generatedAt: new Date().toLocaleString('vi-VN'),
       departmentName: department || 'Toàn bộ phòng ban',
-      records: clientItems,
+      records: exportableRecords,
       stats: stats
         ? {
             totalEmployees: stats.totalEmployees,
@@ -389,7 +288,7 @@ export const AdminAttendanceView: React.FC = () => {
   }
 
   // Đặt lại toàn bộ bộ lọc
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
     setKeyword('')
     setDepartment('')
     setStatus('')
@@ -397,11 +296,11 @@ export const AdminAttendanceView: React.FC = () => {
     setFromDate('')
     setToDate('')
     setPage(0)
-  }
+  }, [])
 
-  const hasActiveFilters = Boolean(
-    keyword || department || status || verificationMethod || fromDate || toDate
-  )
+  const hasActiveFilters = useMemo(() => {
+    return Boolean(keyword || department || status || verificationMethod || fromDate || toDate)
+  }, [keyword, department, status, verificationMethod, fromDate, toDate])
 
   return (
     <div className="space-y-6" data-testid="admin-attendance-view">
@@ -564,142 +463,45 @@ export const AdminAttendanceView: React.FC = () => {
           </div>
           <div>
             <div data-testid="kpi-face-ratio" className="text-2xl font-extrabold font-mono text-indigo-600 tracking-tight">
-              {records.length > 0
-                ? `${Math.round(
-                    (records.filter((r) => r.verificationMethod === 'VERIFICATION_FACE').length /
-                      records.length) *
-                      100
-                  )}%`
-                : '100%'}
+              {faceRecognitionRatio}
             </div>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">Tỷ lệ xác thực sinh trắc ArcFace</p>
           </div>
         </div>
       </div>
 
-      {/* ── Bộ Lọc Nâng Cao Đồng Bộ (Unified Filters) ── */}
-      <div className="card-surface p-4 space-y-3">
-        {/* Hàng 1: Ô tìm kiếm từ khóa & 3 Dropdown bộ lọc */}
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-          {/* Ô tìm kiếm từ khóa */}
-          <div className="flex-1 min-w-56 relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <Search className="w-4 h-4" />
-            </div>
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => {
-                setKeyword(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-keyword-input"
-              aria-label="Tìm kiếm lượt điểm danh"
-              placeholder="Tìm theo Mã NV, Họ tên..."
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            />
-          </div>
-
-          {/* Lọc theo phòng ban */}
-          <div className="w-full sm:w-44">
-            <select
-              value={department}
-              onChange={(e) => {
-                setDepartment(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-department-select"
-              aria-label="Lọc theo phòng ban"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            >
-              <option value="">Tất cả phòng ban</option>
-              <option value="Phòng Kỹ thuật">Phòng Kỹ thuật</option>
-              <option value="Phòng Kinh doanh">Phòng Kinh doanh</option>
-              <option value="Phòng Nhân sự">Phòng Nhân sự</option>
-              <option value="Phòng Tài chính">Phòng Tài chính</option>
-            </select>
-          </div>
-
-          {/* Lọc theo trạng thái */}
-          <div className="w-full sm:w-38">
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-status-select"
-              aria-label="Lọc theo trạng thái điểm danh"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="ON_TIME">Đúng giờ</option>
-              <option value="LATE">Đi muộn</option>
-              <option value="EARLY_LEAVE">Về sớm</option>
-            </select>
-          </div>
-
-          {/* Lọc theo phương thức xác thực */}
-          <div className="w-full sm:w-44">
-            <select
-              value={verificationMethod}
-              onChange={(e) => setVerificationMethod(e.target.value)}
-              data-testid="filter-method-select"
-              aria-label="Lọc theo phương thức xác thực"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            >
-              <option value="">Tất cả phương thức</option>
-              <option value="VERIFICATION_FACE">Khuôn mặt (Face)</option>
-              <option value="VERIFICATION_PIN">Mã PIN</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Hàng 2: Khoảng ngày & Nút Xóa lọc */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-100">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-slate-500 mr-1">Khoảng ngày:</span>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-from-date"
-              className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-              title="Từ ngày"
-            />
-            <span className="text-slate-400 text-xs font-medium">—</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value)
-                setPage(0)
-              }}
-              data-testid="filter-to-date"
-              className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-              title="Đến ngày"
-            />
-          </div>
-
-          {hasActiveFilters && (
-            <div className="flex items-center self-end sm:self-auto">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleResetFilters}
-                data-testid="reset-filters-btn"
-                leftIcon={<X className="w-3.5 h-3.5" />}
-                className="h-9 px-3 text-xs font-semibold text-rose-700 bg-rose-50/80 border-rose-200 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800 shadow-2xs shrink-0 cursor-pointer"
-              >
-                Xóa tất cả lọc
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* ── Bộ Lọc Nâng Cao Đồng Bộ (ARCH-02: Modularized AttendanceFilterToolbar) ── */}
+      <AttendanceFilterToolbar
+        keyword={keyword}
+        department={department}
+        status={status}
+        verificationMethod={verificationMethod}
+        fromDate={fromDate}
+        toDate={toDate}
+        hasActiveFilters={hasActiveFilters}
+        onKeywordChange={(val) => {
+          setKeyword(val)
+          setPage(0)
+        }}
+        onDepartmentChange={(val) => {
+          setDepartment(val)
+          setPage(0)
+        }}
+        onStatusChange={(val) => {
+          setStatus(val)
+          setPage(0)
+        }}
+        onVerificationMethodChange={(val) => setVerificationMethod(val)}
+        onFromDateChange={(val) => {
+          setFromDate(val)
+          setPage(0)
+        }}
+        onToDateChange={(val) => {
+          setToDate(val)
+          setPage(0)
+        }}
+        onResetFilters={handleResetFilters}
+      />
 
       {/* Thông báo lỗi nếu có */}
       {errorMessage && (
@@ -726,77 +528,34 @@ export const AdminAttendanceView: React.FC = () => {
           onEditRecord={(record) => setRecordToAdjust(record)}
         />
 
-        {/* ── Thanh Phân Trang (Chuẩn hóa theo EmployeeManagementView) ── */}
-        <div className="card-surface p-4 border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <div>
-            Hiển thị <span className="font-semibold text-slate-900">{displayRecords.length}</span> /{' '}
-            <span className="font-semibold text-slate-900">{totalElements}</span> lượt điểm danh
-          </div>
-
-          <div className="flex items-center gap-2">
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
-                setPage(0)
-              }}
-              data-testid="page-size-select"
-              className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            >
-              <option value={20}>20 dòng / trang</option>
-              <option value={50}>50 dòng / trang</option>
-              <option value={100}>100 dòng / trang</option>
-            </select>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              data-testid="prev-page-btn"
-            >
-              Trước
-            </Button>
-
-            <span className="px-2 font-semibold text-slate-700">Trang {page + 1}</span>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              disabled={(page + 1) * pageSize >= totalElements}
-              onClick={() => setPage((p) => p + 1)}
-              data-testid="next-page-btn"
-            >
-              Sau
-            </Button>
-          </div>
-        </div>
+        {/* ── Thanh Phân Trang (ARCH-02: Modularized AttendancePaginationBar) ── */}
+        <AttendancePaginationBar
+          page={page}
+          pageSize={pageSize}
+          totalElements={totalElements}
+          displayedCount={displayRecords.length}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize)
+            setPage(0)
+          }}
+        />
       </div>
 
-      {/* ── Modal Tùy chọn Xuất Báo Cáo Excel/PDF (TASK-WEB-020, BLD-WEB-016) ── */}
-      <ExportReportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        recordsCount={records.length}
-        records={records.map((r) => ({
-          recordId: r.recordId,
-          employeeCode: r.employeeCode,
-          fullName: r.fullName,
-          department: r.department,
-          punchTimestamp: r.punchTimestamp,
-          punchType: r.punchType,
-          status: r.status,
-          lateMinutes: r.lateMinutes,
-          kioskId: r.kioskId,
-          verificationMethod: r.verificationMethod,
-        }))}
-        currentPeriod={fromDate ? fromDate.slice(0, 7) : undefined}
-        currentDepartment={department}
-        onExport={handleExportReport}
-        onPrintPreview={handlePrintPreview}
-      />
+      {/* ── Modal Tùy chọn Xuất Báo Cáo Excel/PDF (EXP1-09: conditional mount & memoized records) ── */}
+      {isExportModalOpen && (
+        <ExportReportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          recordsCount={records.length}
+          records={exportableRecords}
+          currentPeriod={fromDate ? fromDate.slice(0, 7) : undefined}
+          currentDepartment={department}
+          onExport={handleExportReport}
+          onPrintPreview={handlePrintPreview}
+        />
+      )}
 
       {/* ── Modal Điều Chỉnh Giờ Công & Trạng Thái (API-BE-048, API-WEB-021) ── */}
       <AdjustAttendanceModal

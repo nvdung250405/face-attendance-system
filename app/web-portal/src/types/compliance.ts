@@ -17,16 +17,21 @@ export type DataRequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJEC
 
 export interface DataSubjectRequestItem {
   readonly id: number
-  readonly employeeId: number
+  readonly employeeId?: number
   readonly employeeCode?: string
   readonly fullName?: string
   readonly requestType: DataRequestType
-  readonly details: string
+  readonly details?: string
+  readonly reason?: string
   readonly status: DataRequestStatus
-  readonly submittedAt: string
+  readonly submittedAt?: string
+  readonly createdAt?: string
+  readonly requestedAt?: string
   readonly handledAt?: string | null
+  readonly completedAt?: string | null
   readonly handledBy?: string | null
   readonly adminNote?: string | null
+  readonly responseSummary?: string | null
 }
 
 export interface CreateDataSubjectRequest {
@@ -42,13 +47,18 @@ export interface UpdateDataSubjectRequest {
 export interface AuditLogItem {
   readonly id: number
   readonly action: string
-  readonly actorId: number
-  readonly actorEmail: string
-  readonly targetResource: string
+  readonly actorId?: number
+  readonly actorEmail?: string
+  readonly actor?: string
+  readonly actorUsername?: string
+  readonly targetResource?: string
+  readonly target?: string
+  readonly resource?: string
   readonly oldValues?: Record<string, unknown> | null
   readonly newValues?: Record<string, unknown> | null
   readonly ipAddress?: string
-  readonly createdAt: string
+  readonly createdAt?: string
+  readonly timestamp?: string
 }
 
 export interface AuditLogQueryCriteria {

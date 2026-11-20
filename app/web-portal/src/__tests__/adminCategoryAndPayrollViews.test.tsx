@@ -421,6 +421,11 @@ describe('TASK-WEB-028: Màn Hình Quản Trị Danh Mục & Kỳ Công (UXD-WEB
 
       expect(screen.getByTestId('shift-drawer')).toBeTruthy()
       expect(screen.getByText('Tạo Mới Ca Làm Việc')).toBeTruthy()
+      expect(screen.getByTestId('shift-code-preview')).toBeTruthy()
+      expect(screen.getByTestId('toggle-custom-shift-code')).toBeTruthy()
+
+      // Mở toggle tùy chỉnh mã ca thủ công
+      fireEvent.click(screen.getByTestId('toggle-custom-shift-code'))
 
       // Nhập form Drawer
       fireEvent.change(screen.getByTestId('input-shift-code'), { target: { value: 'CA_TOI' } })

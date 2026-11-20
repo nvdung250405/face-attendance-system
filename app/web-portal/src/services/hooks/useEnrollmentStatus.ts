@@ -8,7 +8,7 @@
  * - Hỗ trợ hàm reset và tự động hủy đăng ký kênh khi unmount hoặc OTP thay đổi.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { IMessage } from '@stomp/stompjs'
 import type { EnrollmentSuccessMessage } from '@/types'
 import { stompClientService, type StompWebSocketService } from '../stompClientService'
@@ -54,6 +54,11 @@ export function useEnrollmentStatus(
   const [enrollmentData, setEnrollmentData] = useState<EnrollmentSuccessMessage | null>(null)
   const [isConnected, setIsConnected] = useState<boolean>(service.isConnected())
 
+  const onSuccessRef = useRef(onSuccess)
+  useEffect(() => {
+    onSuccessRef.current = onSuccess
+  }, [onSuccess])
+
   const reset = useCallback(() => {
     setIsEnrolled(false)
     setEnrollmentData(null)
@@ -87,7 +92,7 @@ export function useEnrollmentStatus(
         if (payload && payload.status === 'ENROLLMENT_SUCCESS') {
           setIsEnrolled(true)
           setEnrollmentData(payload)
-          onSuccess?.(payload)
+          onSuccessRef.current?.(payload)
         }
       } catch (err) {
         console.error(`[useEnrollmentStatus] Failed to parse message on ${destination}:`, err)
@@ -99,7 +104,7 @@ export function useEnrollmentStatus(
       subscription.unsubscribe()
       unbindStatus()
     }
-  }, [otp, autoConnect, service, onSuccess])
+  }, [otp, autoConnect, service])
 
   return {
     isEnrolled,

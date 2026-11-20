@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore, getDefaultPathForRole } from '@/store/authStore'
 import { apiClient } from '@/services/apiClient'
 import { normalizeApiError } from '@/services/errorNormalizer'
-import type { ApiResponse, AuthSession, LoginResponse, UserRole } from '@/types'
+import type { ApiResponse, AuthSession, LoginResponse } from '@/types'
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate()
@@ -61,35 +61,6 @@ export const LoginView: React.FC = () => {
       const target = from || getDefaultPathForRole(session.user.role)
       navigate(target, { replace: true })
     } catch (err: unknown) {
-      if (import.meta.env.MODE === 'test') {
-        const simulatedRole: UserRole = loginEmail.includes('admin') || loginEmail.includes('hr')
-          ? 'HR_MANAGER'
-          : 'EMPLOYEE'
-
-        const mockSession: AuthSession = {
-          accessToken: `mock-jwt-token-${Date.now()}`,
-          refreshToken: `mock-refresh-token-${Date.now()}`,
-          tokenType: 'Bearer',
-          expiresAt: Date.now() + 3600000,
-          user: {
-            id: simulatedRole === 'HR_MANAGER' ? 1 : 1042,
-            employeeCode: simulatedRole === 'HR_MANAGER' ? 'NV-HR-001' : 'NV-1042',
-            fullName: simulatedRole === 'HR_MANAGER' ? 'Quản Lý Nhân Sự' : 'Nhân Viên Mẫu',
-            email: loginEmail || 'user@company.com',
-            role: simulatedRole,
-            status: 'ACTIVE',
-            department: simulatedRole === 'HR_MANAGER' ? 'Phòng Nhân sự' : 'Phòng Kỹ thuật',
-            hasBiometric: false,
-            hasPin: false,
-          },
-        }
-
-        setSession(mockSession)
-        const target = from || getDefaultPathForRole(simulatedRole)
-        navigate(target, { replace: true })
-        return
-      }
-
       const apiError = normalizeApiError(err)
       setError(apiError.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.')
     } finally {
@@ -99,18 +70,27 @@ export const LoginView: React.FC = () => {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await loginWithCredentials(email, password)
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      setError('Vui lòng nhập email doanh nghiệp.')
+      return
+    }
+    if (!password) {
+      setError('Vui lòng nhập mật khẩu.')
+      return
+    }
+    await loginWithCredentials(trimmedEmail, password)
   }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-bg-app">
-      {/* Cột Trái: Brand Dark Navy Workspace (Figma Frame 3:23919) */}
-      <div className="md:w-1/2 bg-brand-dark-navy text-white p-8 md:p-12 flex flex-col justify-between">
+      {/* Cột Trái: Brand Dark Navy Workspace (Figma Frame 3:23919) - Chỉ hiển thị trên Desktop (md+) */}
+      <div className="hidden md:flex md:w-1/2 bg-brand-dark-navy text-white p-8 md:p-12 flex-col justify-between">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-navy-card border border-slate-700 text-brand-light-blue text-xs font-semibold tracking-wide">
             FAS ENTERPRISE SYSTEM
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-tight">
             Cổng Quản Trị & Điểm Danh Nhận Diện Khuôn Mặt
           </h1>
           <p className="text-slate-300 text-sm md:text-base leading-relaxed">
@@ -123,25 +103,36 @@ export const LoginView: React.FC = () => {
         </div>
       </div>
 
-      {/* Cột Phải: Form Đăng nhập */}
-      <div className="md:w-1/2 flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-md bg-surface-card border border-border-subtle rounded-xl shadow-sm p-8 space-y-6">
+      {/* Cột Phải: Form Đăng nhập - Căn giữa trên Desktop, gọn gàng trên Mobile */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-12 flex-1">
+        <div className="w-full max-w-md bg-surface-card border border-border-subtle rounded-2xl shadow-sm p-6 sm:p-8 space-y-5">
+          {/* Logo & Brand header thu gọn riêng cho Mobile */}
+          <div className="md:hidden flex items-center gap-2.5 pb-2 border-b border-border-subtle">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center font-black text-white text-xs shrink-0 shadow-sm ring-1 ring-indigo-400/30">
+              FAS
+            </div>
+            <div>
+              <div className="text-xs font-bold text-text-primary tracking-tight">FAS Enterprise System</div>
+              <div className="text-[10px] text-text-muted">Cổng Quản Trị & Điểm Danh</div>
+            </div>
+          </div>
+
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-text-primary">Đăng nhập Cổng Web</h2>
-            <p className="text-sm text-text-secondary">
+            <h2 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight">Đăng nhập Cổng Web</h2>
+            <p className="text-xs sm:text-sm text-text-secondary">
               Nhập email doanh nghiệp và mật khẩu để tiếp tục
             </p>
           </div>
 
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-status-danger text-sm rounded-lg">
+            <div className="p-3 bg-rose-50 border border-rose-200 text-status-danger text-xs sm:text-sm rounded-xl">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div className="space-y-1 text-left">
-              <label htmlFor="email-input" className="block text-xs font-medium text-text-secondary uppercase">
+              <label htmlFor="email-input" className="block text-xs font-semibold text-text-secondary">
                 Email doanh nghiệp
               </label>
               <input
@@ -151,12 +142,12 @@ export const LoginView: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ten.nv@company.com"
-                className="w-full px-3 py-2 border border-border-subtle rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                className="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
               />
             </div>
 
             <div className="space-y-1 text-left">
-              <label htmlFor="password-input" className="block text-xs font-medium text-text-secondary uppercase">
+              <label htmlFor="password-input" className="block text-xs font-semibold text-text-secondary">
                 Mật khẩu
               </label>
               <input
@@ -166,14 +157,14 @@ export const LoginView: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 border border-border-subtle rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                className="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+              className="w-full min-h-[44px] py-3 bg-brand-primary hover:bg-brand-hover text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center cursor-pointer"
             >
               {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
             </button>

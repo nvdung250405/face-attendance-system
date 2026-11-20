@@ -19,7 +19,8 @@ export interface KioskItemResponse {
 }
 
 export interface RegisterKioskRequest {
-  kioskId: string
+  id?: string
+  kioskId?: string
   name: string
   location: string
 }

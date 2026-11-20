@@ -141,7 +141,7 @@ describe('Bộ Client Dịch vụ Vòng đời (TASK-WEB-023, BLD-WEB-022, APD-W
         data: { success: true, message: 'Đổi mật khẩu thành công', data: { message: 'Đổi thành công', sessionsRevoked: true } },
       })
       const res = await credentialService.changePassword({
-        oldPassword: 'OldPass@123',
+        currentPassword: 'OldPass@123',
         newPassword: 'NewPass@456',
       })
       expect(res.sessionsRevoked).toBe(true)

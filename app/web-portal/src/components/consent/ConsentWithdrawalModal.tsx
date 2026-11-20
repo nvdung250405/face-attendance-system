@@ -20,6 +20,7 @@ import { AlertTriangle, X, AlertCircle, Check } from 'lucide-react'
 import { dataSubjectService } from '@/services/dataSubjectService'
 import { useAuthStore } from '@/store/authStore'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { formatDateTime } from '@/utils/date'
 import type { WithdrawConsentResponse } from '@/types'
 
 export type WithdrawalStep = 'WARNING' | 'CONFIRM' | 'SUCCESS'
@@ -79,18 +80,7 @@ const ConsentWithdrawalModalContent: React.FC<ConsentWithdrawalModalProps> = ({
 
   const formatDeadline = (isoString?: string) => {
     if (!isoString) return '7 ngày làm việc kể từ thời điểm này'
-    try {
-      const d = new Date(isoString)
-      return d.toLocaleDateString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    } catch {
-      return isoString
-    }
+    return formatDateTime(isoString)
   }
 
   return (

@@ -5,12 +5,13 @@
  * dọn dẹp sạch sẽ Storage phía trình duyệt và phát sự kiện đồng bộ đa tab.
  */
 
-import { apiClient, AUTH_STORAGE_KEY } from './apiClient'
-import { safeLocalStorage, safeSessionStorage, STORAGE_KEYS } from './storage'
+import { apiClient } from './apiClient'
+import { safeLocalStorage, safeSessionStorage, STORAGE_KEYS, AUTH_STORAGE_KEY } from './storage'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
+import { queryClient } from './queryClient'
 import type { AuthSession } from '@/types'
 
 import { stompClientService } from './stompClientService'
@@ -49,6 +50,7 @@ export class LogoutService {
     useNotificationStore.getState().clearStore()
     usePayrollPeriodStore.getState().clearStore()
     useKioskRegistryStore.getState().clearStore()
+    queryClient.clear()
     void stompClientService.deactivate().catch(() => {})
   }
 }

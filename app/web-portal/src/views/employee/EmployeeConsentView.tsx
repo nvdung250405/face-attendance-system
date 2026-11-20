@@ -36,22 +36,9 @@ export const EmployeeConsentView: React.FC = () => {
   }, [updateUser])
 
   useEffect(() => {
-    let ignore = false
-    const fetchOnMount = async () => {
-      try {
-        const res = await apiClient.get<ApiResponse<UserProfile>>('/api/v1/auth/me')
-        if (!ignore && res.data?.data) {
-          useAuthStore.getState().updateUser(res.data.data)
-        }
-      } catch {
-        // im lặng
-      }
-    }
-    fetchOnMount()
-    return () => {
-      ignore = true
-    }
-  }, [])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refreshProfile()
+  }, [refreshProfile])
 
   return (
     <div className="space-y-6">

@@ -65,5 +65,15 @@ export const TRANSITION_TOKENS = {
   greenFlashDuration: '1500ms',
 } as const
 
+export const Z_INDEX_TOKENS = {
+  header: 30,
+  sidebar: 40,
+  overlay: 45,
+  modal: 50,
+  toast: 60,
+  tooltip: 70,
+} as const
+
 export type ColorTokenKey = keyof typeof COLOR_TOKENS
 export type LayoutTokenKey = keyof typeof LAYOUT_TOKENS
+export type ZIndexTokenKey = keyof typeof Z_INDEX_TOKENS

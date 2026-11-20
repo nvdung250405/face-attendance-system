@@ -253,7 +253,7 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
 
       await waitFor(() => {
         expect(changePasswordSpy).toHaveBeenCalledWith({
-          oldPassword: 'OldPass@123',
+          currentPassword: 'OldPass@123',
           newPassword: 'NewPass@456',
         })
         expect(screen.getByTestId('change-password-success')).toBeDefined()
@@ -287,17 +287,48 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
 
       expect(screen.getByTestId('employee-drawer')).toBeDefined()
       expect(screen.getByText('Tạo mới hồ sơ nhân sự')).toBeDefined()
+      expect(screen.getByTestId('employee-code-preview')).toBeDefined()
 
-      // Xóa mã nhân viên đã được hệ thống tự động sinh để kiểm tra validation để trống
-      fireEvent.change(screen.getByTestId('drawer-employee-code'), { target: { value: '' } })
-
-      // Bấm lưu khi form rỗng
+      // Bấm lưu khi form rỗng (Mã nhân viên là tùy chọn, không bị báo lỗi bắt buộc)
       fireEvent.click(screen.getByTestId('drawer-btn-submit'))
 
       await waitFor(() => {
-        expect(screen.getByText('Mã nhân viên không được để trống')).toBeDefined()
+        expect(screen.queryByText('Mã nhân viên không được để trống')).toBeNull()
         expect(screen.getByText('Họ và tên không được để trống')).toBeDefined()
         expect(screen.getByText('Email không được để trống')).toBeDefined()
+      })
+    })
+
+    it('gọi adminEmployeeService.createEmployee với employeeCode undefined khi để trống', async () => {
+      const createSpy = vi.spyOn(adminEmployeeService, 'createEmployee').mockResolvedValueOnce(
+        mockCreateEmployeeSuccess.data
+      )
+      const onSuccess = vi.fn()
+      const onClose = vi.fn()
+
+      render(
+        <EmployeeDrawer
+          isOpen={true}
+          mode="create"
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      )
+
+      fireEvent.change(screen.getByTestId('drawer-full-name'), { target: { value: 'Nguyễn Văn Tự Động' } })
+      fireEvent.change(screen.getByTestId('drawer-email'), { target: { value: 'tudong.nv@company.com' } })
+      fireEvent.change(screen.getByTestId('drawer-department'), { target: { value: 'Phòng Kỹ thuật' } })
+
+      fireEvent.click(screen.getByTestId('drawer-btn-submit'))
+
+      await waitFor(() => {
+        expect(createSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            employeeCode: undefined,
+            fullName: 'Nguyễn Văn Tự Động',
+            email: 'tudong.nv@company.com',
+          })
+        )
       })
     })
 
@@ -589,7 +620,7 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
       })
     })
 
-    it('TopHeader gọi logoutService.logout khi nhấn Đăng xuất', async () => {
+    it('TopHeader mở LogoutConfirmModal và gọi logoutService.logout khi xác nhận', async () => {
       setupAuthUser('HR_MANAGER')
       const logoutSpy = vi.spyOn(logoutService, 'logout').mockResolvedValueOnce(undefined)
 
@@ -605,12 +636,16 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
       const logoutBtn = screen.getByRole('menuitem', { name: /Đăng xuất/i })
       fireEvent.click(logoutBtn)
 
+      // Kiểm tra LogoutConfirmModal mở ra và bấm nút xác nhận Đăng xuất
+      const confirmBtn = await screen.findByTestId('btn-confirm-logout')
+      fireEvent.click(confirmBtn)
+
       await waitFor(() => {
         expect(logoutSpy).toHaveBeenCalledTimes(1)
       })
     })
 
-    it('Sidebar gọi logoutService.logout khi nhấn Đăng xuất', async () => {
+    it('Sidebar mở LogoutConfirmModal và gọi logoutService.logout khi xác nhận', async () => {
       setupAuthUser('HR_MANAGER')
       const logoutSpy = vi.spyOn(logoutService, 'logout').mockResolvedValueOnce(undefined)
 
@@ -622,6 +657,10 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
 
       const logoutBtn = screen.getByRole('button', { name: 'Đăng xuất' })
       fireEvent.click(logoutBtn)
+
+      // Kiểm tra LogoutConfirmModal mở ra và bấm nút xác nhận Đăng xuất
+      const confirmBtn = await screen.findByTestId('btn-confirm-logout')
+      fireEvent.click(confirmBtn)
 
       await waitFor(() => {
         expect(logoutSpy).toHaveBeenCalledTimes(1)

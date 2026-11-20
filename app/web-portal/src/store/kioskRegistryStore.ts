@@ -14,6 +14,23 @@ import type { KioskItemResponse, KioskStatus } from '@/types'
 
 export const DEFAULT_PING_WARNING_THRESHOLD_MINUTES = 5
 
+/**
+ * Kiểm tra xem trạm Kiosk có bị mất tín hiệu Ping quá ngưỡng (mặc định 5 phút) hay không (DD-WEB-019, ARCH-003, ARCH-19)
+ * Pure helper function tách rời khỏi Zustand state để tối ưu memory & render performance.
+ */
+export function isKioskPingStale(
+  lastPingAt?: string,
+  thresholdMinutes = DEFAULT_PING_WARNING_THRESHOLD_MINUTES
+): boolean {
+  if (!lastPingAt) return true
+  const pingTime = new Date(lastPingAt).getTime()
+  if (isNaN(pingTime)) return true
+  const elapsedMinutes = (Date.now() - pingTime) / (1000 * 60)
+  return elapsedMinutes > thresholdMinutes
+}
+
+export const isPingStale = isKioskPingStale
+
 export interface KioskRegistryState {
   kiosks: KioskItemResponse[]
   /** Bản đồ lưu Secret Token duy nhất trong RAM (kioskId -> token) */
@@ -106,16 +123,7 @@ export const useKioskRegistryStore = create<KioskRegistryState>((set, get) => ({
   /**
    * Kiểm tra xem trạm Kiosk có bị mất tín hiệu Ping quá ngưỡng (mặc định 5 phút) hay không (DD-WEB-019)
    */
-  isPingStale: (
-    lastPingAt?: string,
-    thresholdMinutes = DEFAULT_PING_WARNING_THRESHOLD_MINUTES
-  ): boolean => {
-    if (!lastPingAt) return true
-    const pingTime = new Date(lastPingAt).getTime()
-    if (isNaN(pingTime)) return true
-    const elapsedMinutes = (Date.now() - pingTime) / (1000 * 60)
-    return elapsedMinutes > thresholdMinutes
-  },
+  isPingStale: isKioskPingStale,
 
   /**
    * Xóa sạch toàn bộ dữ liệu RAM khi unmount hoặc rời màn hình (DD-WEB-019)

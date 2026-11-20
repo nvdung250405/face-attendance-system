@@ -17,8 +17,9 @@ export interface SetupPinRequest {
 export interface ResetPinRequest {
   currentPassword: string
   newPin: string
-  confirmPin?: string
 }
+
+export type ResetPinWithPasswordRequest = ResetPinRequest
 
 export interface PinStatusResponse {
   readonly hasPin: boolean

@@ -84,12 +84,14 @@ export type DayAttendanceStatus =
   | 'HOLIDAY'
   | 'EXCUSE_PENDING'
 
+export type DynamicAttendanceStatus = DayAttendanceStatus | AttendanceStatus | (string & {})
+
 export interface PersonalAttendanceDayRecord {
   date: string // YYYY-MM-DD
   dayOfWeek?: string
   checkIn?: string | null
   checkOut?: string | null
-  status: DayAttendanceStatus | AttendanceStatus | string
+  status: DynamicAttendanceStatus
   lateMinutes?: number
   workingHours?: number
   shiftCode?: string
@@ -113,7 +115,6 @@ export interface PersonalAttendanceResponse {
 export interface AdjustAttendanceRequest {
   punchTimestamp?: string
   status?: AttendanceStatus
-  lateMinutes?: number
   reason: string
 }
 

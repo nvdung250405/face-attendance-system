@@ -24,9 +24,9 @@ export interface InputProps
 }
 
 const sizeStyles = {
-  sm: 'h-8 text-xs px-2.5',
-  md: 'h-10 text-sm px-3.5',
-  lg: 'h-12 text-base px-4',
+  sm: 'h-8 sm:h-8 max-sm:min-h-[40px] text-xs max-sm:text-sm px-2.5',
+  md: 'h-10 min-h-[44px] text-sm px-3.5',
+  lg: 'h-12 min-h-[48px] text-base px-4',
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(

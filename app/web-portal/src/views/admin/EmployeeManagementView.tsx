@@ -14,8 +14,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus, Search, ScanFace, Lock, Edit2, KeyRound, CheckCircle2, Ban, X, AlertCircle } from 'lucide-react'
 import { Button, Modal, TableSkeleton } from '@/components/common'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
+import { useDebounce } from '@/hooks'
 import { EmployeeDrawer, TemporaryPasswordModal } from '@/components/account'
 import { useAuthStore } from '@/store/authStore'
+import { DEPARTMENTS } from '@/constants/departments'
 import type { EmployeeItem, UserRole, UserStatus } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
 
@@ -24,32 +26,18 @@ interface PendingConfirmAction {
   employee: EmployeeItem
 }
 
-const DEFAULT_DEPARTMENTS = [
-  'Phòng Kỹ thuật & Tích hợp',
-  'Phòng Nhân sự & Đào tạo',
-  'Phòng Kinh doanh & Khách hàng',
-  'Phòng Kế toán - Tài chính',
-  'Phòng Kho vận & Logistics',
-  'Ban Quản Trị Hệ Thống',
-  'Ban Pháp chế & Bảo mật',
-  'Phòng Kỹ thuật',
-  'Phòng Nhân sự',
-  'Phòng Kế toán',
-  'Phòng Kinh doanh',
-  'Ban Giám đốc',
-]
-
 export const EmployeeManagementView: React.FC = () => {
   // Danh sách & Phân trang
   const [employees, setEmployees] = useState<EmployeeItem[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [totalElements, setTotalElements] = useState(0)
   const [page, setPage] = useState(0)
   const pageSize = 10
 
-  // Bộ lọc
+  // Bộ lọc (WEB-F-05: STAB-004 useDebounce 350ms)
   const [keyword, setKeyword] = useState('')
+  const debouncedKeyword = useDebounce(keyword, 350)
   const [departmentFilter, setDepartmentFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [roleFilter, setRoleFilter] = useState<string>('ALL')
@@ -69,67 +57,45 @@ export const EmployeeManagementView: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<PendingConfirmAction | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
+  // Trạng thái tác vụ xác nhận (Reset mật khẩu / Vô hiệu hóa)
+  const isPendingReset = pendingAction?.type === 'RESET_PASSWORD'
+  const isPendingDeactivated = useMemo(() => {
+    if (!pendingAction || pendingAction.type === 'RESET_PASSWORD') return false
+    const st = pendingAction.employee.status
+    return st === 'INACTIVE' || st === 'TERMINATED' || st === 'SUSPENDED'
+  }, [pendingAction])
+
   // Tải danh sách nhân sự
   const fetchEmployees = useCallback(async () => {
-    setIsLoading(true)
-    setErrorMessage(null)
     try {
       const criteria = {
         page,
         size: pageSize,
-        keyword: keyword.trim() || undefined,
+        keyword: debouncedKeyword.trim() || undefined,
         department: departmentFilter !== 'ALL' ? departmentFilter : undefined,
         status: statusFilter !== 'ALL' ? (statusFilter as UserStatus) : undefined,
+        role: roleFilter !== 'ALL' ? (roleFilter as UserRole) : undefined,
       }
       const data = await adminEmployeeService.getEmployees(criteria)
       setEmployees(data.content || [])
       setTotalElements(data.totalElements || 0)
+      setErrorMessage(null)
     } catch (err: unknown) {
       const apiErr = err as NormalizedApiError
       setErrorMessage(apiErr?.message || 'Không thể tải danh mục hồ sơ nhân sự.')
     } finally {
       setIsLoading(false)
     }
-  }, [page, keyword, departmentFilter, statusFilter])
+  }, [page, debouncedKeyword, departmentFilter, statusFilter, roleFilter])
 
   useEffect(() => {
-    let active = true
-    const run = async () => {
-      setIsLoading(true)
-      setErrorMessage(null)
-      try {
-        const criteria = {
-          page,
-          size: pageSize,
-          keyword: keyword.trim() || undefined,
-          department: departmentFilter !== 'ALL' ? departmentFilter : undefined,
-          status: statusFilter !== 'ALL' ? (statusFilter as UserStatus) : undefined,
-        }
-        const data = await adminEmployeeService.getEmployees(criteria)
-        if (active) {
-          setEmployees(data.content || [])
-          setTotalElements(data.totalElements || 0)
-        }
-      } catch (err: unknown) {
-        if (active) {
-          const apiErr = err as NormalizedApiError
-          setErrorMessage(apiErr?.message || 'Không thể tải danh mục hồ sơ nhân sự.')
-        }
-      } finally {
-        if (active) {
-          setIsLoading(false)
-        }
-      }
-    }
-    void run()
-    return () => {
-      active = false
-    }
-  }, [page, keyword, departmentFilter, statusFilter])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchEmployees()
+  }, [fetchEmployees])
 
   // Danh sách phòng ban tổng hợp (chuẩn hóa cùng dữ liệu thực tế)
   const availableDepartments = useMemo(() => {
-    const set = new Set(DEFAULT_DEPARTMENTS)
+    const set = new Set<string>(DEPARTMENTS)
     employees.forEach((emp) => {
       if (emp.department && emp.department !== '—') {
         set.add(emp.department)
@@ -156,12 +122,6 @@ export const EmployeeManagementView: React.FC = () => {
     setRoleFilter('ALL')
     setPage(0)
   }
-
-  // Lọc thêm theo role ở client nếu backend chưa hỗ trợ query role
-  const displayedEmployees = useMemo(() => {
-    if (roleFilter === 'ALL') return employees
-    return employees.filter((emp) => emp.role === roleFilter)
-  }, [employees, roleFilter])
 
   // Mở Drawer tạo mới
   const handleOpenCreate = () => {
@@ -475,7 +435,7 @@ export const EmployeeManagementView: React.FC = () => {
                   hasActionColumn={true}
                   ariaLabel="Đang tải danh sách nhân sự..."
                 />
-              ) : displayedEmployees.length === 0 ? (
+              ) : employees.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-text-secondary">
                     <p className="text-base font-medium">Không tìm thấy hồ sơ nhân sự nào</p>
@@ -483,8 +443,9 @@ export const EmployeeManagementView: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                displayedEmployees.map((emp) => {
+                employees.map((emp) => {
                   const isBusy = actionLoadingId === emp.id
+                  const isDeactivated = emp.status === 'INACTIVE' || emp.status === 'TERMINATED' || emp.status === 'SUSPENDED'
                   return (
                     <tr
                       key={emp.id}
@@ -571,29 +532,24 @@ export const EmployeeManagementView: React.FC = () => {
                           </button>
 
                           {/* Nút đổi trạng thái */}
-                          {(() => {
-                            const isDeactivated = emp.status === 'INACTIVE' || emp.status === 'TERMINATED' || emp.status === 'SUSPENDED'
-                            return (
-                              <button
-                                type="button"
-                                title={isDeactivated ? 'Kích hoạt lại' : 'Vô hiệu hóa'}
-                                aria-label={`${isDeactivated ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
-                                onClick={() => handleToggleStatus(emp)}
-                                disabled={isBusy}
-                                className={`p-2 rounded-lg transition-colors ${
-                                  isDeactivated
-                                    ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
-                                    : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
-                                }`}
-                              >
-                                {isDeactivated ? (
-                                  <CheckCircle2 size={16} strokeWidth={2} />
-                                ) : (
-                                  <Ban size={16} strokeWidth={2} />
-                                )}
-                              </button>
-                            )
-                          })()}
+                          <button
+                            type="button"
+                            title={isDeactivated ? 'Kích hoạt lại' : 'Vô hiệu hóa'}
+                            aria-label={`${isDeactivated ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
+                            onClick={() => handleToggleStatus(emp)}
+                            disabled={isBusy}
+                            className={`p-2 rounded-lg transition-colors ${
+                              isDeactivated
+                                ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
+                                : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+                            }`}
+                          >
+                            {isDeactivated ? (
+                              <CheckCircle2 size={16} strokeWidth={2} />
+                            ) : (
+                              <Ban size={16} strokeWidth={2} />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -607,7 +563,7 @@ export const EmployeeManagementView: React.FC = () => {
         {/* ── Thanh Phân trang ── */}
         <div className="p-4 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div>
-            Hiển thị <span className="font-semibold text-slate-900">{displayedEmployees.length}</span> /{' '}
+            Hiển thị <span className="font-semibold text-slate-900">{employees.length}</span> /{' '}
             <span className="font-semibold text-slate-900">{totalElements}</span> nhân sự
           </div>
           <div className="flex items-center gap-2">
@@ -625,7 +581,7 @@ export const EmployeeManagementView: React.FC = () => {
               type="button"
               variant="secondary"
               size="sm"
-              disabled={displayedEmployees.length < pageSize || (page + 1) * pageSize >= totalElements || isLoading}
+              disabled={employees.length < pageSize || (page + 1) * pageSize >= totalElements || isLoading}
               onClick={() => setPage((p) => p + 1)}
             >
               Sau
@@ -669,22 +625,18 @@ export const EmployeeManagementView: React.FC = () => {
           }}
           dataTestId="confirm-action-modal"
           title={
-            pendingAction.type === 'RESET_PASSWORD'
+            isPendingReset
               ? 'Cấp lại mật khẩu tạm thời'
-              : (pendingAction.employee.status === 'INACTIVE' ||
-                 pendingAction.employee.status === 'TERMINATED' ||
-                 pendingAction.employee.status === 'SUSPENDED')
+              : isPendingDeactivated
               ? 'Kích hoạt lại tài khoản'
               : 'Vô hiệu hóa tài khoản'
           }
           icon={
-            pendingAction.type === 'RESET_PASSWORD' ? (
+            isPendingReset ? (
               <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
                 <KeyRound size={20} strokeWidth={2} />
               </div>
-            ) : (pendingAction.employee.status === 'INACTIVE' ||
-                 pendingAction.employee.status === 'TERMINATED' ||
-                 pendingAction.employee.status === 'SUSPENDED') ? (
+            ) : isPendingDeactivated ? (
               <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
                 <CheckCircle2 size={20} strokeWidth={2} />
               </div>
@@ -712,22 +664,18 @@ export const EmployeeManagementView: React.FC = () => {
                 type="button"
                 data-testid="btn-confirm-action"
                 variant={
-                  pendingAction.type === 'RESET_PASSWORD'
+                  isPendingReset
                     ? 'primary'
-                    : (pendingAction.employee.status === 'INACTIVE' ||
-                       pendingAction.employee.status === 'TERMINATED' ||
-                       pendingAction.employee.status === 'SUSPENDED')
+                    : isPendingDeactivated
                     ? 'primary'
                     : 'danger'
                 }
                 isLoading={Boolean(actionLoadingId)}
                 onClick={handleConfirmAction}
               >
-                {pendingAction.type === 'RESET_PASSWORD'
+                {isPendingReset
                   ? 'Cấp mật khẩu'
-                  : (pendingAction.employee.status === 'INACTIVE' ||
-                     pendingAction.employee.status === 'TERMINATED' ||
-                     pendingAction.employee.status === 'SUSPENDED')
+                  : isPendingDeactivated
                   ? 'Kích hoạt'
                   : 'Vô hiệu hóa'}
               </Button>
@@ -740,16 +688,14 @@ export const EmployeeManagementView: React.FC = () => {
                 {actionError}
               </div>
             )}
-            {pendingAction.type === 'RESET_PASSWORD' ? (
+            {isPendingReset ? (
               <p>
                 Bạn có chắc chắn muốn cấp lại mật khẩu tạm thời cho nhân viên{' '}
                 <strong className="text-slate-900">{pendingAction.employee.fullName}</strong> (
                 <span className="font-mono text-slate-800">{pendingAction.employee.employeeCode}</span>)?
                 Toàn bộ phiên làm việc hiện tại của nhân sự này sẽ bị thu hồi và một mật khẩu tạm mới sẽ được sinh ra.
               </p>
-            ) : (pendingAction.employee.status === 'INACTIVE' ||
-                 pendingAction.employee.status === 'TERMINATED' ||
-                 pendingAction.employee.status === 'SUSPENDED') ? (
+            ) : isPendingDeactivated ? (
               <p>
                 Bạn có chắc chắn muốn kích hoạt lại tài khoản của nhân viên{' '}
                 <strong className="text-slate-900">{pendingAction.employee.fullName}</strong> (

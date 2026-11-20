@@ -1,5 +1,3 @@
-/**
- * Xuất khẩu các thành phần Kiosk Module
- */
-
 export * from './KioskRegistrationModal'
+export * from './ReissuedTokenDialog'
+export * from './KioskKpiCards'

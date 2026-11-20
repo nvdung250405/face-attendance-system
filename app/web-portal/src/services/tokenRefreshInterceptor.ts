@@ -13,10 +13,9 @@
 
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse, AuthSession, TokenResponse } from '@/types'
-import { safeLocalStorage } from './storage'
-import { AUTH_STORAGE_KEY } from './apiClient'
+import { safeLocalStorage, AUTH_STORAGE_KEY } from './storage'
 import { useAuthStore } from '@/store/authStore'
-import { stompClientService } from './stompClientService'
+import { logoutService } from './logoutService'
 
 interface QueueItem {
   resolve: (token: string) => void
@@ -82,13 +81,8 @@ export function attachTokenRefreshInterceptor(
   const refreshUrl = options.refreshUrl || '/api/v1/auth/refresh'
 
   const handleSessionExpired = () => {
-    void stompClientService.deactivate().catch(() => {})
-    if (options.onSessionExpired) {
-      options.onSessionExpired()
-    } else {
-      safeLocalStorage.removeItem(AUTH_STORAGE_KEY)
-      useAuthStore.getState().clearSession()
-    }
+    logoutService.clearLocalSession()
+    options.onSessionExpired?.()
   }
 
   return instance.interceptors.response.use(

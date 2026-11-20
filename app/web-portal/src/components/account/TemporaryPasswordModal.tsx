@@ -8,7 +8,7 @@
  * 3. Hỗ trợ nút sao chép vào bộ nhớ tạm với phản hồi thị giác rõ ràng.
  */
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { KeyRound, AlertTriangle, Check, Copy } from 'lucide-react'
 import {
   Dialog,
@@ -35,6 +35,15 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
   onClose,
 }) => {
   const [copied, setCopied] = useState(false)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current)
+      }
+    }
+  }, [])
 
   if (!isOpen || !temporaryPassword) {
     return null
@@ -45,12 +54,14 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(temporaryPassword)
       }
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
     } catch {
       // Fallback nếu clipboard API bị chặn
+    } finally {
       setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current)
+      }
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2500)
     }
   }
 
@@ -63,7 +74,7 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
     >
       <DialogContent
         data-testid="temporary-password-modal"
-        className="max-w-md p-6"
+        className="sm:max-w-md sm:p-6"
       >
         {/* Tiêu đề & Icon */}
         <DialogHeader>

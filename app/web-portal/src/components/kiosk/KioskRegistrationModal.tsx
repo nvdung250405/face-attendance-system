@@ -10,11 +10,12 @@
  * 4. Hiển thị Secret Token một lần duy nhất kèm nút sao chép và cảnh báo tiêu hủy khi đóng modal.
  */
 
-import React, { useState } from 'react'
-import { Monitor, X, AlertTriangle, Check, Copy } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Monitor, X, AlertTriangle, Check, Copy, Sparkles, ChevronDown } from 'lucide-react'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { previewKioskId } from '@/utils/codePreview'
 import type { KioskItemResponse } from '@/types'
 
 export interface KioskRegistrationModalProps {
@@ -27,9 +28,14 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { setSecretToken, clearSecretToken } = useKioskRegistryStore()
+  const setSecretToken = useKioskRegistryStore((s) => s.setSecretToken)
+  const clearSecretToken = useKioskRegistryStore((s) => s.clearSecretToken)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const [step, setStep] = useState<'FORM' | 'TOKEN_DISPLAY'>('FORM')
   const [kioskId, setKioskId] = useState('')
+  const [showCustomKioskId, setShowCustomKioskId] = useState(false)
+  const [createdKioskId, setCreatedKioskId] = useState('')
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
   const [createdSecretToken, setCreatedSecretToken] = useState<string | null>(null)
@@ -37,9 +43,15 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!kioskId.trim() || !name.trim() || !location.trim()) {
+    if (!name.trim() || !location.trim()) {
       setErrorMessage('Vui lòng điền đầy đủ các thông tin bắt buộc.')
       return
     }
@@ -49,13 +61,15 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
       setErrorMessage(null)
 
       const result = await complianceAdminService.registerKiosk({
-        kioskId: kioskId.trim(),
+        kioskId: kioskId.trim() || undefined,
         name: name.trim(),
         location: location.trim(),
       })
 
+      const regId = result.kiosk.kioskId || kioskId.trim()
+      setCreatedKioskId(regId)
       // Lưu Secret Token duy nhất vào RAM
-      setSecretToken(result.kiosk.kioskId, result.secretToken)
+      setSecretToken(regId, result.secretToken)
       setCreatedSecretToken(result.secretToken)
       setStep('TOKEN_DISPLAY')
       onSuccess?.(result.kiosk)
@@ -71,14 +85,16 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
     if (createdSecretToken) {
       navigator.clipboard.writeText(createdSecretToken)
       setIsCopied(true)
-      setTimeout(() => setIsCopied(false), 2000)
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+      copyTimerRef.current = setTimeout(() => setIsCopied(false), 2000)
     }
   }
 
   const handleClose = () => {
-    if (kioskId) {
+    const idToClear = createdKioskId || kioskId
+    if (idToClear) {
       // Tiêu hủy Secret Token khỏi RAM khi đóng
-      clearSecretToken(kioskId)
+      clearSecretToken(idToClear)
     }
     onClose()
   }
@@ -132,23 +148,6 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
           {step === 'FORM' ? (
             <form id="register-kiosk-form" onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="kiosk-id-input" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">
-                  Mã Trạm Kiosk (Kiosk ID) *
-                </label>
-                <input
-                  type="text"
-                  id="kiosk-id-input"
-                  data-testid="kiosk-id-input"
-                  value={kioskId}
-                  onChange={(e) => setKioskId(e.target.value.toUpperCase())}
-                  placeholder="Ví dụ: KIOSK-HN-03"
-                  className="input-base font-mono font-medium"
-                  required
-                />
-                <p className="text-[11px] text-text-secondary mt-1">Định danh duy nhất của trạm Kiosk trong hệ thống</p>
-              </div>
-
-              <div>
                 <label htmlFor="kiosk-name-input" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">
                   Tên Trạm Kiosk *
                 </label>
@@ -179,6 +178,54 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
                   required
                 />
               </div>
+
+              {/* Live Preview Badge */}
+              <div
+                data-testid="kiosk-id-preview"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200"
+              >
+                <Sparkles size={16} className="text-brand-primary shrink-0" />
+                <span className="text-xs text-text-secondary">Mã trạm dự kiến sinh tự động:</span>
+                <span className="text-xs font-mono font-bold text-brand-primary">
+                  {previewKioskId(location)}
+                </span>
+              </div>
+
+              {/* Collapsible toggle for custom kioskId */}
+              <div>
+                <button
+                  type="button"
+                  data-testid="toggle-custom-kiosk-id"
+                  onClick={() => {
+                    setShowCustomKioskId((prev) => {
+                      const next = !prev
+                      if (!next) setKioskId('')
+                      return next
+                    })
+                  }}
+                  className="text-xs text-brand-primary hover:text-brand-hover font-medium flex items-center gap-1 transition-colors"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showCustomKioskId ? 'rotate-180' : ''}`} />
+                  <span>Tùy chỉnh mã trạm (nâng cao)</span>
+                </button>
+              </div>
+
+              {showCustomKioskId && (
+                <div className="space-y-1 animate-in fade-in duration-150">
+                  <label htmlFor="kiosk-id-input" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">
+                    Mã Trạm Kiosk (Kiosk ID) thủ công
+                  </label>
+                  <input
+                    type="text"
+                    id="kiosk-id-input"
+                    data-testid="kiosk-id-input"
+                    value={kioskId}
+                    onChange={(e) => setKioskId(e.target.value.toUpperCase())}
+                    placeholder="Để trống để hệ thống tự sinh mã (ví dụ: KSK-XXXX)"
+                    className="input-base font-mono font-medium"
+                  />
+                </div>
+              )}
             </form>
           ) : (
             <div className="space-y-4">
@@ -196,7 +243,7 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                  Secret Token của trạm <span className="font-mono text-text-primary">{kioskId}</span>
+                  Secret Token của trạm <span className="font-mono text-text-primary">{createdKioskId || kioskId}</span>
                 </label>
                 <div className="p-3 bg-slate-100 rounded-xl border border-border-subtle flex items-center justify-between gap-3">
                   <code
@@ -245,7 +292,7 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
                 type="submit"
                 form="register-kiosk-form"
                 data-testid="submit-register-kiosk-btn"
-                disabled={isSubmitting || !kioskId.trim() || !name.trim()}
+                disabled={isSubmitting || !name.trim() || !location.trim()}
                 className="btn-primary flex items-center gap-2 text-sm disabled:opacity-50"
               >
                 {isSubmitting ? (
@@ -289,7 +336,7 @@ export const KioskRegistrationModal: React.FC<KioskRegistrationModalProps> = (pr
         usePortal={false}
         className="p-0 max-w-lg border-0 bg-transparent shadow-none"
       >
-        <KioskRegistrationModalContent {...props} />
+        <KioskRegistrationModalContent key={props.isOpen ? 'open' : 'closed'} {...props} />
       </DialogContent>
     </Dialog>
   )

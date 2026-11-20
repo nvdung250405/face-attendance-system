@@ -74,16 +74,19 @@ describe('Zustand Auth Store (TASK-WEB-016)', () => {
   })
 
   describe('setSession & clearSession', () => {
-    it('lưu phiên vào state và LocalStorage khi setSession', () => {
+    it('lưu phiên vào state và LocalStorage khi setSession (SEC-002: accessToken lưu trong RAM)', () => {
       useAuthStore.getState().setSession(sampleSession)
       const state = useAuthStore.getState()
 
       expect(state.isAuthenticated).toBe(true)
       expect(state.user?.fullName).toBe('Ngô Văn Dũng')
+      expect(state.session?.accessToken).toBe('test-access-token-123')
 
       const stored = localStorage.getItem(AUTH_STORAGE_KEY)
       expect(stored).not.toBeNull()
-      expect(JSON.parse(stored!).accessToken).toBe('test-access-token-123')
+      // SEC-002: accessToken is stored in-memory (Zustand RAM) and excluded from localStorage
+      expect(JSON.parse(stored!).accessToken).toBeUndefined()
+      expect(JSON.parse(stored!).refreshToken).toBe('test-refresh-token-456')
     })
 
     it('xóa sạch state và LocalStorage khi clearSession (Logout)', () => {

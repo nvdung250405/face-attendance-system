@@ -11,6 +11,7 @@
 
 import { QueryClient } from '@tanstack/react-query'
 import type { AttendanceRecord, AttendanceQueryParams, AttendanceStats } from '@/types'
+import { formatLocalDateISO } from '@/utils/date'
 
 /**
  * Chính sách thời gian lưu và dọn rác bộ đệm (DD-WEB-006)
@@ -109,13 +110,9 @@ export const queryClient = createQueryClient()
  */
 /**
  * Trả về ngày hôm nay theo múi giờ địa phương (YYYY-MM-DD), tránh lệch ngày khi dùng toISOString (UTC).
+ * Tái sử dụng formatLocalDateISO từ utils/date (ARCH-003, ARCH-18).
  */
-export function getLocalDateString(d = new Date()): string {
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+export const getLocalDateString = formatLocalDateISO
 
 export function handleLiveAttendanceEvent(
   newRecord: AttendanceRecord,
@@ -141,6 +138,6 @@ export function handleLiveAttendanceEvent(
     }
   })
 
-  // 3. Đánh dấu danh sách lịch sử đã cũ (Stale)
-  qc.invalidateQueries({ queryKey: attendanceKeys.all })
+  // 3. Đánh dấu danh sách lịch sử đã cũ (Stale) để refetch khi cần, không xóa nhầm cache live và stats
+  qc.invalidateQueries({ queryKey: attendanceKeys.history() })
 }

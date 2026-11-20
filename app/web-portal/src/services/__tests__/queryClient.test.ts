@@ -208,7 +208,7 @@ describe('TanStack Query & Cache Factory (TASK-WEB-007)', () => {
 
       handleLiveAttendanceEvent(mockRecord1, qc, '2026-10-12')
 
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: attendanceKeys.all })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: attendanceKeys.history() })
     })
   })
 })

@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, MessageSquare, Check, AlertCircle, Send } from 'lucide-react'
 import { dataSubjectService } from '@/services/dataSubjectService'
+import { formatDateTime } from '@/utils/date'
 import type { DataRequestType, DataSubjectRequestItem, DataRequestStatus } from '@/types'
 
 const REQUEST_TYPE_LABELS: Record<DataRequestType, { label: string; desc: string }> = {
@@ -51,20 +52,7 @@ const STATUS_CONFIG: Record<DataRequestStatus, { label: string; className: strin
   },
 }
 
-function formatDate(isoString: string): string {
-  try {
-    const d = new Date(isoString)
-    return d.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return isoString
-  }
-}
+const formatDate = formatDateTime
 
 export const EmployeeDataRequestsView: React.FC = () => {
   const [requests, setRequests] = useState<DataSubjectRequestItem[]>([])
@@ -93,26 +81,9 @@ export const EmployeeDataRequestsView: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    let ignore = false
-    dataSubjectService
-      .getEmployeeDataRequests()
-      .then((data) => {
-        if (!ignore) {
-          setRequests(data)
-          setIsLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          const error = err as { message?: string }
-          setErrorMessage(error.message || 'Không thể tải danh sách yêu cầu dữ liệu.')
-          setIsLoading(false)
-        }
-      })
-    return () => {
-      ignore = true
-    }
-  }, [])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadRequests()
+  }, [loadRequests])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -322,22 +293,24 @@ export const EmployeeDataRequestsView: React.FC = () => {
                           {REQUEST_TYPE_LABELS[item.requestType]?.label || item.requestType}
                         </span>
                       </td>
-                      <td className="py-3 px-4 max-w-xs truncate text-text-secondary text-xs" title={item.details}>
-                        {item.details}
+                      <td className="py-3 px-4 max-w-xs truncate text-text-secondary text-xs" title={item.details || item.reason}>
+                        {item.details || item.reason || '—'}
                       </td>
                       <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
-                        {formatDate(item.submittedAt)}
+                        {formatDate(item.submittedAt || item.createdAt || item.requestedAt)}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span className={statusInfo.className}>{statusInfo.label}</span>
                       </td>
                       <td className="py-3 px-4 text-xs max-w-sm">
-                        {item.adminNote ? (
+                        {item.adminNote || item.responseSummary ? (
                           <div className="space-y-0.5">
-                            <p className="text-text-primary font-medium">{item.adminNote}</p>
-                            {item.handledAt && (
+                            <p className="text-text-primary font-medium">
+                              {item.adminNote || item.responseSummary}
+                            </p>
+                            {(item.handledAt || item.completedAt) && (
                               <p className="text-[11px] text-text-secondary">
-                                Xử lý ngày: {formatDate(item.handledAt)} {item.handledBy ? `bởi ${item.handledBy}` : ''}
+                                Xử lý ngày: {formatDate(item.handledAt || item.completedAt)} {item.handledBy ? `bởi ${item.handledBy}` : ''}
                               </p>
                             )}
                           </div>

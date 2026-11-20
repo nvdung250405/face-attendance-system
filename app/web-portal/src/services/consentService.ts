@@ -54,9 +54,11 @@ export class ConsentService {
    * Gửi yêu cầu ký cam kết điện tử lên máy chủ (POST /api/v1/employee/consent)
    */
   async submitConsent(request?: Partial<ConsentRequest>): Promise<ConsentResult> {
+    const isAgreedValue = request?.isAgreed ?? request?.agreed ?? request?.accepted ?? true
     const payload: ConsentRequest = {
-      agreed: request?.agreed ?? request?.accepted ?? true,
-      accepted: request?.accepted ?? request?.agreed ?? true,
+      agreed: isAgreedValue,
+      isAgreed: isAgreedValue,
+      accepted: isAgreedValue,
       consentVersion: request?.consentVersion ?? 'v1.0',
       consentTimestamp: request?.consentTimestamp ?? new Date().toISOString(),
     }

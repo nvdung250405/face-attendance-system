@@ -9,7 +9,7 @@
  * - Tự động hủy đăng ký khi unmount, bảo vệ chống rò rỉ bộ nhớ.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { IMessage } from '@stomp/stompjs'
 import type { AttendanceRecord } from '@/types'
@@ -51,6 +51,11 @@ export function useLiveAttendance(options: UseLiveAttendanceOptions = {}): UseLi
   const [latestEvents, setLatestEvents] = useState<AttendanceRecord[]>([])
   const [isConnected, setIsConnected] = useState<boolean>(service.isConnected())
 
+  const onRecordReceivedRef = useRef(onRecordReceived)
+  useEffect(() => {
+    onRecordReceivedRef.current = onRecordReceived
+  }, [onRecordReceived])
+
   const clearEvents = useCallback(() => {
     setLatestEvents([])
   }, [])
@@ -79,7 +84,7 @@ export function useLiveAttendance(options: UseLiveAttendanceOptions = {}): UseLi
         handleLiveAttendanceEvent(record, queryClient)
 
         // Kích hoạt callback nếu có
-        onRecordReceived?.(record)
+        onRecordReceivedRef.current?.(record)
       } catch (err) {
         console.error('[useLiveAttendance] Failed to parse message body:', err)
       }
@@ -90,7 +95,7 @@ export function useLiveAttendance(options: UseLiveAttendanceOptions = {}): UseLi
       subscription.unsubscribe()
       unbindStatus()
     }
-  }, [service, autoConnect, maxRecords, queryClient, onRecordReceived])
+  }, [service, autoConnect, maxRecords, queryClient])
 
   return {
     latestEvents,

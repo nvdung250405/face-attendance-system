@@ -33,60 +33,13 @@ import {
   Loader2,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { ConfettiEffect } from '@/components/common'
 import { consentService } from '@/services/consentService'
 import { useEnrollmentStatus } from '@/services/hooks/useEnrollmentStatus'
 import { useAuthStore } from '@/store/authStore'
 import type { ConsentResult } from '@/types'
 
 export type ConsentModalStep = 'TERMS' | 'OTP_DISPLAY' | 'SUCCESS'
-
-const CONFETTI_COLORS = [
-  '#4f46e5', // indigo
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#ef4444', // rose
-  '#06b6d4', // cyan
-  '#8b5cf6', // purple
-]
-
-export const ConfettiEffect: React.FC = () => {
-  const pieces = useMemo(() => {
-    return Array.from({ length: 36 }).map((_, i) => ({
-      id: i,
-      left: `${(i * 2.8 + (i % 5) * 1.5) % 96}%`,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      delay: `${(i % 6) * 0.15}s`,
-      size:
-        i % 3 === 0
-          ? 'w-2 h-4 rounded-xs'
-          : i % 3 === 1
-            ? 'w-2.5 h-2.5 rounded-full'
-            : 'w-3 h-2 rounded-xs',
-      duration: `${1.8 + (i % 4) * 0.25}s`,
-    }))
-  }, [])
-
-  return (
-    <div
-      data-testid="confetti-effect"
-      aria-hidden="true"
-      className="absolute inset-0 pointer-events-none overflow-hidden z-20"
-    >
-      {pieces.map((p) => (
-        <span
-          key={p.id}
-          className={`absolute top-0 opacity-0 animate-[confettiDrop_2.5s_ease-out_forwards] ${p.size}`}
-          style={{
-            left: p.left,
-            backgroundColor: p.color,
-            animationDelay: p.delay,
-            animationDuration: p.duration,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
 
 export interface ConsentModalProps {
   isOpen: boolean
@@ -147,6 +100,9 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
 
   const termsContainerRef = useRef<HTMLDivElement>(null)
   const modalCardRef = useRef<HTMLDivElement>(null)
+  const lastScrollTimeRef = useRef(0)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Lắng nghe WebSocket STOMP kích hoạt khuôn mặt tại Kiosk
   const activeOtp = effectiveOtpData?.otp ?? null
@@ -170,12 +126,27 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
   useEffect(() => {
     if (step === 'SUCCESS') {
       reset()
-      const timer = setTimeout(() => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+      successTimerRef.current = setTimeout(() => {
         onClose()
       }, 3000)
-      return () => clearTimeout(timer)
+      return () => {
+        if (successTimerRef.current) clearTimeout(successTimerRef.current)
+      }
     }
   }, [step, reset, onClose])
+
+  // Cleanup timers khi unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current)
+      }
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current)
+      }
+    }
+  }, [])
 
   // Hiển thị bước hiện tại (step SUCCESS thì ưu tiên hiển thị SUCCESS)
   const currentStep: ConsentModalStep =
@@ -185,15 +156,19 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
         ? 'OTP_DISPLAY'
         : step
 
-  // Theo dõi sự kiện cuộn văn bản điều khoản (DD-WEB-015)
-  const handleTermsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  // Theo dõi sự kiện cuộn văn bản điều khoản có throttling (DD-WEB-015, EXP3-07)
+  const handleTermsScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     if (hasScrolledToBottom) return
+    const now = Date.now()
+    if (now - lastScrollTimeRef.current < 40) return
+    lastScrollTimeRef.current = now
+
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
-    // Cho phép dung sai 8px
-    if (scrollTop + clientHeight >= scrollHeight - 8) {
+    // Cho phép dung sai 10px khi cuộn tới cuối
+    if (scrollHeight > 0 && scrollTop + clientHeight >= scrollHeight - 10) {
       setHasScrolledToBottom(true)
     }
-  }
+  }, [hasScrolledToBottom])
 
   // Xử lý ký cam kết
   const handleSignConsent = async () => {
@@ -225,7 +200,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
     }
   }
 
-  // Sao chép mã OTP vào Clipboard
+  // Sao chép mã OTP vào Clipboard có timer cleanup
   const handleCopyOtp = useCallback(async () => {
     if (!effectiveOtpData?.otp) return
     try {
@@ -233,11 +208,13 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
         await navigator.clipboard.writeText(effectiveOtpData.otp)
       }
       setIsCopied(true)
-      setTimeout(() => setIsCopied(false), 2000)
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+      copyTimerRef.current = setTimeout(() => setIsCopied(false), 2000)
     } catch {
       // Fallback
       setIsCopied(true)
-      setTimeout(() => setIsCopied(false), 2000)
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+      copyTimerRef.current = setTimeout(() => setIsCopied(false), 2000)
     }
   }, [effectiveOtpData])
 

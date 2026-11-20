@@ -13,12 +13,15 @@ import type { AuthSession } from '@/types'
 
 /**
  * Các khóa lưu trữ chuẩn hóa của Web Portal
+ * (SEC-002: AUTH_SESSION lưu trữ refreshToken và metadata phiên; accessToken lưu trong Zustand RAM)
  */
 export const STORAGE_KEYS = {
   AUTH_SESSION: 'fas_auth_session',
   UI_PREFS: 'fas_ui_prefs',
   CONSENT_SESSION: 'fas_consent_session',
 } as const
+
+export const AUTH_STORAGE_KEY = STORAGE_KEYS.AUTH_SESSION
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS] | (string & {})
 
@@ -116,6 +119,7 @@ export class SafeStorage {
    * Định dạng khóa với tiền tố chuẩn hóa (tránh nhân đôi tiền tố nếu khóa đã có sẵn)
    */
   formatKey(key: string): string {
+    if (!key || typeof key !== 'string') return ''
     if (!this.prefix) return key
     if (key.startsWith(this.prefix)) return key
     return `${this.prefix}${key}`

@@ -1,7 +1,7 @@
-import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
-import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/utils/cn'
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/utils/cn";
 
 /**
  * Button Component chuẩn hóa theo FAS Design Tokens (Indigo Clean SaaS) & UI States:
@@ -12,58 +12,58 @@ import { cn } from '@/utils/cn'
  * 4. Disabled (disabled, mờ 50%, chặn tương tác, con trỏ not-allowed)
  */
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-all duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-all duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed select-none cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          'bg-brand-primary text-white shadow-xs hover:bg-brand-hover active:scale-[0.98]',
+          "bg-brand-primary text-white shadow-xs hover:bg-brand-hover active:bg-brand-hover/90",
         primary:
-          'bg-brand-primary text-white hover:bg-brand-hover focus-visible:ring-brand-primary shadow-xs border-transparent',
+          "bg-brand-primary text-white hover:bg-brand-hover focus-visible:ring-brand-primary shadow-xs border-transparent",
         destructive:
-          'bg-status-danger text-white shadow-xs hover:bg-rose-700 active:scale-[0.98]',
+          "bg-status-danger text-white shadow-xs hover:bg-rose-700 active:bg-rose-800",
         danger:
-          'bg-status-danger text-white hover:bg-rose-700 focus-visible:ring-status-danger shadow-xs border-transparent',
+          "bg-status-danger text-white hover:bg-rose-700 focus-visible:ring-status-danger shadow-xs border-transparent",
         outline:
-          'border border-slate-300 bg-white text-slate-700 font-semibold shadow-xs hover:bg-slate-50 hover:border-slate-400 hover:text-slate-900 active:scale-[0.98]',
+          "border border-slate-300 bg-white text-slate-700 font-semibold shadow-xs hover:bg-slate-50 hover:border-slate-400 hover:text-slate-900 active:bg-slate-100",
         secondary:
-          'border border-slate-300 bg-slate-50/80 text-slate-700 font-semibold shadow-xs hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 active:bg-slate-200 active:scale-[0.98]',
+          "border border-slate-300 bg-slate-50/80 text-slate-700 font-semibold shadow-xs hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 active:bg-slate-200",
         ghost:
-          'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]',
-        link:
-          'text-brand-primary underline-offset-4 hover:underline',
+          "text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200",
+        link: "text-brand-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: 'h-10 px-4 py-2 text-sm',
-        sm: 'h-8 rounded-lg px-3 text-xs',
-        md: 'h-10 px-4 py-2 text-sm',
-        lg: 'h-11 rounded-lg px-6 text-base',
-        icon: 'h-9 w-9 p-0',
+        default: "h-10 min-h-[44px] px-4 py-2 text-sm",
+        sm: "h-8 sm:h-8 max-sm:min-h-[40px] max-sm:px-3.5 rounded-lg px-3 text-xs",
+        md: "h-10 min-h-[44px] px-4 py-2 text-sm",
+        lg: "h-11 min-h-[44px] rounded-lg px-6 text-base",
+        icon: "size-9 max-sm:size-11 p-0 flex items-center justify-center shrink-0",
       },
       isError: {
-        true: 'border-status-danger bg-status-danger-bg text-status-danger hover:bg-rose-100 focus-visible:ring-status-danger',
-        false: '',
+        true: "border-status-danger bg-status-danger-bg text-status-danger hover:bg-rose-100 focus-visible:ring-status-danger",
+        false: "",
       },
     },
     defaultVariants: {
-      variant: 'default',
-      size: 'default',
+      variant: "default",
+      size: "default",
       isError: false,
     },
-  }
-)
+  },
+);
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean
-  isLoading?: boolean
-  loadingText?: React.ReactNode
-  isError?: boolean
-  hasError?: boolean
-  error?: boolean | string
-  leftIcon?: React.ReactNode
-  rightIcon?: React.ReactNode
+  asChild?: boolean;
+  isLoading?: boolean;
+  loadingText?: React.ReactNode;
+  isError?: boolean;
+  hasError?: boolean;
+  error?: boolean | string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -84,11 +84,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const isErr = Boolean(isError || hasError || error)
-    const isDisabled = Boolean(disabled || isLoading)
-    const Comp = asChild ? Slot : 'button'
+    const isErr = Boolean(isError || hasError || error);
+    const isDisabled = Boolean(disabled || isLoading);
+    const Comp = asChild ? Slot : "button";
 
     return (
       <Comp
@@ -99,13 +99,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             size,
             isError: isErr,
             className,
-          })
+          }),
         )}
         ref={ref}
         disabled={isDisabled}
-        aria-busy={isLoading ? 'true' : undefined}
-        aria-disabled={isDisabled ? 'true' : undefined}
-        aria-invalid={isErr ? 'true' : undefined}
+        aria-busy={isLoading ? "true" : undefined}
+        aria-disabled={isDisabled ? "true" : undefined}
+        aria-invalid={isErr ? "true" : undefined}
         {...props}
       >
         {isLoading ? (
@@ -141,10 +141,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         )}
       </Comp>
-    )
-  }
-)
-Button.displayName = 'Button'
+    );
+  },
+);
+Button.displayName = "Button";
 
-export { Button, buttonVariants }
-
+export { Button, buttonVariants };

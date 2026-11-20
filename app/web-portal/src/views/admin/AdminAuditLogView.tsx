@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/common'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { complianceAdminService } from '@/services/complianceAdminService'
+import { formatDateTime } from '@/utils/date'
 import type {
   AuditLogItem,
   DpoConsentAuditItem,
@@ -31,22 +32,6 @@ import type {
 } from '@/types'
 
 export type ComplianceTab = 'AUDIT_LOGS' | 'DPO_CONSENTS' | 'RETENTION_SCHEDULE'
-
-function formatDateTime(isoString?: string | null): string {
-  if (!isoString) return '—'
-  try {
-    const d = new Date(isoString)
-    return d.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return isoString
-  }
-}
 
 export const AdminAuditLogView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ComplianceTab>('AUDIT_LOGS')
@@ -119,27 +104,9 @@ export const AdminAuditLogView: React.FC = () => {
 
   // Tải dữ liệu ban đầu
   useEffect(() => {
-    let ignore = false
-    complianceAdminService
-      .getAuditLogs()
-      .then((data) => {
-        if (!ignore) {
-          setAuditLogs(data.content)
-          setAuditTotal(data.totalElements)
-          setIsAuditLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          const error = err as { message?: string }
-          setErrorMessage(error.message || 'Không thể tải nhật ký kiểm toán.')
-          setIsAuditLoading(false)
-        }
-      })
-    return () => {
-      ignore = true
-    }
-  }, [])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadAuditLogs()
+  }, [loadAuditLogs])
 
   const handleTabChange = (tab: ComplianceTab) => {
     setActiveTab(tab)
@@ -401,7 +368,7 @@ export const AdminAuditLogView: React.FC = () => {
                           #{log.id}
                         </td>
                         <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
-                          {formatDateTime(log.createdAt)}
+                          {formatDateTime(log.createdAt || log.timestamp)}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
@@ -409,10 +376,10 @@ export const AdminAuditLogView: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-xs text-text-primary font-medium">
-                          {log.actorEmail}
+                          {log.actorEmail || log.actor || log.actorUsername || '—'}
                         </td>
                         <td className="py-3 px-4 text-xs font-mono text-text-secondary">
-                          {log.targetResource}
+                          {log.targetResource || log.target || log.resource || '—'}
                         </td>
                         <td className="py-3 px-4 text-xs font-mono text-text-muted">
                           {log.ipAddress || '—'}
@@ -644,15 +611,15 @@ export const AdminAuditLogView: React.FC = () => {
               <div className="space-y-3 text-xs">
                 <div>
                   <span className="font-semibold text-slate-500">Thời điểm:</span>{' '}
-                  <span className="font-mono text-slate-800">{formatDateTime(selectedLogDetail.createdAt)}</span>
+                  <span className="font-mono text-slate-800">{formatDateTime(selectedLogDetail.createdAt || selectedLogDetail.timestamp)}</span>
                 </div>
                 <div>
                   <span className="font-semibold text-slate-500">Người thực hiện:</span>{' '}
-                  <span className="font-semibold text-slate-800">{selectedLogDetail.actorEmail}</span>
+                  <span className="font-semibold text-slate-800">{selectedLogDetail.actorEmail || selectedLogDetail.actor || selectedLogDetail.actorUsername || '—'}</span>
                 </div>
                 <div>
                   <span className="font-semibold text-slate-500">Tài nguyên:</span>{' '}
-                  <span className="font-mono text-slate-800">{selectedLogDetail.targetResource}</span>
+                  <span className="font-mono text-slate-800">{selectedLogDetail.targetResource || selectedLogDetail.target || selectedLogDetail.resource || '—'}</span>
                 </div>
 
                 {selectedLogDetail.oldValues && (
