@@ -27,6 +27,9 @@ import { shiftAdminService } from '@/services/shiftAdminService'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { reportExportService } from '@/services/reportExportService'
 import { notificationService } from '@/services/notificationService'
+import { apiClient } from '@/services/apiClient'
+import { createMockServer, setupDefaultMockHandlers, restoreMockServer } from '@/mocks'
+import type MockAdapter from 'axios-mock-adapter'
 import * as useLiveAttendanceModule from '@/services/hooks/useLiveAttendance'
 import * as useEnrollmentStatusModule from '@/services/hooks/useEnrollmentStatus'
 import type {
@@ -215,9 +218,12 @@ const renderAppAt = (initialRoute: string) => {
 
 describe('TASK-WEB-021: Tích Hợp Toàn Trình Giao Diện Cổng Web (BLD-WEB-017, Wave 7)', () => {
   let liveAttendanceCallback: ((rec: AttendanceRecord) => void) | null = null
+  let mockServer: MockAdapter | null = null
 
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockServer = createMockServer(apiClient)
+    setupDefaultMockHandlers(mockServer)
     window.confirm = vi.fn().mockReturnValue(true)
 
     useAuthStore.getState().clearSession()
@@ -265,6 +271,10 @@ describe('TASK-WEB-021: Tích Hợp Toàn Trình Giao Diện Cổng Web (BLD-WEB
   })
 
   afterEach(() => {
+    if (mockServer) {
+      restoreMockServer(mockServer)
+      mockServer = null
+    }
     vi.useRealTimers()
   })
 

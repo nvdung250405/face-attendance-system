@@ -253,6 +253,26 @@ class AdminExcuseControllerTest {
         }
 
         @Test
+        @DisplayName("Ra quyết định với trạng thái PENDING -> trả về 400 VALIDATION_FAILED")
+        void decideExcuseRequest_PendingStatus_Returns400() throws Exception {
+            DecideExcuseRequest request = new DecideExcuseRequest(
+                    ExcuseRequestStatus.PENDING,
+                    null,
+                    null
+            );
+
+            when(userRepository.findByEmail("hr@company.com")).thenReturn(java.util.Optional.of(hrUser()));
+
+            mockMvc.perform(patch("/api/v1/admin/excuse-requests/1")
+                            .principal(() -> "hr@company.com")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                    .andExpect(jsonPath("$.detail").value(containsString("Trạng thái quyết định chỉ có thể là APPROVED hoặc REJECTED")));
+        }
+
+        @Test
         @DisplayName("Xử lý đơn đã hoàn tất trước đó -> Service ném 409 EXCUSE_ALREADY_PROCESSED")
         void decideExcuseRequest_AlreadyProcessed_Returns409() throws Exception {
             DecideExcuseRequest request = new DecideExcuseRequest(

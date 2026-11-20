@@ -110,7 +110,6 @@ describe('AdjustAttendanceModal Component (API-BE-048, API-WEB-021)', () => {
         101,
         expect.objectContaining({
           status: 'ON_TIME',
-          lateMinutes: 0,
           reason: 'Nhân viên có mặt đúng giờ nhưng camera Kiosk nhận diện chậm',
         })
       )

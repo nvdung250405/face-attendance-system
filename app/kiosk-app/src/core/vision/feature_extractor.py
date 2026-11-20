@@ -56,9 +56,7 @@ class ArcFaceFeatureExtractor:
         sess_options = ort.SessionOptions()
         sess_options.intra_op_num_threads = self.num_threads
         sess_options.inter_op_num_threads = 1
-        sess_options.graph_optimization_level = (
-            ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        )
+        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
         self._session = ort.InferenceSession(
             str(self.model_path),
@@ -137,9 +135,7 @@ class ArcFaceFeatureExtractor:
 
         # Đảm bảo đúng kích thước 112x112
         if aligned_face.shape[:2] != (112, 112):
-            aligned_face = cv2.resize(
-                aligned_face, (112, 112), interpolation=cv2.INTER_LINEAR
-            )
+            aligned_face = cv2.resize(aligned_face, (112, 112), interpolation=cv2.INTER_LINEAR)
 
         # Chuyển đổi không gian màu BGR sang RGB
         rgb_face = cv2.cvtColor(aligned_face, cv2.COLOR_BGR2RGB)

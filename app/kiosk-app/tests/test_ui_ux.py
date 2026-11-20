@@ -25,17 +25,20 @@ from presentation.viewmodels.kiosk_view_model import KioskViewModel, OvalState
 # Helper fixtures / mocks
 # ==============================================================================
 
+
 def _create_mock_detection(
     is_tilted: bool = False,
     is_valid_size: bool = True,
     bbox: tuple[int, int, int, int] = (270, 137, 100, 110),
 ) -> FaceDetectionResult:
     landmarks = np.array(
-        [[bbox[0] + 30, bbox[1] + 30],
-         [bbox[0] + 70, bbox[1] + 30],
-         [bbox[0] + 50, bbox[1] + 55],
-         [bbox[0] + 35, bbox[1] + 85],
-         [bbox[0] + 65, bbox[1] + 85]],
+        [
+            [bbox[0] + 30, bbox[1] + 30],
+            [bbox[0] + 70, bbox[1] + 30],
+            [bbox[0] + 50, bbox[1] + 55],
+            [bbox[0] + 35, bbox[1] + 85],
+            [bbox[0] + 65, bbox[1] + 85],
+        ],
         dtype=np.float32,
     )
     yaw = 25.0 if is_tilted else 2.0
@@ -52,6 +55,7 @@ def _create_mock_detection(
 # ==============================================================================
 # TST-KSK-UX-001: Kiểm thử Máy trạng thái Khung Oval 4 Màu
 # ==============================================================================
+
 
 def test_tst_ksk_ux_001_oval_four_color_state_machine(qapp):
     """TST-KSK-UX-001: Máy trạng thái Khung Oval 4 Màu.
@@ -72,10 +76,10 @@ def test_tst_ksk_ux_001_oval_four_color_state_machine(qapp):
 
     # Ánh xạ màu chuẩn theo spec UI-KSK-004 -> UI-KSK-007
     color_map = {
-        OvalState.IDLE: "#64748B",       # Xám Slate (Standby)
-        OvalState.ALIGNING: "#F59E0B",   # Vàng Hổ phách (Aligning)
-        OvalState.SUCCESS: "#10B981",    # Xanh Emerald (Success)
-        OvalState.ERROR: "#EF4444",      # Đỏ Cảnh báo (Rejected)
+        OvalState.IDLE: "#64748B",  # Xám Slate (Standby)
+        OvalState.ALIGNING: "#F59E0B",  # Vàng Hổ phách (Aligning)
+        OvalState.SUCCESS: "#10B981",  # Xanh Emerald (Success)
+        OvalState.ERROR: "#EF4444",  # Đỏ Cảnh báo (Rejected)
     }
 
     assert color_map[vm.ovalState] == "#64748B"
@@ -135,6 +139,7 @@ def test_tst_ksk_ux_001_oval_four_color_state_machine(qapp):
 # TST-KSK-UX-002: Kiểm thử Co giãn Tỷ lệ Động S (Scaling Test)
 # ==============================================================================
 
+
 def test_tst_ksk_ux_002_dynamic_proportional_scaling():
     """TST-KSK-UX-002: Kiểm thử Co giãn Tỷ lệ Động S theo công thức:
     S = min(W_actual / 1080, H_actual / 1920)
@@ -186,6 +191,7 @@ def test_tst_ksk_ux_002_dynamic_proportional_scaling():
 # TST-KSK-UX-003: Kiểm thử Bàn phím Ảo PIN Pad & Khóa 15 Phút
 # ==============================================================================
 
+
 def test_tst_ksk_ux_003_pin_pad_and_lockout(qapp):
     """TST-KSK-UX-003: Bàn phím ảo PIN Pad & Khóa 15 Phút (Lockout).
 
@@ -207,7 +213,11 @@ def test_tst_ksk_ux_003_pin_pad_and_lockout(qapp):
     assert controller.currentPin == "4567"
 
     # Kiểm tra anti-peeking format: "● ● ● ●"
-    anti_peeking_display = "● ".repeat(len(controller.currentPin)).strip() if hasattr(str, "repeat") else " ".join(["●"] * len(controller.currentPin))
+    anti_peeking_display = (
+        "● ".repeat(len(controller.currentPin)).strip()
+        if hasattr(str, "repeat")
+        else " ".join(["●"] * len(controller.currentPin))
+    )
     assert len(anti_peeking_display.split()) == 4
 
     # Backspace và Clear
@@ -245,6 +255,7 @@ def test_tst_ksk_ux_003_pin_pad_and_lockout(qapp):
 # ==============================================================================
 # TST-KSK-UX-004: Kiểm thử Luồng Tự Đăng ký In-Viewport
 # ==============================================================================
+
 
 def test_tst_ksk_ux_004_in_viewport_enrollment_flow(qapp):
     """TST-KSK-UX-004: Kiểm thử Luồng Tự Đăng ký In-Viewport 3 Bước.
@@ -353,6 +364,7 @@ def test_tst_ksk_ux_004_in_viewport_enrollment_flow(qapp):
 # TST-KSK-UX-005: Kiểm thử Thước Đo Góc Yaw & 3 Thẻ Tư Thế HUD
 # ==============================================================================
 
+
 def test_tst_ksk_ux_005_hud_pose_cards_and_yaw_gauge(qapp):
     """TST-KSK-UX-005: Kiểm thử Thước Đo Góc Yaw Thời Gian Thực & 3 Thẻ Tư Thế HUD.
 
@@ -416,6 +428,7 @@ def test_tst_ksk_ux_005_hud_pose_cards_and_yaw_gauge(qapp):
 # TST-KSK-UX-006: Kiểm thử Huy hiệu Mạng & Đồng bộ Ngoại Tuyến trên HeaderBar
 # ==============================================================================
 
+
 def test_tst_ksk_ux_006_header_network_and_offline_badge(qapp):
     """TST-KSK-UX-006: Kiểm thử Huy hiệu Mạng Trực Tuyến & Ngoại Tuyến trên HeaderBar.
 
@@ -450,6 +463,7 @@ def test_tst_ksk_ux_006_header_network_and_offline_badge(qapp):
 # TST-KSK-UX-007: Kiểm thử Gắn kết Động Thẻ Kết quả Điểm danh (PortraitResultCard)
 # ==============================================================================
 
+
 def test_tst_ksk_ux_007_portrait_result_card_binding(qapp):
     """TST-KSK-UX-007: Gắn kết Động Dữ liệu Thẻ Kết quả Điểm danh.
 
@@ -475,6 +489,7 @@ def test_tst_ksk_ux_007_portrait_result_card_binding(qapp):
 # ==============================================================================
 # TST-KSK-UX-008: Kiểm thử Phân tách Môi trường Production vs Development
 # ==============================================================================
+
 
 def test_tst_ksk_ux_008_prod_vs_dev_environment_separation(qapp):
     """TST-KSK-UX-008: Phân tách Môi trường Production vs Development (Clean UI vs Dev Mode).
@@ -524,5 +539,3 @@ def test_tst_ksk_ux_008_prod_vs_dev_environment_separation(qapp):
     enroll_dev.setCurrentStep(2)
     enroll_dev.completeCaptureStep()
     assert enroll_dev.currentStep == 3  # Cho phép mô phỏng nhảy sang bước 3 thành công
-
-

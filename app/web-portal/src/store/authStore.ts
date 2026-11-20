@@ -5,8 +5,9 @@
 
 import { create } from 'zustand'
 import type { AuthSession, UserProfile, UserRole } from '@/types'
-import { AUTH_STORAGE_KEY } from '@/services/apiClient'
-import { safeLocalStorage, onStorageKeyChange } from '@/services/storage'
+import { safeLocalStorage, onStorageKeyChange, AUTH_STORAGE_KEY } from '@/services/storage'
+
+export { AUTH_STORAGE_KEY }
 
 export function getDefaultPathForRole(role?: UserRole): string {
   switch (role) {
@@ -22,22 +23,27 @@ export function getDefaultPathForRole(role?: UserRole): string {
 }
 
 /**
- * Đọc phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003)
+ * Đọc phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003, SEC-002)
  */
 export function readSessionFromStorage(): AuthSession | null {
   const session = safeLocalStorage.getItem<AuthSession>(AUTH_STORAGE_KEY)
-  if (!session || !session.accessToken || !session.user) {
+  if (!session || !session.user) {
     return null
   }
   return session
 }
 
 /**
- * Lưu phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003)
+ * Lưu phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003, SEC-002)
+ * Lưu trữ refreshToken và thông tin người dùng; accessToken được lưu trong RAM Zustand.
  */
 export function writeSessionToStorage(session: AuthSession | null): void {
   if (session) {
-    safeLocalStorage.setItem(AUTH_STORAGE_KEY, session)
+    // SEC-002: Exclude sensitive accessToken from localStorage to prevent DOM XSS theft.
+    // accessToken is preserved in Zustand in-memory RAM state.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { accessToken: _, ...persistentSession } = session
+    safeLocalStorage.setItem(AUTH_STORAGE_KEY, persistentSession)
   } else {
     safeLocalStorage.removeItem(AUTH_STORAGE_KEY)
   }
@@ -56,30 +62,33 @@ interface AuthState {
   updateUser: (partialUser: Partial<UserProfile>) => void
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  session: null,
-  user: null,
-  isAuthenticated: false,
-  isInitialized: false,
+export const useAuthStore = create<AuthState>((set, get) => {
+  const initialSession = readSessionFromStorage()
 
-  initialize: () => {
-    const existing = readSessionFromStorage()
-    if (existing) {
-      set({
-        session: existing,
-        user: existing.user,
-        isAuthenticated: true,
-        isInitialized: true,
-      })
-    } else {
-      set({
-        session: null,
-        user: null,
-        isAuthenticated: false,
-        isInitialized: true,
-      })
-    }
-  },
+  return {
+    session: initialSession,
+    user: initialSession?.user ?? null,
+    isAuthenticated: Boolean((initialSession?.accessToken || initialSession?.refreshToken) && initialSession?.user),
+    isInitialized: true,
+
+    initialize: () => {
+      const existing = readSessionFromStorage()
+      if (existing) {
+        set({
+          session: existing,
+          user: existing.user,
+          isAuthenticated: true,
+          isInitialized: true,
+        })
+      } else {
+        set({
+          session: null,
+          user: null,
+          isAuthenticated: false,
+          isInitialized: true,
+        })
+      }
+    },
 
   setSession: (session: AuthSession) => {
     writeSessionToStorage(session)
@@ -110,14 +119,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: updatedUser,
     })
   },
-}))
+}
+})
 
 /**
  * Lắng nghe sự kiện storage trên window để đồng bộ đa tab (DTD-WEB-002, DD-WEB-004)
  */
 export function setupMultiTabAuthSync(): () => void {
   return onStorageKeyChange<AuthSession>(AUTH_STORAGE_KEY, (newSession) => {
-    if (!newSession || !newSession.accessToken) {
+    if (!newSession || (!newSession.accessToken && !newSession.refreshToken)) {
       useAuthStore.getState().clearSession()
     } else {
       useAuthStore.setState({

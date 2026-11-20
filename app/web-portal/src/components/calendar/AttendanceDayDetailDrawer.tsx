@@ -7,18 +7,15 @@ import React, { useEffect } from 'react'
 import {
   X,
   Calendar,
-  Clock,
   MapPin,
-  CheckCircle2,
-  AlertTriangle,
-  MinusCircle,
-  FileQuestion,
   ScanFace,
   KeyRound,
-  ShieldAlert,
+  AlertTriangle,
 } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
-import type { PersonalAttendanceDayRecord, DayAttendanceStatus } from '@/types'
+import { AttendanceStatusBadge } from '@/components/common'
+import { formatDate } from '@/utils/date'
+import type { PersonalAttendanceDayRecord } from '@/types'
 
 export interface AttendanceDayDetailDrawerProps {
   isOpen: boolean
@@ -47,76 +44,6 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
 
   if (!isOpen || !record) return null
 
-  const getStatusBadge = (status: DayAttendanceStatus | string, lateMinutes = 0) => {
-    switch (status) {
-      case 'ON_TIME':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-status-success border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Đúng giờ</span>
-          </span>
-        )
-      case 'LATE':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Đi muộn {lateMinutes > 0 ? `(${lateMinutes} phút)` : ''}</span>
-          </span>
-        )
-      case 'EARLY_LEAVE':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-orange-50 text-orange-700 border border-orange-200">
-            <Clock className="w-3.5 h-3.5" />
-            <span>Về sớm</span>
-          </span>
-        )
-      case 'ABSENT':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-rose-50 text-status-danger border border-rose-200">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Vắng mặt</span>
-          </span>
-        )
-      case 'REST_DAY':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-            <MinusCircle className="w-3.5 h-3.5" />
-            <span>Nghỉ tuần</span>
-          </span>
-        )
-      case 'HOLIDAY':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Nghỉ lễ</span>
-          </span>
-        )
-      case 'EXCUSE_PENDING':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-            <FileQuestion className="w-3.5 h-3.5" />
-            <span>Chờ duyệt giải trình</span>
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">
-            {status}
-          </span>
-        )
-    }
-  }
-
-  // Định dạng ngày theo Tiếng Việt
-  const formatDisplayDate = (dateStr: string) => {
-    try {
-      const [year, month, day] = dateStr.split('-').map(Number)
-      return `${day}/${month}/${year}`
-    } catch {
-      return dateStr
-    }
-  }
-
   const isLateOrAbnormal =
     record.status === 'LATE' ||
     record.status === 'EARLY_LEAVE' ||
@@ -144,7 +71,7 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
                   className="text-base font-bold text-text-primary tracking-tight"
                 >
                   {record.dayOfWeek ? `${record.dayOfWeek}, ` : ''}
-                  {formatDisplayDate(record.date)}
+                  {formatDate(record.date)}
                 </h3>
               </div>
               <p className="text-xs text-text-secondary">Chi tiết lượt điểm danh trong ngày</p>
@@ -171,7 +98,14 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
                   {record.shiftCode || 'Ca Hành Chính'}
                 </span>
               </div>
-              <div>{getStatusBadge(record.status, record.lateMinutes)}</div>
+              <div>
+                <AttendanceStatusBadge
+                  status={record.status}
+                  lateMinutes={record.lateMinutes}
+                  showIcon
+                  lateFormat="verbose"
+                />
+              </div>
             </div>
 
             {/* Chi tiết quẹt thẻ Vào & Ra */}

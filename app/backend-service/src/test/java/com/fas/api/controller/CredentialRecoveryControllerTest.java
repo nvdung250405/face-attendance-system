@@ -73,7 +73,7 @@ class CredentialRecoveryControllerTest {
     @Test
     @DisplayName("Nhân viên đặt lại PIN thành công -> trả về 200 OK")
     void resetPin_Success() throws Exception {
-        PinResetRequest request = new PinResetRequest("Current@123", "654321", "654321");
+        PinResetRequest request = new PinResetRequest("Current@123", "654321");
         PinOperationResult result = new PinOperationResult(true, "Đặt lại mã PIN thành công");
 
         when(credentialRecoveryService.resetPin(eq(1042L), any(PinResetRequest.class))).thenReturn(result);
@@ -96,7 +96,7 @@ class CredentialRecoveryControllerTest {
     @Test
     @DisplayName("Đặt lại PIN với dữ liệu sai định dạng (PIN < 6 số) -> trả về 400 Bad Request")
     void resetPin_InvalidPin_Returns400() throws Exception {
-        PinResetRequest request = new PinResetRequest("Current@123", "123", "123");
+        PinResetRequest request = new PinResetRequest("Current@123", "123");
 
         mockMvc.perform(post("/api/v1/employee/pin/reset")
                         .contentType(MediaType.APPLICATION_JSON)

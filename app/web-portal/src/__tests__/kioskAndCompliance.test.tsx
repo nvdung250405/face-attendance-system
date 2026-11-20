@@ -195,7 +195,8 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       render(<KioskRegistrationModal isOpen={true} onClose={vi.fn()} onSuccess={vi.fn()} />)
 
       expect(screen.getByText('Đăng Ký Trạm Kiosk Mới')).toBeTruthy()
-      expect(screen.getByTestId('kiosk-id-input')).toBeTruthy()
+      expect(screen.getByTestId('kiosk-id-preview')).toBeTruthy()
+      expect(screen.getByTestId('toggle-custom-kiosk-id')).toBeTruthy()
       expect(screen.getByTestId('kiosk-name-input')).toBeTruthy()
       expect(screen.getByTestId('kiosk-location-input')).toBeTruthy()
       expect(screen.getByTestId('submit-register-kiosk-btn')).toBeTruthy()
@@ -218,7 +219,8 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       const onSuccessMock = vi.fn()
       render(<KioskRegistrationModal isOpen={true} onClose={vi.fn()} onSuccess={onSuccessMock} />)
 
-      // Điền form
+      // Mở tùy chỉnh mã thủ công và điền form
+      fireEvent.click(screen.getByTestId('toggle-custom-kiosk-id'))
       fireEvent.change(screen.getByTestId('kiosk-id-input'), {
         target: { value: 'KSK-TEST-01' },
       })
@@ -280,6 +282,42 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
 
       fireEvent.click(screen.getByTestId('cancel-kiosk-btn'))
       expect(handleClose).toHaveBeenCalled()
+    })
+
+    it('cho phép để trống kioskId khi đăng ký: server tự sinh mã trạm KSK-XXXX', async () => {
+      const mockRegister = vi.spyOn(complianceAdminService, 'registerKiosk').mockResolvedValue({
+        kiosk: {
+          id: 100,
+          kioskId: 'KSK-AUTO-01',
+          name: 'Trạm Tự Sinh',
+          location: 'Cổng Phụ',
+          status: 'ONLINE',
+          lastPingAt: new Date().toISOString(),
+        },
+        secretToken: 'ksk_sec_auto_999',
+      })
+
+      const onSuccessMock = vi.fn()
+      render(<KioskRegistrationModal isOpen={true} onClose={vi.fn()} onSuccess={onSuccessMock} />)
+
+      // Không nhập kiosk-id-input, chỉ nhập name và location
+      fireEvent.change(screen.getByTestId('kiosk-name-input'), {
+        target: { value: 'Trạm Tự Sinh' },
+      })
+      fireEvent.change(screen.getByTestId('kiosk-location-input'), {
+        target: { value: 'Cổng Phụ' },
+      })
+
+      fireEvent.click(screen.getByTestId('submit-register-kiosk-btn'))
+
+      await waitFor(() => {
+        expect(mockRegister).toHaveBeenCalledWith({
+          kioskId: undefined,
+          name: 'Trạm Tự Sinh',
+          location: 'Cổng Phụ',
+        })
+        expect(screen.getByTestId('secret-token-value')).toBeTruthy()
+      })
     })
   })
 

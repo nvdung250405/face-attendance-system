@@ -3,7 +3,7 @@
  * (FR-BE-014, API-BE-026, APD-BE-015, UI-WEB-005, TASK-WEB-012).
  */
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,13 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,7 +80,8 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
       })
 
       setIsSuccess(true)
-      setTimeout(() => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+      successTimerRef.current = setTimeout(() => {
         setIsSuccess(false)
         setReason('')
         setRequestedPunchTimestamp('')
@@ -90,6 +98,7 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
 
   const handleModalClose = () => {
     if (!isSubmitting) {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
       setErrorMessage(null)
       setIsSuccess(false)
       onClose()
@@ -98,90 +107,91 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleModalClose()}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold text-text-primary">
-            <Clock className="w-5 h-5 text-brand-primary" />
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader className="pb-1 text-left">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <Clock className="w-5 h-5 text-indigo-600 shrink-0" />
             <span>Nộp Đơn Giải Trình Công</span>
           </DialogTitle>
-          <DialogDescription className="text-xs text-text-secondary">
+          <DialogDescription className="text-xs text-slate-500">
             Giải trình đi muộn, về sớm hoặc sự cố chấm công cho ngày{' '}
-            <span className="font-semibold text-text-primary">{attendanceDate || 'đã chọn'}</span>.
+            <span className="font-semibold text-slate-700">{attendanceDate || 'đã chọn'}</span>.
           </DialogDescription>
         </DialogHeader>
 
         {isSuccess ? (
           <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 text-status-success flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7" />
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-text-primary">Nộp đơn thành công!</h3>
-            <p className="text-xs text-text-secondary max-w-xs">
-              Đơn giải trình của bạn đã được chuyển đến bộ phận HR để xem xét phê duyệt.
+            <h3 className="text-sm font-bold text-slate-900">Nộp đơn thành công!</h3>
+            <p className="text-xs text-slate-500 max-w-xs">
+              Đơn giải trình của bạn đã được gửi đến bộ phận HR để xem xét phê duyệt.
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
-            {/* Cảnh báo khi không xác định được lượt chấm công cần giải trình */}
+          <form onSubmit={handleSubmit} className="space-y-3.5 py-1">
+            {/* Cảnh báo khi mở form tự do mà chưa chọn lượt chấm công cụ thể */}
             {!attendanceLogId && (
               <div
                 data-testid="excuse-missing-log-id-notice"
-                className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2"
+                className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-800 text-xs flex items-start gap-2 leading-relaxed"
               >
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
-                <span>Không xác định được lượt chấm công cần giải trình. Vui lòng mở đơn từ chi tiết ngày chấm công cụ thể.</span>
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                <span>
+                  Chưa chọn lượt chấm công. Vui lòng mở form từ chi tiết ngày chấm công cụ thể để gửi đơn.
+                </span>
               </div>
             )}
 
-            {/* Thông tin lượt quẹt */}
-            <div className="p-3 bg-slate-50 border border-border-subtle rounded-xl text-xs space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Ngày chấm công:</span>
-                <span className="font-semibold text-text-primary">{attendanceDate || 'Hôm nay'}</span>
+            {/* Thông tin lượt quẹt thu gọn thành meta badge thanh lịch */}
+            <div className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs space-y-1">
+              <div className="flex items-center justify-between text-slate-700">
+                <span className="text-slate-500">Ngày chấm công:</span>
+                <span className="font-medium text-slate-900">{attendanceDate || 'Hôm nay'}</span>
               </div>
               {currentPunchTime && (
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Giờ quẹt ghi nhận:</span>
-                  <span className="font-mono font-bold text-amber-700">{currentPunchTime}</span>
+                <div className="flex items-center justify-between text-slate-700">
+                  <span className="text-slate-500">Giờ ghi nhận:</span>
+                  <span className="font-mono font-semibold text-amber-700">{currentPunchTime}</span>
                 </div>
               )}
-              <div className="flex items-start gap-1.5 text-2xs text-text-muted pt-1 border-t border-slate-200">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <span>Quy định: Chỉ tiếp nhận đơn giải trình trong vòng 30 ngày kể từ ngày chấm công.</span>
+              <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60 flex items-center gap-1">
+                <span>* Chỉ tiếp nhận đơn giải trình trong vòng 30 ngày kể từ ngày chấm công.</span>
               </div>
             </div>
 
             {errorMessage && (
-              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-status-danger text-xs">
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
                 {errorMessage}
               </div>
             )}
 
             {/* Lý do giải trình */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label htmlFor="excuse-reason" className="text-xs font-semibold text-text-primary">
-                  Lý do giải trình <span className="text-status-danger">*</span>
+                <label htmlFor="excuse-reason" className="text-xs font-semibold text-slate-800">
+                  Lý do giải trình <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-2xs text-text-muted">{reason.length}/500</span>
+                <span className="text-[11px] font-mono text-slate-400">{reason.length}/500</span>
               </div>
               <textarea
                 id="excuse-reason"
                 data-testid="excuse-reason-input"
-                rows={4}
+                rows={3}
                 maxLength={500}
                 required
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Nhập chi tiết lý do (ví dụ: Sự cố kẹt xe đường Nguyễn Trãi, thiết bị Kiosk bảo trì, đi công tác khẩn cấp...)"
-                className="w-full text-xs rounded-xl border border-border-subtle p-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                placeholder="Ví dụ: Kẹt xe, máy chấm công không nhận diện, đi công tác đột xuất..."
+                className="w-full text-xs rounded-xl border border-slate-200 bg-white p-2.5 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors resize-none leading-relaxed"
               />
             </div>
 
             {/* Giờ đề xuất điều chỉnh */}
-            <div className="space-y-1.5">
-              <label htmlFor="excuse-punch-time" className="text-xs font-semibold text-text-primary">
-                Thời gian đề xuất điều chỉnh <span className="text-text-muted font-normal">(tùy chọn)</span>
+            <div className="space-y-1">
+              <label htmlFor="excuse-punch-time" className="text-xs font-semibold text-slate-800">
+                Thời gian đề xuất điều chỉnh <span className="text-slate-400 font-normal">(tùy chọn)</span>
               </label>
               <input
                 id="excuse-punch-time"
@@ -189,18 +199,18 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
                 type="datetime-local"
                 value={requestedPunchTimestamp}
                 onChange={(e) => setRequestedPunchTimestamp(e.target.value)}
-                className="w-full text-xs rounded-xl border border-border-subtle p-2.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                className="w-full text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
               />
-              <span className="text-2xs text-text-muted block">
-                Nếu không điền, HR sẽ xem xét theo ca làm việc đã đăng ký.
-              </span>
+              <p className="text-[11px] text-slate-400 leading-normal">
+                Nếu để trống, HR sẽ xem xét theo ca làm việc đã đăng ký.
+              </p>
             </div>
 
             <DialogFooter className="pt-2">
               <Button
                 type="button"
                 variant="secondary"
-                size="sm"
+                size="md"
                 onClick={handleModalClose}
                 disabled={isSubmitting}
               >
@@ -209,7 +219,7 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
               <Button
                 type="submit"
                 variant="primary"
-                size="sm"
+                size="md"
                 isLoading={isSubmitting}
                 disabled={!attendanceLogId || isSubmitting}
                 data-testid="submit-excuse-btn"

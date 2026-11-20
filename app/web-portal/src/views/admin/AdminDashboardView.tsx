@@ -9,7 +9,7 @@
  * 4. Tải danh sách và thống kê khởi tạo từ Backend, tự động đồng bộ cache TanStack Query.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/common'
 import { useAuthStore } from '@/store/authStore'
@@ -28,7 +28,7 @@ const DEFAULT_STATS: AttendanceStats = {
 }
 
 export const AdminDashboardView: React.FC = () => {
-  const { user } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
 
   // Dữ liệu khởi tạo từ REST
   const [initialRecords, setInitialRecords] = useState<AttendanceRecord[]>([])
@@ -39,12 +39,16 @@ export const AdminDashboardView: React.FC = () => {
 
   // Hiệu ứng Green Flash 1.5s cho dòng mới nhất
   const [highlightedRecordId, setHighlightedRecordId] = useState<number | null>(null)
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Callback khi nhận sự kiện điểm danh STOMP
   const handleRecordReceived = useCallback((record: AttendanceRecord) => {
     // 1. Kích hoạt hiệu ứng Green Flash 1.5s (DD-WEB-014)
     setHighlightedRecordId(record.recordId)
-    const timer = setTimeout(() => {
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current)
+    }
+    highlightTimerRef.current = setTimeout(() => {
       setHighlightedRecordId(null)
     }, 1500)
 
@@ -72,8 +76,15 @@ export const AdminDashboardView: React.FC = () => {
         absentCount: newAbsent,
       }
     })
+  }, [])
 
-    return () => clearTimeout(timer)
+  // Dọn dẹp timer khi component unmount để tránh rò rỉ bộ nhớ (EXP1-02)
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current)
+      }
+    }
   }, [])
 
   // Hook STOMP lắng nghe kênh '/topic/live-attendance'
@@ -81,16 +92,15 @@ export const AdminDashboardView: React.FC = () => {
     onRecordReceived: handleRecordReceived,
   })
 
-  // Hàm làm mới dữ liệu thủ công từ nút bấm
+  // Hàm làm mới dữ liệu
   const loadDashboardData = useCallback(async () => {
     try {
-      setIsLoading(true)
-      setErrorMessage(null)
-
       const [statsData, attendanceData] = await Promise.allSettled([
         attendanceService.getAttendanceStats(),
         attendanceService.getAdminAttendance({ page: 0, size: 50 }),
       ])
+
+      setErrorMessage(null)
 
       if (statsData.status === 'fulfilled' && statsData.value) {
         setStats(statsData.value)
@@ -98,6 +108,11 @@ export const AdminDashboardView: React.FC = () => {
 
       if (attendanceData.status === 'fulfilled' && attendanceData.value?.content) {
         setInitialRecords(attendanceData.value.content)
+      }
+
+      if (statsData.status === 'rejected' && attendanceData.status === 'rejected') {
+        const err = (attendanceData.reason || statsData.reason) as { message?: string }
+        setErrorMessage(err?.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
       }
     } catch (err) {
       const error = err as { message?: string }
@@ -108,46 +123,9 @@ export const AdminDashboardView: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    let ignore = false
-
-    const fetchData = async () => {
-      try {
-        const [statsData, attendanceData] = await Promise.allSettled([
-          attendanceService.getAttendanceStats(),
-          attendanceService.getAdminAttendance({ page: 0, size: 50 }),
-        ])
-        if (ignore) return
-
-        if (statsData.status === 'fulfilled' && statsData.value) {
-          setStats(statsData.value)
-        }
-
-        if (attendanceData.status === 'fulfilled' && attendanceData.value?.content) {
-          setInitialRecords(attendanceData.value.content)
-        }
-
-        if (statsData.status === 'rejected' && attendanceData.status === 'rejected') {
-          const err = (attendanceData.reason || statsData.reason) as { message?: string }
-          setErrorMessage(err?.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
-        }
-      } catch (err) {
-        if (!ignore) {
-          const error = err as { message?: string }
-          setErrorMessage(error.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    fetchData()
-
-    return () => {
-      ignore = true
-    }
-  }, [])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadDashboardData()
+  }, [loadDashboardData])
 
   // Hợp nhất danh sách hiển thị: latestEvents & stompRecords chèn lên đầu initialRecords
   const mergedRecords = useMemo(() => {
@@ -196,7 +174,10 @@ export const AdminDashboardView: React.FC = () => {
             data-testid="refresh-dashboard-btn"
             variant="secondary"
             size="sm"
-            onClick={loadDashboardData}
+            onClick={() => {
+              setIsLoading(true)
+              void loadDashboardData()
+            }}
             isLoading={isLoading}
             leftIcon={<RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />}
           >
@@ -214,7 +195,10 @@ export const AdminDashboardView: React.FC = () => {
           <span>{errorMessage}</span>
           <button
             type="button"
-            onClick={loadDashboardData}
+            onClick={() => {
+              setIsLoading(true)
+              void loadDashboardData()
+            }}
             className="text-xs underline font-semibold hover:text-rose-900"
           >
             Thử lại

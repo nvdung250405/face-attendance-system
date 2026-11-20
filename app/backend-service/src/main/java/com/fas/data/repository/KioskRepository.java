@@ -15,5 +15,7 @@ public interface KioskRepository extends JpaRepository<Kiosk, String> {
 
     Optional<Kiosk> findByIdAndIsActiveTrue(String id);
 
+    Optional<Kiosk> findTopByIdStartingWithOrderByIdDesc(String prefix);
+
     List<Kiosk> findByIsActiveTrue();
 }

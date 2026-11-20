@@ -113,6 +113,26 @@ class ShiftManagementServiceTest {
         }
 
         @Test
+        @DisplayName("Tạo ca làm việc khi shiftCode null/trống: tự động sinh mã ca SHF-xxxx")
+        void createShift_BlankShiftCode_AutoGeneratesShiftCode() {
+            CreateShiftRequest request = new CreateShiftRequest(
+                    null, "Ca Sáng 08:00 - 12:00", LocalTime.of(8, 0), LocalTime.of(12, 0), 10);
+
+            when(shiftRepository.existsByShiftCode(anyString())).thenReturn(false);
+            when(shiftRepository.save(any(Shift.class))).thenAnswer(invocation -> {
+                Shift s = invocation.getArgument(0);
+                s.setId(10L);
+                return s;
+            });
+
+            ShiftResponse response = shiftService.createShift(request);
+
+            assertThat(response).isNotNull();
+            assertThat(response.shiftCode()).isEqualTo("SHF-SANG-0812");
+            assertThat(response.shiftName()).isEqualTo("Ca Sáng 08:00 - 12:00");
+        }
+
+        @Test
         @DisplayName("Ném lỗi DATA_INTEGRITY_VIOLATION khi mã ca làm việc đã tồn tại")
         void createShift_DuplicateCode_ThrowsException() {
             CreateShiftRequest request = new CreateShiftRequest(

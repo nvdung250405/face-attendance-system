@@ -9,25 +9,21 @@
  * 4. Quyền truy cập: Role DPO ở chế độ CHỈ ĐỌC (không có nút thêm/sửa/cấp lại token).
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   RefreshCw,
   Plus,
   Info,
   AlertTriangle,
   Monitor,
-  Wifi,
-  WifiOff,
-  Server,
-  Copy,
-  Check,
 } from 'lucide-react'
 import { Button } from '@/components/common'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { toast } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { complianceAdminService } from '@/services/complianceAdminService'
-import { KioskRegistrationModal } from '@/components/kiosk'
+import { KioskRegistrationModal, ReissuedTokenDialog, KioskKpiCards } from '@/components/kiosk'
+import { formatRelativeTime } from '@/utils/date'
 import type { KioskItemResponse, KioskStatus } from '@/types'
 
 const STATUS_CONFIG: Record<KioskStatus, { label: string; className: string }> = {
@@ -45,34 +41,14 @@ const STATUS_CONFIG: Record<KioskStatus, { label: string; className: string }> =
   },
 }
 
-function formatRelativeTime(isoString?: string): string {
-  if (!isoString) return 'Chưa có tín hiệu'
-  try {
-    const pingTime = new Date(isoString).getTime()
-    if (isNaN(pingTime)) return isoString
-    const diffSeconds = Math.max(0, Math.floor((Date.now() - pingTime) / 1000))
-    if (diffSeconds < 60) return `${diffSeconds} giây trước`
-    const diffMinutes = Math.floor(diffSeconds / 60)
-    if (diffMinutes < 60) return `${diffMinutes} phút trước`
-    const diffHours = Math.floor(diffMinutes / 60)
-    if (diffHours < 24) return `${diffHours} giờ trước`
-    const diffDays = Math.floor(diffHours / 24)
-    return `${diffDays} ngày trước`
-  } catch {
-    return isoString
-  }
-}
-
 export const AdminKioskManagementView: React.FC = () => {
-  const { user } = useAuthStore()
-  const {
-    kiosks,
-    setKiosks,
-    isPingStale,
-    setSecretToken,
-    clearSecretToken,
-    clearStore,
-  } = useKioskRegistryStore()
+  const user = useAuthStore((s) => s.user)
+  const kiosks = useKioskRegistryStore((s) => s.kiosks)
+  const isPingStale = useKioskRegistryStore((s) => s.isPingStale)
+  const setKiosks = useKioskRegistryStore((s) => s.setKiosks)
+  const setSecretToken = useKioskRegistryStore((s) => s.setSecretToken)
+  const clearSecretToken = useKioskRegistryStore((s) => s.clearSecretToken)
+  const clearStore = useKioskRegistryStore((s) => s.clearStore)
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -84,7 +60,6 @@ export const AdminKioskManagementView: React.FC = () => {
     token: string
   } | null>(null)
   const [isReissuing, setIsReissuing] = useState<string | null>(null)
-  const [copiedToken, setCopiedToken] = useState(false)
 
   const isReadOnly = user?.role === 'DPO'
 
@@ -103,29 +78,14 @@ export const AdminKioskManagementView: React.FC = () => {
   }, [setKiosks])
 
   useEffect(() => {
-    let ignore = false
-    complianceAdminService
-      .getKiosks()
-      .then((data) => {
-        if (!ignore) {
-          setKiosks(data)
-          setIsLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          const error = err as { message?: string }
-          setErrorMessage(error.message || 'Không thể tải danh sách trạm Kiosk.')
-          setIsLoading(false)
-        }
-      })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadKiosks()
 
     return () => {
-      ignore = true
       // Tiêu hủy RAM khi unmount theo DD-WEB-019
       clearStore()
     }
-  }, [setKiosks, clearStore])
+  }, [loadKiosks, clearStore])
 
   const handleReissueToken = async (kiosk: KioskItemResponse) => {
     if (isReadOnly) return
@@ -150,17 +110,28 @@ export const AdminKioskManagementView: React.FC = () => {
       }
     } catch (err) {
       const error = err as { message?: string }
-      alert(error.message || 'Không thể cấp lại token cho trạm Kiosk.')
+      toast.error(error.message || 'Không thể cấp lại token cho trạm Kiosk.')
     } finally {
       setIsReissuing(null)
     }
   }
 
-  // Danh sách các trạm mất ping quá 5 phút
-  const staleKiosks = kiosks.filter((k) => isPingStale(k.lastPingAt))
-  const onlineCount = kiosks.filter((k) => k.status === 'ONLINE' && !isPingStale(k.lastPingAt)).length
-  const warningCount = kiosks.filter((k) => k.status === 'WARNING' || isPingStale(k.lastPingAt)).length
-  const offlineCount = kiosks.filter((k) => k.status === 'OFFLINE').length
+  // Danh sách các trạm mất ping quá 5 phút và thống kê KPI (tính trong 1 vòng lặp duy nhất)
+  const { staleKiosks, onlineCount, warningCount, offlineCount } = useMemo(() => {
+    const stale: KioskItemResponse[] = []
+    let online = 0
+    let warning = 0
+    let offline = 0
+
+    for (const k of kiosks) {
+      const isStale = isPingStale(k.lastPingAt)
+      if (isStale) stale.push(k)
+      if (k.status === 'ONLINE' && !isStale) online++
+      if (k.status === 'WARNING' || isStale) warning++
+      if (k.status === 'OFFLINE') offline++
+    }
+    return { staleKiosks: stale, onlineCount: online, warningCount: warning, offlineCount: offline }
+  }, [kiosks, isPingStale])
 
   return (
     <div className="space-y-6">
@@ -243,77 +214,12 @@ export const AdminKioskManagementView: React.FC = () => {
       )}
 
       {/* ── Thống kê tổng quan KPI Đồng bộ ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Tổng số trạm */}
-        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-xl ring-1 ring-indigo-500/20 bg-indigo-50/70 text-indigo-600 flex items-center justify-center shadow-xs">
-              <Server size={18} />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tất cả</span>
-          </div>
-          <div>
-            <div className="text-xs font-semibold text-slate-500">Tổng số trạm</div>
-            <div className="text-2xl font-extrabold font-mono text-slate-800 tracking-tight" data-testid="kpi-total-kiosks">
-              {kiosks.length}
-            </div>
-          </div>
-        </div>
-
-        {/* Trực tuyến */}
-        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-xl ring-1 ring-emerald-500/20 bg-emerald-50/70 text-emerald-600 flex items-center justify-center shadow-xs">
-              <Wifi size={18} />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
-              Hoạt động
-            </span>
-          </div>
-          <div>
-            <div className="text-xs font-semibold text-emerald-700">Trực tuyến</div>
-            <div className="text-2xl font-extrabold font-mono text-emerald-700 tracking-tight" data-testid="kpi-online-kiosks">
-              {onlineCount}
-            </div>
-          </div>
-        </div>
-
-        {/* Mất Ping > 5p */}
-        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-xl ring-1 ring-amber-500/20 bg-amber-50/70 text-amber-600 flex items-center justify-center shadow-xs">
-              <AlertTriangle size={18} />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/50">
-              Mất tín hiệu
-            </span>
-          </div>
-          <div>
-            <div className="text-xs font-semibold text-amber-700">Mất Ping &gt; 5p</div>
-            <div className="text-2xl font-extrabold font-mono text-amber-700 tracking-tight" data-testid="kpi-stale-kiosks">
-              {warningCount}
-            </div>
-          </div>
-        </div>
-
-        {/* Ngoại tuyến */}
-        <div className="card-surface p-4.5 space-y-3 relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 group">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-xl ring-1 ring-rose-500/20 bg-rose-50/70 text-rose-600 flex items-center justify-center shadow-xs">
-              <WifiOff size={18} />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/50">
-              Gián đoạn
-            </span>
-          </div>
-          <div>
-            <div className="text-xs font-semibold text-rose-700">Ngoại tuyến</div>
-            <div className="text-2xl font-extrabold font-mono text-rose-700 tracking-tight" data-testid="kpi-offline-kiosks">
-              {offlineCount}
-            </div>
-          </div>
-        </div>
-      </div>
+      <KioskKpiCards
+        totalCount={kiosks.length}
+        onlineCount={onlineCount}
+        warningCount={warningCount}
+        offlineCount={offlineCount}
+      />
 
       {/* ── Thông báo lỗi nếu có ── */}
       {errorMessage && (
@@ -409,15 +315,17 @@ export const AdminKioskManagementView: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1 items-start">
-                          <span className={statusInfo.className}>{statusInfo.label}</span>
-                          {stale && (
+                          {stale ? (
                             <span
                               data-testid={`ping-stale-badge-${kiosk.kioskId}`}
                               title="Không nhận được nhịp tim ping từ trạm trong hơn 5 phút"
-                              className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded cursor-help"
+                              className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1 cursor-help"
                             >
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                               MẤT TÍN HIỆU &gt; 5P
                             </span>
+                          ) : (
+                            <span className={statusInfo.className}>{statusInfo.label}</span>
                           )}
                         </div>
                       </td>
@@ -459,73 +367,15 @@ export const AdminKioskManagementView: React.FC = () => {
       />
 
       {/* ── Modal Hiển thị Secret Token Cấp Lại (Một Lần Trong RAM) ── */}
-      <Dialog
-        open={Boolean(reissuedTokenKiosk)}
-        onOpenChange={(open) => {
-          if (!open && reissuedTokenKiosk) {
+      <ReissuedTokenDialog
+        reissuedTokenKiosk={reissuedTokenKiosk}
+        onClose={() => {
+          if (reissuedTokenKiosk) {
             clearSecretToken(reissuedTokenKiosk.kioskId)
-            setReissuedTokenKiosk(null)
-            setCopiedToken(false)
           }
+          setReissuedTokenKiosk(null)
         }}
-      >
-        <DialogContent
-          hideCloseButton
-          usePortal={false}
-          className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4"
-        >
-          {reissuedTokenKiosk && (
-            <>
-              <DialogTitle className="text-base font-bold text-slate-900">
-                Cấp Lại Secret Token Thành Công
-              </DialogTitle>
-
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
-                Secret Token mới của trạm <strong>{reissuedTokenKiosk.kioskId}</strong> chỉ hiển thị duy nhất 1 lần trong RAM. Khi đóng hộp thoại này, token sẽ bị hủy khỏi bộ nhớ trình duyệt.
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
-                <code
-                  data-testid="reissued-token-value"
-                  className="font-mono text-xs font-bold text-indigo-600 break-all select-all"
-                >
-                  {reissuedTokenKiosk.token}
-                </code>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(reissuedTokenKiosk.token)
-                    setCopiedToken(true)
-                    setTimeout(() => setCopiedToken(false), 2000)
-                  }}
-                  leftIcon={copiedToken ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                  className="shrink-0"
-                >
-                  {copiedToken ? 'Đã chép' : 'Sao chép'}
-                </Button>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  data-testid="close-reissued-token-modal-btn"
-                  onClick={() => {
-                    clearSecretToken(reissuedTokenKiosk.kioskId)
-                    setReissuedTokenKiosk(null)
-                    setCopiedToken(false)
-                  }}
-                >
-                  Tôi đã lưu Token an toàn
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      />
     </div>
   )
 }

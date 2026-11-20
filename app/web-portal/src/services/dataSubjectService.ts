@@ -9,6 +9,7 @@ import { apiClient } from './apiClient'
 import { normalizeApiError } from './errorNormalizer'
 import type {
   ApiResponse,
+  PaginatedResult,
   WithdrawConsentRequest,
   WithdrawConsentResponse,
   DataSubjectRequestItem,
@@ -53,13 +54,13 @@ export class DataSubjectService {
    */
   async getEmployeeDataRequests(): Promise<DataSubjectRequestItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<unknown>>(
-        '/api/v1/employee/data-requests'
-      )
-      const raw = response.data.data
-      if (Array.isArray(raw)) return raw as DataSubjectRequestItem[]
-      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        return (raw as { content: DataSubjectRequestItem[] }).content
+      const response = await apiClient.get<
+        ApiResponse<PaginatedResult<DataSubjectRequestItem> | DataSubjectRequestItem[]>
+      >('/api/v1/employee/data-requests')
+      const data = response.data.data
+      if (Array.isArray(data)) return data
+      if (data && typeof data === 'object' && 'content' in data && Array.isArray(data.content)) {
+        return data.content
       }
       return []
     } catch (error) {
@@ -72,13 +73,13 @@ export class DataSubjectService {
    */
   async getDpoDataRequests(): Promise<DataSubjectRequestItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<unknown>>(
-        '/api/v1/dpo/data-requests'
-      )
-      const raw = response.data.data
-      if (Array.isArray(raw)) return raw as DataSubjectRequestItem[]
-      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        return (raw as { content: DataSubjectRequestItem[] }).content
+      const response = await apiClient.get<
+        ApiResponse<PaginatedResult<DataSubjectRequestItem> | DataSubjectRequestItem[]>
+      >('/api/v1/dpo/data-requests')
+      const data = response.data.data
+      if (Array.isArray(data)) return data
+      if (data && typeof data === 'object' && 'content' in data && Array.isArray(data.content)) {
+        return data.content
       }
       return []
     } catch (error) {

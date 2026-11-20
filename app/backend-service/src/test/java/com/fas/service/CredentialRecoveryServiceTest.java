@@ -28,7 +28,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Kiểm thử Dịch vụ Khôi phục Thông tin Xác thực (Reset Password & Reset PIN)
- * (SOL-BE-022, FR-BE-019, DD-BE-022, API-BE-036, API-BE-037, TST-BE-034, BLD-BE-031, TASK-BE-036).
+ * (SOL-BE-022, FR-BE-019, DD-BE-022, API-BE-036, API-BE-037, TST-BE-034,
+ * BLD-BE-031, TASK-BE-036).
  */
 @ExtendWith(MockitoExtension.class)
 class CredentialRecoveryServiceTest {
@@ -53,8 +54,7 @@ class CredentialRecoveryServiceTest {
                 userRepository,
                 sessionService,
                 pinService,
-                passwordEncoder
-        );
+                passwordEncoder);
     }
 
     @Test
@@ -104,7 +104,8 @@ class CredentialRecoveryServiceTest {
         // When / Then
         assertThatThrownBy(() -> credentialRecoveryService.resetPassword(999L))
                 .isInstanceOf(ApiException.class)
-                .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.EMPLOYEE_NOT_FOUND));
+                .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                        .isEqualTo(ApiErrorCode.EMPLOYEE_NOT_FOUND));
 
         verify(sessionService, never()).revokeAllSessionsForUser(any());
         verify(userRepository, never()).save(any());
@@ -137,7 +138,7 @@ class CredentialRecoveryServiceTest {
     void resetPin_ValidRequest_DelegatesToPinService() {
         // Given
         Long userId = 100L;
-        PinResetRequest request = new PinResetRequest("CurrentPassword123!", "654321", "654321");
+        PinResetRequest request = new PinResetRequest("CurrentPassword123!", "654321");
         PinOperationResult expectedResult = new PinOperationResult(true, "Đặt lại mã PIN thành công");
 
         when(pinService.resetPinWithPassword(userId, request)).thenReturn(expectedResult);
@@ -158,7 +159,8 @@ class CredentialRecoveryServiceTest {
         // When / Then
         assertThatThrownBy(() -> credentialRecoveryService.resetPin(100L, null))
                 .isInstanceOf(ApiException.class)
-                .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.VALIDATION_FAILED));
+                .satisfies(
+                        ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.VALIDATION_FAILED));
 
         verify(pinService, never()).resetPinWithPassword(any(), any());
     }

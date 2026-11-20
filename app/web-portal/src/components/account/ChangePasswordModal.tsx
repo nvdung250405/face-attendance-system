@@ -8,8 +8,8 @@
  * 4. Không chặn điều hướng (người dùng tự do đóng hộp thoại hoặc huỷ bất kỳ lúc nào).
  */
 
-import React, { useState, useId } from 'react'
-import { Lock, X, Info, Check, Eye, EyeOff } from 'lucide-react'
+import React, { useState, useId, useRef, useEffect, useCallback } from 'react'
+import { Lock, X, Check, Eye, EyeOff } from 'lucide-react'
 import { credentialService } from '@/services/credentialService'
 import {
   Dialog,
@@ -46,25 +46,43 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const titleId = useId()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const resetForm = useCallback(() => {
+    setOldPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setShowOld(false)
+    setShowNew(false)
+    setShowConfirm(false)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    setIsLoading(false)
+  }, [])
+
+  const handleClose = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    resetForm()
+    onClose()
+  }, [resetForm, onClose])
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [])
 
   if (!isOpen) {
     return null
   }
 
   const strength = calculatePasswordStrength(newPassword)
-
-  const resetForm = () => {
-    setOldPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-    setErrorMessage(null)
-    setSuccessMessage(null)
-  }
-
-  const handleClose = () => {
-    resetForm()
-    onClose()
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,7 +112,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     setIsLoading(true)
     try {
       const res = await credentialService.changePassword({
-        oldPassword,
+        currentPassword: oldPassword,
         newPassword,
       })
 
@@ -102,7 +120,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         res.message || 'Đổi mật khẩu thành công! Các phiên đăng nhập trên thiết bị khác đã được thu hồi.'
       )
       onSuccess?.()
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         handleClose()
       }, 2000)
     } catch (err: unknown) {
@@ -124,7 +142,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         data-testid="change-password-modal"
         hideCloseButton
         usePortal={false}
-        className="max-w-md p-6"
+        className="sm:max-w-md sm:p-6"
       >
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between pb-3.5 border-b border-border-subtle">
@@ -136,31 +154,25 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <DialogTitle id={titleId} className="text-base font-bold text-slate-900">
                 Đổi mật khẩu tài khoản
               </DialogTitle>
-              <p className="text-xs text-slate-500">Thiết lập mật khẩu bảo mật mới</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
             aria-label="Đóng"
-            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
+            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
           >
             <X size={18} strokeWidth={2} />
           </button>
         </DialogHeader>
 
-        {/* Khối cảnh báo thu hồi phiên (UXD-WEB-008) */}
-        <div className="my-3.5 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs leading-relaxed flex items-start gap-2">
-          <Info size={16} className="text-blue-600 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-semibold">Lưu ý thu hồi phiên:</span> Sau khi đổi mật khẩu thành công, toàn bộ các phiên đăng nhập khác của bạn sẽ tự động bị thu hồi để đảm bảo an toàn.
-          </div>
-        </div>
-
         {/* Thông báo kết quả */}
         {errorMessage && (
           <div
+            id="change-password-error"
             data-testid="change-password-error"
+            role="alert"
+            aria-live="assertive"
             className="mb-3.5 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium"
           >
             {errorMessage}
@@ -169,7 +181,10 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
         {successMessage && (
           <div
+            id="change-password-success"
             data-testid="change-password-success"
+            role="status"
+            aria-live="polite"
             className="mb-3.5 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center gap-2"
           >
             <Check size={16} strokeWidth={2.5} />
@@ -192,21 +207,26 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 id="input-old-password"
                 data-testid="input-old-password"
                 type={showOld ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 placeholder="Nhập mật khẩu đang sử dụng"
-                className="input-base pr-10"
+                className="input-base pr-11"
                 disabled={isLoading}
                 required
+                aria-required="true"
+                aria-invalid={Boolean(errorMessage)}
+                aria-describedby={errorMessage ? 'change-password-error' : undefined}
               />
               <button
                 type="button"
-                tabIndex={-1}
                 onClick={() => setShowOld(!showOld)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
-                aria-label={showOld ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:text-text-primary transition-colors cursor-pointer"
+                aria-label={showOld ? 'Ẩn mật khẩu hiện tại' : 'Hiện mật khẩu hiện tại'}
+                aria-pressed={showOld}
+                aria-controls="input-old-password"
               >
-                {showOld ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
@@ -224,36 +244,51 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 id="input-new-password"
                 data-testid="input-new-password"
                 type={showNew ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, số"
-                className="input-base pr-10"
+                className="input-base pr-11"
                 disabled={isLoading}
                 required
+                aria-required="true"
+                aria-invalid={Boolean(errorMessage)}
+                aria-describedby={errorMessage ? 'change-password-error' : undefined}
               />
               <button
                 type="button"
-                tabIndex={-1}
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
-                aria-label={showNew ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:text-text-primary transition-colors cursor-pointer"
+                aria-label={showNew ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
+                aria-pressed={showNew}
+                aria-controls="input-new-password"
               >
-                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
             {/* Thước đo độ mạnh mật khẩu */}
             {newPassword && (
-              <div data-testid="password-strength-meter" className="mt-2">
+              <div data-testid="password-strength-meter" className="mt-2" role="region" aria-label="Độ mạnh mật khẩu">
                 <div className="flex items-center justify-between text-[11px] mb-1 font-medium text-text-secondary">
                   <span>Độ mạnh:</span>
-                  <span className={`font-semibold ${
-                    strength.score <= 2 ? 'text-rose-600' : strength.score === 3 ? 'text-amber-600' : 'text-emerald-600'
-                  }`}>
+                  <span
+                    aria-live="polite"
+                    className={`font-semibold ${
+                      strength.score <= 2 ? 'text-rose-600' : strength.score === 3 ? 'text-amber-600' : 'text-emerald-600'
+                    }`}
+                  >
                     {strength.label}
                   </span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  role="progressbar"
+                  aria-valuenow={strength.score}
+                  aria-valuemin={0}
+                  aria-valuemax={4}
+                  aria-valuetext={strength.label}
+                  className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden"
+                >
                   <div
                     style={{ width: strength.barWidth }}
                     className={`h-full transition-all duration-300 ${strength.colorClass}`}
@@ -276,27 +311,32 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 id="input-confirm-password"
                 data-testid="input-confirm-password"
                 type={showConfirm ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu mới"
-                className="input-base pr-10"
+                className="input-base pr-11"
                 disabled={isLoading}
                 required
+                aria-required="true"
+                aria-invalid={Boolean(errorMessage)}
+                aria-describedby={errorMessage ? 'change-password-error' : undefined}
               />
               <button
                 type="button"
-                tabIndex={-1}
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
-                aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:text-text-primary transition-colors cursor-pointer"
+                aria-label={showConfirm ? 'Ẩn xác nhận mật khẩu' : 'Hiện xác nhận mật khẩu'}
+                aria-pressed={showConfirm}
+                aria-controls="input-confirm-password"
               >
-                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="pt-3 border-t border-border-subtle flex items-center justify-end gap-2.5">
+          <div className="pt-3 border-t border-border-subtle flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
             <Button
               type="button"
               variant="secondary"
@@ -304,6 +344,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               data-testid="btn-cancel-change-password"
               onClick={handleClose}
               disabled={isLoading}
+              className="w-full sm:w-auto"
             >
               Hủy bỏ
             </Button>
@@ -312,10 +353,15 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               id="btn-submit-change-password"
               data-testid="btn-submit-change-password"
               isLoading={isLoading}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               Cập nhật mật khẩu
             </Button>
           </div>
+
+          <p className="text-center text-[11px] text-slate-500 pt-1">
+            <span className="font-semibold text-slate-600">Lưu ý thu hồi phiên:</span> Toàn bộ phiên đăng nhập khác sẽ được thu hồi sau khi đổi mật khẩu.
+          </p>
         </form>
       </DialogContent>
     </Dialog>

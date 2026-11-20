@@ -65,8 +65,13 @@ class SQLiteQueueManager:
                 # Kiểm tra tương thích schema bảng hiện có
                 cursor.execute("PRAGMA table_info(offline_punches);")
                 existing_cols = [row[1] for row in cursor.fetchall()]
-                if existing_cols and ("is_synced" not in existing_cols or "punch_timestamp" not in existing_cols):
-                    logger.warning("Phát hiện schema cũ trong %s, thực hiện tái cấu trúc bảng chuẩn...", self.db_path.name)
+                if existing_cols and (
+                    "is_synced" not in existing_cols or "punch_timestamp" not in existing_cols
+                ):
+                    logger.warning(
+                        "Phát hiện schema cũ trong %s, thực hiện tái cấu trúc bảng chuẩn...",
+                        self.db_path.name,
+                    )
                     cursor.execute("DROP TABLE offline_punches;")
 
                 # DDL Tạo bảng hàng đợi điểm danh ngoại tuyến theo chuẩn DATA-KSK-001
@@ -171,7 +176,9 @@ class SQLiteQueueManager:
             last_type = self.get_last_punch_type(employee_id)
             punch_type = "CHECK_OUT" if last_type == "CHECK_IN" else "CHECK_IN"
         elif punch_type in ("FACE", "PIN"):
-            verification_method = "VERIFICATION_FACE" if punch_type == "FACE" else "VERIFICATION_PIN"
+            verification_method = (
+                "VERIFICATION_FACE" if punch_type == "FACE" else "VERIFICATION_PIN"
+            )
             last_type = self.get_last_punch_type(employee_id)
             punch_type = "CHECK_OUT" if last_type == "CHECK_IN" else "CHECK_IN"
 

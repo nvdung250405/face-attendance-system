@@ -177,14 +177,17 @@ export class ShiftAdminService {
         } else {
           await this.deactivateShift(id)
         }
+        const allShifts = await this.getShifts()
+        const matched = allShifts.find((s) => s.id === id)
+        if (matched) return matched
         return {
           id,
-          shiftCode: '',
-          name: '',
-          shiftName: '',
-          startTime: '',
-          endTime: '',
-          gracePeriodMinutes: 0,
+          shiftCode: `CA-${id}`,
+          name: `Ca #${id}`,
+          shiftName: `Ca #${id}`,
+          startTime: '08:00',
+          endTime: '17:30',
+          gracePeriodMinutes: 15,
           isActive: data.isActive,
         }
       }

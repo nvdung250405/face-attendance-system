@@ -164,7 +164,7 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
     vi.spyOn(shiftAdminService, 'getEmployeeShifts').mockResolvedValue(mockAssignments)
     vi.spyOn(shiftAdminService, 'createShift').mockImplementation(async (req) => ({
       id: 3,
-      shiftCode: req.shiftCode,
+      shiftCode: req.shiftCode || 'SHIFT-CUSTOM',
       name: req.name,
       startTime: req.startTime,
       endTime: req.endTime,
@@ -254,6 +254,11 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       fireEvent.click(createButton)
 
       expect(screen.getByTestId('shift-drawer')).toBeTruthy()
+      expect(screen.getByTestId('shift-code-preview')).toBeTruthy()
+      expect(screen.getByTestId('toggle-custom-shift-code')).toBeTruthy()
+
+      // Mở toggle tùy chỉnh mã ca thủ công
+      fireEvent.click(screen.getByTestId('toggle-custom-shift-code'))
 
       // Điền form
       fireEvent.change(screen.getByTestId('input-shift-code'), { target: { value: 'CA_DEM' } })
@@ -271,6 +276,36 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
             name: 'Ca Đêm',
             startTime: '22:00',
             endTime: '06:00',
+          })
+        )
+      })
+    })
+
+    it('2b. Tạo ca làm việc mới mà không nhập shiftCode (máy chủ tự sinh mã ca)', async () => {
+      renderShiftManagementView()
+
+      await waitFor(() => {
+        expect(screen.getByText('Ca Hành Chính')).toBeTruthy()
+      })
+
+      const createButton = screen.getByTestId('open-create-shift-drawer-btn')
+      fireEvent.click(createButton)
+
+      expect(screen.getByTestId('shift-drawer')).toBeTruthy()
+
+      // Chỉ điền tên ca, giờ bắt đầu, giờ kết thúc, để trống shiftCode
+      fireEvent.change(screen.getByTestId('input-shift-name'), { target: { value: 'Ca Tự Động' } })
+      fireEvent.change(screen.getByTestId('input-shift-start-time'), { target: { value: '09:00' } })
+      fireEvent.change(screen.getByTestId('input-shift-end-time'), { target: { value: '18:00' } })
+
+      fireEvent.click(screen.getByTestId('submit-shift-btn'))
+
+      await waitFor(() => {
+        expect(shiftAdminService.createShift).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: 'Ca Tự Động',
+            startTime: '09:00',
+            endTime: '18:00',
           })
         )
       })

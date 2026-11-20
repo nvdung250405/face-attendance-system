@@ -12,14 +12,13 @@ import java.time.LocalTime;
  * DTO yêu cầu khởi tạo ca làm việc mới
  * ({@code POST /api/v1/admin/shifts} - APD-BE-013, API-BE-023).
  *
- * @param shiftCode          mã ca làm việc duy nhất
+ * @param shiftCode          mã ca làm việc duy nhất (tùy chọn; nếu bỏ trống máy chủ sẽ tự sinh SHF-XXXX)
  * @param shiftName          tên mô tả ca
  * @param startTime          thời gian bắt đầu ca
  * @param endTime            thời gian kết thúc ca
  * @param gracePeriodMinutes thời gian ân hạn đi muộn (phút, 0-60)
  */
 public record CreateShiftRequest(
-        @NotBlank(message = "Mã ca không được để trống")
         @Size(max = 32, message = "Mã ca không được vượt quá 32 ký tự")
         String shiftCode,
 

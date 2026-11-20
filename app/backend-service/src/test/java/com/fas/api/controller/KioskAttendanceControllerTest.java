@@ -121,8 +121,7 @@ class KioskAttendanceControllerTest {
                     1042L,
                     punchTime,
                     "VERIFICATION_FACE",
-                    new BigDecimal("0.8824"),
-                    "KIOSK-HN-01"
+                    new BigDecimal("0.8824")
             );
 
             PunchResult result = new PunchResult(
@@ -138,7 +137,7 @@ class KioskAttendanceControllerTest {
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-            when(attendanceService.recordPunch(any(KioskPunchRequest.class))).thenReturn(result);
+            when(attendanceService.recordPunch(eq("KIOSK-HN-01"), any(KioskPunchRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
@@ -156,7 +155,7 @@ class KioskAttendanceControllerTest {
                     .andExpect(jsonPath("$.data.punchType").value("CHECK_IN"))
                     .andExpect(jsonPath("$.data.status").value("ON_TIME"));
 
-            verify(attendanceService).recordPunch(any(KioskPunchRequest.class));
+            verify(attendanceService).recordPunch(eq("KIOSK-HN-01"), any(KioskPunchRequest.class));
         }
 
         @Test
@@ -166,8 +165,7 @@ class KioskAttendanceControllerTest {
                     1042L,
                     OffsetDateTime.now(),
                     "VERIFICATION_FACE",
-                    new BigDecimal("0.8824"),
-                    "KIOSK-HN-01"
+                    new BigDecimal("0.8824")
             );
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
@@ -187,8 +185,7 @@ class KioskAttendanceControllerTest {
                     1042L,
                     OffsetDateTime.now(),
                     "VERIFICATION_FACE",
-                    new BigDecimal("0.8824"),
-                    "KIOSK-HN-01"
+                    new BigDecimal("0.8824")
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", null))
@@ -212,8 +209,7 @@ class KioskAttendanceControllerTest {
                     1042L,
                     OffsetDateTime.now(),
                     "VERIFICATION_FACE",
-                    new BigDecimal("0.8824"),
-                    "KIOSK-HN-01"
+                    new BigDecimal("0.8824")
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", "wrong-secret"))
@@ -238,8 +234,7 @@ class KioskAttendanceControllerTest {
                     1042L,
                     OffsetDateTime.now(),
                     "VERIFICATION_FACE",
-                    new BigDecimal("0.8824"),
-                    "KIOSK-DISABLED"
+                    new BigDecimal("0.8824")
             );
 
             when(kioskAuthService.authenticate("KIOSK-DISABLED", KIOSK_SECRET))
@@ -258,42 +253,17 @@ class KioskAttendanceControllerTest {
         }
 
         @Test
-        @DisplayName("Header X-Kiosk-Id không khớp với kioskId trong body -> trả về 401 KIOSK_UNAUTHORIZED")
-        void recordPunch_HeaderBodyMismatch_Returns401() throws Exception {
-            KioskPunchRequest request = new KioskPunchRequest(
-                    1042L,
-                    OffsetDateTime.now(),
-                    "VERIFICATION_FACE",
-                    new BigDecimal("0.8824"),
-                    "KIOSK-HN-02"
-            );
-
-            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-
-            mockMvc.perform(post("/api/v1/kiosk/punch")
-                            .header("X-Kiosk-Id", "KIOSK-HN-01")
-                            .header("X-Kiosk-Secret", KIOSK_SECRET)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
-
-            verifyNoInteractions(attendanceService);
-        }
-
-        @Test
         @DisplayName("Vi phạm Cooldown 120 giây -> trả về 409 Conflict COOLDOWN_ACTIVE")
         void recordPunch_CooldownActive_Returns409() throws Exception {
             KioskPunchRequest request = new KioskPunchRequest(
                     1042L,
                     OffsetDateTime.now(),
                     "VERIFICATION_FACE",
-                    new BigDecimal("0.8824"),
-                    "KIOSK-HN-01"
+                    new BigDecimal("0.8824")
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-            when(attendanceService.recordPunch(any(KioskPunchRequest.class)))
+            when(attendanceService.recordPunch(eq("KIOSK-HN-01"), any(KioskPunchRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.COOLDOWN_ACTIVE, "Chống quẹt trùng lặp trong 120s"));
 
             mockMvc.perform(post("/api/v1/kiosk/punch")
@@ -312,8 +282,7 @@ class KioskAttendanceControllerTest {
                     {
                       "employeeId": null,
                       "punchTimestamp": "2026-10-08T08:30:15+07:00",
-                      "verificationMethod": "VERIFICATION_FACE",
-                      "kioskId": "KIOSK-HN-01"
+                      "verificationMethod": "VERIFICATION_FACE"
                     }
                     """;
 
@@ -336,12 +305,12 @@ class KioskAttendanceControllerTest {
         void syncBatch_Success_Returns200() throws Exception {
             OfflinePunchRecord rec1 = new OfflinePunchRecord(101L, 1042L, OffsetDateTime.now(), "VERIFICATION_FACE", new BigDecimal("0.891"));
             OfflinePunchRecord rec2 = new OfflinePunchRecord(102L, 1045L, OffsetDateTime.now(), "VERIFICATION_PIN", null);
-            KioskSyncBatchRequest request = new KioskSyncBatchRequest("KIOSK-HN-01", 2, List.of(rec1, rec2));
+            KioskSyncBatchRequest request = new KioskSyncBatchRequest(List.of(rec1, rec2));
 
             BatchSyncResult result = new BatchSyncResult(2, List.of(101L, 102L), List.of());
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-            when(offlineBatchSyncService.processOfflineBatch(any(KioskSyncBatchRequest.class))).thenReturn(result);
+            when(offlineBatchSyncService.processOfflineBatch(eq("KIOSK-HN-01"), any(KioskSyncBatchRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/sync-batch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
@@ -355,13 +324,13 @@ class KioskAttendanceControllerTest {
                     .andExpect(jsonPath("$.data.syncedLocalIds[0]").value(101))
                     .andExpect(jsonPath("$.data.syncedLocalIds[1]").value(102));
 
-            verify(offlineBatchSyncService).processOfflineBatch(any(KioskSyncBatchRequest.class));
+            verify(offlineBatchSyncService).processOfflineBatch(eq("KIOSK-HN-01"), any(KioskSyncBatchRequest.class));
         }
 
         @Test
         @DisplayName("Thiếu header X-Kiosk-Id -> trả về 400 Bad Request")
         void syncBatch_MissingHeader_Returns400() throws Exception {
-            KioskSyncBatchRequest request = new KioskSyncBatchRequest("KIOSK-HN-01", 1, List.of(
+            KioskSyncBatchRequest request = new KioskSyncBatchRequest(List.of(
                     new OfflinePunchRecord(101L, 1042L, OffsetDateTime.now(), "VERIFICATION_FACE", new BigDecimal("0.891"))
             ));
 
@@ -377,7 +346,7 @@ class KioskAttendanceControllerTest {
         @Test
         @DisplayName("Thiếu header X-Kiosk-Secret -> trả về 401 KIOSK_UNAUTHORIZED")
         void syncBatch_MissingSecret_Returns401() throws Exception {
-            KioskSyncBatchRequest request = new KioskSyncBatchRequest("KIOSK-HN-01", 1, List.of(
+            KioskSyncBatchRequest request = new KioskSyncBatchRequest(List.of(
                     new OfflinePunchRecord(101L, 1042L, OffsetDateTime.now(), "VERIFICATION_FACE", new BigDecimal("0.891"))
             ));
 
@@ -387,26 +356,6 @@ class KioskAttendanceControllerTest {
 
             mockMvc.perform(post("/api/v1/kiosk/sync-batch")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.code").value("KIOSK_UNAUTHORIZED"));
-
-            verifyNoInteractions(offlineBatchSyncService);
-        }
-
-        @Test
-        @DisplayName("Header X-Kiosk-Id không khớp body -> trả về 401 KIOSK_UNAUTHORIZED")
-        void syncBatch_HeaderMismatch_Returns401() throws Exception {
-            KioskSyncBatchRequest request = new KioskSyncBatchRequest("KIOSK-HN-02", 1, List.of(
-                    new OfflinePunchRecord(101L, 1042L, OffsetDateTime.now(), "VERIFICATION_FACE", new BigDecimal("0.891"))
-            ));
-
-            when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-
-            mockMvc.perform(post("/api/v1/kiosk/sync-batch")
-                            .header("X-Kiosk-Id", "KIOSK-HN-01")
-                            .header("X-Kiosk-Secret", KIOSK_SECRET)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized())
@@ -524,7 +473,7 @@ class KioskAttendanceControllerTest {
         @Test
         @DisplayName("Thẩm định OTP hợp lệ -> trả về 200 OK OTP_VERIFIED")
         void verifyOtp_Success_Returns200() throws Exception {
-            KioskVerifyOtpRequest request = new KioskVerifyOtpRequest("123456", "KIOSK-HN-01");
+            KioskVerifyOtpRequest request = new KioskVerifyOtpRequest("123456");
             OtpVerificationResult result = new OtpVerificationResult(
                     "token123",
                     1042L,
@@ -534,7 +483,7 @@ class KioskAttendanceControllerTest {
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-            when(enrollmentService.verifyOtp(any(KioskVerifyOtpRequest.class))).thenReturn(result);
+            when(enrollmentService.verifyOtp(eq("KIOSK-HN-01"), any(KioskVerifyOtpRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/verify-otp")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
@@ -547,13 +496,13 @@ class KioskAttendanceControllerTest {
                     .andExpect(jsonPath("$.data.sessionToken").value("token123"))
                     .andExpect(jsonPath("$.data.employeeCode").value("NV-1042"));
 
-            verify(enrollmentService).verifyOtp(any(KioskVerifyOtpRequest.class));
+            verify(enrollmentService).verifyOtp(eq("KIOSK-HN-01"), any(KioskVerifyOtpRequest.class));
         }
 
         @Test
         @DisplayName("Mã OTP sai format (không đủ 6 số) -> trả về 400 VALIDATION_FAILED")
         void verifyOtp_InvalidFormat_Returns400() throws Exception {
-            KioskVerifyOtpRequest request = new KioskVerifyOtpRequest("12", "KIOSK-HN-01");
+            KioskVerifyOtpRequest request = new KioskVerifyOtpRequest("12");
 
             mockMvc.perform(post("/api/v1/kiosk/verify-otp")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
@@ -584,8 +533,7 @@ class KioskAttendanceControllerTest {
             KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
                     "123456",
                     "sessionToken123",
-                    vector,
-                    "KIOSK-HN-01"
+                    vector
             );
 
             EnrollmentResult result = new EnrollmentResult(
@@ -596,7 +544,7 @@ class KioskAttendanceControllerTest {
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-            when(enrollmentService.enrollFace(any(KioskEnrollFaceRequest.class))).thenReturn(result);
+            when(enrollmentService.enrollFace(eq("KIOSK-HN-01"), any(KioskEnrollFaceRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/enroll-face")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
@@ -609,7 +557,7 @@ class KioskAttendanceControllerTest {
                     .andExpect(jsonPath("$.data.employeeId").value(1042))
                     .andExpect(jsonPath("$.data.status").value("ACTIVE"));
 
-            verify(enrollmentService).enrollFace(any(KioskEnrollFaceRequest.class));
+            verify(enrollmentService).enrollFace(eq("KIOSK-HN-01"), any(KioskEnrollFaceRequest.class));
         }
 
         @Test
@@ -621,8 +569,7 @@ class KioskAttendanceControllerTest {
             KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
                     "123456",
                     "sessionToken123",
-                    vector,
-                    "KIOSK-HN-01"
+                    vector
             );
 
             mockMvc.perform(post("/api/v1/kiosk/enroll-face")
@@ -643,8 +590,7 @@ class KioskAttendanceControllerTest {
             KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
                     "123456",
                     "sessionToken123",
-                    vector,
-                    "KIOSK-HN-01"
+                    vector
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", null))
@@ -676,8 +622,8 @@ class KioskAttendanceControllerTest {
             KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
                     "839201",
                     "tmp_session_token",
-                    "KIOSK-HN-01",
-                    templates
+                    templates,
+                    null
             );
 
             EnrollmentResult result = new EnrollmentResult(
@@ -691,7 +637,7 @@ class KioskAttendanceControllerTest {
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-            when(enrollmentService.enrollFace(any(KioskEnrollFaceRequest.class))).thenReturn(result);
+            when(enrollmentService.enrollFace(eq("KIOSK-HN-01"), any(KioskEnrollFaceRequest.class))).thenReturn(result);
 
             mockMvc.perform(post("/api/v1/kiosk/enroll-face")
                             .header("X-Kiosk-Id", "KIOSK-HN-01")
@@ -720,12 +666,12 @@ class KioskAttendanceControllerTest {
             KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
                     "839201",
                     "tmp_session_token",
-                    "KIOSK-HN-01",
-                    templates
+                    templates,
+                    null
             );
 
             when(kioskAuthService.authenticate("KIOSK-HN-01", KIOSK_SECRET)).thenReturn(activeKiosk);
-            when(enrollmentService.enrollFace(any(KioskEnrollFaceRequest.class)))
+            when(enrollmentService.enrollFace(eq("KIOSK-HN-01"), any(KioskEnrollFaceRequest.class)))
                     .thenThrow(new ApiException(ApiErrorCode.INVALID_TEMPLATE_SET,
                             "Bộ mẫu sinh trắc học bắt buộc phải gồm đúng 3 tư thế phân biệt: FRONTAL, LEFT_TILT, RIGHT_TILT"));
 

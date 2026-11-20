@@ -110,7 +110,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
         data-testid="export-report-modal"
         hideCloseButton
         usePortal={false}
-        className="card-surface w-full max-w-lg bg-white shadow-2xl rounded-3xl border border-slate-200/80 overflow-hidden space-y-5 p-6 animate-in zoom-in-95 duration-150"
+        className="card-surface w-full max-w-lg bg-white shadow-2xl rounded-3xl border border-slate-200/80 space-y-5 p-6 animate-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
@@ -124,9 +124,6 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-text-primary">Xuất Báo Cáo Bảng Công</h3>
-              <p className="text-2xs text-text-secondary">
-                Định dạng chuẩn doanh nghiệp, mốc thời gian &amp; chống Formula Injection
-              </p>
             </div>
           </div>
 

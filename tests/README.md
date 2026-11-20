@@ -1,61 +1,42 @@
-# Bộ Kiểm thử Hệ thống & Đa Dịch vụ (`tests/`)
+# Bộ Kiểm Thử Hệ Thống & Đa Phân Hệ (`tests/`)
 
 > **Mã phân vùng:** `WORKSPACE-TESTS`  
 > **Cấp độ không gian:** Parent Testing Hub  
 > **Đường dẫn:** `tests/`  
 > **Không gian cha:** [`README.md`](../README.md) (Thư mục Gốc)  
-> **Trách nhiệm cốt lõi (Single Responsibility):** Quản lý và thực thi toàn bộ các tầng kiểm thử cấp hệ thống (System-Level), kiểm thử tự động hóa đầu-cuối (E2E), kiểm thử trực quan (Visual Regression & Scaling Matrix), và kiểm thử tích hợp hợp đồng liên dịch vụ (Cross-service Integration Tests).
+> **Trách nhiệm cốt lõi:** Quản lý và điều phối toàn bộ các tầng kiểm thử cấp hệ thống: kiểm thử tích hợp API liên dịch vụ (System API Integration), kiểm thử tự động hóa trạm Kiosk (Desktop Kiosk UIA3 & Visual), và kiểm thử đầu-cuối Cổng Web (Web Portal E2E & Visual Regression).
 
 ---
 
-## 1. Kim tự tháp Kiểm thử Cấp Hệ thống
+## 1. Kim Tự Tháp Kiểm Thử Cấp Hệ Thống
 
-Khác với các bài kiểm thử đơn vị nội bộ nằm trong từng service (`app/<service>/tests/`), thư mục `tests/` này là không gian độc lập kiểm định tính tương thích, độ ổn định và trải nghiệm người dùng trên toàn hệ thống:
+Khác với các bài kiểm thử đơn vị nội bộ nằm trong từng service (`app/<service>/`), thư mục `tests/` này là không gian độc lập kiểm định tính tương thích, độ ổn định và trải nghiệm người dùng trên toàn hệ thống:
 
 ```mermaid
 flowchart TD
-    T3["Tầng 3: End-to-End System & Desktop Automation (tests/e2e/)"]
-    T2["Tầng 2: Visual Snapshot & Scaling Matrix Testing (tests/visual/)"]
-    T1["Tầng 1: Integration & Contract Compatibility (tests/integration/)"]
+    T3["Tầng 3: Web Portal E2E & Visual Pipeline (tests/web-portal/)"]
+    T2["Tầng 2: Desktop Kiosk Automation & QML Visual (tests/desktop-kiosk/)"]
+    T1["Tầng 1: Cross-Service API & Business Flow (tests/system-api/)"]
 
     T3 --> T2 --> T1
 ```
 
 ---
 
-## 2. Bản đồ Cấu trúc Nội bộ (Internal Layout)
+## 2. Bản Đồ Cấu Trúc Phân Hệ (Internal Layout)
 
-| Thư mục / Kịch bản | Loại kiểm thử | Trách nhiệm chi tiết | Lệnh thực thi |
+| Phân hệ / Thư mục | Ứng dụng mục tiêu | Loại kiểm thử | Lệnh thực thi chính |
 |:---|:---|:---|:---|
-| [**`e2e/run_system_e2e_tests.py`**](e2e/run_system_e2e_tests.py) | System E2E | Luồng nghiệp vụ toàn diện từ Cổng Web $\rightarrow$ Backend $\rightarrow$ Kiosk | `python tests/e2e/run_system_e2e_tests.py` |
-| [**`e2e/desktop/run_flaui_e2e.py`**](e2e/desktop/run_flaui_e2e.py) | Desktop UIA3 | Điều khiển giao diện Kiosk thật qua FlaUI CLI: giả lập phím F2, F1, Esc, Space | `python tests/e2e/desktop/run_flaui_e2e.py` |
-| [**`visual/test_visual_regression.py`**](visual/test_visual_regression.py) | Visual Regression | Kiểm tra 17 màn hình chuẩn Kiosk, Zero-Leak Gate (không lộ dữ liệu demo) | `pytest tests/visual/test_visual_regression.py -v` |
-| [**`visual/test_scaling_matrix.py`**](visual/test_scaling_matrix.py) | Scaling Matrix | Kiểm định tính co giãn trên 8 độ phân giải (FHD, 4K, Landscape, Ultrawide, Mobile) | `pytest tests/visual/test_scaling_matrix.py -v` |
-| [**`visual/run_ui_review.py`**](visual/run_ui_review.py) | Snapshot Runner | Tự động kết xuất lại toàn bộ 17 ảnh chụp chuẩn vào `tests/reports/screenshots/baselines/` | `python tests/visual/run_ui_review.py` |
-| [**`integration/`**](integration/) | API Integration | Kiểm định tính tương thích thực tế giữa Backend REST/STOMP và các ứng dụng | `pytest tests/integration/ -v` |
+| [**`desktop-kiosk/`**](desktop-kiosk/) | `app/kiosk-app` | FlaUI UIA3 E2E, QML Scaling Matrix, Visual Regression (17 Golden Baselines) | `pytest tests/desktop-kiosk/visual/ -v`<br>`python tests/desktop-kiosk/automation/run_flaui_e2e.py` |
+| [**`web-portal/`**](web-portal/) | `app/web-portal` | Playwright E2E Functional (01-05), Visual Regression Pipeline (67 screens & Gallery) | `cd app/web-portal && npm run test:e2e`<br>`cd app/web-portal && npm run test:ui` |
+| [**`system-api/`**](system-api/) | Full-stack (Docker) | System Integration TST-SYS-001..034 (REST API, STOMP WS, RBAC, CSDL) | `python tests/system-api/run_system_e2e.py` |
+| [**`reports/`**](reports/) | Tất cả phân hệ | Kho lưu trữ báo cáo, ảnh chụp màn hình, audit JSON và HTML Gallery | *Tự động sinh ra khi chạy test (Local-Only)* |
 
 ---
 
-## 3. Quy tắc Đầu ra & Chính sách Đóng Gói (Self-Contained Outputs)
+## 3. Chính Sách Báo Cáo Cục Bộ (Local-Only Policy)
 
-Tuân thủ nguyên tắc đóng gói toàn diện: **Toàn bộ đầu ra, báo cáo và dữ liệu kiểm thử sinh ra đều nằm gói gọn 100% bên trong không gian `tests/`**, không rò rỉ ra thư mục gốc:
-
-```text
-tests/
-├── README.md                      # Metadata manifest của Testing Hub
-├── e2e/                           # Kịch bản kiểm thử tích hợp & desktop E2E
-├── visual/                        # Kiểm thử visual regression & ma trận scaling
-└── reports/                       # <<< TOÀN BỘ ARTIFACTS TEST NẰM Ở ĐÂY
-    ├── README.md                  # Metadata manifest chi tiết của reports
-    ├── audit/
-    │   └── flaui_audit_report.json
-    ├── screenshots/
-    │   ├── baselines/             # 17 ảnh chụp giao diện chuẩn Kiosk
-    │   └── e2e/                   # 4 ảnh chụp minh chứng luồng E2E FlaUI
-    ├── diffs/                     # Ảnh sai lệch kết xuất khi test fail (.gitignore)
-    └── test-results/              # Kết quả JUnit XML / Coverage (.gitignore)
-```
-
-* **Chính sách Git**:
-  - Mã nguồn kiểm thử `tests/` cùng ảnh chuẩn `tests/reports/screenshots/baselines/` và `tests/reports/audit/` được lưu vết trong Git.
-  - Các tệp phiên tạm (`tests/.tmp/`), session FlaUI (`*.session.json`) và ảnh diff sai lệch (`diffs/`) được `.gitignore` tự động bỏ qua.
+Tuân thủ nguyên tắc **Local-Only Artifacts**:
+* **Toàn bộ đầu ra kiểm thử** (ảnh chụp màn hình, ảnh diffs, file báo cáo HTML `visual_gallery.html`, tệp JSON đo kiểm) được sinh ra bên trong `tests/reports/<platform>/` nhằm phục vụ việc kiểm tra trực quan tại máy developer.
+* **100% tài nguyên báo cáo bị `.gitignore` bỏ qua**: Không đưa bất kỳ ảnh kết xuất nhị phân (`.png`) hay báo cáo tạm nào lên Git repository để giữ repo luôn tinh gọn và tránh xung đột code.
+* **CI/CD Artifacts**: Khi chạy trên GitHub Actions, các báo cáo sẽ được tải lên dưới dạng GitHub Actions Artifacts tạm thời với hạn lưu trữ 7 ngày.

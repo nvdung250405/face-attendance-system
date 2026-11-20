@@ -88,9 +88,7 @@ class ProblemDetailsContractTest {
         assertThat(body.path("timestamp").asText()).matches(ISO_8601_VN_PATTERN);
 
         assertThat(invalidParamFields(body))
-                .containsExactlyInAnyOrder("employeeId", "punchTimestamp", "verificationMethod", "confidenceScore",
-                        "kioskId");
-        assertThat(reasonsFor(body, "kioskId")).containsExactly("kioskId không được để trống");
+                .containsExactlyInAnyOrder("employeeId", "punchTimestamp", "verificationMethod", "confidenceScore");
         assertThat(reasonsFor(body, "employeeId")).containsExactly("employeeId phải là số nguyên dương");
         assertThat(reasonsFor(body, "verificationMethod"))
                 .containsExactly("verificationMethod chỉ chấp nhận giá trị VERIFICATION_FACE hoặc VERIFICATION_PIN");
@@ -104,8 +102,7 @@ class ProblemDetailsContractTest {
                   "employeeId": 1042,
                   "punchTimestamp": "2026-10-03T08:29:45.120+07:00",
                   "verificationMethod": "VERIFICATION_FACE",
-                  "confidenceScore": 0.8924,
-                  "kioskId": "KIOSK-HN-01"
+                  "confidenceScore": 0.8924
                 }
                 """;
 
@@ -120,7 +117,7 @@ class ProblemDetailsContractTest {
         assertThat(body.path("success").asBoolean()).isTrue();
         assertThat(body.path("code").asText()).isEqualTo("PUNCH_RECORDED");
         assertThat(body.path("message").asText()).isEqualTo("Ghi nhận điểm danh thành công");
-        assertThat(body.path("data").asText()).isEqualTo("KIOSK-HN-01");
+        assertThat(body.path("data").asText()).isEqualTo("VERIFICATION_FACE");
         assertThat(body.path("timestamp").asText()).matches(ISO_8601_VN_PATTERN);
     }
 
@@ -131,8 +128,7 @@ class ProblemDetailsContractTest {
                 {
                   "employeeId": "khong-phai-so",
                   "punchTimestamp": "2026-10-03T08:29:45.120+07:00",
-                  "verificationMethod": "VERIFICATION_FACE",
-                  "kioskId": "KIOSK-HN-01"
+                  "verificationMethod": "VERIFICATION_FACE"
                 }
                 """;
 
@@ -342,8 +338,7 @@ class ProblemDetailsContractTest {
         return OBJECT_MAPPER.writeValueAsString(new KioskEnrollFaceRequest(
                 "839201",
                 "tmp_sess_9a8b7c6d5e4f3a2b1c0d",
-                vector512,
-                "KIOSK-HN-01"));
+                vector512));
     }
 
     private List<Float> vectorOf(int dimension, float component) {
@@ -377,12 +372,12 @@ class ProblemDetailsContractTest {
 
         @PostMapping("/kiosk/punch")
         ApiResponse<String> punch(@Valid @RequestBody KioskPunchRequest request) {
-            return ApiResponse.ok("PUNCH_RECORDED", "Ghi nhận điểm danh thành công", request.kioskId());
+            return ApiResponse.ok("PUNCH_RECORDED", "Ghi nhận điểm danh thành công", request.verificationMethod());
         }
 
         @PostMapping("/kiosk/enroll-face")
         ApiResponse<String> enrollFace(@Valid @RequestBody KioskEnrollFaceRequest request) {
-            return ApiResponse.ok("ENROLLMENT_COMPLETED", "Đăng ký khuôn mặt thành công", request.kioskId());
+            return ApiResponse.ok("ENROLLMENT_COMPLETED", "Đăng ký khuôn mặt thành công", request.sessionToken());
         }
 
         @GetMapping("/admin/attendance")

@@ -2,15 +2,16 @@
  * LiveAttendanceTable: Bảng Dữ Liệu Chấm Công Trực Tiếp Thời Gian Thực
  * (UXD-WEB-004, UI-WEB-003, DD-WEB-014, BLD-WEB-006, TASK-WEB-010).
  *
- * Tính năng chính:
- * 1. Tiêu đề dính (Sticky Header) hỗ trợ cuộn mượt mà.
- * 2. Hiệu ứng chớp sáng Green Flash (1.5s) trên dòng mới nhất khi nhận tin STOMP (DD-WEB-014).
- * 3. Hiển thị huy hiệu trạng thái: Đúng giờ (ON_TIME), Đi muộn (LATE kèm số phút trễ), Phương thức (Khuôn mặt / PIN).
- * 4. Bộ lọc nhanh cục bộ theo từ khóa (Mã NV, Họ tên), phòng ban và trạng thái.
+ * Tối ưu hóa (EXP2-08, EXP3-09, EXP3-10):
+ * 1. Dùng useMemo cho departments và filteredRecords để tránh tính toán lại trên mọi render.
+ * 2. Tái sử dụng formatTime từ @/utils/date.
+ * 3. Chuẩn hóa hiển thị huy hiệu trạng thái qua AttendanceStatusBadge (dùng Badge từ @/components/ui/badge).
+ * 4. Tách và memoize AttendanceRowItem để giữ tính ổn định khi render dòng bảng.
  */
 
-import React, { useState } from "react";
-import { TableSkeleton } from "@/components/common";
+import React, { useState, useMemo } from 'react'
+import { TableSkeleton, AttendanceStatusBadge } from '@/components/common'
+import { formatTime } from '@/utils/date'
 import {
   ScanFace,
   Lock,
@@ -20,32 +21,117 @@ import {
   RotateCcw,
   X,
   Edit3,
-} from "lucide-react";
-import type { AttendanceRecord } from "@/types";
+} from 'lucide-react'
+import type { AttendanceRecord } from '@/types'
 
 export interface LiveAttendanceTableProps {
-  records: AttendanceRecord[];
-  isLoading?: boolean;
-  isConnected?: boolean;
-  highlightedRecordId?: number | null;
-  showFilters?: boolean;
-  onEditRecord?: (record: AttendanceRecord) => void;
+  records: AttendanceRecord[]
+  isLoading?: boolean
+  isConnected?: boolean
+  highlightedRecordId?: number | null
+  showFilters?: boolean
+  onEditRecord?: (record: AttendanceRecord) => void
 }
 
-function formatTimeOnly(isoString?: string): string {
-  if (!isoString) return "—";
-  try {
-    const d = new Date(isoString);
-    return d.toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-  } catch {
-    return isoString;
-  }
+export { AttendanceStatusBadge } from '@/components/common'
+
+interface AttendanceRowItemProps {
+  record: AttendanceRecord
+  isHighlighted: boolean
+  onEditRecord?: (record: AttendanceRecord) => void
 }
+
+const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
+  ({ record, isHighlighted, onEditRecord }) => {
+    return (
+      <tr
+        data-testid={`attendance-row-${record.recordId}`}
+        className={`transition-colors duration-500 group ${
+          isHighlighted
+            ? 'bg-emerald-50/90 ring-2 ring-emerald-400 ring-inset animate-pulse'
+            : 'hover:bg-indigo-50/25'
+        }`}
+      >
+        <td className="py-3 px-4 font-mono font-bold text-xs text-slate-900 whitespace-nowrap">
+          {formatTime(record.punchTimestamp)}
+        </td>
+
+        <td className="py-3 px-4 font-mono font-bold text-xs text-indigo-600 whitespace-nowrap">
+          {record.employeeCode}
+        </td>
+
+        <td className="py-3 px-4 text-xs font-semibold text-slate-900 whitespace-nowrap">
+          {record.fullName}
+        </td>
+
+        <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
+          {record.department || '—'}
+        </td>
+
+        <td className="py-3 px-4 text-xs whitespace-nowrap">
+          <span
+            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+              record.punchType === 'CHECK_IN'
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200/70'
+                : 'bg-slate-100 text-slate-700 border-slate-200'
+            }`}
+          >
+            {record.punchType === 'CHECK_IN' ? 'VÀO CA' : 'RA CA'}
+          </span>
+        </td>
+
+        <td className="py-3 px-4 text-xs whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 font-medium text-slate-600">
+            {record.verificationMethod === 'VERIFICATION_FACE' ||
+            record.verificationMethod === 'FACE_MATCH' ? (
+              <>
+                <ScanFace size={15} className="text-indigo-600" />
+                <span>Khuôn mặt</span>
+              </>
+            ) : record.verificationMethod === 'MANUAL_HR' ||
+              record.verificationMethod === 'HR_OVERRIDE' ? (
+              <>
+                <UserCheck size={15} className="text-blue-600" />
+                <span>HR Điều chỉnh</span>
+              </>
+            ) : (
+              <>
+                <Lock size={15} className="text-amber-600" />
+                <span>Mã PIN</span>
+              </>
+            )}
+          </span>
+        </td>
+
+        <td className="py-3 px-4 whitespace-nowrap">
+          <AttendanceStatusBadge status={record.status} lateMinutes={record.lateMinutes} />
+        </td>
+
+        <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
+          {record.kioskId}
+        </td>
+
+        {onEditRecord && (
+          <td className="py-3 px-4 text-xs whitespace-nowrap text-right sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+            <button
+              type="button"
+              data-testid={`adjust-record-btn-${record.recordId}`}
+              aria-label={`Điều chỉnh bản ghi điểm danh của ${record.fullName}`}
+              onClick={() => onEditRecord(record)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
+              title="Điều chỉnh giờ công / trạng thái"
+            >
+              <Edit3 size={13} />
+              <span>Sửa</span>
+            </button>
+          </td>
+        )}
+      </tr>
+    )
+  }
+)
+
+AttendanceRowItem.displayName = 'AttendanceRowItem'
 
 export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
   records,
@@ -54,33 +140,40 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
   showFilters = true,
   onEditRecord,
 }) => {
-  const [filterKeyword, setFilterKeyword] = useState("");
-  const [filterDepartment, setFilterDepartment] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterKeyword, setFilterKeyword] = useState('')
+  const [filterDepartment, setFilterDepartment] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
 
-  // Danh sách các phòng ban phân biệt
-  const departments = Array.from(
-    new Set(records.map((r) => r.department).filter(Boolean)),
-  );
+  // Danh sách các phòng ban phân biệt (EXP2-08: Memoized)
+  const departments = useMemo(() => {
+    return Array.from(new Set(records.map((r) => r.department).filter(Boolean)))
+  }, [records])
 
-  // Lọc dữ liệu hiển thị
-  const filteredRecords = records.filter((rec) => {
-    if (filterKeyword) {
-      const q = filterKeyword.toLowerCase();
-      const matchCode = (rec.employeeCode || "").toLowerCase().includes(q);
-      const matchName = (rec.fullName || "").toLowerCase().includes(q);
-      if (!matchCode && !matchName) return false;
-    }
-    if (filterDepartment && rec.department !== filterDepartment) {
-      return false;
-    }
-    if (filterStatus && rec.status !== filterStatus) {
-      return false;
-    }
-    return true;
-  });
+  // Lọc dữ liệu hiển thị (EXP2-08: Memoized)
+  const filteredRecords = useMemo(() => {
+    const q = filterKeyword.toLowerCase().trim()
+    return records.filter((rec) => {
+      if (q) {
+        const matchCode = (rec.employeeCode || '').toLowerCase().includes(q)
+        const matchName = (rec.fullName || '').toLowerCase().includes(q)
+        if (!matchCode && !matchName) return false
+      }
+      if (filterDepartment && rec.department !== filterDepartment) {
+        return false
+      }
+      if (filterStatus && rec.status !== filterStatus) {
+        return false
+      }
+      return true
+    })
+  }, [records, filterKeyword, filterDepartment, filterStatus])
 
-  const isFiltering = Boolean(filterKeyword || filterDepartment || filterStatus);
+  // Giữ slice ổn định (Slice stability)
+  const displayRows = useMemo(() => {
+    return filteredRecords.slice(0, 100)
+  }, [filteredRecords])
+
+  const isFiltering = Boolean(filterKeyword || filterDepartment || filterStatus)
 
   return (
     <div
@@ -120,7 +213,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
               {filterKeyword && (
                 <button
                   type="button"
-                  onClick={() => setFilterKeyword("")}
+                  onClick={() => setFilterKeyword('')}
                   aria-label="Xóa từ khóa tìm kiếm"
                   className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-sm"
                 >
@@ -166,9 +259,9 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                 type="button"
                 data-testid="live-clear-filters-btn"
                 onClick={() => {
-                  setFilterKeyword("");
-                  setFilterDepartment("");
-                  setFilterStatus("");
+                  setFilterKeyword('')
+                  setFilterDepartment('')
+                  setFilterStatus('')
                 }}
                 title="Đặt lại tất cả bộ lọc"
                 className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition-colors shrink-0"
@@ -189,7 +282,9 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
         >
           <thead>
             <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Giờ Quẹt</th>
+              <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
+                Giờ Quẹt
+              </th>
               <th className="py-3 px-4">Mã NV</th>
               <th className="py-3 px-4">Họ và Tên</th>
               <th className="py-3 px-4">Phòng Ban</th>
@@ -212,7 +307,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                 hasActionColumn={Boolean(onEditRecord)}
                 ariaLabel="Đang nạp dữ liệu chấm công..."
               />
-            ) : filteredRecords.length === 0 ? (
+            ) : displayRows.length === 0 ? (
               <tr>
                 <td
                   colSpan={onEditRecord ? 9 : 8}
@@ -231,116 +326,18 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                 </td>
               </tr>
             ) : (
-              filteredRecords.map((record) => {
-                const isHighlighted = highlightedRecordId === record.recordId;
-
-                return (
-                  <tr
-                    key={record.recordId}
-                    data-testid={`attendance-row-${record.recordId}`}
-                    className={`transition-colors duration-500 group ${
-                      isHighlighted
-                        ? "bg-emerald-50/90 ring-2 ring-emerald-400 ring-inset animate-pulse"
-                        : "hover:bg-indigo-50/25"
-                    }`}
-                  >
-                    <td className="py-3 px-4 font-mono font-bold text-xs text-slate-900 whitespace-nowrap">
-                      {formatTimeOnly(record.punchTimestamp)}
-                    </td>
-
-                    <td className="py-3 px-4 font-mono font-bold text-xs text-indigo-600 whitespace-nowrap">
-                      {record.employeeCode}
-                    </td>
-
-                    <td className="py-3 px-4 text-xs font-semibold text-slate-900 whitespace-nowrap">
-                      {record.fullName}
-                    </td>
-
-                    <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-                      {record.department || "—"}
-                    </td>
-
-                    <td className="py-3 px-4 text-xs whitespace-nowrap">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                          record.punchType === "CHECK_IN"
-                            ? "bg-indigo-50 text-indigo-700 border-indigo-200/70"
-                            : "bg-slate-100 text-slate-700 border-slate-200"
-                        }`}
-                      >
-                        {record.punchType === "CHECK_IN" ? "VÀO CA" : "RA CA"}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-4 text-xs whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5 font-medium text-slate-600">
-                        {record.verificationMethod === "VERIFICATION_FACE" ||
-                        record.verificationMethod === "FACE_MATCH" ? (
-                          <>
-                            <ScanFace size={15} className="text-indigo-600" />
-                            <span>Khuôn mặt</span>
-                          </>
-                        ) : record.verificationMethod === "MANUAL_HR" ||
-                          record.verificationMethod === "HR_OVERRIDE" ? (
-                          <>
-                            <UserCheck size={15} className="text-blue-600" />
-                            <span>HR Điều chỉnh</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock size={15} className="text-amber-600" />
-                            <span>Mã PIN</span>
-                          </>
-                        )}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {record.status === "ON_TIME" ? (
-                        <span className="badge-success">Đúng giờ</span>
-                      ) : record.status === "LATE" ? (
-                        <span className="badge-warning">
-                          Đi muộn ({record.lateMinutes}p)
-                        </span>
-                      ) : record.status === "EARLY_LEAVE" ? (
-                        <span className="badge-danger">Về sớm</span>
-                      ) : record.status === "OVERTIME" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                          Tăng ca
-                        </span>
-                      ) : record.status === "ANOMALOUS" ? (
-                        <span className="badge-danger">Bất thường</span>
-                      ) : (
-                        <span className="badge-neutral">{record.status}</span>
-                      )}
-                    </td>
-
-                    <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
-                      {record.kioskId}
-                    </td>
-
-                    {onEditRecord && (
-                      <td className="py-3 px-4 text-xs whitespace-nowrap text-right sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
-                        <button
-                          type="button"
-                          data-testid={`adjust-record-btn-${record.recordId}`}
-                          aria-label={`Điều chỉnh bản ghi điểm danh của ${record.fullName}`}
-                          onClick={() => onEditRecord(record)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
-                          title="Điều chỉnh giờ công / trạng thái"
-                        >
-                          <Edit3 size={13} />
-                          <span>Sửa</span>
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })
+              displayRows.map((record) => (
+                <AttendanceRowItem
+                  key={record.recordId}
+                  record={record}
+                  isHighlighted={highlightedRecordId === record.recordId}
+                  onEditRecord={onEditRecord}
+                />
+              ))
             )}
           </tbody>
         </table>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -25,6 +25,7 @@ import com.fas.data.repository.BiometricTemplateRepository;
 import com.fas.data.repository.EnrollmentSessionRepository;
 import com.fas.data.repository.KioskRepository;
 import com.fas.data.repository.UserRepository;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -83,11 +84,19 @@ public class EnrollmentService {
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    /** Bộ nhớ đệm tạm thời lưu trữ các sessionToken đã xác minh hợp lệ tại trạm Kiosk. */
-    private final ConcurrentMap<String, VerifiedSession> verifiedSessions = new ConcurrentHashMap<>();
+    /** Bộ nhớ đệm tạm thời lưu trữ các sessionToken đã xác minh hợp lệ tại trạm Kiosk (TTL 15 phút, tối đa 5000 phần tử). */
+    private final ConcurrentMap<String, VerifiedSession> verifiedSessions = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofMinutes(15))
+            .maximumSize(5000)
+            .<String, VerifiedSession>build()
+            .asMap();
 
-    /** Bộ đếm lần thử OTP sai liên tiếp theo kioskId (chống brute-force). */
-    private final ConcurrentMap<String, OtpFailedAttemptRecord> otpFailedAttempts = new ConcurrentHashMap<>();
+    /** Bộ đếm lần thử OTP sai liên tiếp theo kioskId (chống brute-force, TTL 15 phút, tối đa 5000 phần tử). */
+    private final ConcurrentMap<String, OtpFailedAttemptRecord> otpFailedAttempts = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofMinutes(15))
+            .maximumSize(5000)
+            .<String, OtpFailedAttemptRecord>build()
+            .asMap();
 
     public EnrollmentService(
             UserRepository userRepository,
@@ -159,17 +168,18 @@ public class EnrollmentService {
     /**
      * Bước 2: Thẩm định mã OTP tại trạm Kiosk và cấp token phiên tạm thời.
      *
-     * @param request yêu cầu thẩm định chứa mã OTP và kioskId
+     * @param kioskId mã trạm Kiosk từ header X-Kiosk-Id
+     * @param request yêu cầu thẩm định chứa mã OTP
      * @return kết quả thẩm định chứa thông tin nhân sự và sessionToken
      */
     @Transactional(readOnly = true)
-    public OtpVerificationResult verifyOtp(KioskVerifyOtpRequest request) {
+    public OtpVerificationResult verifyOtp(String kioskId, KioskVerifyOtpRequest request) {
         if (request == null || request.otp() == null || request.otp().isBlank()) {
             throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Mã OTP không được để trống");
         }
 
-        validateKiosk(request.kioskId());
-        checkOtpAttemptLockout(request.kioskId());
+        validateKiosk(kioskId);
+        checkOtpAttemptLockout(kioskId);
 
         Instant now = Instant.now();
         List<EnrollmentSession> activeSessions = enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(now);
@@ -188,7 +198,7 @@ public class EnrollmentService {
                     .findTop100ByIsUsedTrueOrderByCreatedAtDesc();
             for (EnrollmentSession session : recentlyUsedSessions) {
                 if (passwordEncoder.matches(request.otp(), session.getOtpHash())) {
-                    recordOtpFailure(request.kioskId());
+                    recordOtpFailure(kioskId);
                     throw new ApiException(ApiErrorCode.OTP_ALREADY_USED, "Mã OTP này đã được sử dụng");
                 }
             }
@@ -198,16 +208,16 @@ public class EnrollmentService {
                     .findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(now);
             for (EnrollmentSession session : recentlyExpiredSessions) {
                 if (passwordEncoder.matches(request.otp(), session.getOtpHash())) {
-                    recordOtpFailure(request.kioskId());
+                    recordOtpFailure(kioskId);
                     throw new ApiException(ApiErrorCode.OTP_EXPIRED, "Mã OTP đã hết hạn");
                 }
             }
 
-            recordOtpFailure(request.kioskId());
+            recordOtpFailure(kioskId);
             throw new ApiException(ApiErrorCode.OTP_INVALID, "Mã OTP không đúng hoặc không tồn tại");
         }
 
-        otpFailedAttempts.remove(request.kioskId());
+        otpFailedAttempts.remove(kioskId);
 
         User user = matchedSession.getUser();
         if (user == null || user.getStatus() == EmployeeStatus.TERMINATED) {
@@ -216,9 +226,9 @@ public class EnrollmentService {
 
         // Cấp sessionToken ngẫu nhiên bảo mật
         String sessionToken = UUID.randomUUID().toString().replace("-", "");
-        verifiedSessions.put(sessionToken, new VerifiedSession(matchedSession.getId(), user.getId(), now, request.kioskId()));
+        verifiedSessions.put(sessionToken, new VerifiedSession(matchedSession.getId(), user.getId(), now, kioskId));
         logger.info("Thẩm định OTP thành công tại Kiosk {}: userId={}, employeeCode={}",
-                request.kioskId(), user.getId(), user.getEmployeeCode());
+                kioskId, user.getId(), user.getEmployeeCode());
 
         return new OtpVerificationResult(
                 sessionToken,
@@ -232,16 +242,17 @@ public class EnrollmentService {
     /**
      * Bước 3: Nạp vector ArcFace 512D mới, mã hóa AES-256-GCM, kích hoạt ACTIVE và phát sóng STOMP.
      *
-     * @param request yêu cầu nạp vector chứa OTP, sessionToken, vector512 và kioskId
+     * @param kioskId mã trạm Kiosk từ header X-Kiosk-Id
+     * @param request yêu cầu nạp vector chứa OTP, sessionToken, templates/vector512
      * @return kết quả kích hoạt mẫu sinh trắc học
      */
     @Transactional
-    public EnrollmentResult enrollFace(KioskEnrollFaceRequest request) {
+    public EnrollmentResult enrollFace(String kioskId, KioskEnrollFaceRequest request) {
         if (request == null) {
             throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Yêu cầu đăng ký không được rỗng");
         }
 
-        validateKiosk(request.kioskId());
+        validateKiosk(kioskId);
 
         VerifiedSession tokenData = request.sessionToken() != null ? verifiedSessions.remove(request.sessionToken()) : null;
         if (tokenData == null) {

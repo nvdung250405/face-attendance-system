@@ -125,13 +125,15 @@ export class ComplianceAdminService {
    */
   async getKiosks(): Promise<KioskItemResponse[]> {
     try {
-      const response = await apiClient.get<ApiResponse<unknown>>('/api/v1/admin/kiosks')
+      const response = await apiClient.get<
+        ApiResponse<PaginatedResult<Record<string, unknown>> | Record<string, unknown>[]>
+      >('/api/v1/admin/kiosks')
       const raw = response.data.data
-      let list: unknown[] = []
+      let list: Record<string, unknown>[] = []
       if (Array.isArray(raw)) {
         list = raw
-      } else if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        list = (raw as { content: unknown[] }).content
+      } else if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray(raw.content)) {
+        list = raw.content
       }
       return list.map((item, idx) => adaptKioskItem(item, idx))
     } catch (error) {
@@ -145,10 +147,12 @@ export class ComplianceAdminService {
    */
   async registerKiosk(data: RegisterKioskRequest): Promise<RegisterKioskResponse> {
     try {
-      const untyped = data as unknown as Record<string, unknown>
-      const payload = {
-        id: data.kioskId || untyped.id,
+      const payload: { id?: string; locationName: string } = {
         locationName: data.name && data.location ? `${data.name} - ${data.location}` : (data.location || data.name),
+      }
+      const kioskIdentifier = data.id || data.kioskId
+      if (kioskIdentifier && kioskIdentifier.trim()) {
+        payload.id = kioskIdentifier.trim()
       }
       const response = await apiClient.post<ApiResponse<Record<string, unknown>>>(
         '/api/v1/admin/kiosks',
@@ -192,7 +196,7 @@ export class ComplianceAdminService {
         payload.isActive = data.isActive
       }
 
-      const response = await apiClient.patch<ApiResponse<unknown>>(
+      const response = await apiClient.patch<ApiResponse<Record<string, unknown>>>(
         `/api/v1/admin/kiosks/${id}`,
         payload
       )
@@ -221,11 +225,13 @@ export class ComplianceAdminService {
    */
   async getDpoConsents(): Promise<DpoConsentAuditItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<unknown>>('/api/v1/dpo/consents')
-      const raw = response.data.data
-      if (Array.isArray(raw)) return raw as DpoConsentAuditItem[]
-      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        return (raw as { content: DpoConsentAuditItem[] }).content
+      const response = await apiClient.get<ApiResponse<PaginatedResult<DpoConsentAuditItem> | DpoConsentAuditItem[]>>(
+        '/api/v1/dpo/consents'
+      )
+      const data = response.data.data
+      if (Array.isArray(data)) return data
+      if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<DpoConsentAuditItem>).content)) {
+        return (data as PaginatedResult<DpoConsentAuditItem>).content
       }
       return []
     } catch (error) {
@@ -238,13 +244,13 @@ export class ComplianceAdminService {
    */
   async getDpoRetentionSchedule(): Promise<RetentionScheduleItem[]> {
     try {
-      const response = await apiClient.get<ApiResponse<unknown>>(
+      const response = await apiClient.get<ApiResponse<PaginatedResult<RetentionScheduleItem> | RetentionScheduleItem[]>>(
         '/api/v1/dpo/retention-schedule'
       )
-      const raw = response.data.data
-      if (Array.isArray(raw)) return raw as RetentionScheduleItem[]
-      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        return (raw as { content: RetentionScheduleItem[] }).content
+      const data = response.data.data
+      if (Array.isArray(data)) return data
+      if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<RetentionScheduleItem>).content)) {
+        return (data as PaginatedResult<RetentionScheduleItem>).content
       }
       return []
     } catch (error) {

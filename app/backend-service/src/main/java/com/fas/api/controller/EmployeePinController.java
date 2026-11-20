@@ -12,11 +12,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.fas.api.dto.request.PinManagementRequest;
+import jakarta.validation.Valid;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Map;
 
 /**
  * REST Controller Quản lý Mã PIN Dự phòng Nhân sự
@@ -65,15 +66,15 @@ public class EmployeePinController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PinOperationResult> managePin(
-            @RequestBody Map<String, String> body,
+            @Valid @RequestBody PinManagementRequest request,
             Principal principal
     ) {
         Long userId = resolveCurrentUserId(principal);
 
-        String currentPin = body != null ? body.get("currentPin") : null;
-        String pin = body != null ? body.get("pin") : null;
-        String newPin = body != null ? body.get("newPin") : null;
-        String confirmPin = body != null ? body.get("confirmPin") : null;
+        String currentPin = request != null ? request.currentPin() : null;
+        String pin = request != null ? request.pin() : null;
+        String newPin = request != null ? request.newPin() : null;
+        String confirmPin = request != null ? request.confirmPin() : null;
 
         PinOperationResult result;
         if (StringUtils.hasText(currentPin)) {

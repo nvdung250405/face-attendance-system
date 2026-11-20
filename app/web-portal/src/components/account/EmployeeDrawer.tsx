@@ -9,17 +9,14 @@
  */
 
 import React, { useState } from 'react'
-import { X, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react'
+import { X, AlertCircle, Sparkles } from 'lucide-react'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { DEPARTMENTS } from '@/constants/departments'
+import { previewEmployeeCode } from '@/utils/codePreview'
 import type { EmployeeItem, UserRole } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
-
-const generateDefaultEmployeeCode = (): string => {
-  const rand = Math.floor(1000 + Math.random() * 9000)
-  return `NV-${rand}`
-}
 
 export interface EmployeeDrawerProps {
   isOpen: boolean
@@ -29,21 +26,6 @@ export interface EmployeeDrawerProps {
   onClose: () => void
   onSuccess: (result: { employee: EmployeeItem; temporaryPassword?: string }) => void
 }
-
-const DEPARTMENTS = [
-  'Phòng Kỹ thuật & Tích hợp',
-  'Phòng Nhân sự & Đào tạo',
-  'Phòng Kinh doanh & Khách hàng',
-  'Phòng Kế toán - Tài chính',
-  'Phòng Kho vận & Logistics',
-  'Ban Quản Trị Hệ Thống',
-  'Ban Pháp chế & Bảo mật',
-  'Phòng Kỹ thuật',
-  'Phòng Nhân sự',
-  'Phòng Kế toán',
-  'Phòng Kinh doanh',
-  'Ban Giám đốc',
-]
 
 const ROLES: { value: UserRole; label: string }[] = [
   { value: 'EMPLOYEE', label: 'Nhân viên (EMPLOYEE)' },
@@ -63,7 +45,7 @@ interface DrawerFormProps {
 const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActiveAdmin, onClose, onSuccess }) => {
   const [employeeCode, setEmployeeCode] = useState(() => {
     if (initialData?.employeeCode) return initialData.employeeCode
-    return mode === 'create' ? generateDefaultEmployeeCode() : ''
+    return ''
   })
   const [fullName, setFullName] = useState(initialData?.fullName ?? '')
   const [email, setEmail] = useState(initialData?.email ?? '')
@@ -80,7 +62,9 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
     setFieldErrors({})
 
     const errs: Record<string, string> = {}
-    if (!employeeCode.trim()) errs.employeeCode = 'Mã nhân viên không được để trống'
+    if (mode === 'edit' && !employeeCode.trim()) {
+      errs.employeeCode = 'Mã nhân viên không được để trống'
+    }
     if (!fullName.trim()) errs.fullName = 'Họ và tên không được để trống'
     if (!email.trim()) {
       errs.email = 'Email không được để trống'
@@ -96,8 +80,9 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
     setIsLoading(true)
     try {
       if (mode === 'create') {
+        const finalEmployeeCode = employeeCode.trim() || undefined
         const res = await adminEmployeeService.createEmployee({
-          employeeCode: employeeCode.trim(),
+          employeeCode: finalEmployeeCode,
           fullName: fullName.trim(),
           email: email.trim(),
           department,
@@ -105,7 +90,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
         })
         const createdEmployee: EmployeeItem = res.employee || {
           id: 0,
-          employeeCode: employeeCode.trim(),
+          employeeCode: finalEmployeeCode || 'EMP-AUTO',
           fullName: fullName.trim(),
           email: email.trim(),
           department,
@@ -121,8 +106,8 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
             employee: createdEmployee,
             temporaryPassword: res.temporaryPassword,
           })
-        } catch (cbErr) {
-          console.error('Lỗi callback hiển thị mật khẩu tạm:', cbErr)
+        } catch {
+          // Callback error handled silently in production
         }
         return
       } else if (initialData) {
@@ -184,47 +169,58 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
       {/* Nội dung Form cuộn được */}
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {/* Mã nhân viên */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label
-              htmlFor="drawer-employee-code"
-              className="block text-xs font-semibold text-text-secondary"
-            >
-              Mã nhân viên <span className="text-rose-500">*</span>
-            </label>
-            {mode === 'create' && (
-              <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-medium inline-flex items-center gap-1">
-                <CheckCircle2 size={12} className="text-emerald-600" />
-                Tự động tạo
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              id="drawer-employee-code"
-              data-testid="drawer-employee-code"
-              type="text"
-              value={employeeCode}
-              onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
-              disabled={mode === 'edit' || isLoading}
-              placeholder="VD: NV-1042"
-              className={`input-base font-mono flex-1 ${fieldErrors.employeeCode ? 'border-rose-400 focus:border-rose-500' : ''}`}
-            />
-            {mode === 'create' && (
-              <button
-                type="button"
-                id="drawer-btn-regenerate-code"
-                data-testid="drawer-btn-regenerate-code"
-                onClick={() => setEmployeeCode(generateDefaultEmployeeCode())}
-                disabled={isLoading}
-                title="Tạo mã nhân viên ngẫu nhiên khác"
-                className="px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors flex items-center gap-1.5 shrink-0"
+        <div className="space-y-2">
+          {mode === 'create' ? (
+            <>
+              {/* Live Preview Badge */}
+              <div
+                data-testid="employee-code-preview"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200"
               >
-                <RefreshCw size={13} className="text-slate-500" />
-                <span>Đổi mã</span>
-              </button>
-            )}
-          </div>
+                <Sparkles size={16} className="text-brand-primary shrink-0" />
+                <span className="text-xs text-text-secondary">Mã NV sẽ được hệ thống cấp tự động:</span>
+                <span className="text-xs font-mono font-bold text-brand-primary">
+                  {previewEmployeeCode(department)}
+                </span>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="drawer-employee-code"
+                  className="block text-xs font-semibold text-text-secondary mb-1"
+                >
+                  Mã nhân viên <span className="text-text-muted font-normal">(Tùy chọn - để trống để cấp tự động)</span>
+                </label>
+                <input
+                  id="drawer-employee-code"
+                  data-testid="drawer-employee-code"
+                  type="text"
+                  value={employeeCode}
+                  onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
+                  disabled={isLoading}
+                  placeholder="Để trống hoặc nhập mã định danh riêng..."
+                  className={`input-base font-mono w-full ${fieldErrors.employeeCode ? 'border-rose-400 focus:border-rose-500' : ''}`}
+                />
+              </div>
+            </>
+          ) : (
+            <div>
+              <label
+                htmlFor="drawer-employee-code"
+                className="block text-xs font-semibold text-text-secondary mb-1"
+              >
+                Mã nhân viên <span className="text-rose-500">*</span>
+              </label>
+              <input
+                id="drawer-employee-code"
+                data-testid="drawer-employee-code"
+                type="text"
+                value={employeeCode}
+                disabled
+                className="input-base font-mono w-full bg-slate-50 text-text-muted"
+              />
+            </div>
+          )}
           {fieldErrors.employeeCode && (
             <p className="text-xs text-rose-600 mt-1">{fieldErrors.employeeCode}</p>
           )}
@@ -311,7 +307,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
             </label>
             {isLastActiveAdmin && mode === 'edit' && (
               <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-medium inline-flex items-center gap-1">
-                <AlertCircle size={12} className="text-amber-600" />
+                <AlertCircle size={12} className="text-amber-600 shrink-0" />
                 ADMIN duy nhất
               </span>
             )}

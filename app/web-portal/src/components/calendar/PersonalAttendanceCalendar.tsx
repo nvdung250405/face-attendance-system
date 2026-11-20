@@ -23,6 +23,8 @@ import {
 } from 'lucide-react'
 import { attendanceService } from '@/services/attendanceService'
 import { useAuthStore } from '@/store/authStore'
+import { AttendanceStatusBadge } from '@/components/common'
+import { formatLocalDateISO } from '@/utils/date'
 import { AttendanceDayDetailDrawer } from './AttendanceDayDetailDrawer'
 import { SubmitExcuseModal } from '@/components/excuse/SubmitExcuseModal'
 import type { PersonalAttendanceDayRecord, PersonalAttendanceResponse } from '@/types'
@@ -48,7 +50,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
   initialYear,
   onExport,
 }) => {
-  const { user } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
 
   const today = useMemo(() => new Date(), [])
   const [currentYear, setCurrentYear] = useState<number>(initialYear || today.getFullYear())
@@ -61,57 +63,28 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
   const [isExcuseModalOpen, setIsExcuseModalOpen] = useState<boolean>(false)
 
   // Tải dữ liệu bảng công theo tháng
-  const fetchAttendance = useCallback((m: number, y: number) => {
-    setIsLoading(true)
-    attendanceService
-      .getPersonalAttendance({ month: m, year: y })
-      .then((data) => {
-        setAttendanceData(data)
+  const fetchAttendance = useCallback(async (m: number, y: number) => {
+    try {
+      const data = await attendanceService.getPersonalAttendance({ month: m, year: y })
+      setAttendanceData(data)
+    } catch {
+      setAttendanceData({
+        month: m,
+        year: y,
+        totalWorkDays: 0,
+        totalOnTimeDays: 0,
+        totalLateDays: 0,
+        records: [],
       })
-      .catch(() => {
-        setAttendanceData({
-          month: m,
-          year: y,
-          totalWorkDays: 0,
-          totalOnTimeDays: 0,
-          totalLateDays: 0,
-          records: [],
-        })
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    let ignore = false
-
-    attendanceService
-      .getPersonalAttendance({ month: currentMonth, year: currentYear })
-      .then((data) => {
-        if (!ignore) {
-          setAttendanceData(data)
-          setIsLoading(false)
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          setAttendanceData({
-            month: currentMonth,
-            year: currentYear,
-            totalWorkDays: 0,
-            totalOnTimeDays: 0,
-            totalLateDays: 0,
-            records: [],
-          })
-          setIsLoading(false)
-        }
-      })
-
-    return () => {
-      ignore = true
-    }
-  }, [currentMonth, currentYear])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchAttendance(currentMonth, currentYear)
+  }, [currentMonth, currentYear, fetchAttendance])
 
   // Điều hướng chuyển tháng
   const handlePrevMonth = () => {
@@ -180,11 +153,11 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
     }
 
     // Các ngày thực tế trong tháng
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    const todayStr = formatLocalDateISO(today)
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const dateObj = new Date(currentYear, currentMonth - 1, day)
+      const dateStr = formatLocalDateISO(dateObj)
       const dayOfWeek = dateObj.getDay()
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
 
@@ -250,61 +223,24 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
       return null
     }
 
-    switch (rec.status) {
-      case 'ON_TIME':
-        return (
-          <span
-            data-testid="cell-status-on-time"
-            className="inline-flex items-center gap-1 text-2xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-200/60"
-          >
-            <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
-            <span>Đúng giờ</span>
-          </span>
-        )
-      case 'LATE':
-        return (
-          <span
-            data-testid="cell-status-late"
-            className="inline-flex items-center gap-1 text-2xs font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded-sm border border-amber-200"
-          >
-            <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
-            <span>Muộn {rec.lateMinutes ? `${rec.lateMinutes}p` : ''}</span>
-          </span>
-        )
-      case 'EARLY_LEAVE':
-        return (
-          <span className="text-2xs font-semibold text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded-sm border border-orange-200">
-            Về sớm
-          </span>
-        )
-      case 'ABSENT':
-        return (
-          <span
-            data-testid="cell-status-absent"
-            className="text-2xs font-semibold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-sm border border-rose-200"
-          >
-            Vắng mặt
-          </span>
-        )
-      case 'REST_DAY':
-        return (
-          <span className="text-2xs text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded-sm">
-            Nghỉ tuần
-          </span>
-        )
-      case 'HOLIDAY':
-        return (
-          <span className="text-2xs font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-sm border border-purple-200">
-            Nghỉ lễ
-          </span>
-        )
-      default:
-        return (
-          <span className="text-2xs text-text-tertiary bg-slate-100 px-1.5 py-0.5 rounded-sm">
-            {rec.status}
-          </span>
-        )
-    }
+    return (
+      <AttendanceStatusBadge
+        status={rec.status}
+        lateMinutes={rec.lateMinutes}
+        shortLate
+        showIcon
+        size="sm"
+        data-testid={
+          rec.status === 'ON_TIME'
+            ? 'cell-status-on-time'
+            : rec.status === 'LATE'
+              ? 'cell-status-late'
+              : rec.status === 'ABSENT'
+                ? 'cell-status-absent'
+                : undefined
+        }
+      />
+    )
   }
 
   // Thống kê nhanh
@@ -369,7 +305,10 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
 
           <button
             type="button"
-            onClick={() => fetchAttendance(currentMonth, currentYear)}
+            onClick={() => {
+              setIsLoading(true)
+              void fetchAttendance(currentMonth, currentYear)
+            }}
             data-testid="calendar-refresh-btn"
             title="Tải lại dữ liệu"
             className="p-2 rounded-xl border border-border-subtle bg-white text-text-secondary hover:text-text-primary hover:bg-slate-50 transition-colors shadow-2xs"

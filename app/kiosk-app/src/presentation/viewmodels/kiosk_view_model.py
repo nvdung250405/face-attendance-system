@@ -32,10 +32,10 @@ logger = get_logger("kiosk_view_model")
 class OvalState(StrEnum):
     """Máy trạng thái 4 màu viền Oval sinh trắc học."""
 
-    IDLE = "IDLE"          # Xám: Chờ người dùng
+    IDLE = "IDLE"  # Xám: Chờ người dùng
     ALIGNING = "ALIGNING"  # Vàng: Đang phát hiện & căn chỉnh
-    SUCCESS = "SUCCESS"    # Xanh lá: Nhận diện thành công
-    ERROR = "ERROR"        # Đỏ: Spoofing hoặc lỗi
+    SUCCESS = "SUCCESS"  # Xanh lá: Nhận diện thành công
+    ERROR = "ERROR"  # Đỏ: Spoofing hoặc lỗi
 
 
 def evaluate_face_oval_alignment(
@@ -68,7 +68,7 @@ def evaluate_face_oval_alignment(
     oval_cy = fh * 0.40
 
     rx = (visible_w * (470.0 / 968.0)) / 2.0  # Bán trục ngang
-    ry = (fh * (604.0 / 1496.0)) / 2.0        # Bán trục dọc
+    ry = (fh * (604.0 / 1496.0)) / 2.0  # Bán trục dọc
 
     # 3. Kiểm tra kích thước khuôn mặt (khoảng cách chuẩn 0.5m – 1.2m)
     # Khuôn mặt hợp lệ chiếm khoảng 35% đến 85% chiều cao Oval (2 * ry)
@@ -131,7 +131,9 @@ class KioskViewModel(QObject):
     ) -> None:
         """Khởi tạo KioskViewModel."""
         super().__init__(parent)
-        self._is_dev_mode: bool = is_dev_mode if is_dev_mode is not None else settings.is_development
+        self._is_dev_mode: bool = (
+            is_dev_mode if is_dev_mode is not None else settings.is_development
+        )
         self.image_provider = image_provider
         self.detector = detector
         self.liveness_gate = liveness_gate
@@ -169,11 +171,17 @@ class KioskViewModel(QObject):
         self._standby_timeout: float = 8.0  # 8.0 giây vắng người -> Standby
         self._enrollment_cooldown_until: float = 0.0  # Grace period sau khi nạp mẫu khuôn mặt
 
-        if self.enrollment_controller is not None and hasattr(self.enrollment_controller, "dialogOpenChanged"):
+        if self.enrollment_controller is not None and hasattr(
+            self.enrollment_controller, "dialogOpenChanged"
+        ):
+
             def _on_enrollment_dialog_open_changed(is_open: bool) -> None:
                 if not is_open:
                     self._enrollment_cooldown_until = time.time() + 5.0
-                    logger.info("Đã đóng hộp thoại đăng ký -> Kích hoạt Grace Period 5.0s không nhận diện điểm danh")
+                    logger.info(
+                        "Đã đóng hộp thoại đăng ký -> Kích hoạt Grace Period 5.0s không nhận diện điểm danh"
+                    )
+
             self.enrollment_controller.dialogOpenChanged.connect(_on_enrollment_dialog_open_changed)
 
         if self.sync_worker:
@@ -354,7 +362,9 @@ class KioskViewModel(QObject):
             if self.detector is not None:
                 detection = self.detector.detect_face(frame)
                 if detection is not None:
-                    logger.info("Phát hiện người dùng bước tới trạm -> Đánh thức Kiosk (Standby -> Active)")
+                    logger.info(
+                        "Phát hiện người dùng bước tới trạm -> Đánh thức Kiosk (Standby -> Active)"
+                    )
                     self.setStandby(False)
                 else:
                     return
@@ -366,7 +376,9 @@ class KioskViewModel(QObject):
         # Nếu đang ở chế độ Đăng ký mẫu khuôn mặt mới (Bước 1, 2, 3) hoặc đang trong Grace Period: Tạm dừng nhận diện điểm danh
         is_dialog_open = False
         if self.enrollment_controller is not None:
-            is_dialog_open = getattr(self.enrollment_controller, "isDialogOpen", False) or getattr(self.enrollment_controller, "isEnrolling", False)
+            is_dialog_open = getattr(self.enrollment_controller, "isDialogOpen", False) or getattr(
+                self.enrollment_controller, "isEnrolling", False
+            )
 
         if is_dialog_open or (current_time < self._enrollment_cooldown_until):
             self._last_face_time = current_time
@@ -392,7 +404,10 @@ class KioskViewModel(QObject):
             self.set_state(OvalState.IDLE, "Vui lòng nhìn vào khung hình để điểm danh")
             # Tự động chuyển về Màn hình Chờ Chào mừng khi không phát hiện người trong 8 giây
             if current_time - self._last_face_time >= self._standby_timeout:
-                logger.info("Không phát hiện người dùng trong %.1fs -> Tự động chuyển sang Standby", self._standby_timeout)
+                logger.info(
+                    "Không phát hiện người dùng trong %.1fs -> Tự động chuyển sang Standby",
+                    self._standby_timeout,
+                )
                 self.setStandby(True)
             return
 
@@ -571,4 +586,3 @@ class KioskViewModel(QObject):
         )
         self._trigger_hold(duration_sec=3.0)
         logger.info("Điểm danh mã PIN %s THÀNH CÔNG cho emp_id=%d", punch_type, emp_id)
-

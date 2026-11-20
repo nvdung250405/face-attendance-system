@@ -217,18 +217,9 @@ class NotificationServiceTest {
         void markAllAsRead_success() {
             when(userRepository.existsById(100L)).thenReturn(true);
 
-            Notification n1 = Notification.builder().id(1L).user(sampleUser).readAt(null).build();
-            Notification n2 = Notification.builder().id(2L).user(sampleUser).readAt(null).build();
-
-            when(notificationRepository.findByUserIdOrderByCreatedAtDesc(eq(100L), any(Pageable.class)))
-                    .thenReturn(new PageImpl<>(List.of(n1, n2)));
-
             notificationService.markAllAsRead(100L);
 
-            verify(notificationRepository).saveAll(argThat(iterable -> {
-                List<Notification> list = (List<Notification>) iterable;
-                return list.size() == 2 && list.stream().allMatch(n -> n.getReadAt() != null);
-            }));
+            verify(notificationRepository).markAllAsReadByUserId(eq(100L), eq(fixedInstant));
         }
     }
 }

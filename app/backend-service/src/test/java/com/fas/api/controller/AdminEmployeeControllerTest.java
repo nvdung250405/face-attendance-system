@@ -96,6 +96,32 @@ class AdminEmployeeControllerTest {
         }
 
         @Test
+        @DisplayName("Tạo nhân viên khi không truyền employeeCode -> thành công 201 Created")
+        void createEmployee_WithoutEmployeeCode_Returns201() throws Exception {
+            CreateEmployeeRequest request = new CreateEmployeeRequest(
+                    null, "Ngô Văn Dũng", "dung.nv@company.com", "Phòng Kỹ thuật", Role.EMPLOYEE
+            );
+
+            CreateEmployeeResponse response = new CreateEmployeeResponse(
+                    1042L, "EMP-ENG-260001", "Ngô Văn Dũng", "dung.nv@company.com",
+                    Role.EMPLOYEE, EmployeeStatus.PENDING_CONSENT, "Phòng Kỹ thuật",
+                    "TempPass@123", OffsetDateTime.parse("2026-10-11T08:00:00+07:00")
+            );
+
+            when(accountManagementService.createEmployee(any(CreateEmployeeRequest.class)))
+                    .thenReturn(response);
+
+            mockMvc.perform(post("/api/v1/admin/employees")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.employeeCode").value("EMP-ENG-260001"));
+
+            verify(accountManagementService).createEmployee(any(CreateEmployeeRequest.class));
+        }
+
+        @Test
         @DisplayName("Trùng mã nhân viên hoặc email -> ném 409 Conflict EMPLOYEE_ALREADY_EXISTS")
         void createEmployee_Duplicate_Returns409() throws Exception {
             CreateEmployeeRequest request = new CreateEmployeeRequest(

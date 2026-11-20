@@ -46,7 +46,9 @@ from presentation.viewmodels.kiosk_view_model import (
 logger = get_logger("main")
 
 
-def _load_gallery_from_backend(http_client: KioskHttpClient, gallery_matcher: GalleryCacheManager) -> int:
+def _load_gallery_from_backend(
+    http_client: KioskHttpClient, gallery_matcher: GalleryCacheManager
+) -> int:
     """Tải danh mục vector ArcFace từ Backend và nạp vào RAM Gallery khi khởi động.
 
     Trả về số lượng nhân viên đã nạp (0 khi offline hoặc thất bại — không crash khởi động).
@@ -61,7 +63,9 @@ def _load_gallery_from_backend(http_client: KioskHttpClient, gallery_matcher: Ga
             pose = item.get("poseType") or item.get("pose_type") or "FRONTAL"
             vec = np.asarray(item.get("vector512") or [], dtype=np.float32)
             if vec.shape[0] != 512:
-                logger.warning("Bỏ qua nhân viên %d trong gallery: vector %dD", emp_id, vec.shape[0])
+                logger.warning(
+                    "Bỏ qua nhân viên %d trong gallery: vector %dD", emp_id, vec.shape[0]
+                )
                 continue
             records.append(
                 {
@@ -153,7 +157,7 @@ class DemoEnrollHandler(QObject):
 
             fh, fw = frame.shape[:2]
             x, y, w, h = det.bbox
-            roi = frame[max(0, y):min(fh, y + h), max(0, x):min(fw, x + w)]
+            roi = frame[max(0, y) : min(fh, y + h), max(0, x) : min(fw, x + w)]
             if roi.size > 0:
                 gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
                 sharpness = float(cv2.Laplacian(gray_roi, cv2.CV_64F).var())
@@ -176,9 +180,7 @@ class DemoEnrollHandler(QObject):
                 )
 
             if cnt >= self._target_frames:
-                best_crop = (
-                    self._best_aligned if self._best_aligned is not None else aligned
-                )
+                best_crop = self._best_aligned if self._best_aligned is not None else aligned
                 vec = self._extractor.extract_vector(best_crop)
                 self._gallery_matcher.add_or_update_employee(self._employee_id, vec)
                 self._done = True
@@ -229,9 +231,9 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "--env",
-        choices=["production", "development", "dev", "prod"],
+        choices=["dev", "staging", "prod", "development", "production"],
         default=None,
-        help="Ghi đè môi trường vận hành (production hoặc development). Mặc định đọc từ biến môi trường APP_ENV",
+        help="Ghi đè môi trường vận hành (dev, staging, prod). Mặc định đọc từ biến môi trường APP_ENV",
     )
     parser.add_argument(
         "--demo",
@@ -329,9 +331,13 @@ def main() -> int:
         args.no_liveness = True
         logger.info("Chế độ vận hành: [DEMO DEV] (Tự động bật --no-liveness để kiểm thử linh hoạt)")
     elif is_dev_mode:
-        logger.info("Chế độ vận hành: [DEVELOPMENT MODE] (Hiển thị công cụ thử nghiệm, phím tắt mô phỏng)")
+        logger.info(
+            "Chế độ vận hành: [DEVELOPMENT MODE] (Hiển thị công cụ thử nghiệm, phím tắt mô phỏng)"
+        )
     else:
-        logger.info("Chế độ vận hành: [PRODUCTION CLEAN] (Dữ liệu thực, giao diện sạch sẽ, kiểm soát sinh trắc chuẩn)")
+        logger.info(
+            "Chế độ vận hành: [PRODUCTION CLEAN] (Dữ liệu thực, giao diện sạch sẽ, kiểm soát sinh trắc chuẩn)"
+        )
 
     if args.no_liveness:
         logger.info("Ngưỡng Liveness: [ĐÃ BỎ QUA (--no-liveness)]")
@@ -429,7 +435,9 @@ def main() -> int:
             # (xử lý trên MAIN thread qua queued connection để tránh đua ONNX inference)
             demo_enroll_handler = None
             if args.demo_enroll is not None and extractor is not None and detector is not None:
-                demo_enroll_handler = DemoEnrollHandler(detector, extractor, gallery_matcher, args.demo_enroll)
+                demo_enroll_handler = DemoEnrollHandler(
+                    detector, extractor, gallery_matcher, args.demo_enroll
+                )
                 camera_worker.frame_ready.connect(demo_enroll_handler.handle_frame)
 
             # Kết nối frame camera trực tiếp vào KioskViewModel và EnrollmentController

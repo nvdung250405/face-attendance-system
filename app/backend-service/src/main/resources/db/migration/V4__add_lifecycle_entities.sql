@@ -63,7 +63,7 @@ CREATE INDEX idx_notifications_user_read ON notifications(user_id, read_at);
 -- 4. Vết rút Informed Consent và hạn tiêu hủy dữ liệu sinh trắc 7 ngày (DTD-BE-014, FR-BE-022)
 CREATE TABLE IF NOT EXISTS consent_withdrawals (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     withdrawn_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     client_ip VARCHAR(45) NOT NULL,
     biometric_disposal_due_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -76,7 +76,7 @@ CREATE INDEX idx_consent_withdrawals_user ON consent_withdrawals(user_id, withdr
 -- 5. Yêu cầu của chủ thể dữ liệu cá nhân (DTD-BE-015, DATA-BE-024, FR-BE-022)
 CREATE TABLE IF NOT EXISTS data_subject_requests (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     request_type VARCHAR(32) NOT NULL,
     detail VARCHAR(1000),
     status VARCHAR(32) NOT NULL DEFAULT 'RECEIVED',

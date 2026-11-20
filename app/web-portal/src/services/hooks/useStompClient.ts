@@ -44,7 +44,8 @@ function mapStatus(connectionStatus: ConnectionStatus): StompStatus {
 
 export function useStompClient(options: UseStompClientOptions = {}): UseStompClientResult {
   const { autoConnect = true, service = stompClientService } = options
-  const { status, setStatus } = useStompConnectionStore()
+  const status = useStompConnectionStore((s) => s.status)
+  const setStatus = useStompConnectionStore((s) => s.setStatus)
 
   useEffect(() => {
     // 1. Đồng bộ trạng thái hiện tại của service vào store ngay khi mount

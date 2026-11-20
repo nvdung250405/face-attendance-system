@@ -8,7 +8,7 @@
  * - Cảnh báo nghiệp vụ UXD-WEB-006 hiển thị trực tiếp trên đầu bảng.
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Lock,
   Unlock,
@@ -17,11 +17,10 @@ import {
   CheckCircle2,
   X,
   RotateCw,
-  ShieldCheck,
   Download,
 } from 'lucide-react'
 import { Button } from '@/components/common'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { LockPayrollModal, UnlockPayrollModal } from '@/components/payroll'
 import { payrollPeriodService } from '@/services/payrollPeriodService'
 import { reportExportService } from '@/services/reportExportService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
@@ -33,15 +32,22 @@ export const AdminPayrollPeriodView: React.FC = () => {
   const currentUser = useAuthStore((state) => state.user)
   const isAdmin = currentUser?.role === 'ADMIN'
 
-  // Store trạng thái kỳ công
-  const {
-    periods,
-    selectedPeriod,
-    isAdjustmentLocked,
-    setPeriods,
-    setSelectedPeriod,
-    updatePeriodStatus,
-  } = usePayrollPeriodStore()
+  // Store trạng thái kỳ công qua atomic selectors
+  const periods = usePayrollPeriodStore((state) => state.periods)
+  const selectedPeriod = usePayrollPeriodStore((state) => state.selectedPeriod)
+  const isAdjustmentLocked = usePayrollPeriodStore((state) => state.isAdjustmentLocked)
+  const setPeriods = usePayrollPeriodStore((state) => state.setPeriods)
+  const setSelectedPeriod = usePayrollPeriodStore((state) => state.setSelectedPeriod)
+  const updatePeriodStatus = usePayrollPeriodStore((state) => state.updatePeriodStatus)
+
+  // Memoize danh sách kỳ công cùng các cờ khóa điều chỉnh
+  const memoizedPeriods = useMemo(() => {
+    return periods.map((period) => ({
+      ...period,
+      isPeriodLocked: period.status === 'LOCKED',
+      isCurrentSelected: selectedPeriod?.id === period.id,
+    }))
+  }, [periods, selectedPeriod?.id])
 
   // Năm tra cứu
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
@@ -57,10 +63,8 @@ export const AdminPayrollPeriodView: React.FC = () => {
   const [periodToLock, setPeriodToLock] = useState<PayrollPeriodResponse | null>(null)
   const [isLocking, setIsLocking] = useState<boolean>(false)
 
-  // Modal Mở lại kỳ công (Unlock Modal - Yêu cầu lý do)
+  // Modal Mở lại kỳ công (Unlock Modal)
   const [periodToUnlock, setPeriodToUnlock] = useState<PayrollPeriodResponse | null>(null)
-  const [unlockReason, setUnlockReason] = useState<string>('')
-  const [unlockError, setUnlockError] = useState<string | null>(null)
   const [isUnlocking, setIsUnlocking] = useState<boolean>(false)
 
   // Tải danh sách kỳ công
@@ -81,34 +85,9 @@ export const AdminPayrollPeriodView: React.FC = () => {
   }, [selectedYear, setPeriods])
 
   useEffect(() => {
-    let ignore = false
-    const fetchData = async () => {
-      try {
-        const data = await payrollPeriodService.getPayrollPeriods({ year: selectedYear })
-        if (!ignore) {
-          setPeriods(data || [])
-        }
-      } catch (err) {
-        if (!ignore) {
-          const error = err as NormalizedApiError
-          setNotification({
-            type: 'error',
-            message: error.message || 'Không thể tải danh sách kỳ công.',
-          })
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void fetchData()
-
-    return () => {
-      ignore = true
-    }
-  }, [selectedYear, setPeriods])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadPayrollPeriods()
+  }, [loadPayrollPeriods])
 
   // ── Thao tác Chốt Kỳ Công (Lock) ──────────────────────────────────────────
 
@@ -148,27 +127,15 @@ export const AdminPayrollPeriodView: React.FC = () => {
 
   const handleOpenUnlockModal = (period: PayrollPeriodResponse) => {
     setPeriodToUnlock(period)
-    setUnlockReason('')
-    setUnlockError(null)
   }
 
-  const handleConfirmUnlockPeriod = async () => {
+  const handleConfirmUnlockPeriod = async (reason: string) => {
     if (!periodToUnlock) return
-    const trimmedReason = unlockReason.trim()
-    if (!trimmedReason) {
-      setUnlockError('Bắt buộc phải nhập lý do mở lại kỳ công theo quy định kiểm toán tuân thủ.')
-      return
-    }
-    if (trimmedReason.length < 5) {
-      setUnlockError('Lý do mở lại kỳ công phải có độ dài tối thiểu 5 ký tự.')
-      return
-    }
-
     const periodCode = `${periodToUnlock.periodYear}-${String(periodToUnlock.periodMonth).padStart(2, '0')}`
 
     try {
       setIsUnlocking(true)
-      await payrollPeriodService.unlockPeriod(periodCode, { reason: trimmedReason })
+      await payrollPeriodService.unlockPeriod(periodCode, { reason })
       // Cập nhật trạng thái mở lại vào Store tập trung (isAdjustmentLocked -> false)
       updatePeriodStatus(periodToUnlock.id, 'OPEN')
       setNotification({
@@ -178,7 +145,11 @@ export const AdminPayrollPeriodView: React.FC = () => {
       setPeriodToUnlock(null)
     } catch (err) {
       const error = err as NormalizedApiError
-      setUnlockError(error.message || 'Không thể mở lại kỳ công. Vui lòng thử lại.')
+      setNotification({
+        type: 'error',
+        message: error.message || 'Không thể mở lại kỳ công. Vui lòng thử lại.',
+      })
+      throw error
     } finally {
       setIsUnlocking(false)
     }
@@ -353,16 +324,15 @@ export const AdminPayrollPeriodView: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ) : periods.length === 0 ? (
+              ) : memoizedPeriods.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-text-secondary">
                     Không có dữ liệu kỳ công nào cho năm {selectedYear}.
                   </td>
                 </tr>
               ) : (
-                periods.map((period) => {
-                  const isPeriodLocked = period.status === 'LOCKED'
-                  const isCurrentSelected = selectedPeriod?.id === period.id
+                memoizedPeriods.map((period) => {
+                  const { isPeriodLocked, isCurrentSelected } = period
 
                   return (
                     <tr
@@ -525,158 +495,20 @@ export const AdminPayrollPeriodView: React.FC = () => {
       </div>
 
       {/* ── Modal Xác Nhận Chốt Kỳ Công (Lock Modal) ── */}
-      <Dialog
-        open={Boolean(periodToLock)}
-        onOpenChange={(open) => !open && setPeriodToLock(null)}
-      >
-        <DialogContent
-          data-testid="lock-payroll-modal"
-          hideCloseButton
-          usePortal={false}
-          className="w-full max-w-md p-6 space-y-4"
-        >
-          {periodToLock && (
-            <>
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-amber-100 text-amber-700">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <div>
-                  <DialogTitle className="font-bold text-base text-slate-900">Xác Nhận Chốt Kỳ Công</DialogTitle>
-                  <span className="text-xs text-slate-500">
-                    Kỳ Tháng {String(periodToLock.periodMonth).padStart(2, '0')}/{periodToLock.periodYear}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2 leading-relaxed">
-                <p className="font-bold">Cảnh báo hệ quả quan trọng:</p>
-                <ul className="list-disc list-inside space-y-1 text-2xs text-amber-800">
-                  <li>Bảng chấm công và số liệu kỳ này sẽ chính thức bị đóng băng.</li>
-                  <li>Toàn bộ chức năng duyệt đơn giải trình, phân ca và điều chỉnh công sẽ bị khóa.</li>
-                  <li>Hành động mở lại kỳ sau này sẽ được ghi nhận vào nhật ký kiểm toán bảo mật.</li>
-                </ul>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2.5">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setPeriodToLock(null)}
-                >
-                  Hủy bỏ
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={handleConfirmLockPeriod}
-                  disabled={isLocking}
-                  data-testid="confirm-lock-period-btn"
-                  leftIcon={<Lock className="w-3.5 h-3.5" />}
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
-                >
-                  {isLocking ? 'Đang chốt...' : 'Xác Nhận Chốt Kỳ'}
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <LockPayrollModal
+        period={periodToLock}
+        isLocking={isLocking}
+        onConfirm={handleConfirmLockPeriod}
+        onCancel={() => setPeriodToLock(null)}
+      />
 
       {/* ── Modal Mở Lại Kỳ Công Kèm Lý Do Kiểm Toán (Unlock Modal) ── */}
-      <Dialog
-        open={Boolean(periodToUnlock)}
-        onOpenChange={(open) => !open && setPeriodToUnlock(null)}
-      >
-        <DialogContent
-          data-testid="unlock-payroll-modal"
-          hideCloseButton
-          usePortal={false}
-          className="w-full max-w-md p-6 space-y-4"
-        >
-          {periodToUnlock && (
-            <>
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700">
-                  <Unlock className="w-6 h-6" />
-                </div>
-                <div>
-                  <DialogTitle className="font-bold text-base text-slate-900">Mở Lại Kỳ Công Đã Chốt</DialogTitle>
-                  <span className="text-xs text-slate-500">
-                    Kỳ Tháng {String(periodToUnlock.periodMonth).padStart(2, '0')}/{periodToUnlock.periodYear}
-                  </span>
-                </div>
-              </div>
-
-              {unlockError && (
-                <div
-                  data-testid="unlock-modal-error"
-                  className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2"
-                >
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{unlockError}</span>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="unlock-reason"
-                  className="text-xs font-semibold text-slate-700 flex items-center justify-between"
-                >
-                  <span>
-                    Lý do mở lại kỳ công <span className="text-rose-600">*</span>
-                  </span>
-                  <span className="text-2xs text-slate-400">Bắt buộc theo quy định kiểm toán</span>
-                </label>
-                <textarea
-                  id="unlock-reason"
-                  rows={3}
-                  value={unlockReason}
-                  onChange={(e) => setUnlockReason(e.target.value)}
-                  data-testid="input-unlock-reason"
-                  placeholder="Ví dụ: Điều chỉnh bổ sung giờ công cho nhân viên phòng Kỹ thuật theo biên bản phê duyệt số 12/BB-NS..."
-                  className="w-full p-3 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 shadow-2xs"
-                />
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-2xs space-y-1">
-                <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Quy định kiểm toán tuân thủ (DPO / Audit Log)</span>
-                </div>
-                <p>
-                  Thao tác mở lại kỳ công sẽ được hệ thống lưu vết vĩnh viễn kèm danh tính Quản trị viên và lý do giải trình.
-                </p>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2.5">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setPeriodToUnlock(null)}
-                >
-                  Hủy bỏ
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={handleConfirmUnlockPeriod}
-                  disabled={isUnlocking}
-                  data-testid="confirm-unlock-period-btn"
-                  leftIcon={<Unlock className="w-3.5 h-3.5" />}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  {isUnlocking ? 'Đang mở lại...' : 'Xác Nhận Mở Lại'}
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <UnlockPayrollModal
+        period={periodToUnlock}
+        isUnlocking={isUnlocking}
+        onConfirm={handleConfirmUnlockPeriod}
+        onCancel={() => setPeriodToUnlock(null)}
+      />
     </div>
   )
 }

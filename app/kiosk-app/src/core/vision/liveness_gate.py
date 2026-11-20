@@ -64,9 +64,7 @@ class MiniFASNetLivenessGate:
             num_threads: Số luồng CPU sử dụng cho ONNX Runtime.
         """
         self.model_path: Path = model_path or settings.minifasnet_model_path
-        self.threshold: float = (
-            threshold if threshold is not None else settings.liveness_threshold
-        )
+        self.threshold: float = threshold if threshold is not None else settings.liveness_threshold
         self.scale_factor: float = scale_factor
         self.num_threads: int = num_threads
         self.target_size: tuple[int, int] = (80, 80)
@@ -81,9 +79,7 @@ class MiniFASNetLivenessGate:
         sess_options = ort.SessionOptions()
         sess_options.intra_op_num_threads = self.num_threads
         sess_options.inter_op_num_threads = 1
-        sess_options.graph_optimization_level = (
-            ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        )
+        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
         self._session = ort.InferenceSession(
             str(self.model_path),
@@ -149,9 +145,7 @@ class MiniFASNetLivenessGate:
             return np.zeros((self.target_size[1], self.target_size[0], 3), dtype=np.uint8)
 
         # Resize về kích thước chuẩn 80x80 của MiniFASNet
-        resized = cv2.resize(
-            crop, self.target_size, interpolation=cv2.INTER_LINEAR
-        )
+        resized = cv2.resize(crop, self.target_size, interpolation=cv2.INTER_LINEAR)
         return resized
 
     def predict(
@@ -182,9 +176,7 @@ class MiniFASNetLivenessGate:
             crop_bgr = crop_or_frame
 
         if crop_bgr.shape[:2] != self.target_size:
-            crop_bgr = cv2.resize(
-                crop_bgr, self.target_size, interpolation=cv2.INTER_LINEAR
-            )
+            crop_bgr = cv2.resize(crop_bgr, self.target_size, interpolation=cv2.INTER_LINEAR)
 
         # Chuyển đổi sang float32 và chuẩn hóa về dải [0.0, 1.0] theo quy chuẩn MiniFASNet (ToTensor)
         face_float = crop_bgr.astype(np.float32) / 255.0

@@ -203,6 +203,7 @@ class TestOfflineSyncWorker:
         def mock_handler(request: httpx.Request):
             if request.url.path.endswith("/kiosk/sync-batch"):
                 import json
+
                 data = json.loads(request.content)
                 received_batches.append(data)
                 return httpx.Response(
@@ -263,7 +264,9 @@ class TestOfflineSyncWorker:
         )
 
         network_events = []
-        worker.network_status_changed.connect(lambda online, msg: network_events.append((online, msg)))
+        worker.network_status_changed.connect(
+            lambda online, msg: network_events.append((online, msg))
+        )
 
         total_synced = worker.sync_once()
 
@@ -275,6 +278,7 @@ class TestOfflineSyncWorker:
 
     def test_check_health(self, qapp, queue_mgr):
         """Kiểm thử hàm check_health khi máy chủ online và offline."""
+
         def ok_handler(request: httpx.Request):
             return httpx.Response(200, json={"status": "UP"})
 
@@ -313,4 +317,3 @@ class TestOfflineSyncWorker:
         # Lần 3: Lần trước là CHECK_OUT -> Tạo CHECK_IN
         _ = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
         assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_IN"
-

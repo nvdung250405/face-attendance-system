@@ -35,7 +35,9 @@ class KioskOtpError(Exception):
 class KioskPinError(Exception):
     """Lỗi xác thực mã PIN dự phòng (sai mã PIN, mã PIN bị khóa)."""
 
-    def __init__(self, message: str, code: str = "PIN_INVALID", locked_until: str | None = None) -> None:
+    def __init__(
+        self, message: str, code: str = "PIN_INVALID", locked_until: str | None = None
+    ) -> None:
         super().__init__(message)
         self.code = code
         self.locked_until = locked_until
@@ -148,7 +150,6 @@ class KioskHttpClient:
             "punchTimestamp": p_time,
             "verificationMethod": verification_method,
             "confidenceScore": confidence_score,
-            "kioskId": self.kiosk_id,
         }
 
         client = self._get_client()
@@ -156,12 +157,16 @@ class KioskHttpClient:
             resp = client.post(url, json=payload, headers=self._get_headers(), timeout=self.timeout)
             if resp.status_code == 200:
                 data = resp.json()
-                logger.info("send_punch thành công: emp_id=%d, score=%s", employee_id, confidence_score)
+                logger.info(
+                    "send_punch thành công: emp_id=%d, score=%s", employee_id, confidence_score
+                )
                 return data
             elif resp.status_code == 409:
                 err_data = resp.json() if resp.text else {}
                 logger.warning("send_punch gặp 409 Conflict: %s", err_data)
-                raise KioskCooldownConflict(err_data.get("message", "Nhân viên đang trong thời gian Cooldown"))
+                raise KioskCooldownConflict(
+                    err_data.get("message", "Nhân viên đang trong thời gian Cooldown")
+                )
             else:
                 msg = f"Máy chủ trả về HTTP {resp.status_code}: {resp.text}"
                 logger.warning("send_punch thất bại: %s", msg)
@@ -185,15 +190,19 @@ class KioskHttpClient:
             item = {
                 "localQueueId": r.get("id") or r.get("localQueueId") or r.get("localId"),
                 "employeeId": r.get("employee_id") or r.get("employeeId"),
-                "punchTimestamp": r.get("punch_timestamp") or r.get("punchTimestamp") or r.get("punch_time"),
-                "verificationMethod": r.get("verification_method") or r.get("verificationMethod") or "VERIFICATION_FACE",
-                "confidenceScore": r.get("confidence_score") if r.get("confidence_score") is not None else r.get("confidenceScore"),
+                "punchTimestamp": r.get("punch_timestamp")
+                or r.get("punchTimestamp")
+                or r.get("punch_time"),
+                "verificationMethod": r.get("verification_method")
+                or r.get("verificationMethod")
+                or "VERIFICATION_FACE",
+                "confidenceScore": r.get("confidence_score")
+                if r.get("confidence_score") is not None
+                else r.get("confidenceScore"),
             }
             formatted_records.append(item)
 
         payload = {
-            "kioskId": self.kiosk_id,
-            "batchSize": len(formatted_records),
             "records": formatted_records,
         }
 
@@ -244,7 +253,6 @@ class KioskHttpClient:
         url = f"{self.base_url}/kiosk/verify-otp"
         payload = {
             "otp": otp,
-            "kioskId": self.kiosk_id,
         }
         client = self._get_client()
         try:
@@ -288,12 +296,13 @@ class KioskHttpClient:
         payload: dict[str, Any] = {
             "otp": otp,
             "sessionToken": session_token,
-            "kioskId": self.kiosk_id,
         }
 
         if templates is not None:
             if len(templates) != 3:
-                raise ValueError("templates bắt buộc phải có đúng 3 phần tử (FRONTAL, LEFT_TILT, RIGHT_TILT)")
+                raise ValueError(
+                    "templates bắt buộc phải có đúng 3 phần tử (FRONTAL, LEFT_TILT, RIGHT_TILT)"
+                )
             payload["templates"] = templates
 
         if vector512 is not None:
@@ -353,10 +362,15 @@ class KioskHttpClient:
             elif resp.status_code == 423:
                 err = resp.json() if resp.text else {}
                 msg = err.get("message", "Mã PIN đang bị khóa do nhập sai nhiều lần")
-                locked_until = err.get("data", {}).get("lockedUntil") if isinstance(err.get("data"), dict) else None
-                raise KioskPinError(msg, code=err.get("code", "PIN_LOCKED"), locked_until=locked_until)
+                locked_until = (
+                    err.get("data", {}).get("lockedUntil")
+                    if isinstance(err.get("data"), dict)
+                    else None
+                )
+                raise KioskPinError(
+                    msg, code=err.get("code", "PIN_LOCKED"), locked_until=locked_until
+                )
             else:
                 raise KioskNetworkError(f"HTTP {resp.status_code}: {resp.text}")
         except (httpx.RequestError, httpx.TimeoutException) as exc:
             raise KioskNetworkError(str(exc)) from exc
-

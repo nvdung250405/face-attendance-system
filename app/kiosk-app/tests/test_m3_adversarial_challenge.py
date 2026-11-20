@@ -85,6 +85,7 @@ def _setup_controller(
 # Challenge Area 1: Sequential 3-Pose Flow & Dead-Zone Rejection
 # ==============================================================================
 
+
 class TestSequentialFlowAndDeadZone:
     """Stress-test sequential ordering and dead-zone rejection."""
 
@@ -167,8 +168,24 @@ class TestSequentialFlowAndDeadZone:
     @pytest.mark.parametrize(
         "dead_yaw",
         [
-            5.01, 5.5, 6.0, 7.0, 7.5, 8.0, 9.0, 9.5, 9.99,
-            -5.01, -5.5, -6.0, -7.0, -7.5, -8.0, -9.0, -9.5, -9.99,
+            5.01,
+            5.5,
+            6.0,
+            7.0,
+            7.5,
+            8.0,
+            9.0,
+            9.5,
+            9.99,
+            -5.01,
+            -5.5,
+            -6.0,
+            -7.0,
+            -7.5,
+            -8.0,
+            -9.0,
+            -9.5,
+            -9.99,
         ],
     )
     def test_dead_zone_yaw_rejection_across_all_poses(self, dead_yaw):
@@ -184,7 +201,9 @@ class TestSequentialFlowAndDeadZone:
                 liveness_score=0.95,
                 target_pose=pose,
             )
-            assert rep.is_passed is False, f"Dead-zone yaw {dead_yaw}° unexpectedly passed for {pose}"
+            assert rep.is_passed is False, (
+                f"Dead-zone yaw {dead_yaw}° unexpectedly passed for {pose}"
+            )
             assert rep.euler_passed is False
 
     @pytest.mark.parametrize(
@@ -228,6 +247,7 @@ class TestSequentialFlowAndDeadZone:
 # ==============================================================================
 # Challenge Area 2: Stability Hold Duration (0.25s) & Sudden Drops
 # ==============================================================================
+
 
 class TestStabilityHoldAndDrops:
     """Stress-test 0.25s stability hold requirement under perturbations."""
@@ -328,7 +348,9 @@ class TestStabilityHoldAndDrops:
 
     def test_sudden_liveness_drop_resets_stability_timer(self, monkeypatch, qapp):
         """Liveness drop (spoof detection) during hold resets stability timer."""
-        ctrl, detector, _, liveness_gate = _setup_controller(capture_interval=0.35, pose_hold_duration=0.25)
+        ctrl, detector, _, liveness_gate = _setup_controller(
+            capture_interval=0.35, pose_hold_duration=0.25
+        )
         rng = np.random.default_rng(42)
         sharp_frame = rng.integers(0, 256, (480, 640, 3), dtype=np.uint8)
         detector.detect_face.return_value = _make_detection(yaw=0.0)
@@ -407,6 +429,7 @@ class TestStabilityHoldAndDrops:
 # Challenge Area 3: Backend 400 Rejection Recovery & End-to-End Retry
 # ==============================================================================
 
+
 class TestBackendRejectionRecovery:
     """Stress-test clean state recovery after Backend 400 rejection."""
 
@@ -446,7 +469,10 @@ class TestBackendRejectionRecovery:
         assert ctrl.employeeId == 101, "Employee ID must be preserved"
         assert ctrl.employeeName == "Nguyen Van A", "Employee name must be preserved"
         assert ctrl._otp == "839201", "OTP must be preserved"
-        assert "INVALID_TEMPLATE_SET" in ctrl.statusMessage or "Biometric templates" in ctrl.statusMessage
+        assert (
+            "INVALID_TEMPLATE_SET" in ctrl.statusMessage
+            or "Biometric templates" in ctrl.statusMessage
+        )
 
         # --- Second Attempt (Immediate Retry without re-authenticating) ---
         # 1. FRONTAL
@@ -516,6 +542,7 @@ class TestBackendRejectionRecovery:
 # Challenge Area 4: Boundary & Input Robustness
 # ==============================================================================
 
+
 class TestInputAndStateRobustness:
     """Stress-test unexpected or malformed inputs and state guards."""
 
@@ -569,7 +596,9 @@ class TestInputAndStateRobustness:
         for t in ctrl.capturedTemplates:
             vec = np.array(t["vector512"])
             norm = float(np.linalg.norm(vec))
-            assert pytest.approx(norm, 1e-4) == 1.0, f"Template {t['poseType']} vector not L2 normalized"
+            assert pytest.approx(norm, 1e-4) == 1.0, (
+                f"Template {t['poseType']} vector not L2 normalized"
+            )
 
         submit_json = mock_client.post.call_args[1]["json"]
         fallback_norm = float(np.linalg.norm(np.array(submit_json["vector512"])))
@@ -579,6 +608,7 @@ class TestInputAndStateRobustness:
 # ==============================================================================
 # Challenge Area 5: Milestone 3 Round 2 Lifecycle & Network Validation
 # ==============================================================================
+
 
 class TestM3Round2LifecycleAndNetworkValidation:
     """Stress-test state machine reset lifecycle, touch cancel recovery, and network validation."""

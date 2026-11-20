@@ -1,0 +1,77 @@
+/**
+ * Shared date & time utilities for web-portal
+ * (EXP3-09: Standardized date/time formatting across components)
+ */
+
+export function formatTime(isoString?: string | null): string {
+  if (!isoString) return '—'
+  try {
+    const d = new Date(isoString)
+    return d.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+  } catch {
+    return isoString
+  }
+}
+
+export const formatTimeOnly = formatTime
+
+export function formatDate(isoString?: string | null): string {
+  if (!isoString) return '—'
+  try {
+    const d = new Date(isoString)
+    return d.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+  } catch {
+    return isoString
+  }
+}
+
+export function formatDateTime(isoString?: string | null): string {
+  if (!isoString) return '—'
+  try {
+    const d = new Date(isoString)
+    return d.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+  } catch {
+    return isoString
+  }
+}
+
+export function formatRelativeTime(isoString?: string | null): string {
+  if (!isoString) return '—'
+  try {
+    const d = new Date(isoString)
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffSec = Math.floor(diffMs / 1000)
+    if (diffSec < 60) return `${Math.max(1, diffSec)} giây trước`
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return `${diffMin} phút trước`
+    const diffHour = Math.floor(diffMin / 60)
+    if (diffHour < 24) return `${diffHour} giờ trước`
+    const diffDay = Math.floor(diffHour / 24)
+    return `${diffDay} ngày trước`
+  } catch {
+    return isoString
+  }
+}
+
+export function formatLocalDateISO(d: Date = new Date()): string {
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}

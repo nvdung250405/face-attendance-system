@@ -18,7 +18,7 @@ export interface EmployeeItem {
 }
 
 export interface CreateEmployeeRequest {
-  employeeCode: string
+  employeeCode?: string
   fullName: string
   email: string
   department: string
@@ -42,4 +42,5 @@ export interface EmployeeSearchCriteria {
   keyword?: string
   department?: string
   status?: UserStatus
+  role?: UserRole
 }

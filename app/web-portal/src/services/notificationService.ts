@@ -6,7 +6,7 @@
 
 import { apiClient } from './apiClient'
 import { normalizeApiError } from './errorNormalizer'
-import type { ApiResponse, NotificationResponse } from '@/types'
+import type { ApiResponse, PaginatedResult, NotificationResponse } from '@/types'
 
 export class NotificationService {
   /**
@@ -14,13 +14,13 @@ export class NotificationService {
    */
   async getNotifications(): Promise<NotificationResponse[]> {
     try {
-      const response = await apiClient.get<ApiResponse<unknown>>(
-        '/api/v1/notifications'
-      )
-      const raw = response.data.data
-      if (Array.isArray(raw)) return raw as NotificationResponse[]
-      if (raw && typeof raw === 'object' && 'content' in raw && Array.isArray((raw as { content: unknown }).content)) {
-        return (raw as { content: NotificationResponse[] }).content
+      const response = await apiClient.get<
+        ApiResponse<PaginatedResult<NotificationResponse> | NotificationResponse[]>
+      >('/api/v1/notifications')
+      const data = response.data.data
+      if (Array.isArray(data)) return data
+      if (data && typeof data === 'object' && 'content' in data && Array.isArray(data.content)) {
+        return data.content
       }
       return []
     } catch (error) {

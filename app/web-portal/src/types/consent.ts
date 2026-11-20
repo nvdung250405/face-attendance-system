@@ -1,11 +1,14 @@
-﻿/**
+/**
  * Hợp đồng dữ liệu Luồng Ký cam kết Informed Consent (DATA-WEB-003, API-WEB-003, API-WEB-014).
  */
 
 export interface ConsentRequest {
   consentVersion?: string
+  agreed: boolean
+  /** @deprecated Alias thừa thãi, sử dụng agreed */
   accepted?: boolean
-  agreed?: boolean
+  /** @deprecated Alias thừa thãi, sử dụng agreed */
+  isAgreed?: boolean
   consentTimestamp?: string
 }
 
@@ -49,4 +52,7 @@ export interface EnrollmentSuccessMessage {
   readonly message: string
   readonly activatedAt: string
 }
+
+export type { DataSubjectRequestItem } from './compliance'
+
 

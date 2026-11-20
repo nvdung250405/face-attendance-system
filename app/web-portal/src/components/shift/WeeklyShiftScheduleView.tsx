@@ -21,6 +21,7 @@ import {
   Search,
 } from 'lucide-react'
 import type { ShiftItem, EmployeeShiftAssignment, EmployeeItem } from '@/types'
+import { formatLocalDateISO as formatDateISO } from '@/utils/date'
 
 export interface WeeklyShiftScheduleViewProps {
   shifts: ShiftItem[]
@@ -39,13 +40,6 @@ function getMonday(d: Date): Date {
   const day = date.getDay()
   const diff = date.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
   return new Date(date.setDate(diff))
-}
-
-function formatDateISO(d: Date): string {
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const date = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${date}`
 }
 
 function formatDateDisplay(d: Date): string {

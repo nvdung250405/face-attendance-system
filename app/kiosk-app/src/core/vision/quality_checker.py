@@ -81,9 +81,7 @@ class EnrollmentQualityChecker:
         _, _, w, h = bbox
 
         # 1. Kiểm tra góc Pitch và Roll chung (|Pitch| <= 15°, |Roll| <= 15°)
-        pitch_roll_passed = (
-            abs(pitch) <= self.max_pitch_deg and abs(roll) <= self.max_roll_deg
-        )
+        pitch_roll_passed = abs(pitch) <= self.max_pitch_deg and abs(roll) <= self.max_roll_deg
 
         # 2. Kiểm tra góc Yaw theo từng tư thế cụ thể
         yaw_passed = False
@@ -134,9 +132,7 @@ class EnrollmentQualityChecker:
         # 5. Tiêu chí thực thể sống liveness >= min_liveness
         liveness_passed = liveness_score >= self.min_liveness
 
-        is_passed = (
-            euler_passed and size_passed and sharpness_passed and liveness_passed
-        )
+        is_passed = euler_passed and size_passed and sharpness_passed and liveness_passed
 
         # Xây dựng câu nhắc hướng dẫn trực quan theo thứ tự ưu tiên
         if not size_passed:

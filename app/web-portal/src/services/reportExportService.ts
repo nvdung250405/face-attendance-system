@@ -12,6 +12,7 @@
 
 import { apiClient } from './apiClient'
 import { normalizeApiError } from './errorNormalizer'
+import { sanitizeFormula } from '@/utils/security'
 import type {
   ExportReportParams,
   ExportReportResult,
@@ -20,16 +21,9 @@ import type {
 
 /**
  * Phòng chống mã độc chèn công thức Excel (Anti-Formula Injection / CWE-1236, DD-WEB-017, TST-SYS-019).
- * Nếu chuỗi văn bản bắt đầu bằng =, +, -, @ thì tự động chèn dấu nháy đơn ' ở đầu.
+ * Tái sử dụng sanitizeFormula tập trung từ utils/security.
  */
-export function sanitizeFormula(value: unknown): string {
-  if (value === null || value === undefined) return ''
-  const str = String(value).trim()
-  if (/^[=+\-@]/.test(str)) {
-    return `'${str}`
-  }
-  return str
-}
+export { sanitizeFormula }
 
 /**
  * Loại bỏ dấu tiếng Việt để xuất văn bản ASCII an toàn cho PDF Type1 Helvetica

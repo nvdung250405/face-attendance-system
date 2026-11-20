@@ -95,12 +95,16 @@ class KioskStompWorker(QThread):
 
             raw_vec = data.get("vector512")
             if not raw_vec:
-                logger.warning("ADD_VECTOR thiếu trường vector512 hoặc templates cho nhân viên %d", emp_id)
+                logger.warning(
+                    "ADD_VECTOR thiếu trường vector512 hoặc templates cho nhân viên %d", emp_id
+                )
                 return False
 
             vec = np.asarray(raw_vec, dtype=np.float32)
             if vec.shape[0] != 512:
-                logger.warning("Vector không đúng 512D (%dD) cho nhân viên %d", vec.shape[0], emp_id)
+                logger.warning(
+                    "Vector không đúng 512D (%dD) cho nhân viên %d", vec.shape[0], emp_id
+                )
                 return False
 
             pose = data.get("poseType") or data.get("pose_type") or "FRONTAL"

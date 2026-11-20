@@ -68,13 +68,16 @@ def test_detect_on_empty_input():
 def test_euler_angle_estimation_neutral():
     """Kiểm tra tính toán góc Euler cho khuôn mặt nhìn thẳng (neutral pose)."""
     # 5 điểm mốc đối xứng chuẩn (nhìn thẳng)
-    neutral_landmarks = np.array([
-        [40.0, 50.0],  # Mắt phải
-        [80.0, 50.0],  # Mắt trái (ngang hàng)
-        [60.0, 70.0],  # Mũi (ở giữa)
-        [45.0, 90.0],  # Khóe miệng phải
-        [75.0, 90.0],  # Khóe miệng trái
-    ], dtype=np.float32)
+    neutral_landmarks = np.array(
+        [
+            [40.0, 50.0],  # Mắt phải
+            [80.0, 50.0],  # Mắt trái (ngang hàng)
+            [60.0, 70.0],  # Mũi (ở giữa)
+            [45.0, 90.0],  # Khóe miệng phải
+            [75.0, 90.0],  # Khóe miệng trái
+        ],
+        dtype=np.float32,
+    )
 
     yaw, pitch, roll = estimate_euler_angles(neutral_landmarks)
 
@@ -86,13 +89,16 @@ def test_euler_angle_estimation_neutral():
 
 def test_euler_angle_estimation_roll_crosstalk_mitigation():
     """Kiểm tra thuật toán khử xoay Roll 2D không sinh ra góc Yaw ảo khi mặt chỉ nghiêng Roll."""
-    neutral_landmarks = np.array([
-        [40.0, 50.0],
-        [80.0, 50.0],
-        [60.0, 70.0],
-        [45.0, 90.0],
-        [75.0, 90.0],
-    ], dtype=np.float64)
+    neutral_landmarks = np.array(
+        [
+            [40.0, 50.0],
+            [80.0, 50.0],
+            [60.0, 70.0],
+            [45.0, 90.0],
+            [75.0, 90.0],
+        ],
+        dtype=np.float64,
+    )
 
     # Xoay toàn bộ mặt quanh tâm mắt góc +25 độ
     roll_angle = 25.0
@@ -117,25 +123,31 @@ def test_euler_angle_estimation_roll_crosstalk_mitigation():
 def test_euler_angle_estimation_left_and_right_tilt():
     """Kiểm tra ước lượng góc Yaw chuẩn cho tư thế nghiêng trái (LEFT_TILT) và nghiêng phải (RIGHT_TILT)."""
     # Nghiêng trái: Mũi lệch nhẹ về phía mắt trái (x = 64.0 -> yaw = +18.0°)
-    left_landmarks = np.array([
-        [40.0, 50.0],
-        [80.0, 50.0],
-        [64.0, 70.0],
-        [47.0, 90.0],
-        [77.0, 90.0],
-    ], dtype=np.float32)
+    left_landmarks = np.array(
+        [
+            [40.0, 50.0],
+            [80.0, 50.0],
+            [64.0, 70.0],
+            [47.0, 90.0],
+            [77.0, 90.0],
+        ],
+        dtype=np.float32,
+    )
     yaw_left, _, _ = estimate_euler_angles(left_landmarks)
     assert 10.0 <= yaw_left <= 25.0
     assert pytest.approx(yaw_left, abs=0.1) == 18.0
 
     # Nghiêng phải: Mũi lệch nhẹ về phía mắt phải (x = 56.0 -> yaw = -18.0°)
-    right_landmarks = np.array([
-        [40.0, 50.0],
-        [80.0, 50.0],
-        [56.0, 70.0],
-        [43.0, 90.0],
-        [73.0, 90.0],
-    ], dtype=np.float32)
+    right_landmarks = np.array(
+        [
+            [40.0, 50.0],
+            [80.0, 50.0],
+            [56.0, 70.0],
+            [43.0, 90.0],
+            [73.0, 90.0],
+        ],
+        dtype=np.float32,
+    )
     yaw_right, _, _ = estimate_euler_angles(right_landmarks)
     assert -25.0 <= yaw_right <= -10.0
     assert pytest.approx(yaw_right, abs=0.1) == -18.0
@@ -144,13 +156,16 @@ def test_euler_angle_estimation_left_and_right_tilt():
 def test_euler_angle_estimation_degenerate_clamping():
     """Kiểm tra giới hạn tỷ lệ [-1.0, 1.0] ngăn ngừa ngoại suy góc Euler phi thực tế."""
     # Điểm mốc cực đoan dị thường
-    extreme_landmarks = np.array([
-        [40.0, 50.0],
-        [80.0, 50.0],
-        [500.0, 70.0],  # Mũi trượt rất xa ngoài khuôn mặt
-        [40.0, 90.0],
-        [80.0, 90.0],
-    ], dtype=np.float32)
+    extreme_landmarks = np.array(
+        [
+            [40.0, 50.0],
+            [80.0, 50.0],
+            [500.0, 70.0],  # Mũi trượt rất xa ngoài khuôn mặt
+            [40.0, 90.0],
+            [80.0, 90.0],
+        ],
+        dtype=np.float32,
+    )
 
     yaw, pitch, roll = estimate_euler_angles(extreme_landmarks)
     assert -90.0 <= yaw <= 90.0

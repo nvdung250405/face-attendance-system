@@ -8,6 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:e2e": "node ../../tests/web-portal/runner-e2e.mjs --config tests/web-portal/playwright.config.ts",
+    "test:ui": "node ../../tests/web-portal/visual/runner.mjs",
+    "test:ui:quick": "node ../../tests/web-portal/visual/runner.mjs --filter",
+    "test:staging:global": "node ../../tests/web-portal/runner-e2e.mjs --config tests/web-portal/playwright.staging.config.ts",
+    "test:staging:visual": "node ../../tests/web-portal/visual/runner.mjs --port 3000 --filter global-ui",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -33,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^24.13.3",
@@ -40,6 +46,7 @@
     "@types/react-dom": "^19.2.7",
     "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.4",
     "autoprefixer": "^10.6.1",
     "axios-mock-adapter": "^2.1.0",
     "eslint": "^10.10.0",

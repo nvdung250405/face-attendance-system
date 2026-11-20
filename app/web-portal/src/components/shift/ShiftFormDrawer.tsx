@@ -2,9 +2,10 @@
  * Modal Drawer Tạo mới / Chỉnh sửa Ca làm việc (UXD-WEB-006, SOL-WEB-007).
  */
 
-import React from 'react'
-import { Clock, X, AlertTriangle } from 'lucide-react'
+import React, { useState } from 'react'
+import { Clock, X, AlertTriangle, Sparkles, ChevronDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { previewShiftCode } from '@/utils/codePreview'
 import type { ShiftItem, CreateShiftRequest } from '@/types'
 
 export interface ShiftFormDrawerProps {
@@ -28,6 +29,14 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
   isSubmitting,
   onSubmit,
 }) => {
+  const [customCodeExpanded, setCustomCodeExpanded] = useState(false)
+  const isCustomCodeActive = customCodeExpanded || Boolean(formData.shiftCode)
+
+  const previewCode = previewShiftCode(
+    formData.name || '',
+    formData.startTime || '',
+    formData.endTime || ''
+  )
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -74,23 +83,69 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
               </div>
             )}
 
-            {/* Mã ca */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-text-secondary">
-                Mã ca làm việc <span className="text-status-danger">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.shiftCode}
-                onChange={(e) =>
-                  onChangeFormData((prev) => ({ ...prev, shiftCode: e.target.value.toUpperCase() }))
-                }
-                disabled={Boolean(editingShift)}
-                data-testid="input-shift-code"
-                placeholder="Ví dụ: CA_SANG, CA_TOI..."
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white disabled:bg-slate-50 disabled:text-text-muted uppercase font-mono"
-              />
-            </div>
+            {/* Mã ca làm việc / Live Preview */}
+            {editingShift ? (
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-text-secondary">
+                  Mã ca làm việc
+                </label>
+                <input
+                  type="text"
+                  value={formData.shiftCode || editingShift.shiftCode}
+                  disabled
+                  data-testid="input-shift-code"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-slate-50 text-text-muted uppercase font-mono"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div
+                  data-testid="shift-code-preview"
+                  className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200"
+                >
+                  <Sparkles className="w-4 h-4 text-brand-primary shrink-0" />
+                  <span className="text-xs text-text-secondary">Mã ca dự kiến sinh tự động:</span>
+                  <span className="text-xs font-mono font-bold text-brand-primary">{previewCode}</span>
+                </div>
+
+                <div>
+                  <button
+                    type="button"
+                    data-testid="toggle-custom-shift-code"
+                    onClick={() => {
+                      if (isCustomCodeActive) {
+                        setCustomCodeExpanded(false)
+                        onChangeFormData((f) => ({ ...f, shiftCode: undefined }))
+                      } else {
+                        setCustomCodeExpanded(true)
+                      }
+                    }}
+                    className="text-xs text-brand-primary hover:text-brand-hover font-medium flex items-center gap-1 transition-colors"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isCustomCodeActive ? 'rotate-180' : ''}`} />
+                    <span>Tùy chỉnh mã ca (nâng cao)</span>
+                  </button>
+                </div>
+
+                {isCustomCodeActive && (
+                  <div className="space-y-1 animate-in fade-in duration-150">
+                    <label className="text-xs font-semibold text-text-secondary">
+                      Mã ca làm việc thủ công
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.shiftCode || ''}
+                      onChange={(e) =>
+                        onChangeFormData((prev) => ({ ...prev, shiftCode: e.target.value.toUpperCase() }))
+                      }
+                      data-testid="input-shift-code"
+                      placeholder="Để trống để hệ thống tự sinh (ví dụ: SHF-XXXX)"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white uppercase font-mono"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Tên ca */}
             <div className="space-y-1">

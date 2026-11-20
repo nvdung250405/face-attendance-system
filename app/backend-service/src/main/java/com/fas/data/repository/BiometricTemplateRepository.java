@@ -2,6 +2,7 @@ package com.fas.data.repository;
 
 import com.fas.data.entity.BiometricTemplate;
 import com.fas.data.enums.PoseType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Spring Data JPA Repository cho thực thể BiometricTemplate (DATA-BE-005 - biometric_templates).
@@ -26,7 +28,11 @@ public interface BiometricTemplateRepository extends JpaRepository<BiometricTemp
 
     boolean existsByUserIdAndIsActiveTrue(Long userId);
 
+    @EntityGraph(attributePaths = {"user"})
     List<BiometricTemplate> findByIsActiveTrue();
+
+    @Query("SELECT DISTINCT bt.user.id FROM BiometricTemplate bt WHERE bt.user.id IN :userIds AND bt.isActive = true")
+    Set<Long> findActiveUserIdsIn(@Param("userIds") Collection<Long> userIds);
 
     List<BiometricTemplate> findByUserId(Long userId);
 

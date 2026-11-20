@@ -202,9 +202,7 @@ class YuNetFaceDetector:
 
         # Resize khung hình sang độ phân giải suy luận YuNet chuẩn
         if (w, h) != (target_w, target_h):
-            det_frame = cv2.resize(
-                frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR
-            )
+            det_frame = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
             scale_x = w / float(target_w)
             scale_y = h / float(target_h)
         else:
@@ -279,4 +277,3 @@ class YuNetFaceDetector:
             return None
         # Ưu tiên khuôn mặt có diện tích lớn nhất (gần camera nhất)
         return max(results, key=lambda r: r.bbox[2] * r.bbox[3])
-

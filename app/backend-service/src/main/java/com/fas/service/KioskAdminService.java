@@ -9,6 +9,7 @@ import com.fas.api.dto.response.RegisterKioskResponse;
 import com.fas.api.dto.response.RotateKioskTokenResponse;
 import com.fas.api.error.ApiErrorCode;
 import com.fas.api.error.ApiException;
+import com.fas.common.generator.BusinessCodeGenerator;
 import com.fas.data.entity.Kiosk;
 import com.fas.data.repository.KioskRepository;
 import com.fas.service.audit.AuditContextHolder;
@@ -54,14 +55,28 @@ public class KioskAdminService {
     private final KioskRepository kioskRepository;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
+    private final BusinessCodeGenerator businessCodeGenerator;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Autowired
     public KioskAdminService(
             KioskRepository kioskRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            BusinessCodeGenerator businessCodeGenerator
     ) {
-        this(kioskRepository, passwordEncoder, Clock.systemDefaultZone());
+        this(kioskRepository, passwordEncoder, Clock.systemDefaultZone(), businessCodeGenerator);
+    }
+
+    public KioskAdminService(
+            KioskRepository kioskRepository,
+            PasswordEncoder passwordEncoder,
+            Clock clock,
+            BusinessCodeGenerator businessCodeGenerator
+    ) {
+        this.kioskRepository = kioskRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
+        this.businessCodeGenerator = businessCodeGenerator;
     }
 
     public KioskAdminService(
@@ -69,9 +84,8 @@ public class KioskAdminService {
             PasswordEncoder passwordEncoder,
             Clock clock
     ) {
-        this.kioskRepository = kioskRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.clock = clock;
+        this(kioskRepository, passwordEncoder, clock,
+                new BusinessCodeGenerator(null, kioskRepository, null, clock));
     }
 
     /**
@@ -83,14 +97,19 @@ public class KioskAdminService {
     @Auditable(action = "REGISTER_KIOSK", entityType = "KIOSK", entityId = "#result.id", includeState = false)
     @Transactional
     public RegisterKioskResponse registerKiosk(RegisterKioskRequest request) {
-        if (request == null || !StringUtils.hasText(request.id()) || !StringUtils.hasText(request.locationName())) {
-            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Mã trạm và tên vị trí không được để trống");
+        if (request == null || !StringUtils.hasText(request.locationName())) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Tên vị trí không được để trống");
         }
 
-        String kioskId = request.id().trim().toUpperCase();
-        if (kioskRepository.existsById(kioskId)) {
-            log.warn("Đăng ký trạm thất bại: Mã trạm '{}' đã tồn tại", kioskId);
-            throw new ApiException(ApiErrorCode.KIOSK_ALREADY_EXISTS, "Mã trạm Kiosk đã tồn tại: " + kioskId);
+        String kioskId;
+        if (StringUtils.hasText(request.id())) {
+            kioskId = request.id().trim().toUpperCase();
+            if (kioskRepository.existsById(kioskId)) {
+                log.warn("Đăng ký trạm thất bại: Mã trạm '{}' đã tồn tại", kioskId);
+                throw new ApiException(ApiErrorCode.KIOSK_ALREADY_EXISTS, "Mã trạm Kiosk đã tồn tại: " + kioskId);
+            }
+        } else {
+            kioskId = businessCodeGenerator.generateKioskId(request.locationName());
         }
 
         // 1. Sinh Secret Token CSPRNG ngẫu nhiên và băm một chiều

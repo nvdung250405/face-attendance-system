@@ -1,38 +1,51 @@
-# Kho Báo cáo Thực thi & Vết Kiểm toán (`tests/reports/`)
+# Kho Báo Cáo Kiểm Thử & Dấu Vết Thực Thi (`tests/reports/`)
 
 > **Mã phân vùng:** `WORKSPACE-TESTS-REPORTS`  
-> **Cấp độ không gian:** Sub-Workspace Artifacts Hub  
+> **Cấp độ không gian:** Local Artifacts Hub  
 > **Đường dẫn:** `tests/reports/`  
 > **Không gian cha:** [`tests/README.md`](../README.md) (Testing Hub)  
-> **Trách nhiệm cốt lõi (Single Responsibility):** Quản lý tập trung toàn bộ dữ liệu đầu ra sinh ra trong quá trình kiểm thử, bao gồm kho ảnh mẫu giao diện (Golden Baselines), ảnh vết thực thi E2E tự động, báo cáo kiểm toán trợ năng (FlaUI UIA3 Audit), và kết quả đo độ phủ mã nguồn (Coverage).
+> **Nguyên tắc cốt lõi:** **100% Local-Only**. Kho lưu trữ này chỉ phục vụ việc lưu trữ cục bộ các kết quả kiểm thử, ảnh chụp giao diện và báo cáo HTML trực quan trên máy developer. Tuyệt đối không commit tệp báo cáo hoặc ảnh chụp lên Git repository.
 
 ---
 
-## 1. Mục đích & Vai trò Kho Lưu trữ
+## 1. Cấu Trúc Báo Cáo Phân Hệ
 
-Thư mục `tests/reports/` là output đóng gói của không gian kiểm thử `tests/`:
-* Trả lại cho `docs/` sự tinh gọn (chỉ chứa văn bản, đặc tả, biểu đồ kiến trúc; không bị phình to bởi tệp nhị phân).
-* Trả lại cho `app/` sự trong sạch (chỉ chứa mã nguồn ứng dụng và unit tests; không chứa báo cáo tự động).
-* Trả lại cho Root sự ngăn nắp (không có thư mục `reports/` rò rỉ ra ngoài Root).
+Mọi tiến trình kiểm thử tự động đều xuất kết quả vào phân mục tương ứng:
+
+```text
+reports/
+├── .gitkeep                   # Tệp duy nhất được Git theo dõi để giữ khung thư mục
+├── README.md                  # Hướng dẫn quy ước lưu trữ
+├── desktop-kiosk/             # Đầu ra của phân hệ Trạm Kiosk Desktop
+│   ├── audit/
+│   │   └── flaui_audit_report.json # Báo cáo kiểm toán trợ năng FlaUI UIA3
+│   └── screenshots/
+│       ├── baselines/         # 17 ảnh chụp giao diện chuẩn FHD dọc 9:16
+│       ├── e2e/               # 4 ảnh minh chứng các bước điều khiển FlaUI
+│       └── diffs/             # Ảnh sai lệch kết xuất khi test visual thất bại
+├── web-portal/                # Đầu ra của phân hệ Cổng Web Portal
+│   ├── audit_results.json     # Báo cáo đo kiểm chất lượng WCAG & token
+│   ├── raw_results.json       # Kết quả thô từ Playwright runner
+│   ├── visual_gallery.html    # Báo cáo Visual Gallery trực quan (mở bằng trình duyệt)
+│   ├── baselines/             # Ảnh chuẩn màn hình Web Portal
+│   ├── screenshots/           # Ảnh kết xuất của lần chạy hiện tại
+│   ├── diffs/                 # Ảnh sai lệch pixel diffs
+│   └── test-results/          # Traces & video ghi hình khi test fail
+└── system-api/                # Đầu ra của phân hệ Kiểm thử Tích hợp Cấp Hệ thống
+    └── test-results.json      # Báo cáo kết quả chi tiết 34 kịch bản kiểm thử API
+```
 
 ---
 
-## 2. Bản đồ Cấu trúc Nội bộ (Internal Layout)
+## 2. Hướng Dẫn Xem Báo Cáo Trực Quan (Local Dev)
 
-| Thư mục / Tệp | Loại tài nguyên | Trách nhiệm chi tiết | Nguồn sinh ra |
-|:---|:---|:---|:---|
-| [**`screenshots/baselines/`**](screenshots/baselines/) | PNG Images (17 files) | Kho ảnh chụp giao diện chuẩn FHD dọc 9:16 ($1080 \times 1920\text{ px}$) làm thước đo so sánh hồi quy | Sinh ra bởi `tests/visual/run_ui_review.py` |
-| [**`screenshots/e2e/`**](screenshots/e2e/) | PNG Images (4 files) | Ảnh chụp màn hình làm bằng chứng nghiệm thu các bước điều khiển hệ điều hành tự động qua FlaUI | Sinh ra bởi `tests/e2e/desktop/run_flaui_e2e.py` |
-| [**`audit/flaui_audit_report.json`**](audit/flaui_audit_report.json) | JSON Report | Báo cáo kiểm toán chất lượng selector, cây UI AutomationId và tiêu chuẩn trợ năng Windows | Sinh ra bởi lệnh `flaui audit` |
-| [**`test-results/`**](test-results/) | XML / HTML / JSON | Thư mục đầu ra cho báo cáo kiểm thử tự động JUnit XML, lcov/html coverage reports | Sinh ra bởi `pytest --junitxml` / `mvn test` |
-
----
-
-## 3. Chính sách Dữ liệu & Quy tắc Git (Data & Git Policy)
-
-* **Tài nguyên theo dõi (Tracked)**:
-  - Bộ 17 ảnh mẫu chuẩn tại `tests/reports/screenshots/baselines/` (đóng vai trò Golden Baseline để CI/CD so sánh pixel diff).
-  - Tệp báo cáo kiểm toán `tests/reports/audit/flaui_audit_report.json` làm chứng chỉ nghiệm thu chất lượng UI.
-* **Tài nguyên bỏ qua (Ignored 100%)**:
-  - Thư mục ảnh sai lệch tạm thời: `tests/reports/screenshots/diffs/`.
-  - Kết quả kiểm thử động tạm thời: `tests/reports/test-results/` (được `.gitignore` tự động bỏ qua để không gây xung đột git khi chạy test cục bộ).
+- **Xem Web Visual Gallery**:
+  Mở trực tiếp tệp HTML bằng trình duyệt:
+  ```powershell
+  # Windows PowerShell
+  Start-Process tests/reports/web-portal/visual_gallery.html
+  ```
+- **Xem Báo cáo Trợ năng Kiosk**:
+  Đọc file JSON tại `tests/reports/desktop-kiosk/audit/flaui_audit_report.json`.
+- **Xem Kết quả API System**:
+  Đọc file JSON tại `tests/reports/system-api/test-results.json`.
