@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    env: {
+      VITE_API_BASE_URL: 'http://localhost:8080',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'lcov', 'html'],
