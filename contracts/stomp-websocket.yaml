@@ -40,6 +40,9 @@ destinations:
       summary: "Broadcast stream of validated attendance punches to Web Portal Live Dashboard"
       command: "SUBSCRIBE"
       ack_mode: "auto"
+      security:
+        roles: ["ROLE_ADMIN", "ROLE_HR"]
+        description: "Authenticated administrative and HR monitoring sessions only."
       message_payload:
         $ref: "#/components/schemas/LiveAttendanceEvent"
 
@@ -47,6 +50,9 @@ destinations:
       summary: "Dynamic channel notifying Web Portal of successful 3-pose face enrollment by OTP"
       command: "SUBSCRIBE"
       ack_mode: "auto"
+      security:
+        authorization: "Session authenticated user matching active OTP owner or ROLE_ADMIN"
+        description: "Protected dynamic channel. Backend STOMP Channel Interceptor validates subscription session against OTP ownership to prevent unauthorized channel eavesdropping."
       message_payload:
         $ref: "#/components/schemas/EnrollmentCompletedEvent"
 
@@ -54,8 +60,20 @@ destinations:
       summary: "Broadcast encrypted vector updates and gallery sync signals to active Edge Kiosks"
       command: "SUBSCRIBE"
       ack_mode: "auto"
+      security:
+        roles: ["ROLE_KIOSK"]
+        description: "Authenticated edge kiosk devices only."
       message_payload:
         $ref: "#/components/schemas/KioskGallerySyncEvent"
+
+  # Client -> Server Inbound Channels
+  inbound:
+    - address: "/app/heartbeat"
+      summary: "Client-initiated application heartbeat and health ping"
+      command: "SEND"
+      security:
+        roles: ["ROLE_KIOSK", "ROLE_EMPLOYEE", "ROLE_ADMIN"]
+        description: "Lightweight application ping for latency tracking and channel health verification."
 
   # System Error Handling
   error:
