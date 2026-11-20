@@ -1,0 +1,1681 @@
+[
+  {
+    "id": "UI-01",
+    "name": "Màn hình Đăng nhập Desktop chuẩn",
+    "group": "auth",
+    "subgroup": "login",
+    "route": "/login",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "01_auth_login_desktop.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Giao diện đăng nhập cổng quản trị và điểm danh trên máy tính để bàn",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-02",
+    "name": "Màn hình Đăng nhập Mobile thích ứng",
+    "group": "auth",
+    "subgroup": "login",
+    "route": "/login",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "02_auth_login_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Giao diện đăng nhập co giãn hoàn hảo trên màn hình điện thoại 375px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-03",
+    "name": "Form Đăng nhập báo đỏ validation khi để trống",
+    "group": "auth",
+    "subgroup": "login",
+    "route": "/login",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "03_auth_login_validation_error.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Viền đỏ và thông điệp yêu cầu nhập tài khoản, mật khẩu khi bấm đăng nhập rỗng",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-04",
+    "name": "Đăng nhập báo lỗi sai thông tin xác thực",
+    "group": "auth",
+    "subgroup": "login",
+    "route": "/login",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "04_auth_login_server_error_toast.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Alert cảnh báo Tên đăng nhập hoặc mật khẩu không chính xác từ máy chủ",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-05",
+    "name": "Trang 403 Forbidden (Từ chối truy cập)",
+    "group": "auth",
+    "subgroup": "exception",
+    "route": "/unauthorized",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "05_unauthorized_403.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Màn hình thông báo không có quyền truy cập tài nguyên quản trị",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-06",
+    "name": "Trang 404 Not Found (Không tìm thấy trang)",
+    "group": "auth",
+    "subgroup": "exception",
+    "route": "/not-found",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "06_not_found_404.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Màn hình 404 thân thiện kèm nút điều hướng quay về Bảng điều khiển",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-07",
+    "name": "Dropdown Menu Tài khoản khi click Avatar",
+    "group": "shell",
+    "subgroup": "menu",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "07_shell_account_dropdown.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Menu ngữ cảnh thông tin người dùng, nút đổi mật khẩu, mã PIN và đăng xuất",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-08",
+    "name": "Hộp thoại Đổi mật khẩu tự nguyện",
+    "group": "shell",
+    "subgroup": "modal",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "08_shell_change_password_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal đổi mật khẩu có trường mật khẩu hiện tại, mật khẩu mới và xác nhận",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-09",
+    "name": "Hộp thoại Thiết lập / Đổi mã PIN Kiosk",
+    "group": "shell",
+    "subgroup": "modal",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "09_shell_pin_management_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal quản lý mã PIN 6 chữ số dự phòng dùng khi điểm danh tại Kiosk",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-10",
+    "name": "Ngăn kéo Thông báo (Drawer có dữ liệu)",
+    "group": "shell",
+    "subgroup": "drawer",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "10_shell_notifications_drawer_populated.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Drawer trượt từ bên phải hiển thị danh sách thông báo hệ thống mới nhất",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-11",
+    "name": "Ngăn kéo Thông báo trạng thái rỗng",
+    "group": "shell",
+    "subgroup": "drawer",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "11_shell_notifications_drawer_empty.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Trạng thái rỗng thân thiện khi người dùng đã đọc hết tất cả thông báo",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-12",
+    "name": "Sidebar Mobile mở ra dạng Drawer",
+    "group": "shell",
+    "subgroup": "responsive",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "12_shell_mobile_sidebar_open.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Menu điều hướng di động trượt ra dạng Overlay đè trên màn hình",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-13",
+    "name": "Dashboard Live & 4 Thẻ KPI Sĩ số",
+    "group": "admin",
+    "subgroup": "dashboard",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "13_admin_dashboard_live.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Giao diện giám sát thời gian thực với 4 thẻ KPI và bảng sự kiện trực tiếp",
+    "featureId": "FEAT-LIVE-001",
+    "featureName": "Bảng Điều Khiển Live & KPI"
+  },
+  {
+    "id": "UI-14",
+    "name": "Dashboard Live hiệu ứng Green Flash dòng mới",
+    "group": "admin",
+    "subgroup": "dashboard",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "14_admin_dashboard_green_flash.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Dòng điểm danh mới nhận qua WebSocket STOMP chớp sáng màu xanh lá 1.5 giây",
+    "featureId": "FEAT-LIVE-001",
+    "featureName": "Bảng Điều Khiển Live & KPI"
+  },
+  {
+    "id": "UI-15",
+    "name": "Lịch sử chấm công HR & Thanh công cụ lọc ngày",
+    "group": "admin",
+    "subgroup": "attendance",
+    "route": "/admin/attendance",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "15_admin_attendance_history.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Bảng chấm công tổng hợp của HR với bộ lọc phòng ban, trạng thái và ngày tháng",
+    "featureId": "FEAT-ATTEND-001",
+    "featureName": "Lịch sử Điểm danh & Sửa công"
+  },
+  {
+    "id": "UI-16",
+    "name": "Chấm công HR trạng thái bộ lọc không có dữ liệu",
+    "group": "admin",
+    "subgroup": "attendance",
+    "route": "/admin/attendance",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "16_admin_attendance_empty.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Empty state trực quan khi áp dụng bộ lọc ngày không có nhân viên nào điểm danh",
+    "featureId": "FEAT-ATTEND-001",
+    "featureName": "Lịch sử Điểm danh & Sửa công"
+  },
+  {
+    "id": "UI-17",
+    "name": "Hộp thoại Sửa quẹt thẻ thủ công",
+    "group": "admin",
+    "subgroup": "attendance",
+    "route": "/admin/attendance",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "17_admin_attendance_edit_dialog.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Hộp thoại cho phép HR điều chỉnh giờ quẹt và ghi chú lý do sửa đổi công",
+    "featureId": "FEAT-ATTEND-001",
+    "featureName": "Lịch sử Điểm danh & Sửa công"
+  },
+  {
+    "id": "UI-18",
+    "name": "Quản lý Hồ sơ nhân sự (Danh sách cán bộ)",
+    "group": "admin",
+    "subgroup": "employee_mgmt",
+    "route": "/admin/employees",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "18_admin_employees_list.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Danh sách cán bộ công nhân viên kèm trạng thái kích hoạt sinh trắc học",
+    "featureId": "FEAT-ADMIN-CORE",
+    "featureName": "Quản trị Nhân sự & Trạm Kiosk"
+  },
+  {
+    "id": "UI-19",
+    "name": "Hộp thoại Thêm mới hồ sơ nhân sự",
+    "group": "admin",
+    "subgroup": "employee_mgmt",
+    "route": "/admin/employees",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "19_admin_employees_add_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal tạo mới nhân viên với mã NV, họ tên, email và phòng ban công tác",
+    "featureId": "FEAT-ADMIN-CORE",
+    "featureName": "Quản trị Nhân sự & Trạm Kiosk"
+  },
+  {
+    "id": "UI-20",
+    "name": "Hộp thoại Khóa quyền truy cập nhân sự",
+    "group": "admin",
+    "subgroup": "employee_mgmt",
+    "route": "/admin/employees",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "20_admin_employees_deactivate_dialog.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Dialog cảnh báo đình chỉ tài khoản và hủy hiệu lực điểm danh của nhân viên",
+    "featureId": "FEAT-ADMIN-CORE",
+    "featureName": "Quản trị Nhân sự & Trạm Kiosk"
+  },
+  {
+    "id": "UI-21",
+    "name": "Danh mục Ca làm việc (Tab Danh mục ca)",
+    "group": "admin",
+    "subgroup": "shifts",
+    "route": "/admin/shifts",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "21_admin_shifts_catalog.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Bảng danh mục các ca sáng, ca chiều, ca đêm kèm thời gian ân hạn",
+    "featureId": "FEAT-SHIFT-001",
+    "featureName": "Quản lý Ca làm việc & Phân ca"
+  },
+  {
+    "id": "UI-22",
+    "name": "Hộp thoại Tạo ca làm việc mới",
+    "group": "admin",
+    "subgroup": "shifts",
+    "route": "/admin/shifts",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "22_admin_shifts_create_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal thiết lập mã ca, giờ bắt đầu, giờ kết thúc và phút cho phép đi muộn",
+    "featureId": "FEAT-SHIFT-001",
+    "featureName": "Quản lý Ca làm việc & Phân ca"
+  },
+  {
+    "id": "UI-23",
+    "name": "Lịch Phân ca nhân sự theo tuần (Tab Phân ca)",
+    "group": "admin",
+    "subgroup": "shifts",
+    "route": "/admin/shifts",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "23_admin_shifts_assignments.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Ma trận phân bổ ca làm việc cho từng cán bộ theo ngày trong tuần",
+    "featureId": "FEAT-SHIFT-001",
+    "featureName": "Quản lý Ca làm việc & Phân ca"
+  },
+  {
+    "id": "UI-24",
+    "name": "Ngăn kéo Phân ca — Chưa tick chọn (Disabled)",
+    "group": "admin",
+    "subgroup": "shifts",
+    "route": "/admin/shifts",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "24_admin_shifts_drawer_unticked.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Drawer phân ca hàng loạt khi chưa chọn nhân viên: nút ghi Phân Ca (0) và bị mờ",
+    "featureId": "FEAT-SHIFT-001",
+    "featureName": "Quản lý Ca làm việc & Phân ca"
+  },
+  {
+    "id": "UI-25",
+    "name": "Ngăn kéo Phân ca — Đã tick chọn 2 người (Active)",
+    "group": "admin",
+    "subgroup": "shifts",
+    "route": "/admin/shifts",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "25_admin_shifts_drawer_selected_active.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Drawer phân ca sau khi tick chọn: nút đổi thành Phân Ca Cho Phòng Ban (2) sáng màu",
+    "featureId": "FEAT-SHIFT-001",
+    "featureName": "Quản lý Ca làm việc & Phân ca"
+  },
+  {
+    "id": "UI-26",
+    "name": "Quản lý Kỳ tính công (Danh sách kỳ mở/khóa)",
+    "group": "admin",
+    "subgroup": "payroll",
+    "route": "/admin/payroll-periods",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "26_admin_payroll_periods_list.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Danh sách các kỳ tính công hàng tháng và trạng thái sẵn sàng chốt lương",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-27",
+    "name": "Hộp thoại Xác nhận khóa kỳ công",
+    "group": "admin",
+    "subgroup": "payroll",
+    "route": "/admin/payroll-periods",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "27_admin_payroll_lock_confirm_dialog.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Dialog cảnh báo chốt kỳ công sẽ cố định vĩnh viễn bảng dữ liệu chấm công",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-28",
+    "name": "Duyệt đơn giải trình — Tab Đơn chờ duyệt",
+    "group": "admin",
+    "subgroup": "excuses",
+    "route": "/admin/excuse-requests",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "28_admin_excuses_pending_tab.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Danh sách các đơn khiếu nại quên chấm công, đi muộn đang chờ HR xử lý",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-29",
+    "name": "Duyệt đơn giải trình — Tab Đơn đã xử lý",
+    "group": "admin",
+    "subgroup": "excuses",
+    "route": "/admin/excuse-requests",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "29_admin_excuses_processed_tab.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Danh sách các đơn giải trình đã được phê duyệt hoặc từ chối kèm phản hồi",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-30",
+    "name": "Hộp thoại Phê duyệt đơn giải trình công",
+    "group": "admin",
+    "subgroup": "excuses",
+    "route": "/admin/excuse-requests",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "30_admin_excuses_approve_dialog.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal phê duyệt đơn giải trình kèm trường nhập ý kiến xác nhận của HR",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-31",
+    "name": "Hộp thoại Từ chối đơn giải trình kèm lý do",
+    "group": "admin",
+    "subgroup": "excuses",
+    "route": "/admin/excuse-requests",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "31_admin_excuses_reject_dialog.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal từ chối đơn giải trình với trường nhập lý do không hợp lệ",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-32",
+    "name": "Quản lý trạm Kiosk (Phân tách Trực tuyến & Mất ping)",
+    "group": "admin",
+    "subgroup": "kiosks",
+    "route": "/admin/kiosks",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "32_admin_kiosks_list.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Bảng theo dõi trạm Kiosk với trạm Online (Xanh) tách bạch với trạm Mất ping (Cam)",
+    "featureId": "FEAT-ADMIN-CORE",
+    "featureName": "Quản trị Nhân sự & Trạm Kiosk"
+  },
+  {
+    "id": "UI-33",
+    "name": "Hộp thoại Đăng ký Kiosk mới",
+    "group": "admin",
+    "subgroup": "kiosks",
+    "route": "/admin/kiosks",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "33_admin_kiosks_register_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal đăng ký thiết bị máy trạm Kiosk mới với mã trạm và vị trí lắp đặt",
+    "featureId": "FEAT-ADMIN-CORE",
+    "featureName": "Quản trị Nhân sự & Trạm Kiosk"
+  },
+  {
+    "id": "UI-34",
+    "name": "Hộp thoại Cấp lại Secret Token cho Kiosk",
+    "group": "admin",
+    "subgroup": "kiosks",
+    "route": "/admin/kiosks",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "34_admin_kiosks_reissue_token_dialog.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Dialog cấp lại khóa bí mật Secret Token để xác thực kết nối giữa Kiosk và máy chủ",
+    "featureId": "FEAT-ADMIN-CORE",
+    "featureName": "Quản trị Nhân sự & Trạm Kiosk"
+  },
+  {
+    "id": "UI-35",
+    "name": "Nhật ký kiểm toán DPO — Tab Sự kiện hệ thống",
+    "group": "admin",
+    "subgroup": "audit",
+    "route": "/admin/audit-logs",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "35_admin_audit_logs_table.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Bảng ghi nhật ký an ninh đầy đủ các cột thời điểm, người thực hiện và tài nguyên",
+    "featureId": "FEAT-COMPLY-001",
+    "featureName": "Nhật ký Kiểm toán & Tuân thủ NĐ13"
+  },
+  {
+    "id": "UI-36",
+    "name": "Hộp thoại Xem chi tiết Diff trước/sau",
+    "group": "admin",
+    "subgroup": "audit",
+    "route": "/admin/audit-logs",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "36_admin_audit_diff_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal hiển thị so sánh chi tiết JSON giá trị trước thay đổi và giá trị mới",
+    "featureId": "FEAT-COMPLY-001",
+    "featureName": "Nhật ký Kiểm toán & Tuân thủ NĐ13"
+  },
+  {
+    "id": "UI-37",
+    "name": "Nhật ký DPO — Tab Hồ sơ cam kết sinh trắc",
+    "group": "admin",
+    "subgroup": "audit",
+    "route": "/admin/audit-logs",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "37_admin_audit_dpo_consents.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Lưu trữ hồ sơ đồng thuận thu thập dữ liệu sinh trắc học theo Nghị định 13/2023",
+    "featureId": "FEAT-COMPLY-001",
+    "featureName": "Nhật ký Kiểm toán & Tuân thủ NĐ13"
+  },
+  {
+    "id": "UI-38",
+    "name": "Nhật ký DPO — Tab Lịch tiêu hủy dữ liệu 7 ngày",
+    "group": "admin",
+    "subgroup": "audit",
+    "route": "/admin/audit-logs",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "38_admin_audit_retention_schedule.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Lịch theo dõi tiến trình tiêu hủy dữ liệu sinh trắc của nhân viên sau khi rút cam kết",
+    "featureId": "FEAT-COMPLY-001",
+    "featureName": "Nhật ký Kiểm toán & Tuân thủ NĐ13"
+  },
+  {
+    "id": "UI-39",
+    "name": "Bảng công cá nhân tháng hiện tại & Thẻ thống kê",
+    "group": "employee",
+    "subgroup": "dashboard",
+    "route": "/employee/dashboard",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "39_employee_dashboard_overview.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Giao diện bảng công nhân viên với lưới lịch tháng, số ngày đúng giờ, đi muộn",
+    "featureId": "FEAT-ATTEND-001",
+    "featureName": "Lịch sử Điểm danh & Sửa công"
+  },
+  {
+    "id": "UI-40",
+    "name": "Đăng ký sinh trắc & Informed Consent tổng quan",
+    "group": "employee",
+    "subgroup": "consent",
+    "route": "/employee/consent",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "40_employee_consent_overview.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Màn hình hướng dẫn đăng ký khuôn mặt và điều khoản tuân thủ NĐ 13/2023",
+    "featureId": "FEAT-ENROLL-001",
+    "featureName": "Đăng ký Sinh trắc học & Thỏa thuận"
+  },
+  {
+    "id": "UI-41",
+    "name": "Modal Điều khoản — Chưa tick đồng ý (Disabled)",
+    "group": "employee",
+    "subgroup": "consent",
+    "route": "/employee/consent",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "41_employee_consent_terms_unticked_disabled.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal điều khoản khi chưa tick: nút Ký điện tử bị mờ xám không thể bấm",
+    "featureId": "FEAT-ENROLL-001",
+    "featureName": "Đăng ký Sinh trắc học & Thỏa thuận"
+  },
+  {
+    "id": "UI-42",
+    "name": "Modal Điều khoản — Đã tick đồng ý (Active tím)",
+    "group": "employee",
+    "subgroup": "consent",
+    "route": "/employee/consent",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "42_employee_consent_terms_ticked_active.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal điều khoản sau khi đã tick: nút Ký điện tử sáng màu tím sẵn sàng click",
+    "featureId": "FEAT-ENROLL-001",
+    "featureName": "Đăng ký Sinh trắc học & Thỏa thuận"
+  },
+  {
+    "id": "UI-43",
+    "name": "Modal Mã kích hoạt OTP 6 số và QR Code tại Kiosk",
+    "group": "employee",
+    "subgroup": "consent",
+    "route": "/employee/consent",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "43_employee_consent_otp_kiosk_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Mã kích hoạt OTP 6 số và mã QR phục vụ quét mặt lần đầu tại máy trạm biên",
+    "featureId": "FEAT-ENROLL-001",
+    "featureName": "Đăng ký Sinh trắc học & Thỏa thuận"
+  },
+  {
+    "id": "UI-44",
+    "name": "Lịch sử nộp đơn giải trình cá nhân",
+    "group": "employee",
+    "subgroup": "excuses",
+    "route": "/employee/excuse-requests",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "44_employee_excuses_history.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Bảng theo dõi trạng thái các đơn giải trình công cá nhân đã gửi lên quản trị viên",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-45",
+    "name": "Modal Nộp đơn giải trình — Form trắng chưa điền",
+    "group": "employee",
+    "subgroup": "excuses",
+    "route": "/employee/excuse-requests",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "45_employee_excuses_modal_empty.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal nộp đơn giải trình ban đầu: nút gửi bị vô hiệu hóa khi form chưa có dữ liệu",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-46",
+    "name": "Modal Nộp đơn giải trình — Đã điền hợp lệ",
+    "group": "employee",
+    "subgroup": "excuses",
+    "route": "/employee/excuse-requests",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "46_employee_excuses_modal_filled.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal sau khi đã điền lý do và ngày giải trình: nút gửi kích hoạt sáng màu",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-47",
+    "name": "Yêu cầu quyền chủ thể dữ liệu NĐ 13/2023",
+    "group": "employee",
+    "subgroup": "data_requests",
+    "route": "/employee/data-requests",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "47_employee_data_requests.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Biểu mẫu gửi yêu cầu tiếp cận/xóa dữ liệu và lịch sử các yêu cầu đã gửi DPO",
+    "featureId": "FEAT-COMPLY-001",
+    "featureName": "Nhật ký Kiểm toán & Tuân thủ NĐ13"
+  },
+  {
+    "id": "UI-48",
+    "name": "Hồ sơ nhân sự có Tên cán bộ siêu dài (50 ký tự)",
+    "group": "admin",
+    "subgroup": "stress",
+    "route": "/admin/employees",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "48_stress_long_employee_name.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Stress test: kiểm tra ô tên nhân viên siêu dài xem có bị tràn hay vỡ cột bảng không",
+    "featureId": "FEAT-ADMIN-CORE",
+    "featureName": "Quản trị Nhân sự & Trạm Kiosk"
+  },
+  {
+    "id": "UI-49",
+    "name": "Admin Dashboard co giãn hoàn hảo trên Tablet",
+    "group": "responsive",
+    "subgroup": "tablet",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 768,
+      "height": 1024
+    },
+    "device": "tablet",
+    "outputFile": "49_admin_dashboard_tablet_768px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Giao diện quản trị thích ứng trên máy tính bảng 768px với breadcrumb thoáng đãng",
+    "featureId": "FEAT-LIVE-001",
+    "featureName": "Bảng Điều Khiển Live & KPI"
+  },
+  {
+    "id": "UI-50",
+    "name": "Modal Nộp giải trình co giãn không tràn trên Mobile",
+    "group": "responsive",
+    "subgroup": "mobile",
+    "route": "/employee/excuse-requests",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "50_employee_excuses_modal_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal nộp đơn giải trình co giãn vừa khít màn hình điện thoại 375px không bị tràn",
+    "featureId": "FEAT-EXCUSE-001",
+    "featureName": "Quản lý & Giải trình Công"
+  },
+  {
+    "id": "UI-51",
+    "name": "Modal Xác nhận Đăng xuất Toàn cục (LogoutConfirmModal)",
+    "group": "shell",
+    "subgroup": "modal",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "51_shell_logout_confirm_modal.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": true,
+      "visualDiff": true
+    },
+    "description": "Hộp thoại xác nhận đăng xuất an toàn chống bấm nhầm trên màn hình cảm ứng",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-52",
+    "name": "Chân trang Toàn cục (GlobalFooter) & Layout Đầy Đủ",
+    "group": "shell",
+    "subgroup": "footer",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "52_shell_global_footer.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Chân trang chuẩn SaaS hiển thị Bản quyền © 2026, Phiên bản v2.4.0, SLA 99.9% và NĐ13/2023",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-53",
+    "name": "Hệ thống Thông báo Toast Toàn cục (Global Toast System)",
+    "group": "feedback",
+    "subgroup": "toast",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "53_feedback_global_toast.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Hệ thống thông báo Toast nổi 4 trạng thái (Success, Warning, Error, Info) với hiệu ứng trượt mượt mà",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-54",
+    "name": "Màn hình Sự cố Hệ thống 500 (Global Error Boundary)",
+    "group": "feedback",
+    "subgroup": "exception",
+    "route": "/dev/error-boundary",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "54_feedback_error_boundary_500.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Màn hình xử lý ngoại lệ 500 toàn cục ngăn chặn màn hình trắng khi ứng dụng gặp lỗi runtime unhandled",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-55",
+    "name": "Thanh Điều hướng Bên Thu gọn 72px & Radix Tooltip",
+    "group": "shell",
+    "subgroup": "sidebar",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "55_shell_sidebar_collapsed_tooltip.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Sidebar thu gọn 72px với icon căn giữa hoàn hảo và Tooltip nổi giải thích tính năng khi rê chuột",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-56",
+    "name": "Bảng Trưng bày Primitives & Tokens (Design System)",
+    "group": "primitives",
+    "subgroup": "tokens",
+    "route": "/dev/primitives",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 1440,
+      "height": 1400
+    },
+    "device": "desktop",
+    "outputFile": "56_primitives_design_tokens.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Bảng tổng hợp Primitives & Form Anatomy: Button Matrix, Trường Form chuẩn/lỗi/hợp lệ, Mật khẩu Eye toggle, Select, Checkbox, Switch, Form Pattern & Sticky Actions Bar",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-57",
+    "name": "TopHeader & Shell Quản trị trên Mobile (375px)",
+    "group": "shell",
+    "subgroup": "header",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "57_shell_topheader_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Thanh tiêu đề TopHeader tối ưu mobile: Hamburger menu 40px, STOMP dot indicator, chuông thông báo và avatar",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-58",
+    "name": "Modal Xác nhận Đăng xuất dạng Bottom Sheet trên Mobile (375px)",
+    "group": "shell",
+    "subgroup": "modal",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "58_shell_logout_modal_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Hộp thoại xác nhận đăng xuất Bottom Sheet trượt từ đáy màn hình 375px với 2 nút cảm ứng 44px dễ thao tác bằng ngón tay cái",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-59",
+    "name": "Modal Đổi Mật Khẩu trên Mobile (Chống Auto-Zoom 375px)",
+    "group": "shell",
+    "subgroup": "modal",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "59_shell_change_password_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Modal đổi mật khẩu co giãn vừa khít màn hình 375px, nút Eye toggle 40px và input 44px text-sm chống phóng to iOS",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-60",
+    "name": "Hệ Thống Thông Báo Toast trên Mobile (375px)",
+    "group": "feedback",
+    "subgroup": "toast",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "60_feedback_toast_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Thông báo Toast nổi trên màn hình điện thoại 375px vừa vặn không tràn viền, hỗ trợ chạm vuốt hoặc tắt nhanh",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-61",
+    "name": "Hộp thoại Mã PIN Kiosk trên Mobile (375px)",
+    "group": "shell",
+    "subgroup": "modal",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "61_shell_pin_modal_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Hộp thoại bàn phím số ảo thiết lập mã PIN 6 số trên màn hình 375px với các nút bấm cảm ứng h-12 chống trượt",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-62",
+    "name": "Ngăn kéo Thông báo (Drawer) trên Mobile (375px)",
+    "group": "shell",
+    "subgroup": "drawer",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "62_shell_notification_drawer_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Trung tâm thông báo trượt từ phải sang chiếm trọn 100% bề ngang 375px, hiển thị danh sách thông báo và nút Đọc tất cả",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-63",
+    "name": "Màn hình Sự cố Hệ thống 500 trên Mobile (375px)",
+    "group": "feedback",
+    "subgroup": "exception",
+    "route": "/dev/error-boundary",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "63_feedback_error_500_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Error Boundary toàn cục bắt ngoại lệ JavaScript unhandled trên màn hình 375px, nút Làm mới trang 44px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-64",
+    "name": "Trang 404 Không Tìm Thấy trên Mobile (375px)",
+    "group": "auth",
+    "subgroup": "exception",
+    "route": "/not-found",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "64_auth_404_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Màn hình 404 thân thiện trên điện thoại 375px với nút Quay về trang chủ cảm ứng rộng rãi",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-65",
+    "name": "Trang 403 Từ Chối Truy Cập trên Mobile (375px)",
+    "group": "auth",
+    "subgroup": "exception",
+    "route": "/unauthorized",
+    "role": "EMPLOYEE",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "65_auth_403_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Màn hình từ chối quyền truy cập 403 trên điện thoại 375px khi người dùng vào vùng hạn chế",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-66",
+    "name": "Chân trang Toàn cục (GlobalFooter) trên Mobile (375px)",
+    "group": "shell",
+    "subgroup": "layout",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "66_shell_footer_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Chân trang hệ thống tự động xếp chồng các khối bản quyền, SLA máy chủ và tuân thủ NĐ13 theo chiều dọc thoáng đãng",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-67",
+    "name": "Bảng Trưng bày Primitives & Form Anatomy trên Mobile (375px)",
+    "group": "primitives",
+    "subgroup": "tokens",
+    "route": "/dev/primitives",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 375,
+      "height": 1400
+    },
+    "device": "mobile",
+    "outputFile": "67_primitives_mobile_form_anatomy.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Kiểm định trực quan các viên gạch linh kiện gốc (Inputs, Validation Error, Buttons 44px, Select, Sticky Action Bar) trên điện thoại 375px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-68",
+    "name": "Form Đăng nhập Mobile báo đỏ validation khi để trống",
+    "group": "auth",
+    "subgroup": "login",
+    "route": "/login",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "68_auth_login_validation_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Viền đỏ và thông điệp lỗi tiếng Việt khi bấm nút đăng nhập để trống trên màn hình di động 375px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-69",
+    "name": "Đăng nhập Mobile báo lỗi sai thông tin xác thực",
+    "group": "auth",
+    "subgroup": "login",
+    "route": "/login",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "69_auth_login_error_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Thông báo alert màu đỏ cảnh báo sai email hoặc mật khẩu trên màn hình di động 375px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-70",
+    "name": "Dropdown Menu Tài khoản trên Mobile khi click Avatar",
+    "group": "shell",
+    "subgroup": "menu",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "70_shell_avatar_dropdown_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Menu người dùng mở ra khi chạm Avatar trên thanh TopHeader màn hình mobile 375px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-71",
+    "name": "Ngăn kéo Thông báo trên Mobile trạng thái rỗng",
+    "group": "shell",
+    "subgroup": "drawer",
+    "route": "/admin/dashboard",
+    "role": "ADMIN",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "71_shell_notification_empty_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Ngăn kéo thông báo trống với biểu tượng chuông và lời nhắc thân thiện trên mobile 375px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-72",
+    "name": "Vòng Xoay Chờ Tải Trang Toàn Cục trên Desktop",
+    "group": "feedback",
+    "subgroup": "loading",
+    "route": "/dev/loading",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "device": "desktop",
+    "outputFile": "72_feedback_loading_fallback_desktop.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": false,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Spinner tải trang toàn cục RouteLoadingFallback khi nạp các component lazy load trên Desktop",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  },
+  {
+    "id": "UI-73",
+    "name": "Vòng Xoay Chờ Tải Trang Toàn Cục trên Mobile (375px)",
+    "group": "feedback",
+    "subgroup": "loading",
+    "route": "/dev/loading",
+    "role": "PUBLIC",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "device": "mobile",
+    "outputFile": "73_feedback_loading_fallback_mobile_375px.png",
+    "checks": {
+      "noGlitchText": true,
+      "noHorizontalOverflow": true,
+      "checkTouchTarget": false,
+      "visualDiff": true
+    },
+    "description": "Spinner tải trang toàn cục RouteLoadingFallback canh giữa hoàn hảo trên màn hình mobile 375px",
+    "featureId": "GLOBAL-UI",
+    "featureName": "Hệ Thống Giao Diện Toàn Cục (Global UI)"
+  }
+]
