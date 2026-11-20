@@ -8,9 +8,9 @@
 - **Harness & Guards:**
   - Wrap commands: `bounded_run "<cmd>"`
   - Viewport slice: `bounded_run view <file> --line <N> --window <W>`
-  - Structural AST map: `.agent/repo_map.txt` (via `repo_map`)
+  - Structural AST map: `.agents/repo_map.txt` (via `repo_map`)
 - **State & Memory:**
-  - Task session: `.agent/tasks/<id>.md` (`task-handoff`)
+  - Task session: `.agents/tasks/<id>.md` (`task-handoff`)
   - Invariants: MCP `memory` (`create_entities`, `read_graph`)
   - AST refactor: MCP `ast-grep` (`find_code`, `rewrite_code`)
 
@@ -28,12 +28,4 @@
 - kiosk-app lint: `bounded_run "cd app/kiosk-app && ruff check ."`
 - web-portal test: `bounded_run "cd app/web-portal && npm test"`
 - web-portal lint: `bounded_run "cd app/web-portal && npm run lint"`
-- Run `verification-before-completion` before declaring work done.
-
-# SDLC Agent Skills — portable index
-
-Load skills on demand; never paste full catalog into context.
-- **Router:** `skills/using-sdlc-skills/SKILL.md` (classifies task, selects workflow & skills).
-- **Workflows:** `./workflows/` (full-sdlc, feature-loop, bug-fix, quick-change).
-- **Templates & Tasks:** `./templates/` | `.agent/tasks/<id>.md`.
-- Do not claim checks passed unless run. Stop for human approval before destructive actions.
+- Run tests and linters before declaring work done.

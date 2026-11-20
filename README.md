@@ -16,16 +16,16 @@
 
 ## 🚀 Hướng dẫn Khởi chạy Nhanh (Quickstart)
 
-Khởi động nhanh toàn bộ cụm dịch vụ Full-stack qua Docker và PowerShell:
+Khởi động nhanh toàn bộ cụm dịch vụ Full-stack qua Docker chuẩn quốc tế:
 
-```powershell
+```bash
 # 1. Khởi động PostgreSQL, Backend Spring Boot, Web Portal
-.\scripts\manage-services.ps1 start
+docker compose up -d --build
 
-# 2. Bơm dữ liệu mẫu kiểm thử
-.\scripts\manage-services.ps1 seed
+# 2. Bơm dữ liệu mẫu kiểm thử toàn diện vào PostgreSQL
+docker exec -i fas-postgres psql -U fas_admin -d fas_db < database/seeds/seed-e2e-data.sql
 
-# 3. Khởi chạy Trạm Kiosk Desktop
+# 3. Khởi chạy Trạm Kiosk Desktop (môi trường dev)
 python app/kiosk-app/main.py --dev
 ```
 
@@ -35,8 +35,10 @@ Mỗi không gian làm việc trong dự án sở hữu một tệp `README.md` 
   * 🖥️ **Trạm Kiosk ([`app/kiosk-app/README.md`](app/kiosk-app/README.md))**: Bảng cờ lệnh CLI (`--dev`, `--prod`, `--no-camera`, `--no-liveness`), phím tắt F1-F12, kiểm thử Edge AI.
   * ⚙️ **Máy chủ Trung tâm ([`app/backend-service/README.md`](app/backend-service/README.md))**: Khởi chạy Spring Boot 3.4+, CSDL PostgreSQL, Flyway, cấu hình STOMP broker.
   * 🌐 **Cổng Web ([`app/web-portal/README.md`](app/web-portal/README.md))**: React 18, Vite, live dashboard STOMP, kiểm thử giao diện.
+* 🗄️ **Cơ Sở Dữ Liệu & Data Hub ([`database/README.md`](database/README.md))**: Kiến trúc CSDL PostgreSQL trung tâm, sơ đồ thực thể liên kết ERD, dữ liệu mẫu kiểm thử E2E (Seeds) và công cụ dọn dẹp CSDL.
+* 📜 **Hợp Đồng Giao Tiếp API ([`contracts/README.md`](contracts/README.md))**: 70 REST API operations (OpenAPI 3.0.3), STOMP WebSocket topics và mô hình miền sinh trắc học tập trung.
 * 🧪 **Trung Tâm Kiểm Thử ([`tests/README.md`](tests/README.md))**: Kim tự tháp kiểm thử 5 tầng, FlaUI Windows Desktop E2E, visual regression và toàn bộ dữ liệu báo cáo đầu ra đóng gói tại [`tests/reports/`](tests/reports/README.md).
-* 🛠️ **DevOps & Tự Động Hóa ([`scripts/README.md`](scripts/README.md))**: Cẩm nang `manage-services.ps1`, Docker Compose, nạp dữ liệu mẫu và chuẩn bị AI model.
+* 🛠️ **DevOps & Tự Động Hóa ([`scripts/README.md`](scripts/README.md))**: Tải và xác thực trọng số mô hình AI, tiện ích tự động hóa hạ tầng.
 * 📑 **Cổng Tài Liệu & Kiến Trúc ([`docs/README.md`](docs/README.md))**: Cổng tài liệu vòng đời kỹ nghệ SDLC (PRD, SRS, RTM, ADR-001..005, 8 Feature vertical slices, Runbooks).
   * 👤 **Cẩm Nang Người Dùng ([`docs/user-guide.md`](docs/user-guide.md))**: Hướng dẫn nhân viên ký đồng thuận, nhận OTP và điểm danh khuôn mặt.
 
@@ -173,7 +175,8 @@ face-attendance-system/
 │
 ├── contracts/                       # [contracts/README.md] Hợp đồng giao tiếp máy đọc (OpenAPI, STOMP)
 ├── docs/                            # [docs/README.md] Cổng tài liệu SDLC (PRD, SRS, ADR, Features, Runbooks)
-├── scripts/                         # [scripts/README.md] Bộ công cụ DevOps & điều phối (manage-services.ps1)
+├── database/                        # [database/README.md] Trung tâm CSDL, ERD & Dữ liệu mẫu (Seeds)
+├── scripts/                         # [scripts/README.md] Bộ công cụ DevOps & tải AI models
 ├── tests/                           # [tests/README.md] Testing Hub 5 tầng: E2E FlaUI, Visual Regression
 │   └── reports/                     # [tests/reports/README.md] Toàn bộ artifacts, screenshots & audit JSON
 │

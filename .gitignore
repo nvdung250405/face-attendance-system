@@ -8,7 +8,9 @@
 .env
 .env.local
 .env.*.local
+.env.staging
 !.env.example
+!.env.staging.example
 
 # ------------------------------------------------------------------------------
 # 2. Python & Phân hệ Kiosk Desktop (app/kiosk-app)
@@ -140,6 +142,7 @@ review.md
 # AI Agent scratch artifacts (teamwork subagents & harness logs)
 .agents/
 .agent/
+skills-lock.json
 
 # ------------------------------------------------------------------------------
 # 7. Tệp phiên làm việc Kiểm thử & Tệp tạm Runtime
@@ -149,13 +152,16 @@ review.md
 .flaui-session.json
 flaui_e2e_session.json
 
-# Thư mục tạm & Dữ liệu runtime cục bộ
+# Thư mục kết quả kiểm thử, báo cáo & artifacts cục bộ (100% Local-Only)
+test-results/
+playwright-report/
+blob-report/
+.vitest-cache/
+tests/reports/*
+!tests/reports/README.md
+!tests/reports/.gitkeep
 tests/.tmp/
 .tmp/
 data/*.db*
 data/*.sqlite3
-
-# Thư mục kết quả kiểm thử tạm (giữ lại baselines trong tests/reports)
-tests/reports/screenshots/diffs/
-tests/reports/test-results/
 tests/reports/.tmp/

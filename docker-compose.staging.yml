@@ -1,0 +1,119 @@
+# ==============================================================================
+# HỆ THỐNG ĐIỂM DANH KHUÔN MẶT (FAS) - STAGING ENVIRONMENT DOCKER COMPOSE
+# ==============================================================================
+# Triển khai môi trường tiền phát hành (Pre-production / Staging):
+# - CSDL PostgreSQL 16 đóng cổng ngoài host (chỉ giao tiếp trong mạng nội bộ Docker)
+# - Backend Spring Boot 4.x / Java 21 kích hoạt Spring Profile 'staging'
+# - Giới hạn xoay vòng log (log rotation) chống đầy ổ đĩa (20MB / 5 files)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Cơ sở dữ liệu PostgreSQL 16 (Bảo vệ cổng nội bộ)
+  # ----------------------------------------------------------------------------
+  fas-postgres:
+    image: postgres:16-alpine
+    container_name: fas-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-fas_db}
+      POSTGRES_USER: ${DB_USER:-fas_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required - set it in .env.staging}
+    # Chỉ mở cổng trong mạng fas-staging-net, KHÔNG publish cổng 5432 ra ngoài host
+    expose:
+      - "5432"
+    volumes:
+      - pgdata_staging:/var/lib/postgresql/data
+    networks:
+      - fas-staging-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fas_admin} -d ${DB_NAME:-fas_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 2. Máy chủ Nghiệp vụ Java 21 / Spring Boot 4.x (Staging Profile)
+  # ----------------------------------------------------------------------------
+  fas-backend:
+    build:
+      context: ./app/backend-service
+      dockerfile: Dockerfile
+    container_name: fas-backend-staging
+    restart: unless-stopped
+    depends_on:
+      fas-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://fas-postgres:5432/${DB_NAME:-fas_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-fas_admin}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required - set it in .env.staging}
+      SERVER_PORT: 8080
+      APP_ENV: staging
+      SPRING_PROFILES_ACTIVE: staging
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:?ENCRYPTION_MASTER_KEY is required}
+      KIOSK_SECRET_TOKEN: ${KIOSK_SECRET_TOKEN}
+      FAS_CORS_ALLOWED_ORIGINS: ${FAS_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      COOLDOWN_SECONDS: ${COOLDOWN_SECONDS:-120}
+      COMPLIANCE_DATA_RETENTION_DAYS: ${COMPLIANCE_DATA_RETENTION_DAYS:-20}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@fas.com}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-Admin@123456}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - fas-staging-net
+
+  # ----------------------------------------------------------------------------
+  # 3. Cổng Web Quản trị ReactJS / Nginx Reverse Proxy
+  # ----------------------------------------------------------------------------
+  fas-web:
+    build:
+      context: ./app/web-portal
+      dockerfile: Dockerfile
+    container_name: fas-web-staging
+    restart: unless-stopped
+    depends_on:
+      fas-backend:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - fas-staging-net
+
+# ------------------------------------------------------------------------------
+# Mạng & Volume Lưu trữ Dữ liệu Bền vững Staging
+# ------------------------------------------------------------------------------
+volumes:
+  pgdata_staging:
+    driver: local
+
+networks:
+  fas-staging-net:
+    driver: bridge
