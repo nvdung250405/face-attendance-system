@@ -3,8 +3,7 @@
 -- Phân hệ: Backend Service + Web Portal + Kiosk Edge Desktop
 -- Mục đích: Khởi tạo đầy đủ dữ liệu thực tế cho mọi phân hệ (Users, Kiosks, Shifts,
 --          Biometric Templates, Attendance Logs, Excuse Requests, Payroll, Audit Logs)
--- Cách dùng: .\scripts\manage-services.ps1 seed
---         hoặc: docker exec -i fas-postgres psql -U fas_admin -d fas_db < scripts/seed-e2e-data.sql
+-- Cách dùng: docker exec -i fas-postgres psql -U fas_admin -d fas_db < database/seeds/seed-e2e-data.sql
 -- ==============================================================================
 
 BEGIN;

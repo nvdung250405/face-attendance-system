@@ -4,13 +4,13 @@
 > **Cấp độ không gian:** Parent Automation Hub  
 > **Đường dẫn:** `scripts/`  
 > **Không gian cha:** [`README.md`](../README.md) (Thư mục Gốc)  
-> **Trách nhiệm cốt lõi (Single Responsibility):** Quản lý toàn bộ kịch bản tự động hóa hạ tầng (DevOps), điều phối vòng đời dịch vụ qua Docker Compose, khởi tạo dữ liệu mẫu (Seeding), dọn dẹp cơ sở dữ liệu và tải trọng số mô hình AI.
+> **Trách nhiệm cốt lõi (Single Responsibility):** Quản lý các công cụ tự động hóa hạ tầng (DevOps), kịch bản tải và xác thực mô hình AI ONNX cho Edge Kiosk.
 
 ---
 
 ## 1. Mục đích & Vai trò Công cụ
 
-Thư mục `scripts/` đóng vai trò là "trạm điều khiển kỹ thuật" (Ops Control Panel) của dự án, giúp kỹ sư khởi chạy, nạp dữ liệu và kiểm tra hệ thống chỉ bằng các câu lệnh đơn giản mà không cần gõ các lệnh Docker phức tạp.
+Thư mục `scripts/` chứa các kịch bản phụ trợ phục vụ môi trường phát triển và chuẩn bị tài nguyên nhị phân. Các tác vụ quản trị cụm container được thực hiện trực tiếp qua lệnh Docker Compose tiêu chuẩn.
 
 ---
 
@@ -18,45 +18,37 @@ Thư mục `scripts/` đóng vai trò là "trạm điều khiển kỹ thuật" 
 
 | Kịch bản / Công cụ | Loại tệp | Trách nhiệm chi tiết | Lệnh thực thi mẫu |
 |:---|:---|:---|:---|
-| [**`manage-services.ps1`**](manage-services.ps1) | PowerShell Orchestrator | Điều phối vòng đời hạ tầng Docker (Postgres, Backend, Web): `start`, `stop`, `status`, `logs`, `seed`, `down` | `.\scripts\manage-services.ps1 start` |
-| [**`seed-e2e-data.sql`**](seed-e2e-data.sql) | SQL Fixtures | Bơm dữ liệu mẫu kiểm thử: 10 nhân viên, 3 ca làm việc chuẩn, danh mục trạm Kiosk và quyền quản trị | Tự động kích hoạt qua `manage-services.ps1 seed` |
-| [**`clean-db-data.sql`**](clean-db-data.sql) | SQL Cleanup | Dọn sạch dữ liệu chấm công và bảng điểm danh phát sinh trong khi test, bảo toàn nguyên vẹn lược đồ bảng | Tự động kích hoạt qua `manage-services.ps1 clean-data` |
-| [**`setup/download_kiosk_models.py`**](setup/download_kiosk_models.py) | Python Downloader | Tải bộ 3 trọng số mô hình AI ONNX (YuNet, MiniFASNet, ArcFace) và xác thực checksum | `python scripts/setup/download_kiosk_models.py` |
+| [**`setup/download_kiosk_models.py`**](setup/download_kiosk_models.py) | Python Downloader | Tải bộ 3 trọng số mô hình AI ONNX (YuNet, MiniFASNet, ArcFace) và xác thực checksum SHA-256 | `python scripts/setup/download_kiosk_models.py` |
+
+> [!NOTE]
+> **Tài nguyên Cơ sở Dữ liệu:** Toàn bộ tệp nạp dữ liệu mẫu (`seed-e2e-data.sql`) và kịch bản làm sạch (`clean-db-data.sql`) được quản lý tập trung tại [**`database/`**](../database/README.md).
 
 ---
 
-## 3. Cẩm nang Sử dụng PowerShell Script (`manage-services.ps1`)
+## 3. Lệnh Vận Hành Hạ Tầng Chuẩn Quốc Tế (Docker Compose)
 
-```powershell
-# 1. Khởi động toàn bộ cụm dịch vụ qua Docker (Postgres, Backend Spring Boot, Web Portal)
-.\scripts\manage-services.ps1 start
+Toàn bộ dịch vụ được điều phối trực tiếp qua Docker Compose chuẩn (chạy thống nhất trên Windows, macOS, Linux):
 
-# 2. Khởi động không cần build lại Docker images (chạy nhanh)
-.\scripts\manage-services.ps1 start -NoBuild
+```bash
+# 1. Khởi động toàn bộ cụm dịch vụ (PostgreSQL, Backend Spring Boot, Web Portal)
+docker compose up -d --build
 
-# 3. Nạp dữ liệu mẫu thử nghiệm vào CSDL
-.\scripts\manage-services.ps1 seed
+# 2. Kiểm tra trạng thái các containers
+docker compose ps
 
-# 4. Kiểm tra trạng thái sức khỏe các containers
-.\scripts\manage-services.ps1 status
+# 3. Theo dõi nhật ký log trực tiếp
+docker compose logs -f --tail=100
 
-# 5. Theo dõi nhật ký log trực tiếp
-.\scripts\manage-services.ps1 logs -Service backend
-.\scripts\manage-services.ps1 logs -Service web
+# 4. Dừng toàn bộ hệ thống
+docker compose stop
 
-# 6. Dọn dẹp dữ liệu kiểm thử
-.\scripts\manage-services.ps1 clean-data
-
-# 7. Dừng toàn bộ hệ thống
-.\scripts\manage-services.ps1 stop
-
-# 8. Xóa sạch containers và toàn bộ volumes dữ liệu (Dọn sạch hoàn toàn)
-.\scripts\manage-services.ps1 down -Volumes
+# 5. Dừng và giải phóng toàn bộ containers + volumes
+docker compose down -v
 ```
 
 ---
 
 ## 4. Chính sách Dữ liệu & Quy tắc Git
 
-* **Tài nguyên theo dõi (Tracked)**: Toàn bộ kịch bản `.ps1`, `.sql`, và `.py` trong thư mục này.
+* **Tài nguyên theo dõi (Tracked)**: Toàn bộ kịch bản mã nguồn `.py` trong thư mục này.
 * **Tài nguyên bỏ qua (Ignored 100%)**: Các tệp trọng số nhị phân `*.onnx` (được lưu tại `app/kiosk-app/resources/assets/models/`).
