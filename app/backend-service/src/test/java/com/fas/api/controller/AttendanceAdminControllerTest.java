@@ -119,7 +119,6 @@ class AttendanceAdminControllerTest {
             AdjustAttendanceRequest request = new AdjustAttendanceRequest(
                     OffsetDateTime.parse("2026-10-10T08:00:00+07:00"),
                     AttendanceStatus.ON_TIME,
-                    0,
                     "Điều chỉnh do lỗi cảm biến kiosk"
             );
 
@@ -149,7 +148,7 @@ class AttendanceAdminControllerTest {
         @DisplayName("Không tìm thấy bản ghi điểm danh -> trả về 404 RESOURCE_NOT_FOUND")
         void adjustAttendance_NotFound_Returns404() throws Exception {
             AdjustAttendanceRequest request = new AdjustAttendanceRequest(
-                    null, AttendanceStatus.ON_TIME, 0, "Lý do hợp lệ"
+                    null, AttendanceStatus.ON_TIME, "Lý do hợp lệ"
             );
 
             when(attendanceService.adjustAttendanceLog(eq(999L), any(AdjustAttendanceRequest.class)))
@@ -166,7 +165,21 @@ class AttendanceAdminControllerTest {
         @DisplayName("Thiếu lý do điều chỉnh -> trả về 400 Bad Request VALIDATION_FAILED")
         void adjustAttendance_MissingReason_Returns400() throws Exception {
             AdjustAttendanceRequest request = new AdjustAttendanceRequest(
-                    null, AttendanceStatus.ON_TIME, 0, null
+                    null, AttendanceStatus.ON_TIME, null
+            );
+
+            mockMvc.perform(patch("/api/v1/admin/attendance/101")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        }
+
+        @Test
+        @DisplayName("Lý do điều chỉnh toàn khoảng trắng -> trả về 400 Bad Request VALIDATION_FAILED")
+        void adjustAttendance_BlankReason_Returns400() throws Exception {
+            AdjustAttendanceRequest request = new AdjustAttendanceRequest(
+                    null, AttendanceStatus.ON_TIME, "   "
             );
 
             mockMvc.perform(patch("/api/v1/admin/attendance/101")

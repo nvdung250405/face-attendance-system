@@ -10,8 +10,6 @@ import com.fas.api.dto.response.EnrollmentResult;
 import com.fas.api.dto.response.GalleryResponse;
 import com.fas.api.dto.response.OtpVerificationResult;
 import com.fas.api.dto.response.PunchResult;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
 import com.fas.security.kiosk.KioskAuthService;
 import com.fas.service.AttendanceService;
 import com.fas.service.EnrollmentService;
@@ -91,8 +89,8 @@ public class KioskAttendanceController {
             @RequestHeader("X-Kiosk-Id") String kioskId,
             @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskPunchRequest request) {
-        validateKiosk(kioskId, kioskSecret, request.kioskId());
-        PunchResult result = attendanceService.recordPunch(request);
+        validateKiosk(kioskId, kioskSecret);
+        PunchResult result = attendanceService.recordPunch(kioskId, request);
         return ApiResponse.ok("PUNCH_RECORDED", "Ghi nhận điểm danh thành công", result);
     }
 
@@ -111,8 +109,8 @@ public class KioskAttendanceController {
             @RequestHeader("X-Kiosk-Id") String kioskId,
             @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskSyncBatchRequest request) {
-        validateKiosk(kioskId, kioskSecret, request.kioskId());
-        BatchSyncResult result = offlineBatchSyncService.processOfflineBatch(request);
+        validateKiosk(kioskId, kioskSecret);
+        BatchSyncResult result = offlineBatchSyncService.processOfflineBatch(kioskId, request);
         return ApiResponse.ok("BATCH_SYNCED", "Đồng bộ thành công " + result.syncedCount() + " bản ghi", result);
     }
 
@@ -129,7 +127,7 @@ public class KioskAttendanceController {
     public ApiResponse<GalleryResponse> getGallery(
             @RequestHeader("X-Kiosk-Id") String kioskId,
             @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret) {
-        validateKiosk(kioskId, kioskSecret, null);
+        validateKiosk(kioskId, kioskSecret);
         GalleryResponse response = enrollmentService.getGallery();
         return ApiResponse.ok("GALLERY_FETCHED", "Lấy danh mục vector thành công", response);
     }
@@ -140,7 +138,7 @@ public class KioskAttendanceController {
      *
      * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
      * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
-     * @param request mã OTP và kioskId
+     * @param request mã OTP
      * @return token phiên tạm thời và thông tin nhân sự với mã HTTP 200 OK
      */
     @PostMapping("/verify-otp")
@@ -149,8 +147,8 @@ public class KioskAttendanceController {
             @RequestHeader("X-Kiosk-Id") String kioskId,
             @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskVerifyOtpRequest request) {
-        validateKiosk(kioskId, kioskSecret, request.kioskId());
-        OtpVerificationResult result = enrollmentService.verifyOtp(request);
+        validateKiosk(kioskId, kioskSecret);
+        OtpVerificationResult result = enrollmentService.verifyOtp(kioskId, request);
         return ApiResponse.ok("OTP_VERIFIED", "Xác thực mã OTP thành công", result);
     }
 
@@ -160,7 +158,7 @@ public class KioskAttendanceController {
      *
      * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
      * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
-     * @param request dữ liệu vector 512 chiều, OTP, sessionToken và kioskId
+     * @param request dữ liệu vector 512 chiều, OTP, sessionToken
      * @return kết quả kích hoạt mẫu sinh trắc học với mã HTTP 200 OK
      */
     @PostMapping("/enroll-face")
@@ -169,21 +167,15 @@ public class KioskAttendanceController {
             @RequestHeader("X-Kiosk-Id") String kioskId,
             @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret,
             @Valid @RequestBody KioskEnrollFaceRequest request) {
-        validateKiosk(kioskId, kioskSecret, request.kioskId());
-        EnrollmentResult result = enrollmentService.enrollFace(request);
+        validateKiosk(kioskId, kioskSecret);
+        EnrollmentResult result = enrollmentService.enrollFace(kioskId, request);
         return ApiResponse.ok("FACE_ENROLLED", "Đăng ký khuôn mặt thành công", result);
     }
 
     /**
-     * Thẩm định cặp header {@code X-Kiosk-Id} + {@code X-Kiosk-Secret} qua {@link KioskAuthService}
-     * và đối soát tính nhất quán giữa header và nội dung request body (nếu có).
+     * Thẩm định cặp header {@code X-Kiosk-Id} + {@code X-Kiosk-Secret} qua {@link KioskAuthService}.
      */
-    private void validateKiosk(String headerKioskId, String kioskSecret, String requestKioskId) {
+    private void validateKiosk(String headerKioskId, String kioskSecret) {
         kioskAuthService.authenticate(headerKioskId, kioskSecret);
-
-        if (requestKioskId != null && !requestKioskId.equals(headerKioskId)) {
-            throw new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
-                    "Header X-Kiosk-Id không khớp với kioskId trong nội dung yêu cầu");
-        }
     }
 }

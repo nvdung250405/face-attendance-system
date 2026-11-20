@@ -16,7 +16,6 @@ import jakarta.validation.constraints.Size;
  * @param role         vai trò phân quyền trong hệ thống (mặc định EMPLOYEE nếu null)
  */
 public record CreateEmployeeRequest(
-        @NotBlank(message = "Mã nhân viên không được để trống")
         @Size(max = 32, message = "Mã nhân viên không được vượt quá 32 ký tự")
         String employeeCode,
 

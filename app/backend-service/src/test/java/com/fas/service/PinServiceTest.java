@@ -220,7 +220,7 @@ class PinServiceTest {
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             PinOperationResult result = pinService.resetPinWithPassword(1042L,
-                    new PinResetRequest("Password@123", "987654", "987654"));
+                    new PinResetRequest("Password@123", "987654"));
 
             assertThat(result.hasPin()).isTrue();
             assertThat(sampleUser.getPinHash()).isEqualTo("$2a$12$resetHashedPin");
@@ -234,7 +234,7 @@ class PinServiceTest {
             when(userRepository.findById(1042L)).thenReturn(Optional.of(sampleUser));
             when(passwordEncoder.matches("WrongPassword", sampleUser.getPasswordHash())).thenReturn(false);
 
-            assertThatThrownBy(() -> pinService.resetPinWithPassword(1042L, "WrongPassword", "987654", "987654"))
+            assertThatThrownBy(() -> pinService.resetPinWithPassword(1042L, "WrongPassword", "987654"))
                     .isInstanceOf(ApiException.class)
                     .extracting("errorCode")
                     .isEqualTo(ApiErrorCode.AUTH_INVALID_CREDENTIALS);

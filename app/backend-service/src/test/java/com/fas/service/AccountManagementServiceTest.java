@@ -41,7 +41,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Bộ kiểm thử đơn vị cho AccountManagementService
- * (TASK-BE-024, BLD-BE-019, SOL-BE-014, FR-BE-010, FR-BE-011, DD-BE-013, FR-BE-020).
+ * (TASK-BE-024, BLD-BE-019, SOL-BE-014, FR-BE-010, FR-BE-011, DD-BE-013,
+ * FR-BE-020).
  */
 @ExtendWith(MockitoExtension.class)
 class AccountManagementServiceTest {
@@ -72,8 +73,7 @@ class AccountManagementServiceTest {
                 refreshTokenRepository,
                 biometricTemplateRepository,
                 passwordEncoder,
-                fixedClock
-        );
+                fixedClock);
     }
 
     @Nested
@@ -88,8 +88,7 @@ class AccountManagementServiceTest {
                     "Nguyễn Văn A",
                     "nguyenvana@company.com",
                     "Kỹ thuật",
-                    Role.EMPLOYEE
-            );
+                    Role.EMPLOYEE);
 
             when(userRepository.existsByEmployeeCode("NV-1001")).thenReturn(false);
             when(userRepository.existsByEmail("nguyenvana@company.com")).thenReturn(false);
@@ -131,6 +130,43 @@ class AccountManagementServiceTest {
         }
 
         @Test
+        @DisplayName("Tạo nhân viên khi employeeCode null: tự động sinh mã nhân viên ngữ nghĩa")
+        void createEmployee_BlankEmployeeCode_AutoGeneratesCode() {
+            CreateEmployeeRequest request = new CreateEmployeeRequest(
+                    null,
+                    "Nguyễn Văn A",
+                    "nguyenvana@company.com",
+                    "Kỹ thuật",
+                    Role.EMPLOYEE);
+
+            when(userRepository.findTopByEmployeeCodeStartingWithOrderByEmployeeCodeDesc("EMP-ENG-26")).thenReturn(Optional.empty());
+            when(userRepository.existsByEmail("nguyenvana@company.com")).thenReturn(false);
+            when(passwordEncoder.encode(anyString())).thenReturn("$2a$12$hashedTemporaryPassword");
+
+            when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+                User u = invocation.getArgument(0);
+                return User.builder()
+                        .id(1L)
+                        .employeeCode(u.getEmployeeCode())
+                        .fullName(u.getFullName())
+                        .email(u.getEmail())
+                        .passwordHash(u.getPasswordHash())
+                        .role(u.getRole())
+                        .status(u.getStatus())
+                        .department(u.getDepartment())
+                        .createdAt(NOW)
+                        .updatedAt(NOW)
+                        .build();
+            });
+
+            CreateEmployeeResponse response = accountManagementService.createEmployee(request);
+
+            assertThat(response).isNotNull();
+            assertThat(response.employeeCode()).isEqualTo("EMP-ENG-260001");
+            assertThat(response.fullName()).isEqualTo("Nguyễn Văn A");
+        }
+
+        @Test
         @DisplayName("Tạo nhân viên thất bại khi mã nhân viên đã tồn tại -> 409 Conflict")
         void createEmployee_DuplicateEmployeeCode_ThrowsException() {
             CreateEmployeeRequest request = new CreateEmployeeRequest(
@@ -138,8 +174,7 @@ class AccountManagementServiceTest {
                     "Nguyễn Văn A",
                     "nguyenvana@company.com",
                     "Kỹ thuật",
-                    Role.EMPLOYEE
-            );
+                    Role.EMPLOYEE);
 
             when(userRepository.existsByEmployeeCode("NV-1001")).thenReturn(true);
 
@@ -161,8 +196,7 @@ class AccountManagementServiceTest {
                     "Nguyễn Văn A",
                     "nguyenvana@company.com",
                     "Kỹ thuật",
-                    Role.EMPLOYEE
-            );
+                    Role.EMPLOYEE);
 
             when(userRepository.existsByEmployeeCode("NV-1001")).thenReturn(false);
             when(userRepository.existsByEmail("nguyenvana@company.com")).thenReturn(true);
@@ -223,8 +257,7 @@ class AccountManagementServiceTest {
                     "Trần Thị Bích",
                     "new.email@company.com",
                     "Tài chính",
-                    Role.HR_MANAGER
-            );
+                    Role.HR_MANAGER);
 
             EmployeeItem result = accountManagementService.updateEmployeeProfile(2L, request);
 
@@ -247,8 +280,7 @@ class AccountManagementServiceTest {
                     "Trần Thị B",
                     "tranthib@company.com", // cùng email
                     "Kế toán",
-                    Role.EMPLOYEE
-            );
+                    Role.EMPLOYEE);
 
             EmployeeItem result = accountManagementService.updateEmployeeProfile(2L, request);
 
@@ -266,8 +298,7 @@ class AccountManagementServiceTest {
                     null,
                     "other@company.com",
                     null,
-                    null
-            );
+                    null);
 
             assertThatThrownBy(() -> accountManagementService.updateEmployeeProfile(2L, request))
                     .isInstanceOf(ApiException.class)
@@ -308,8 +339,7 @@ class AccountManagementServiceTest {
                     "Admin Name",
                     null,
                     null,
-                    Role.EMPLOYEE
-            );
+                    Role.EMPLOYEE);
 
             assertThatThrownBy(() -> accountManagementService.updateEmployeeProfile(1L, request))
                     .isInstanceOf(ApiException.class)
@@ -346,8 +376,7 @@ class AccountManagementServiceTest {
                     "Admin One",
                     null,
                     null,
-                    Role.EMPLOYEE
-            );
+                    Role.EMPLOYEE);
 
             EmployeeItem result = accountManagementService.updateEmployeeProfile(1L, request);
             assertThat(result.role()).isEqualTo(Role.EMPLOYEE);
@@ -388,8 +417,7 @@ class AccountManagementServiceTest {
 
             UpdateEmployeeStatusRequest request = new UpdateEmployeeStatusRequest(
                     EmployeeStatus.TERMINATED,
-                    "Nghỉ việc theo nguyện vọng"
-            );
+                    "Nghỉ việc theo nguyện vọng");
 
             EmployeeItem result = accountManagementService.updateEmployeeStatus(3L, request);
 
@@ -417,8 +445,7 @@ class AccountManagementServiceTest {
 
             UpdateEmployeeStatusRequest request = new UpdateEmployeeStatusRequest(
                     EmployeeStatus.TERMINATED,
-                    "Vô hiệu hóa admin cuối cùng"
-            );
+                    "Vô hiệu hóa admin cuối cùng");
 
             assertThatThrownBy(() -> accountManagementService.updateEmployeeStatus(3L, request))
                     .isInstanceOf(ApiException.class)
@@ -439,8 +466,7 @@ class AccountManagementServiceTest {
 
             UpdateEmployeeStatusRequest request = new UpdateEmployeeStatusRequest(
                     EmployeeStatus.ACTIVE,
-                    "Quay lại làm việc"
-            );
+                    "Quay lại làm việc");
 
             EmployeeItem result = accountManagementService.updateEmployeeStatus(3L, request);
 
@@ -462,8 +488,7 @@ class AccountManagementServiceTest {
 
             UpdateEmployeeStatusRequest request = new UpdateEmployeeStatusRequest(
                     EmployeeStatus.SUSPENDED,
-                    "Đang kiểm tra kỷ luật"
-            );
+                    "Đang kiểm tra kỷ luật");
 
             EmployeeItem result = accountManagementService.updateEmployeeStatus(3L, request);
 
@@ -514,9 +539,7 @@ class AccountManagementServiceTest {
 
             ChangePasswordRequest request = new ChangePasswordRequest(
                     "OldPassword@123",
-                    "NewPassword@456",
-                    "NewPassword@456"
-            );
+                    "NewPassword@456");
 
             accountManagementService.changePassword(4L, request);
 
@@ -527,34 +550,13 @@ class AccountManagementServiceTest {
         }
 
         @Test
-        @DisplayName("Đổi mật khẩu thất bại khi mật khẩu xác nhận không khớp")
-        void changePassword_ConfirmMismatch_ThrowsException() {
-            when(userRepository.findById(4L)).thenReturn(Optional.of(sampleUser));
-
-            ChangePasswordRequest request = new ChangePasswordRequest(
-                    "OldPassword@123",
-                    "NewPassword@456",
-                    "DifferentConfirm@456"
-            );
-
-            assertThatThrownBy(() -> accountManagementService.changePassword(4L, request))
-                    .isInstanceOf(ApiException.class)
-                    .satisfies(ex -> {
-                        ApiException apiEx = (ApiException) ex;
-                        assertThat(apiEx.getErrorCode()).isEqualTo(ApiErrorCode.VALIDATION_FAILED);
-                    });
-        }
-
-        @Test
         @DisplayName("Đổi mật khẩu thất bại khi mật khẩu mới dưới 8 ký tự")
         void changePassword_TooShort_ThrowsException() {
             when(userRepository.findById(4L)).thenReturn(Optional.of(sampleUser));
 
             ChangePasswordRequest request = new ChangePasswordRequest(
                     "OldPassword@123",
-                    "Short@1",
-                    "Short@1"
-            );
+                    "Short@1");
 
             assertThatThrownBy(() -> accountManagementService.changePassword(4L, request))
                     .isInstanceOf(ApiException.class)
@@ -571,9 +573,7 @@ class AccountManagementServiceTest {
 
             ChangePasswordRequest request = new ChangePasswordRequest(
                     "SamePassword@123",
-                    "SamePassword@123",
-                    "SamePassword@123"
-            );
+                    "SamePassword@123");
 
             assertThatThrownBy(() -> accountManagementService.changePassword(4L, request))
                     .isInstanceOf(ApiException.class)
@@ -591,9 +591,7 @@ class AccountManagementServiceTest {
 
             ChangePasswordRequest request = new ChangePasswordRequest(
                     "WrongPassword@123",
-                    "NewPassword@456",
-                    "NewPassword@456"
-            );
+                    "NewPassword@456");
 
             assertThatThrownBy(() -> accountManagementService.changePassword(4L, request))
                     .isInstanceOf(ApiException.class)
@@ -648,5 +646,57 @@ class AccountManagementServiceTest {
                         assertThat(apiEx.getErrorCode()).isEqualTo(ApiErrorCode.EMPLOYEE_NOT_FOUND);
                     });
         }
+
+        @Test
+        @DisplayName("Tra cứu danh sách nhân sự phân trang theo batch O(1) kiểm tra biometric")
+        void getEmployees_BatchBiometricCheck_Success() {
+            User u1 = User.builder()
+                    .id(1L)
+                    .employeeCode("EMP-001")
+                    .fullName("User One")
+                    .email("user1@example.com")
+                    .department("IT")
+                    .role(Role.EMPLOYEE)
+                    .status(EmployeeStatus.ACTIVE)
+                    .createdAt(NOW)
+                    .build();
+            User u2 = User.builder()
+                    .id(2L)
+                    .employeeCode("EMP-002")
+                    .fullName("User Two")
+                    .email("user2@example.com")
+                    .department("HR")
+                    .role(Role.EMPLOYEE)
+                    .status(EmployeeStatus.ACTIVE)
+                    .createdAt(NOW)
+                    .build();
+
+            org.springframework.data.domain.Page<User> page = new org.springframework.data.domain.PageImpl<>(
+                    List.of(u1, u2),
+                    org.springframework.data.domain.PageRequest.of(0, 10),
+                    2
+            );
+
+            when(userRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                    .thenReturn(page);
+            when(biometricTemplateRepository.findActiveUserIdsIn(List.of(1L, 2L)))
+                    .thenReturn(java.util.Set.of(1L));
+
+            com.fas.api.dto.PageResponse<EmployeeItem> result = accountManagementService.getEmployees(
+                    null,
+                    org.springframework.data.domain.PageRequest.of(0, 10)
+            );
+
+            assertThat(result.content()).hasSize(2);
+            assertThat(result.content().get(0).hasBiometric()).isTrue();
+            assertThat(result.content().get(1).hasBiometric()).isFalse();
+            verify(biometricTemplateRepository).findActiveUserIdsIn(List.of(1L, 2L));
+            verify(biometricTemplateRepository, never()).existsByUserIdAndIsActiveTrue(anyLong());
+        }
     }
+
 }
+
+    
+
+    

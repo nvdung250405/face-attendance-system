@@ -105,15 +105,33 @@ class KioskAdminControllerTest {
         }
 
         @Test
-        @DisplayName("Thiếu thông tin bắt buộc -> trả về 400 Bad Request VALIDATION_FAILED")
-        void registerKiosk_BlankId_Returns400() throws Exception {
-            RegisterKioskRequest request = new RegisterKioskRequest("", "Cổng Chính");
+        @DisplayName("Thiếu thông tin bắt buộc (locationName) -> trả về 400 Bad Request VALIDATION_FAILED")
+        void registerKiosk_BlankLocationName_Returns400() throws Exception {
+            RegisterKioskRequest request = new RegisterKioskRequest("KIOSK-HN-01", "");
 
             mockMvc.perform(post("/api/v1/admin/kiosks")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        }
+
+        @Test
+        @DisplayName("Đăng ký trạm không truyền id -> tự động sinh id và trả về 201 Created")
+        void registerKiosk_BlankId_Succeeds_Returns201() throws Exception {
+            RegisterKioskRequest request = new RegisterKioskRequest(null, "Cổng Chính");
+            RegisterKioskResponse response = new RegisterKioskResponse(
+                    "KSK-ABC12345", "Cổng Chính", "secret-token-xyz-123", Instant.now()
+            );
+
+            when(kioskAdminService.registerKiosk(any(RegisterKioskRequest.class))).thenReturn(response);
+
+            mockMvc.perform(post("/api/v1/admin/kiosks")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.id").value("KSK-ABC12345"));
         }
     }
 

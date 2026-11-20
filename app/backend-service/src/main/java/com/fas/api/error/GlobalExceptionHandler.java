@@ -4,6 +4,7 @@ import com.fas.api.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.web.multipart.MultipartException;
@@ -197,6 +199,21 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleApiException(ApiException ex, HttpServletRequest request) {
         logger.warn("Lỗi nghiệp vụ tại {}: code={}, message={}", request.getRequestURI(), ex.getErrorCode(), ex.getMessage());
         return problemDetail(ex.getErrorCode(), ex.getMessage(), List.of(), request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
+        logger.warn("Lỗi vi phạm toàn vẹn dữ liệu tại {}: {}", request.getRequestURI(), ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                "Dữ liệu bị trùng lặp hoặc vi phạm ràng buộc toàn vẹn dữ liệu.");
+        problemDetail.setType(URI.create(ApiErrorCode.DATA_INTEGRITY_VIOLATION.problemType()));
+        problemDetail.setTitle(ApiErrorCode.DATA_INTEGRITY_VIOLATION.title());
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("code", ApiErrorCode.DATA_INTEGRITY_VIOLATION.name());
+        problemDetail.setProperty("message", "Dữ liệu bị trùng lặp hoặc vi phạm ràng buộc toàn vẹn dữ liệu.");
+        problemDetail.setProperty("timestamp", OffsetDateTime.now(ApiResponse.VIETNAM_ZONE));
+        return problemDetail;
     }
 
     /**

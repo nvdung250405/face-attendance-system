@@ -4,6 +4,8 @@ import com.fas.data.entity.AttendanceLog;
 import com.fas.data.enums.PunchType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -16,6 +18,10 @@ import java.util.Optional;
  */
 @Repository
 public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Long>, AttendanceLogBatchRepository, JpaSpecificationExecutor<AttendanceLog> {
+
+    @Override
+    @EntityGraph(attributePaths = {"user", "kiosk"})
+    Page<AttendanceLog> findAll(Specification<AttendanceLog> spec, Pageable pageable);
 
     Page<AttendanceLog> findByUserId(Long userId, Pageable pageable);
 

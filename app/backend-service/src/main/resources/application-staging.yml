@@ -1,0 +1,34 @@
+# ==============================================================================
+# FAS BACKEND SERVICE - STAGING PROFILE CONFIGURATION
+# ==============================================================================
+
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:20}
+      minimum-idle: ${HIKARI_MIN_IDLE:10}
+      idle-timeout: 30000
+      connection-timeout: 20000
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+fas:
+  security:
+    jwt-expiration-hours: ${JWT_EXPIRATION_HOURS:2}
+    cors:
+      allowed-origins: ${FAS_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when-authorized

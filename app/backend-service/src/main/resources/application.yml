@@ -10,6 +10,8 @@ server:
 spring:
   application:
     name: backend-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:${APP_ENV:dev}}
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fas_db}}
@@ -48,7 +50,7 @@ fas:
   security:
     # BẮT BUỘC cấp qua biến môi trường (không có giá trị mặc định trong mã nguồn để tránh lộ khóa)
     jwt-secret: ${JWT_SECRET}
-    jwt-expiration-hours: 1
+    jwt-expiration-hours: ${JWT_EXPIRATION_HOURS:1}
     encryption-master-key: ${ENCRYPTION_MASTER_KEY}
     cors:
       allowed-origins: ${FAS_CORS_ALLOWED_ORIGINS:*}
@@ -59,7 +61,7 @@ fas:
   attendance:
     cooldown-seconds: ${COOLDOWN_SECONDS:120}
     stats-cache-seconds: ${STATS_CACHE_SECONDS:30}
-    grace-period-minutes: 15
+    grace-period-minutes: ${GRACE_PERIOD_MINUTES:15}
 
   compliance:
     data-retention-days: ${COMPLIANCE_DATA_RETENTION_DAYS:20}
@@ -73,3 +75,10 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+# Cấu hình SpringDoc OpenAPI 3.0 & Flat Query Parameters
+springdoc:
+  api-docs:
+    version: openapi_3_0
+  default-flat-param-object: true
+

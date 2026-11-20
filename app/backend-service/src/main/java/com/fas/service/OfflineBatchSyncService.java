@@ -42,18 +42,27 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Dịch vụ Đồng bộ Bù Ngoại tuyến cho Trạm Kiosk (SOL-BE-003, FR-BE-003, DD-SYS-002, BLD-BE-012, TASK-BE-014).
+ * Dịch vụ Đồng bộ Bù Ngoại tuyến cho Trạm Kiosk (SOL-BE-003, FR-BE-003,
+ * DD-SYS-002, BLD-BE-012, TASK-BE-014).
  *
- * <p>Quy trình nghiệp vụ:
+ * <p>
+ * Quy trình nghiệp vụ:
  * <ol>
- *   <li>Thẩm định tính hợp lệ của trạm Kiosk và cập nhật mốc {@code lastPingAt}.</li>
- *   <li>Thẩm định kích thước gói lô (tối đa 50 bản ghi) và tính hợp lệ của các bản ghi.</li>
- *   <li>Bỏ qua các bản ghi thuộc nhân sự không tồn tại hoặc đã thôi việc (đưa vào {@code failedLocalIds}).</li>
- *   <li>Tính toán tuần tự {@link PunchType} (CHECK_IN/CHECK_OUT) và trạng thái ca làm việc,
- *       bảo toàn mốc thời gian thực tế của bản ghi ngoại tuyến.</li>
- *   <li>Kiểm tra và loại bỏ bản ghi trùng lặp qua bộ ba tự nhiên {@code (user_id, punch_timestamp, punch_type)}.</li>
- *   <li>Thực thi batch insert hiệu năng cao với chiến lược {@code ON CONFLICT DO NOTHING}.</li>
- *   <li>Trả về kết quả chi tiết {@link BatchSyncResult} gồm số lượng thành công và danh sách ID cục bộ.</li>
+ * <li>Thẩm định tính hợp lệ của trạm Kiosk và cập nhật mốc
+ * {@code lastPingAt}.</li>
+ * <li>Thẩm định kích thước gói lô (tối đa 50 bản ghi) và tính hợp lệ của các
+ * bản ghi.</li>
+ * <li>Bỏ qua các bản ghi thuộc nhân sự không tồn tại hoặc đã thôi việc (đưa vào
+ * {@code failedLocalIds}).</li>
+ * <li>Tính toán tuần tự {@link PunchType} (CHECK_IN/CHECK_OUT) và trạng thái ca
+ * làm việc,
+ * bảo toàn mốc thời gian thực tế của bản ghi ngoại tuyến.</li>
+ * <li>Kiểm tra và loại bỏ bản ghi trùng lặp qua bộ ba tự nhiên
+ * {@code (user_id, punch_timestamp, punch_type)}.</li>
+ * <li>Thực thi batch insert hiệu năng cao với chiến lược
+ * {@code ON CONFLICT DO NOTHING}.</li>
+ * <li>Trả về kết quả chi tiết {@link BatchSyncResult} gồm số lượng thành công
+ * và danh sách ID cục bộ.</li>
  * </ol>
  */
 @Slf4j
@@ -72,7 +81,8 @@ public class OfflineBatchSyncService {
             KioskRepository kioskRepository,
             UserRepository userRepository,
             ShiftManagementService shiftManagementService) {
-        this(attendanceLogRepository, kioskRepository, userRepository, shiftManagementService, Clock.systemDefaultZone());
+        this(attendanceLogRepository, kioskRepository, userRepository, shiftManagementService,
+                Clock.systemDefaultZone());
     }
 
     public OfflineBatchSyncService(
@@ -91,20 +101,21 @@ public class OfflineBatchSyncService {
     /**
      * Tiếp nhận và xử lý gói lô điểm danh ngoại tuyến từ trạm Kiosk.
      *
+     * @param kioskId mã định danh trạm Kiosk từ header X-Kiosk-Id
      * @param request dữ liệu gói lô đồng bộ ngoại tuyến
      * @return kết quả đồng bộ chi tiết
      */
     @CacheEvict(value = CacheConfig.ATTENDANCE_STATS_CACHE, allEntries = true)
     @Transactional
-    public BatchSyncResult processOfflineBatch(KioskSyncBatchRequest request) {
-        validateRequest(request);
+    public BatchSyncResult processOfflineBatch(String kioskId, KioskSyncBatchRequest request) {
+        validateRequest(kioskId, request);
 
         // 1. Thẩm định trạm Kiosk
-        Kiosk kiosk = kioskRepository.findById(request.kioskId())
+        Kiosk kiosk = kioskRepository.findById(kioskId)
                 .orElseThrow(() -> {
-                    log.warn("Không tìm thấy trạm Kiosk ID={}", request.kioskId());
+                    log.warn("Không tìm thấy trạm Kiosk ID={}", kioskId);
                     return new ApiException(ApiErrorCode.KIOSK_NOT_FOUND,
-                            "Không tìm thấy trạm Kiosk: " + request.kioskId());
+                            "Không tìm thấy trạm Kiosk: " + kioskId);
                 });
 
         if (Boolean.FALSE.equals(kiosk.getIsActive())) {
@@ -116,7 +127,8 @@ public class OfflineBatchSyncService {
         kiosk.setLastPingAt(clock.instant());
         kioskRepository.save(kiosk);
 
-        // 2. Sắp xếp các bản ghi theo thời gian thực tế tăng dần để đánh giá ca và lượt quẹt chính xác
+        // 2. Sắp xếp các bản ghi theo thời gian thực tế tăng dần để đánh giá ca và lượt
+        // quẹt chính xác
         List<OfflinePunchRecord> records = new ArrayList<>(request.records());
         records.sort(Comparator.comparing(OfflinePunchRecord::punchTimestamp));
 
@@ -125,7 +137,8 @@ public class OfflineBatchSyncService {
         List<AttendanceLog> logsToInsert = new ArrayList<>();
         List<Long> pendingCandidateLocalIds = new ArrayList<>();
 
-        // Bộ theo dõi lượt quẹt gần nhất của nhân sự trong cùng một ngày (key: userId + "_" + punchDate)
+        // Bộ theo dõi lượt quẹt gần nhất của nhân sự trong cùng một ngày (key: userId +
+        // "_" + punchDate)
         Map<String, PunchType> lastPunchTypeTracker = new HashMap<>();
 
         // 3. Xử lý từng bản ghi ngoại tuyến trong lô
@@ -143,7 +156,8 @@ public class OfflineBatchSyncService {
             User employee = userOpt.get();
             OffsetDateTime punchOffset = record.punchTimestamp();
             // Chuẩn hóa về múi giờ hợp đồng hệ thống (Asia/Ho_Chi_Minh) như đường online
-            OffsetDateTime vietnamPunchOffset = punchOffset.atZoneSameInstant(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toOffsetDateTime();
+            OffsetDateTime vietnamPunchOffset = punchOffset.atZoneSameInstant(com.fas.api.dto.ApiResponse.VIETNAM_ZONE)
+                    .toOffsetDateTime();
             Instant punchInstant = vietnamPunchOffset.toInstant();
             LocalDate punchDate = vietnamPunchOffset.toLocalDate();
             LocalTime punchTime = vietnamPunchOffset.toLocalTime();
@@ -160,14 +174,16 @@ public class OfflineBatchSyncService {
             }
 
             // Kiểm tra ràng buộc duy nhất chống trùng lặp (Idempotency)
-            if (attendanceLogRepository.existsByUserIdAndPunchTimestampAndPunchType(employeeId, punchInstant, punchType)) {
+            if (attendanceLogRepository.existsByUserIdAndPunchTimestampAndPunchType(employeeId, punchInstant,
+                    punchType)) {
                 log.info("Bản ghi offline localQueueId={} đã tồn tại trong CSDL (User={}, Time={}, Type={})",
                         record.localQueueId(), employeeId, punchInstant, punchType);
                 failedLocalIds.add(record.localQueueId());
                 continue;
             }
 
-            // Chỉ cập nhật bộ theo dõi lượt quẹt SAU khi bản ghi vượt qua kiểm tra trùng lặp
+            // Chỉ cập nhật bộ theo dõi lượt quẹt SAU khi bản ghi vượt qua kiểm tra trùng
+            // lặp
             // (tránh suy luận sai CHECK_IN/CHECK_OUT khi gói lô được gửi lại - idempotency)
             lastPunchTypeTracker.put(trackerKey, punchType);
 
@@ -176,7 +192,8 @@ public class OfflineBatchSyncService {
             int lateMinutes = 0;
 
             if (punchType == PunchType.CHECK_IN) {
-                ShiftEvaluationResult evaluation = shiftManagementService.evaluatePunch(employeeId, punchDate, punchTime);
+                ShiftEvaluationResult evaluation = shiftManagementService.evaluatePunch(employeeId, punchDate,
+                        punchTime);
                 status = evaluation.status();
                 lateMinutes = (int) evaluation.lateMinutes();
             } else {
@@ -227,22 +244,18 @@ public class OfflineBatchSyncService {
         return new BatchSyncResult(syncedLocalIds.size(), syncedLocalIds, failedLocalIds);
     }
 
-    private void validateRequest(KioskSyncBatchRequest request) {
+    private void validateRequest(String kioskId, KioskSyncBatchRequest request) {
+        if (!StringUtils.hasText(kioskId)) {
+            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "kioskId không được để trống");
+        }
         if (request == null) {
             throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Dữ liệu gói đồng bộ không được để trống");
-        }
-        if (!StringUtils.hasText(request.kioskId())) {
-            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "kioskId không được để trống");
         }
         if (request.records() == null || request.records().isEmpty()) {
             throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Danh sách bản ghi records không được để trống");
         }
         if (request.records().size() > 50) {
             throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Gói đồng bộ chỉ được chứa tối đa 50 bản ghi");
-        }
-        if (request.batchSize() != null && request.batchSize() != request.records().size()) {
-            throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
-                    "batchSize (" + request.batchSize() + ") không khớp với số lượng bản ghi thực tế (" + request.records().size() + ")");
         }
     }
 

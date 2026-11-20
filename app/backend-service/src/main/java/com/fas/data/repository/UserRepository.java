@@ -27,6 +27,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     Optional<User> findByEmployeeCode(String employeeCode);
 
+    Optional<User> findTopByEmployeeCodeStartingWithOrderByEmployeeCodeDesc(String prefix);
+
     boolean existsByEmail(String email);
 
     boolean existsByEmployeeCode(String employeeCode);

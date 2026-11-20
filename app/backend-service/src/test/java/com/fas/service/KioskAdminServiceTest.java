@@ -124,6 +124,23 @@ class KioskAdminServiceTest {
                         assertThat(apiEx.getErrorCode()).isEqualTo(ApiErrorCode.VALIDATION_FAILED);
                     });
         }
+
+        @Test
+        @DisplayName("Đăng ký trạm khi id null/trống: tự động sinh mã trạm KSK-xxxx")
+        void registerKiosk_BlankId_AutoGeneratesId() {
+            RegisterKioskRequest request = new RegisterKioskRequest(null, "Cửa chính Tòa nhà A");
+
+            when(kioskRepository.findTopByIdStartingWithOrderByIdDesc("KSK-CCTN-")).thenReturn(Optional.empty());
+            when(passwordEncoder.encode(anyString())).thenReturn("$2a$12$hashedSecretToken");
+            when(kioskRepository.save(any(Kiosk.class))).thenAnswer(i -> i.getArgument(0));
+
+            RegisterKioskResponse response = kioskAdminService.registerKiosk(request);
+
+            assertThat(response).isNotNull();
+            assertThat(response.id()).isEqualTo("KSK-CCTN-01");
+            assertThat(response.locationName()).isEqualTo("Cửa chính Tòa nhà A");
+            assertThat(response.secretToken()).isNotBlank();
+        }
     }
 
     @Nested

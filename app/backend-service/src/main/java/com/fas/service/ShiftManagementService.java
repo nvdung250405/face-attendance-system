@@ -18,9 +18,12 @@ import com.fas.data.enums.EmployeeStatus;
 import com.fas.data.repository.EmployeeShiftRepository;
 import com.fas.data.repository.ShiftRepository;
 import com.fas.data.repository.UserRepository;
+import com.fas.common.generator.BusinessCodeGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -33,17 +36,24 @@ import java.util.Optional;
  * Dịch vụ Quản lý Ca kíp & Phân ca Nhân sự
  * (SOL-BE-017, FR-BE-013, DATA-BE-017, DD-BE-017, BLD-BE-024, TASK-BE-029).
  *
- * <p>Quy tắc nghiệp vụ:
+ * <p>
+ * Quy tắc nghiệp vụ:
  * <ul>
- *   <li>Quản lý ca làm việc: mã duy nhất, {@code startTime < endTime}, ân hạn 0-60 phút.</li>
- *   <li>Vô hiệu hóa ca: từ chối ném 409 {@code SHIFT_IN_USE} nếu ca đang được phân công cho nhân sự.</li>
- *   <li>Phân ca nhân sự: kiểm tra chồng lấn khoảng hiệu lực {@code [effectiveFrom, effectiveTo]};
- *       từ chối ném 409 {@code SHIFT_OVERLAPPING} nếu khoảng hiệu lực giao nhau với phân ca hiện có của nhân sự.</li>
- *   <li>Đánh giá ca điểm danh: tính số phút trễ ({@code lateMinutes}) theo giờ bắt đầu và thời gian ân hạn của ca;
- *       trả về trạng thái {@code ANOMALOUS} khi nhân sự chưa được phân ca.</li>
+ * <li>Quản lý ca làm việc: mã duy nhất, {@code startTime < endTime}, ân hạn
+ * 0-60 phút.</li>
+ * <li>Vô hiệu hóa ca: từ chối ném 409 {@code SHIFT_IN_USE} nếu ca đang được
+ * phân công cho nhân sự.</li>
+ * <li>Phân ca nhân sự: kiểm tra chồng lấn khoảng hiệu lực
+ * {@code [effectiveFrom, effectiveTo]};
+ * từ chối ném 409 {@code SHIFT_OVERLAPPING} nếu khoảng hiệu lực giao nhau với
+ * phân ca hiện có của nhân sự.</li>
+ * <li>Đánh giá ca điểm danh: tính số phút trễ ({@code lateMinutes}) theo giờ
+ * bắt đầu và thời gian ân hạn của ca;
+ * trả về trạng thái {@code ANOMALOUS} khi nhân sự chưa được phân ca.</li>
  * </ul>
  */
 @Service
+@Transactional(readOnly = true)
 public class ShiftManagementService {
 
     private static final Logger logger = LoggerFactory.getLogger(ShiftManagementService.class);
@@ -51,14 +61,39 @@ public class ShiftManagementService {
     private final ShiftRepository shiftRepository;
     private final EmployeeShiftRepository employeeShiftRepository;
     private final UserRepository userRepository;
+    private final BusinessCodeGenerator businessCodeGenerator;
+    private final ShiftAssignmentBatchHelper batchHelper;
+
+    @Autowired
+    public ShiftManagementService(
+            ShiftRepository shiftRepository,
+            EmployeeShiftRepository employeeShiftRepository,
+            UserRepository userRepository,
+            BusinessCodeGenerator businessCodeGenerator,
+            ShiftAssignmentBatchHelper batchHelper) {
+        this.shiftRepository = shiftRepository;
+        this.employeeShiftRepository = employeeShiftRepository;
+        this.userRepository = userRepository;
+        this.businessCodeGenerator = businessCodeGenerator;
+        this.batchHelper = batchHelper;
+    }
+
+    public ShiftManagementService(
+            ShiftRepository shiftRepository,
+            EmployeeShiftRepository employeeShiftRepository,
+            UserRepository userRepository,
+            BusinessCodeGenerator businessCodeGenerator) {
+        this(shiftRepository, employeeShiftRepository, userRepository, businessCodeGenerator,
+                new ShiftAssignmentBatchHelper(employeeShiftRepository));
+    }
 
     public ShiftManagementService(
             ShiftRepository shiftRepository,
             EmployeeShiftRepository employeeShiftRepository,
             UserRepository userRepository) {
-        this.shiftRepository = shiftRepository;
-        this.employeeShiftRepository = employeeShiftRepository;
-        this.userRepository = userRepository;
+        this(shiftRepository, employeeShiftRepository, userRepository,
+                new BusinessCodeGenerator(shiftRepository, null, userRepository),
+                new ShiftAssignmentBatchHelper(employeeShiftRepository));
     }
 
     /**
@@ -69,10 +104,16 @@ public class ShiftManagementService {
      */
     @Transactional
     public ShiftResponse createShift(CreateShiftRequest request) {
-        String shiftCode = request.shiftCode().trim();
-        if (shiftRepository.existsByShiftCode(shiftCode)) {
-            throw new ApiException(ApiErrorCode.DATA_INTEGRITY_VIOLATION,
-                    "Mã ca làm việc '" + shiftCode + "' đã tồn tại.");
+        String shiftCode;
+        if (request.shiftCode() != null && !request.shiftCode().isBlank()) {
+            shiftCode = request.shiftCode().trim();
+            if (shiftRepository.existsByShiftCode(shiftCode)) {
+                throw new ApiException(ApiErrorCode.DATA_INTEGRITY_VIOLATION,
+                        "Mã ca làm việc '" + shiftCode + "' đã tồn tại.");
+            }
+        } else {
+            shiftCode = businessCodeGenerator.generateShiftCode(
+                    request.shiftName(), request.startTime(), request.endTime());
         }
 
         validateShiftTimes(request.startTime(), request.endTime(), request.gracePeriodMinutes());
@@ -176,7 +217,8 @@ public class ShiftManagementService {
 
     /**
      * Phân công ca làm việc cho nhân viên theo khoảng thời gian hiệu lực.
-     * Kiểm tra chặt chẽ điều kiện không chồng lấn khoảng hiệu lực của cùng một nhân sự.
+     * Kiểm tra chặt chẽ điều kiện không chồng lấn khoảng hiệu lực của cùng một nhân
+     * sự.
      *
      * @param request thông tin phân công ca
      * @return bản ghi phân công sau khi lưu
@@ -205,7 +247,8 @@ public class ShiftManagementService {
                     "Ngày bắt đầu hiệu lực phải nhỏ hơn hoặc bằng ngày kết thúc.");
         }
 
-        // Kiểm tra chồng lấn khoảng hiệu lực đối với các phân ca hiện có của nhân sự (DD-BE-017)
+        // Kiểm tra chồng lấn khoảng hiệu lực đối với các phân ca hiện có của nhân sự
+        // (DD-BE-017)
         List<EmployeeShift> existingAssignments = employeeShiftRepository.findByUserId(user.getId());
         for (EmployeeShift existing : existingAssignments) {
             if (isOverlapping(from, to, existing.getEffectiveFrom(), existing.getEffectiveTo())) {
@@ -240,7 +283,7 @@ public class ShiftManagementService {
      * @param request dữ liệu yêu cầu phân ca hàng loạt
      * @return báo cáo tổng kết chi tiết từng nhân sự
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public BatchAssignShiftResponse assignShiftBatch(BatchAssignShiftRequest request) {
         Shift shift = findShiftById(request.shiftId());
         if (!Boolean.TRUE.equals(shift.getIsActive())) {
@@ -299,7 +342,7 @@ public class ShiftManagementService {
                         .effectiveTo(to)
                         .build();
 
-                EmployeeShift saved = employeeShiftRepository.save(employeeShift);
+                EmployeeShift saved = batchHelper.saveAssignment(employeeShift);
                 successfulAssignments.add(toEmployeeShiftResponse(saved));
             } catch (Exception ex) {
                 logger.error("Lỗi khi phân ca cho userId={}: {}", userId, ex.getMessage());
@@ -373,7 +416,8 @@ public class ShiftManagementService {
             return ShiftEvaluationResult.onTime(shift.getId(), shift.getShiftCode(), startTime, graceMinutes);
         } else {
             long lateMinutes = Duration.between(startTime, punchTime).toMinutes();
-            return ShiftEvaluationResult.late(shift.getId(), shift.getShiftCode(), lateMinutes, startTime, graceMinutes);
+            return ShiftEvaluationResult.late(shift.getId(), shift.getShiftCode(), lateMinutes, startTime,
+                    graceMinutes);
         }
     }
 
@@ -381,21 +425,16 @@ public class ShiftManagementService {
      * Tra cứu danh sách phân ca của nhân sự với các bộ lọc linh hoạt.
      */
     @Transactional(readOnly = true)
-    public List<EmployeeShiftResponse> getEmployeeShifts(Long userId, Long shiftId, LocalDate fromDate, LocalDate toDate) {
-        List<EmployeeShift> list = (userId != null)
-                ? employeeShiftRepository.findByUserId(userId)
-                : employeeShiftRepository.findAll();
-
-        return list.stream()
-                .filter(es -> shiftId == null || es.getShift().getId().equals(shiftId))
-                .filter(es -> fromDate == null || es.getEffectiveTo() == null || !es.getEffectiveTo().isBefore(fromDate))
-                .filter(es -> toDate == null || !es.getEffectiveFrom().isAfter(toDate))
+    public List<EmployeeShiftResponse> getEmployeeShifts(Long userId, Long shiftId, LocalDate fromDate,
+            LocalDate toDate) {
+        return employeeShiftRepository.findByCriteria(userId, shiftId, fromDate, toDate).stream()
                 .map(this::toEmployeeShiftResponse)
                 .toList();
     }
 
     /**
-     * Kiểm tra xem 2 khoảng thời gian [startA, endA] và [startB, endB] có giao nhau không.
+     * Kiểm tra xem 2 khoảng thời gian [startA, endA] và [startB, endB] có giao nhau
+     * không.
      * Giá trị null ở end đại diện cho vô thời hạn (+vô cực).
      */
     public boolean isOverlapping(LocalDate startA, LocalDate endA, LocalDate startB, LocalDate endB) {
@@ -438,8 +477,7 @@ public class ShiftManagementService {
                 shift.getStartTime(),
                 shift.getEndTime(),
                 shift.getGracePeriodMinutes(),
-                shift.getIsActive()
-        );
+                shift.getIsActive());
     }
 
     private EmployeeShiftResponse toEmployeeShiftResponse(EmployeeShift es) {
@@ -452,7 +490,6 @@ public class ShiftManagementService {
                 es.getShift().getShiftCode(),
                 es.getShift().getShiftName(),
                 es.getEffectiveFrom(),
-                es.getEffectiveTo()
-        );
+                es.getEffectiveTo());
     }
 }

@@ -49,712 +49,698 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Bộ kiểm thử đơn vị cho EnrollmentService (TST-BE-013, BLD-BE-013, TASK-BE-015).
+ * Bộ kiểm thử đơn vị cho EnrollmentService (TST-BE-013, BLD-BE-013,
+ * TASK-BE-015).
  */
 @ExtendWith(MockitoExtension.class)
 class EnrollmentServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private EnrollmentSessionRepository enrollmentSessionRepository;
-
-    @Mock
-    private BiometricTemplateRepository biometricTemplateRepository;
-
-    @Mock
-    private KioskRepository kioskRepository;
-
-    @Mock
-    private BiometricCryptoService biometricCryptoService;
-
-    @Mock
-    private StompEventBroadcaster stompEventBroadcaster;
-
-    private PasswordEncoder passwordEncoder;
-    private EnrollmentService enrollmentService;
-
-    private User sampleUser;
-    private Kiosk activeKiosk;
-
-    @BeforeEach
-    void setUp() {
-        passwordEncoder = new BCryptPasswordEncoder();
-        enrollmentService = new EnrollmentService(
-                userRepository,
-                enrollmentSessionRepository,
-                biometricTemplateRepository,
-                kioskRepository,
-                biometricCryptoService,
-                stompEventBroadcaster,
-                passwordEncoder
-        );
-
-        sampleUser = User.builder()
-                .id(1042L)
-                .employeeCode("NV-1042")
-                .fullName("Ngô Văn Dũng")
-                .email("dung.ngo@fas.com")
-                .passwordHash("$2a$10$dummyHash")
-                .role(Role.EMPLOYEE)
-                .status(EmployeeStatus.PENDING_CONSENT)
-                .department("Phòng Kỹ thuật")
-                .build();
-
-        activeKiosk = Kiosk.builder()
-                .id("KIOSK-HN-01")
-                .locationName("Kiosk Sảnh Tầng 1 - Tòa nhà A")
-                .secretTokenHash("$2a$10$dummyHash")
-                .isActive(true)
-                .build();
-    }
-
-    @Test
-    @DisplayName("Ký Informed Consent thành công: sinh mã OTP 6 số, băm BCrypt, hiệu lực 48 giờ")
-    void testCreateConsentSession_Success() {
-        when(userRepository.findById(1042L)).thenReturn(Optional.of(sampleUser));
-        when(enrollmentSessionRepository.save(any(EnrollmentSession.class))).thenAnswer(invocation -> {
-            EnrollmentSession s = invocation.getArgument(0);
-            s.setId(1L);
-            return s;
-        });
-
-        ConsentRequest request = new ConsentRequest(true, "v1.0-GDPR");
-        ConsentResult result = enrollmentService.createConsentSession(1042L, request, "192.168.1.100");
-
-        assertThat(result).isNotNull();
-        assertThat(result.otp()).matches("\\d{6}");
-        assertThat(result.qrCodeDataUrl()).isEqualTo("otp:" + result.otp());
-        assertThat(result.expiresAt()).isAfter(OffsetDateTime.now());
-        assertThat(result.notice()).contains("48 giờ");
-
-        ArgumentCaptor<EnrollmentSession> captor = ArgumentCaptor.forClass(EnrollmentSession.class);
-        verify(enrollmentSessionRepository).save(captor.capture());
-        EnrollmentSession savedSession = captor.getValue();
-
-        assertThat(savedSession.getUser()).isEqualTo(sampleUser);
-        assertThat(savedSession.getConsentVersion()).isEqualTo("v1.0-GDPR");
-        assertThat(savedSession.getClientIp()).isEqualTo("192.168.1.100");
-        assertThat(savedSession.getIsUsed()).isFalse();
-        assertThat(passwordEncoder.matches(result.otp(), savedSession.getOtpHash())).isTrue();
-        assertThat(savedSession.getExpiresAt()).isAfter(Instant.now().plus(47, ChronoUnit.HOURS));
-    }
-
-    @Test
-    @DisplayName("Ký Informed Consent thất bại khi không đồng ý thỏa thuận (agreed=false)")
-    void testCreateConsentSession_WhenAgreedFalse_ThrowsValidationFailed() {
-        ConsentRequest request = new ConsentRequest(false, "v1.0");
-
-        assertThatThrownBy(() -> enrollmentService.createConsentSession(1042L, request, "127.0.0.1"))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.VALIDATION_FAILED);
-
-        verify(enrollmentSessionRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Ký Informed Consent thất bại khi không tìm thấy nhân sự")
-    void testCreateConsentSession_WhenUserNotFound_ThrowsEmployeeNotFound() {
-        when(userRepository.findById(9999L)).thenReturn(Optional.empty());
-        ConsentRequest request = new ConsentRequest(true, "v1.0");
-
-        assertThatThrownBy(() -> enrollmentService.createConsentSession(9999L, request, "127.0.0.1"))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.EMPLOYEE_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("Ký Informed Consent thất bại khi nhân viên đã thôi việc (TERMINATED)")
-    void testCreateConsentSession_WhenUserTerminated_ThrowsAccessDenied() {
-        sampleUser.setStatus(EmployeeStatus.TERMINATED);
-        when(userRepository.findById(1042L)).thenReturn(Optional.of(sampleUser));
-        ConsentRequest request = new ConsentRequest(true, "v1.0");
-
-        assertThatThrownBy(() -> enrollmentService.createConsentSession(1042L, request, "127.0.0.1"))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.ACCESS_DENIED);
-    }
-
-    @Test
-    @DisplayName("Thẩm định OTP tại Kiosk thành công: cấp sessionToken và trả thông tin nhân sự")
-    void testVerifyOtp_Success() {
-        String plainOtp = "654321";
-        String hashedOtp = passwordEncoder.encode(plainOtp);
-
-        EnrollmentSession session = EnrollmentSession.builder()
-                .id(10L)
-                .user(sampleUser)
-                .otpHash(hashedOtp)
-                .consentVersion("v1.0")
-                .consentSignedAt(Instant.now().minus(2, ChronoUnit.HOURS))
-                .clientIp("127.0.0.1")
-                .expiresAt(Instant.now().plus(46, ChronoUnit.HOURS))
-                .isUsed(false)
-                .build();
-
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-        when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
-                .thenReturn(List.of(session));
-
-        KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01");
-        OtpVerificationResult result = enrollmentService.verifyOtp(request);
-
-        assertThat(result).isNotNull();
-        assertThat(result.sessionToken()).isNotBlank();
-        assertThat(result.employeeId()).isEqualTo(1042L);
-        assertThat(result.employeeCode()).isEqualTo("NV-1042");
-        assertThat(result.fullName()).isEqualTo("Ngô Văn Dũng");
-        assertThat(result.department()).isEqualTo("Phòng Kỹ thuật");
-    }
-
-    @Test
-    @DisplayName("Thẩm định OTP thất bại khi mã OTP không đúng")
-    void testVerifyOtp_WhenOtpInvalid_ThrowsOtpInvalid() {
-        String plainOtp = "123456";
-        String wrongOtp = "999999";
-
-        EnrollmentSession session = EnrollmentSession.builder()
-                .id(10L)
-                .user(sampleUser)
-                .otpHash(passwordEncoder.encode(plainOtp))
-                .expiresAt(Instant.now().plus(46, ChronoUnit.HOURS))
-                .isUsed(false)
-                .build();
-
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-        when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
-                .thenReturn(List.of(session));
-        when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
-                .thenReturn(Collections.emptyList());
-        when(enrollmentSessionRepository.findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(any(Instant.class)))
-                .thenReturn(Collections.emptyList());
-
-        KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(wrongOtp, "KIOSK-HN-01");
-
-        assertThatThrownBy(() -> enrollmentService.verifyOtp(request))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_INVALID);
-    }
-
-    @Test
-    @DisplayName("Thẩm định OTP thất bại khi mã OTP đã hết hạn (quá 48h)")
-    void testVerifyOtp_WhenOtpExpired_ThrowsOtpExpired() {
-        String plainOtp = "123456";
-
-        EnrollmentSession expiredSession = EnrollmentSession.builder()
-                .id(10L)
-                .user(sampleUser)
-                .otpHash(passwordEncoder.encode(plainOtp))
-                .expiresAt(Instant.now().minus(1, ChronoUnit.HOURS))
-                .isUsed(false)
-                .build();
-
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-        when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
-                .thenReturn(Collections.emptyList());
-        when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
-                .thenReturn(Collections.emptyList());
-        when(enrollmentSessionRepository.findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(any(Instant.class)))
-                .thenReturn(List.of(expiredSession));
-
-        KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01");
-
-        assertThatThrownBy(() -> enrollmentService.verifyOtp(request))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_EXPIRED);
-    }
-
-    @Test
-    @DisplayName("Thẩm định OTP thất bại khi mã OTP đã sử dụng trước đó")
-    void testVerifyOtp_WhenOtpAlreadyUsed_ThrowsOtpAlreadyUsed() {
-        String plainOtp = "123456";
-
-        EnrollmentSession usedSession = EnrollmentSession.builder()
-                .id(10L)
-                .user(sampleUser)
-                .otpHash(passwordEncoder.encode(plainOtp))
-                .expiresAt(Instant.now().plus(20, ChronoUnit.HOURS))
-                .isUsed(true)
-                .build();
-
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-        when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
-                .thenReturn(Collections.emptyList());
-        when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
-                .thenReturn(List.of(usedSession));
-
-        KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01");
-
-        assertThatThrownBy(() -> enrollmentService.verifyOtp(request))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_ALREADY_USED);
-    }
-
-    @Test
-    @DisplayName("Thẩm định OTP thất bại khi trạm Kiosk bị vô hiệu hóa")
-    void testVerifyOtp_WhenKioskInactive_ThrowsKioskUnauthorized() {
-        Kiosk inactiveKiosk = Kiosk.builder().id("KIOSK-LOCKED").isActive(false).build();
-        when(kioskRepository.findById("KIOSK-LOCKED")).thenReturn(Optional.of(inactiveKiosk));
-
-        KioskVerifyOtpRequest request = new KioskVerifyOtpRequest("123456", "KIOSK-LOCKED");
-
-        assertThatThrownBy(() -> enrollmentService.verifyOtp(request))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.KIOSK_UNAUTHORIZED);
-    }
-
-    @Test
-    @DisplayName("Nạp vector khuôn mặt thành công: mã hóa AES-256-GCM, lưu template, kích hoạt ACTIVE và broadcast STOMP")
-    void testEnrollFace_Success() {
-        String plainOtp = "888888";
-        String hashedOtp = passwordEncoder.encode(plainOtp);
-
-        EnrollmentSession session = EnrollmentSession.builder()
-                .id(20L)
-                .user(sampleUser)
-                .otpHash(hashedOtp)
-                .expiresAt(Instant.now().plus(40, ChronoUnit.HOURS))
-                .isUsed(false)
-                .build();
-
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-        when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
-                .thenReturn(List.of(session));
-
-        // 1. Verify OTP để lấy sessionToken
-        OtpVerificationResult verifyResult = enrollmentService.verifyOtp(
-                new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01")
-        );
-        String sessionToken = verifyResult.sessionToken();
-
-        // 2. Mock các phụ thuộc cho enrollFace
-        when(enrollmentSessionRepository.findById(20L)).thenReturn(Optional.of(session));
-
-        byte[] fakeCiphertext = new byte[2064];
-        byte[] fakeIv = new byte[12];
-        when(biometricCryptoService.encryptVector(any(float[].class)))
-                .thenReturn(new BiometricCryptoService.EncryptedVector(fakeCiphertext, fakeIv));
-
-        when(biometricTemplateRepository.deactivateAllByUserId(1042L)).thenReturn(0);
-        when(biometricTemplateRepository.save(any(BiometricTemplate.class))).thenAnswer(inv -> {
-            BiometricTemplate bt = inv.getArgument(0);
-            bt.setId(500L);
-            return bt;
-        });
-
-        List<Float> validVector = createValidVector512();
-        KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
-                plainOtp,
-                sessionToken,
-                validVector,
-                "KIOSK-HN-01"
-        );
-
-        // 3. Thực thi enrollFace
-        EnrollmentResult result = enrollmentService.enrollFace(enrollRequest);
-
-        assertThat(result).isNotNull();
-        assertThat(result.employeeId()).isEqualTo(1042L);
-        assertThat(result.templateId()).isEqualTo(500L);
-        assertThat(result.status()).isEqualTo(EmployeeStatus.ACTIVE);
-
-        // 4. Xác nhận trạng thái cập nhật
-        assertThat(session.getIsUsed()).isTrue();
-        assertThat(sampleUser.getStatus()).isEqualTo(EmployeeStatus.ACTIVE);
-        verify(biometricTemplateRepository).deactivateAllByUserId(1042L);
-        verify(enrollmentSessionRepository).save(session);
-        verify(userRepository).save(sampleUser);
-
-        // 5. Xác nhận lưu BiometricTemplate
-        ArgumentCaptor<BiometricTemplate> templateCaptor = ArgumentCaptor.forClass(BiometricTemplate.class);
-        verify(biometricTemplateRepository).save(templateCaptor.capture());
-        BiometricTemplate savedTemplate = templateCaptor.getValue();
-        assertThat(savedTemplate.getEncryptedVector()).isEqualTo(fakeCiphertext);
-        assertThat(savedTemplate.getEncryptionIv()).isEqualTo(fakeIv);
-        assertThat(savedTemplate.getAlgorithm()).isEqualTo("ARCFACE_512D");
-        assertThat(savedTemplate.getPoseType()).isEqualTo(PoseType.FRONTAL);
-        assertThat(savedTemplate.getIsActive()).isTrue();
-
-        // 6. Xác nhận phát sóng STOMP nạp nóng
-        verify(stompEventBroadcaster).broadcastGalleryVectorAdded(
-                eq(1042L),
-                eq("NV-1042"),
-                eq("Ngô Văn Dũng"),
-                eq(validVector),
-                any(),
-                any(OffsetDateTime.class)
-        );
-    }
-
-    @Test
-    @DisplayName("Nạp vector khuôn mặt thất bại khi sessionToken không hợp lệ hoặc giả mạo")
-    void testEnrollFace_WhenSessionTokenInvalid_ThrowsOtpInvalid() {
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-
-        KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
-                "123456",
-                "non-existent-token",
-                createValidVector512(),
-                "KIOSK-HN-01"
-        );
-
-        assertThatThrownBy(() -> enrollmentService.enrollFace(request))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_INVALID);
-    }
-
-    @Test
-    @DisplayName("Nạp vector khuôn mặt thất bại khi vector không đúng 512 chiều")
-    void testEnrollFace_WhenVectorDimensionInvalid_ThrowsInvalidVectorDimension() {
-        String plainOtp = "777777";
-        EnrollmentSession session = EnrollmentSession.builder()
-                .id(30L)
-                .user(sampleUser)
-                .otpHash(passwordEncoder.encode(plainOtp))
-                .expiresAt(Instant.now().plus(40, ChronoUnit.HOURS))
-                .isUsed(false)
-                .build();
-
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-        when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
-                .thenReturn(List.of(session));
-
-        OtpVerificationResult verifyResult = enrollmentService.verifyOtp(
-                new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01")
-        );
-
-        when(enrollmentSessionRepository.findById(30L)).thenReturn(Optional.of(session));
-
-        List<Float> invalidVector = List.of(0.1f, 0.2f, 0.3f);
-        KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
-                plainOtp,
-                verifyResult.sessionToken(),
-                invalidVector,
-                "KIOSK-HN-01"
-        );
-
-        assertThatThrownBy(() -> enrollmentService.enrollFace(request))
-                .isInstanceOf(ApiException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.INVALID_VECTOR_DIMENSION);
-    }
-
-    @Test
-    @DisplayName("Lấy danh mục gallery thành công cho các nhân viên ACTIVE")
-    void testGetGallery_ReturnsActiveDecryptedTemplates() {
-        User activeUser = User.builder()
-                .id(1042L)
-                .employeeCode("NV-1042")
-                .fullName("Ngô Văn Dũng")
-                .status(EmployeeStatus.ACTIVE)
-                .department("Phòng Kỹ thuật")
-                .build();
-
-        BiometricTemplate activeTemplate = BiometricTemplate.builder()
-                .id(1L)
-                .user(activeUser)
-                .encryptedVector(new byte[]{1, 2, 3})
-                .encryptionIv(new byte[]{4, 5, 6})
-                .version(2)
-                .isActive(true)
-                .createdAt(Instant.now())
-                .build();
-
-        User terminatedUser = User.builder()
-                .id(2L)
-                .employeeCode("NV-2000")
-                .fullName("Trần Thị B")
-                .status(EmployeeStatus.TERMINATED)
-                .build();
-
-        BiometricTemplate terminatedTemplate = BiometricTemplate.builder()
-                .id(2L)
-                .user(terminatedUser)
-                .encryptedVector(new byte[]{7, 8})
-                .encryptionIv(new byte[]{9, 10})
-                .version(1)
-                .isActive(true)
-                .build();
-
-        when(biometricTemplateRepository.findByIsActiveTrue())
-                .thenReturn(List.of(activeTemplate, terminatedTemplate));
-
-        float[] decryptedVector = new float[512];
-        decryptedVector[0] = 0.5f;
-        when(biometricCryptoService.decryptVector(activeTemplate.getEncryptedVector(), activeTemplate.getEncryptionIv()))
-                .thenReturn(decryptedVector);
-
-        GalleryResponse response = enrollmentService.getGallery();
-
-        assertThat(response).isNotNull();
-        assertThat(response.galleryVersion()).isEqualTo(2);
-        assertThat(response.totalCount()).isEqualTo(1);
-        assertThat(response.items()).hasSize(1);
-        assertThat(response.items().get(0).employeeCode()).isEqualTo(sampleUser.getEmployeeCode());
-        assertThat(response.items().get(0).poseType()).isEqualTo("FRONTAL");
-        assertThat(response.items().get(0).vector512()).hasSize(512);
-        assertThat(response.items().get(0).vector512().get(0)).isEqualTo(0.5f);
-    }
-
-    private record SessionAndToken(EnrollmentSession session, String sessionToken) {}
-
-    private SessionAndToken setupSessionAndToken(String plainOtp) {
-        String hashedOtp = passwordEncoder.encode(plainOtp);
-        EnrollmentSession session = EnrollmentSession.builder()
-                .id(20L)
-                .user(sampleUser)
-                .otpHash(hashedOtp)
-                .expiresAt(Instant.now().plus(40, ChronoUnit.HOURS))
-                .isUsed(false)
-                .build();
-
-        when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
-        when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
-                .thenReturn(List.of(session));
-
-        OtpVerificationResult verifyResult = enrollmentService.verifyOtp(
-                new KioskVerifyOtpRequest(plainOtp, "KIOSK-HN-01")
-        );
-        when(enrollmentSessionRepository.findById(20L)).thenReturn(Optional.of(session));
-        return new SessionAndToken(session, verifyResult.sessionToken());
-    }
-
-    @Test
-    @DisplayName("FEAT-ENROLL-001: Nạp 3 mẫu đa tư thế thành công và kích hoạt nhân sự")
-    void testEnrollFace_MultiTemplate_Success() {
-        String plainOtp = "839201";
-        SessionAndToken st = setupSessionAndToken(plainOtp);
-        EnrollmentSession session = st.session();
-        String sessionToken = st.sessionToken();
-
-        byte[] fakeCiphertext = new byte[2064];
-        byte[] fakeIv = new byte[12];
-        when(biometricCryptoService.encryptVector(any(float[].class)))
-                .thenReturn(new BiometricCryptoService.EncryptedVector(fakeCiphertext, fakeIv));
-
-        when(biometricTemplateRepository.deactivateAllByUserId(1042L)).thenReturn(1);
-        when(biometricTemplateRepository.save(any(BiometricTemplate.class))).thenAnswer(inv -> {
-            BiometricTemplate bt = inv.getArgument(0);
-            bt.setId(500L);
-            return bt;
-        });
-
-        List<Float> validVector = createValidVector512();
-        List<PoseTemplateDto> templates = List.of(
-                new PoseTemplateDto("FRONTAL", validVector),
-                new PoseTemplateDto("LEFT_TILT", validVector),
-                new PoseTemplateDto("RIGHT_TILT", validVector)
-        );
-
-        KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
-                plainOtp,
-                sessionToken,
-                "KIOSK-HN-01",
-                templates
-        );
-
-        EnrollmentResult result = enrollmentService.enrollFace(enrollRequest);
-
-        assertThat(result).isNotNull();
-        assertThat(result.employeeId()).isEqualTo(1042L);
-        assertThat(result.templateCount()).isEqualTo(3);
-        assertThat(result.poses()).containsExactlyInAnyOrder("FRONTAL", "LEFT_TILT", "RIGHT_TILT");
-        assertThat(result.status()).isEqualTo(EmployeeStatus.ACTIVE);
-
-        verify(biometricTemplateRepository).deactivateAllByUserId(1042L);
-        verify(biometricCryptoService, org.mockito.Mockito.times(3)).encryptVector(any(float[].class));
-        verify(biometricTemplateRepository, org.mockito.Mockito.times(3)).save(any(BiometricTemplate.class));
-        verify(stompEventBroadcaster).broadcastGalleryVectorAdded(
-                eq(1042L),
-                eq("NV-1042"),
-                eq("Ngô Văn Dũng"),
-                eq(validVector),
-                any(),
-                any(OffsetDateTime.class)
-        );
-        verify(stompEventBroadcaster).broadcastEnrollmentSuccess(
-                eq(plainOtp),
-                eq(1042L),
-                eq("NV-1042"),
-                eq("Ngô Văn Dũng"),
-                eq(3),
-                any(),
-                any(),
-                any(OffsetDateTime.class)
-        );
-    }
-
-    @Test
-    @DisplayName("FEAT-ENROLL-001: Bộ mẫu thiếu tư thế -> ném INVALID_TEMPLATE_SET")
-    void testEnrollFace_MultiTemplate_MissingPose_ThrowsInvalidTemplateSet() {
-        String plainOtp = "839201";
-        SessionAndToken st = setupSessionAndToken(plainOtp);
-
-        List<Float> validVector = createValidVector512();
-        List<PoseTemplateDto> templates = List.of(
-                new PoseTemplateDto("FRONTAL", validVector),
-                new PoseTemplateDto("LEFT_TILT", validVector)
-        );
-
-        KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
-                plainOtp,
-                st.sessionToken(),
-                "KIOSK-HN-01",
-                templates
-        );
-
-        ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
-                ApiException.class,
-                () -> enrollmentService.enrollFace(enrollRequest)
-        );
-        assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.INVALID_TEMPLATE_SET);
-    }
-
-    @Test
-    @DisplayName("FEAT-ENROLL-001: Bộ mẫu có tư thế trùng lặp -> ném INVALID_TEMPLATE_SET")
-    void testEnrollFace_MultiTemplate_DuplicatePose_ThrowsInvalidTemplateSet() {
-        String plainOtp = "839201";
-        SessionAndToken st = setupSessionAndToken(plainOtp);
-
-        List<Float> validVector = createValidVector512();
-        List<PoseTemplateDto> templates = List.of(
-                new PoseTemplateDto("FRONTAL", validVector),
-                new PoseTemplateDto("FRONTAL", validVector),
-                new PoseTemplateDto("RIGHT_TILT", validVector)
-        );
-
-        KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
-                plainOtp,
-                st.sessionToken(),
-                "KIOSK-HN-01",
-                templates
-        );
-
-        ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
-                ApiException.class,
-                () -> enrollmentService.enrollFace(enrollRequest)
-        );
-        assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.INVALID_TEMPLATE_SET);
-    }
-
-    @Test
-    @DisplayName("FEAT-ENROLL-001: Vector trong mẫu không đúng 512 chiều -> ném INVALID_VECTOR_DIMENSION")
-    void testEnrollFace_MultiTemplate_InvalidVectorDimension_ThrowsInvalidVectorDimension() {
-        String plainOtp = "839201";
-        SessionAndToken st = setupSessionAndToken(plainOtp);
-
-        List<Float> validVector = createValidVector512();
-        List<Float> shortVector = List.of(0.1f, 0.2f);
-        List<PoseTemplateDto> templates = List.of(
-                new PoseTemplateDto("FRONTAL", validVector),
-                new PoseTemplateDto("LEFT_TILT", shortVector),
-                new PoseTemplateDto("RIGHT_TILT", validVector)
-        );
-
-        KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
-                plainOtp,
-                st.sessionToken(),
-                "KIOSK-HN-01",
-                templates
-        );
-
-        ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
-                ApiException.class,
-                () -> enrollmentService.enrollFace(enrollRequest)
-        );
-        assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.INVALID_VECTOR_DIMENSION);
-    }
-
-    @Test
-    @DisplayName("FEAT-ENROLL-001: Không truyền cả templates lẫn vector512 -> ném VALIDATION_FAILED")
-    void testEnrollFace_WhenNeitherTemplatesNorVector_ThrowsValidationFailed() {
-        String plainOtp = "839201";
-        SessionAndToken st = setupSessionAndToken(plainOtp);
-
-        KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
-                plainOtp,
-                st.sessionToken(),
-                null,
-                null,
-                "KIOSK-HN-01"
-        );
-
-        ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
-                ApiException.class,
-                () -> enrollmentService.enrollFace(enrollRequest)
-        );
-        assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.VALIDATION_FAILED);
-    }
-
-    @Test
-    @DisplayName("FEAT-ENROLL-001: Lấy gallery đa mẫu trả về đủ 3 tư thế")
-    void testGetGallery_MultiTemplate_ReturnsAllPoses() {
-        User activeUser = User.builder()
-                .id(1042L)
-                .employeeCode("NV-1042")
-                .fullName("Ngô Văn Dũng")
-                .status(EmployeeStatus.ACTIVE)
-                .department("Phòng Kỹ thuật")
-                .build();
-
-        BiometricTemplate t1 = BiometricTemplate.builder()
-                .id(1L)
-                .user(activeUser)
-                .poseType(PoseType.FRONTAL)
-                .encryptedVector(new byte[]{1})
-                .encryptionIv(new byte[]{2})
-                .version(1)
-                .isActive(true)
-                .createdAt(Instant.now())
-                .build();
-
-        BiometricTemplate t2 = BiometricTemplate.builder()
-                .id(2L)
-                .user(activeUser)
-                .poseType(PoseType.LEFT_TILT)
-                .encryptedVector(new byte[]{3})
-                .encryptionIv(new byte[]{4})
-                .version(1)
-                .isActive(true)
-                .createdAt(Instant.now())
-                .build();
-
-        BiometricTemplate t3 = BiometricTemplate.builder()
-                .id(3L)
-                .user(activeUser)
-                .poseType(PoseType.RIGHT_TILT)
-                .encryptedVector(new byte[]{5})
-                .encryptionIv(new byte[]{6})
-                .version(1)
-                .isActive(true)
-                .createdAt(Instant.now())
-                .build();
-
-        when(biometricTemplateRepository.findByIsActiveTrue()).thenReturn(List.of(t1, t2, t3));
-
-        float[] decrypted = new float[512];
-        decrypted[0] = 1.0f;
-        when(biometricCryptoService.decryptVector(any(byte[].class), any(byte[].class)))
-                .thenReturn(decrypted);
-
-        GalleryResponse response = enrollmentService.getGallery();
-
-        assertThat(response).isNotNull();
-        assertThat(response.totalCount()).isEqualTo(3);
-        assertThat(response.items()).hasSize(3);
-
-        List<String> returnedPoses = response.items().stream()
-                .map(GalleryItem::poseType)
-                .toList();
-        assertThat(returnedPoses).containsExactlyInAnyOrder("FRONTAL", "LEFT_TILT", "RIGHT_TILT");
-    }
-
-    private List<Float> createValidVector512() {
-        List<Float> list = new ArrayList<>(512);
-        list.add(1.0f);
-        for (int i = 1; i < 512; i++) {
-            list.add(0.0f);
+        @Mock
+        private UserRepository userRepository;
+
+        @Mock
+        private EnrollmentSessionRepository enrollmentSessionRepository;
+
+        @Mock
+        private BiometricTemplateRepository biometricTemplateRepository;
+
+        @Mock
+        private KioskRepository kioskRepository;
+
+        @Mock
+        private BiometricCryptoService biometricCryptoService;
+
+        @Mock
+        private StompEventBroadcaster stompEventBroadcaster;
+
+        private PasswordEncoder passwordEncoder;
+        private EnrollmentService enrollmentService;
+
+        private User sampleUser;
+        private Kiosk activeKiosk;
+
+        @BeforeEach
+        void setUp() {
+                passwordEncoder = new BCryptPasswordEncoder();
+                enrollmentService = new EnrollmentService(
+                                userRepository,
+                                enrollmentSessionRepository,
+                                biometricTemplateRepository,
+                                kioskRepository,
+                                biometricCryptoService,
+                                stompEventBroadcaster,
+                                passwordEncoder);
+
+                sampleUser = User.builder()
+                                .id(1042L)
+                                .employeeCode("NV-1042")
+                                .fullName("Ngô Văn Dũng")
+                                .email("dung.ngo@fas.com")
+                                .passwordHash("$2a$10$dummyHash")
+                                .role(Role.EMPLOYEE)
+                                .status(EmployeeStatus.PENDING_CONSENT)
+                                .department("Phòng Kỹ thuật")
+                                .build();
+
+                activeKiosk = Kiosk.builder()
+                                .id("KIOSK-HN-01")
+                                .locationName("Kiosk Sảnh Tầng 1 - Tòa nhà A")
+                                .secretTokenHash("$2a$10$dummyHash")
+                                .isActive(true)
+                                .build();
         }
-        return list;
-    }
-}
+
+        @Test
+        @DisplayName("Ký Informed Consent thành công: sinh mã OTP 6 số, băm BCrypt, hiệu lực 48 giờ")
+        void testCreateConsentSession_Success() {
+                when(userRepository.findById(1042L)).thenReturn(Optional.of(sampleUser));
+                when(enrollmentSessionRepository.save(any(EnrollmentSession.class))).thenAnswer(invocation -> {
+                        EnrollmentSession s = invocation.getArgument(0);
+                        s.setId(1L);
+                        return s;
+                });
+
+                ConsentRequest request = new ConsentRequest(true, "v1.0-GDPR");
+                ConsentResult result = enrollmentService.createConsentSession(1042L, request, "192.168.1.100");
+
+                assertThat(result).isNotNull();
+                assertThat(result.otp()).matches("\\d{6}");
+                assertThat(result.qrCodeDataUrl()).isEqualTo("otp:" + result.otp());
+                assertThat(result.expiresAt()).isAfter(OffsetDateTime.now());
+                assertThat(result.notice()).contains("48 giờ");
+
+                ArgumentCaptor<EnrollmentSession> captor = ArgumentCaptor.forClass(EnrollmentSession.class);
+                verify(enrollmentSessionRepository).save(captor.capture());
+                EnrollmentSession savedSession = captor.getValue();
+
+                assertThat(savedSession.getUser()).isEqualTo(sampleUser);
+                assertThat(savedSession.getConsentVersion()).isEqualTo("v1.0-GDPR");
+                assertThat(savedSession.getClientIp()).isEqualTo("192.168.1.100");
+                assertThat(savedSession.getIsUsed()).isFalse();
+                assertThat(passwordEncoder.matches(result.otp(), savedSession.getOtpHash())).isTrue();
+                assertThat(savedSession.getExpiresAt()).isAfter(Instant.now().plus(47, ChronoUnit.HOURS));
+        }
+
+        @Test
+        @DisplayName("Ký Informed Consent thất bại khi không đồng ý thỏa thuận (agreed=false)")
+        void testCreateConsentSession_WhenAgreedFalse_ThrowsValidationFailed() {
+                ConsentRequest request = new ConsentRequest(false, "v1.0");
+
+                assertThatThrownBy(() -> enrollmentService.createConsentSession(1042L, request, "127.0.0.1"))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.VALIDATION_FAILED);
+
+                verify(enrollmentSessionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Ký Informed Consent thất bại khi không tìm thấy nhân sự")
+        void testCreateConsentSession_WhenUserNotFound_ThrowsEmployeeNotFound() {
+                when(userRepository.findById(9999L)).thenReturn(Optional.empty());
+                ConsentRequest request = new ConsentRequest(true, "v1.0");
+
+                assertThatThrownBy(() -> enrollmentService.createConsentSession(9999L, request, "127.0.0.1"))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("Ký Informed Consent thất bại khi nhân viên đã thôi việc (TERMINATED)")
+        void testCreateConsentSession_WhenUserTerminated_ThrowsAccessDenied() {
+                sampleUser.setStatus(EmployeeStatus.TERMINATED);
+                when(userRepository.findById(1042L)).thenReturn(Optional.of(sampleUser));
+                ConsentRequest request = new ConsentRequest(true, "v1.0");
+
+                assertThatThrownBy(() -> enrollmentService.createConsentSession(1042L, request, "127.0.0.1"))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.ACCESS_DENIED);
+        }
+
+        @Test
+        @DisplayName("Thẩm định OTP tại Kiosk thành công: cấp sessionToken và trả thông tin nhân sự")
+        void testVerifyOtp_Success() {
+                String plainOtp = "654321";
+                String hashedOtp = passwordEncoder.encode(plainOtp);
+
+                EnrollmentSession session = EnrollmentSession.builder()
+                                .id(10L)
+                                .user(sampleUser)
+                                .otpHash(hashedOtp)
+                                .consentVersion("v1.0")
+                                .consentSignedAt(Instant.now().minus(2, ChronoUnit.HOURS))
+                                .clientIp("127.0.0.1")
+                                .expiresAt(Instant.now().plus(46, ChronoUnit.HOURS))
+                                .isUsed(false)
+                                .build();
+
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+                when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
+                                .thenReturn(List.of(session));
+
+                KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp);
+                OtpVerificationResult result = enrollmentService.verifyOtp("KIOSK-HN-01", request);
+
+                assertThat(result).isNotNull();
+                assertThat(result.sessionToken()).isNotBlank();
+                assertThat(result.employeeId()).isEqualTo(1042L);
+                assertThat(result.employeeCode()).isEqualTo("NV-1042");
+                assertThat(result.fullName()).isEqualTo("Ngô Văn Dũng");
+                assertThat(result.department()).isEqualTo("Phòng Kỹ thuật");
+        }
+
+        @Test
+        @DisplayName("Thẩm định OTP thất bại khi mã OTP không đúng")
+        void testVerifyOtp_WhenOtpInvalid_ThrowsOtpInvalid() {
+                String plainOtp = "123456";
+                String wrongOtp = "999999";
+
+                EnrollmentSession session = EnrollmentSession.builder()
+                                .id(10L)
+                                .user(sampleUser)
+                                .otpHash(passwordEncoder.encode(plainOtp))
+                                .expiresAt(Instant.now().plus(46, ChronoUnit.HOURS))
+                                .isUsed(false)
+                                .build();
+
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+                when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
+                                .thenReturn(List.of(session));
+                when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
+                                .thenReturn(Collections.emptyList());
+                when(enrollmentSessionRepository.findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(
+                                any(Instant.class)))
+                                .thenReturn(Collections.emptyList());
+
+                KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(wrongOtp);
+
+                assertThatThrownBy(() -> enrollmentService.verifyOtp("KIOSK-HN-01", request))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_INVALID);
+        }
+
+        @Test
+        @DisplayName("Thẩm định OTP thất bại khi mã OTP đã hết hạn (quá 48h)")
+        void testVerifyOtp_WhenOtpExpired_ThrowsOtpExpired() {
+                String plainOtp = "123456";
+
+                EnrollmentSession expiredSession = EnrollmentSession.builder()
+                                .id(10L)
+                                .user(sampleUser)
+                                .otpHash(passwordEncoder.encode(plainOtp))
+                                .expiresAt(Instant.now().minus(1, ChronoUnit.HOURS))
+                                .isUsed(false)
+                                .build();
+
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+                when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
+                                .thenReturn(Collections.emptyList());
+                when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
+                                .thenReturn(Collections.emptyList());
+                when(enrollmentSessionRepository.findTop100ByIsUsedFalseAndExpiresAtLessThanEqualOrderByCreatedAtDesc(
+                                any(Instant.class)))
+                                .thenReturn(List.of(expiredSession));
+
+                KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp);
+
+                assertThatThrownBy(() -> enrollmentService.verifyOtp("KIOSK-HN-01", request))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_EXPIRED);
+        }
+
+        @Test
+        @DisplayName("Thẩm định OTP thất bại khi mã OTP đã sử dụng trước đó")
+        void testVerifyOtp_WhenOtpAlreadyUsed_ThrowsOtpAlreadyUsed() {
+                String plainOtp = "123456";
+
+                EnrollmentSession usedSession = EnrollmentSession.builder()
+                                .id(10L)
+                                .user(sampleUser)
+                                .otpHash(passwordEncoder.encode(plainOtp))
+                                .expiresAt(Instant.now().plus(20, ChronoUnit.HOURS))
+                                .isUsed(true)
+                                .build();
+
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+                when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
+                                .thenReturn(Collections.emptyList());
+                when(enrollmentSessionRepository.findTop100ByIsUsedTrueOrderByCreatedAtDesc())
+                                .thenReturn(List.of(usedSession));
+
+                KioskVerifyOtpRequest request = new KioskVerifyOtpRequest(plainOtp);
+
+                assertThatThrownBy(() -> enrollmentService.verifyOtp("KIOSK-HN-01", request))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_ALREADY_USED);
+        }
+
+        @Test
+        @DisplayName("Thẩm định OTP thất bại khi trạm Kiosk bị vô hiệu hóa")
+        void testVerifyOtp_WhenKioskInactive_ThrowsKioskUnauthorized() {
+                Kiosk inactiveKiosk = Kiosk.builder().id("KIOSK-LOCKED").isActive(false).build();
+                when(kioskRepository.findById("KIOSK-LOCKED")).thenReturn(Optional.of(inactiveKiosk));
+
+                KioskVerifyOtpRequest request = new KioskVerifyOtpRequest("123456");
+
+                assertThatThrownBy(() -> enrollmentService.verifyOtp("KIOSK-LOCKED", request))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.KIOSK_UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("Nạp vector khuôn mặt thành công: mã hóa AES-256-GCM, lưu template, kích hoạt ACTIVE và broadcast STOMP")
+        void testEnrollFace_Success() {
+                String plainOtp = "888888";
+                String hashedOtp = passwordEncoder.encode(plainOtp);
+
+                EnrollmentSession session = EnrollmentSession.builder()
+                                .id(20L)
+                                .user(sampleUser)
+                                .otpHash(hashedOtp)
+                                .expiresAt(Instant.now().plus(40, ChronoUnit.HOURS))
+                                .isUsed(false)
+                                .build();
+
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+                when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
+                                .thenReturn(List.of(session));
+
+                // 1. Verify OTP để lấy sessionToken
+                OtpVerificationResult verifyResult = enrollmentService.verifyOtp(
+                                "KIOSK-HN-01",
+                                new KioskVerifyOtpRequest(plainOtp));
+                String sessionToken = verifyResult.sessionToken();
+
+                // 2. Mock các phụ thuộc cho enrollFace
+                when(enrollmentSessionRepository.findById(20L)).thenReturn(Optional.of(session));
+
+                byte[] fakeCiphertext = new byte[2064];
+                byte[] fakeIv = new byte[12];
+                when(biometricCryptoService.encryptVector(any(float[].class)))
+                                .thenReturn(new BiometricCryptoService.EncryptedVector(fakeCiphertext, fakeIv));
+
+                when(biometricTemplateRepository.deactivateAllByUserId(1042L)).thenReturn(0);
+                when(biometricTemplateRepository.save(any(BiometricTemplate.class))).thenAnswer(inv -> {
+                        BiometricTemplate bt = inv.getArgument(0);
+                        bt.setId(500L);
+                        return bt;
+                });
+
+                List<Float> validVector = createValidVector512();
+                KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
+                                plainOtp,
+                                sessionToken,
+                                validVector);
+
+                // 3. Thực thi enrollFace
+                EnrollmentResult result = enrollmentService.enrollFace("KIOSK-HN-01", enrollRequest);
+
+                assertThat(result).isNotNull();
+                assertThat(result.employeeId()).isEqualTo(1042L);
+                assertThat(result.templateId()).isEqualTo(500L);
+                assertThat(result.status()).isEqualTo(EmployeeStatus.ACTIVE);
+
+                // 4. Xác nhận trạng thái cập nhật
+                assertThat(session.getIsUsed()).isTrue();
+                assertThat(sampleUser.getStatus()).isEqualTo(EmployeeStatus.ACTIVE);
+                verify(biometricTemplateRepository).deactivateAllByUserId(1042L);
+                verify(enrollmentSessionRepository).save(session);
+                verify(userRepository).save(sampleUser);
+
+                // 5. Xác nhận lưu BiometricTemplate
+                ArgumentCaptor<BiometricTemplate> templateCaptor = ArgumentCaptor.forClass(BiometricTemplate.class);
+                verify(biometricTemplateRepository).save(templateCaptor.capture());
+                BiometricTemplate savedTemplate = templateCaptor.getValue();
+                assertThat(savedTemplate.getEncryptedVector()).isEqualTo(fakeCiphertext);
+                assertThat(savedTemplate.getEncryptionIv()).isEqualTo(fakeIv);
+                assertThat(savedTemplate.getAlgorithm()).isEqualTo("ARCFACE_512D");
+                assertThat(savedTemplate.getPoseType()).isEqualTo(PoseType.FRONTAL);
+                assertThat(savedTemplate.getIsActive()).isTrue();
+
+                // 6. Xác nhận phát sóng STOMP nạp nóng
+                verify(stompEventBroadcaster).broadcastGalleryVectorAdded(
+                                eq(1042L),
+                                eq("NV-1042"),
+                                eq("Ngô Văn Dũng"),
+                                eq(validVector),
+                                any(),
+                                any(OffsetDateTime.class));
+        }
+
+        @Test
+        @DisplayName("Nạp vector khuôn mặt thất bại khi sessionToken không hợp lệ hoặc giả mạo")
+        void testEnrollFace_WhenSessionTokenInvalid_ThrowsOtpInvalid() {
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+
+                KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
+                                "123456",
+                                "non-existent-token",
+                                createValidVector512());
+
+                assertThatThrownBy(() -> enrollmentService.enrollFace("KIOSK-HN-01", request))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.OTP_INVALID);
+        }
+
+        @Test
+        @DisplayName("Nạp vector khuôn mặt thất bại khi vector không đúng 512 chiều")
+        void testEnrollFace_WhenVectorDimensionInvalid_ThrowsInvalidVectorDimension() {
+                String plainOtp = "777777";
+                EnrollmentSession session = EnrollmentSession.builder()
+                                .id(30L)
+                                .user(sampleUser)
+                                .otpHash(passwordEncoder.encode(plainOtp))
+                                .expiresAt(Instant.now().plus(40, ChronoUnit.HOURS))
+                                .isUsed(false)
+                                .build();
+
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+                when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
+                                .thenReturn(List.of(session));
+
+                OtpVerificationResult verifyResult = enrollmentService.verifyOtp(
+                                "KIOSK-HN-01",
+                                new KioskVerifyOtpRequest(plainOtp));
+
+                when(enrollmentSessionRepository.findById(30L)).thenReturn(Optional.of(session));
+
+                List<Float> invalidVector = List.of(0.1f, 0.2f, 0.3f);
+                KioskEnrollFaceRequest request = new KioskEnrollFaceRequest(
+                                plainOtp,
+                                verifyResult.sessionToken(),
+                                invalidVector);
+
+                assertThatThrownBy(() -> enrollmentService.enrollFace("KIOSK-HN-01", request))
+                                .isInstanceOf(ApiException.class)
+                                .hasFieldOrPropertyWithValue("errorCode", ApiErrorCode.INVALID_VECTOR_DIMENSION);
+        }
+
+        @Test
+        @DisplayName("Lấy danh mục gallery thành công cho các nhân viên ACTIVE")
+        void testGetGallery_ReturnsActiveDecryptedTemplates() {
+                User activeUser = User.builder()
+                                .id(1042L)
+                                .employeeCode("NV-1042")
+                                .fullName("Ngô Văn Dũng")
+                                .status(EmployeeStatus.ACTIVE)
+                                .department("Phòng Kỹ thuật")
+                                .build();
+
+                BiometricTemplate activeTemplate = BiometricTemplate.builder()
+                                .id(1L)
+                                .user(activeUser)
+                                .encryptedVector(new byte[] { 1, 2, 3 })
+                                .encryptionIv(new byte[] { 4, 5, 6 })
+                                .version(2)
+                                .isActive(true)
+                                .createdAt(Instant.now())
+                                .build();
+
+                User terminatedUser = User.builder()
+                                .id(2L)
+                                .employeeCode("NV-2000")
+                                .fullName("Trần Thị B")
+                                .status(EmployeeStatus.TERMINATED)
+                                .build();
+
+                BiometricTemplate terminatedTemplate = BiometricTemplate.builder()
+                                .id(2L)
+                                .user(terminatedUser)
+                                .encryptedVector(new byte[] { 7, 8 })
+                                .encryptionIv(new byte[] { 9, 10 })
+                                .version(1)
+                                .isActive(true)
+                                .build();
+
+                when(biometricTemplateRepository.findByIsActiveTrue())
+                                .thenReturn(List.of(activeTemplate, terminatedTemplate));
+
+                float[] decryptedVector = new float[512];
+                decryptedVector[0] = 0.5f;
+                when(biometricCryptoService.decryptVector(activeTemplate.getEncryptedVector(),
+                                activeTemplate.getEncryptionIv()))
+                                .thenReturn(decryptedVector);
+
+                GalleryResponse response = enrollmentService.getGallery();
+
+                assertThat(response).isNotNull();
+                assertThat(response.galleryVersion()).isEqualTo(2);
+                assertThat(response.totalCount()).isEqualTo(1);
+                assertThat(response.items()).hasSize(1);
+                assertThat(response.items().get(0).employeeCode()).isEqualTo(sampleUser.getEmployeeCode());
+                assertThat(response.items().get(0).poseType()).isEqualTo("FRONTAL");
+                assertThat(response.items().get(0).vector512()).hasSize(512);
+                assertThat(response.items().get(0).vector512().get(0)).isEqualTo(0.5f);
+        }
+
+        private record SessionAndToken(EnrollmentSession session, String sessionToken) {
+        }
+
+        private SessionAndToken setupSessionAndToken(String plainOtp) {
+                String hashedOtp = passwordEncoder.encode(plainOtp);
+                EnrollmentSession session = EnrollmentSession.builder()
+                                .id(20L)
+                                .user(sampleUser)
+                                .otpHash(hashedOtp)
+                                .expiresAt(Instant.now().plus(40, ChronoUnit.HOURS))
+                                .isUsed(false)
+                                .build();
+
+                when(kioskRepository.findById("KIOSK-HN-01")).thenReturn(Optional.of(activeKiosk));
+                when(enrollmentSessionRepository.findByIsUsedFalseAndExpiresAtAfter(any(Instant.class)))
+                                .thenReturn(List.of(session));
+
+                OtpVerificationResult verifyResult = enrollmentService.verifyOtp(
+                                "KIOSK-HN-01",
+                                new KioskVerifyOtpRequest(plainOtp));
+                when(enrollmentSessionRepository.findById(20L)).thenReturn(Optional.of(session));
+                return new SessionAndToken(session, verifyResult.sessionToken());
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Nạp 3 mẫu đa tư thế thành công và kích hoạt nhân sự")
+        void testEnrollFace_MultiTemplate_Success() {
+                String plainOtp = "839201";
+                SessionAndToken st = setupSessionAndToken(plainOtp);
+                EnrollmentSession session = st.session();
+                String sessionToken = st.sessionToken();
+
+                byte[] fakeCiphertext = new byte[2064];
+                byte[] fakeIv = new byte[12];
+                when(biometricCryptoService.encryptVector(any(float[].class)))
+                                .thenReturn(new BiometricCryptoService.EncryptedVector(fakeCiphertext, fakeIv));
+
+                when(biometricTemplateRepository.deactivateAllByUserId(1042L)).thenReturn(1);
+                when(biometricTemplateRepository.save(any(BiometricTemplate.class))).thenAnswer(inv -> {
+                        BiometricTemplate bt = inv.getArgument(0);
+                        bt.setId(500L);
+                        return bt;
+                });
+
+                List<Float> validVector = createValidVector512();
+                List<PoseTemplateDto> templates = List.of(
+                                new PoseTemplateDto("FRONTAL", validVector),
+                                new PoseTemplateDto("LEFT_TILT", validVector),
+                                new PoseTemplateDto("RIGHT_TILT", validVector));
+
+                KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
+                                plainOtp,
+                                sessionToken,
+                                templates,
+                                null);
+
+                EnrollmentResult result = enrollmentService.enrollFace("KIOSK-HN-01", enrollRequest);
+
+                assertThat(result).isNotNull();
+                assertThat(result.employeeId()).isEqualTo(1042L);
+                assertThat(result.templateCount()).isEqualTo(3);
+                assertThat(result.poses()).containsExactlyInAnyOrder("FRONTAL", "LEFT_TILT", "RIGHT_TILT");
+                assertThat(result.status()).isEqualTo(EmployeeStatus.ACTIVE);
+
+                verify(biometricTemplateRepository).deactivateAllByUserId(1042L);
+                verify(biometricCryptoService, org.mockito.Mockito.times(3)).encryptVector(any(float[].class));
+                verify(biometricTemplateRepository, org.mockito.Mockito.times(3)).save(any(BiometricTemplate.class));
+                verify(stompEventBroadcaster).broadcastGalleryVectorAdded(
+                                eq(1042L),
+                                eq("NV-1042"),
+                                eq("Ngô Văn Dũng"),
+                                eq(validVector),
+                                any(),
+                                any(OffsetDateTime.class));
+                verify(stompEventBroadcaster).broadcastEnrollmentSuccess(
+                                eq(plainOtp),
+                                eq(1042L),
+                                eq("NV-1042"),
+                                eq("Ngô Văn Dũng"),
+                                eq(3),
+                                any(),
+                                any(),
+                                any(OffsetDateTime.class));
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Bộ mẫu thiếu tư thế -> ném INVALID_TEMPLATE_SET")
+        void testEnrollFace_MultiTemplate_MissingPose_ThrowsInvalidTemplateSet() {
+                String plainOtp = "839201";
+                SessionAndToken st = setupSessionAndToken(plainOtp);
+
+                List<Float> validVector = createValidVector512();
+                List<PoseTemplateDto> templates = List.of(
+                                new PoseTemplateDto("FRONTAL", validVector),
+                                new PoseTemplateDto("LEFT_TILT", validVector));
+
+                KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
+                                plainOtp,
+                                st.sessionToken(),
+                                templates,
+                                null);
+
+                ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                                ApiException.class,
+                                () -> enrollmentService.enrollFace("KIOSK-HN-01", enrollRequest));
+                assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.INVALID_TEMPLATE_SET);
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Bộ mẫu có tư thế trùng lặp -> ném INVALID_TEMPLATE_SET")
+        void testEnrollFace_MultiTemplate_DuplicatePose_ThrowsInvalidTemplateSet() {
+                String plainOtp = "839201";
+                SessionAndToken st = setupSessionAndToken(plainOtp);
+
+                List<Float> validVector = createValidVector512();
+                List<PoseTemplateDto> templates = List.of(
+                                new PoseTemplateDto("FRONTAL", validVector),
+                                new PoseTemplateDto("FRONTAL", validVector),
+                                new PoseTemplateDto("RIGHT_TILT", validVector));
+
+                KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
+                                plainOtp,
+                                st.sessionToken(),
+                                templates,
+                                null);
+
+                ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                                ApiException.class,
+                                () -> enrollmentService.enrollFace("KIOSK-HN-01", enrollRequest));
+                assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.INVALID_TEMPLATE_SET);
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Vector trong mẫu không đúng 512 chiều -> ném INVALID_VECTOR_DIMENSION")
+        void testEnrollFace_MultiTemplate_InvalidVectorDimension_ThrowsInvalidVectorDimension() {
+                String plainOtp = "839201";
+                SessionAndToken st = setupSessionAndToken(plainOtp);
+
+                List<Float> validVector = createValidVector512();
+                List<Float> shortVector = List.of(0.1f, 0.2f);
+                List<PoseTemplateDto> templates = List.of(
+                                new PoseTemplateDto("FRONTAL", validVector),
+                                new PoseTemplateDto("LEFT_TILT", shortVector),
+                                new PoseTemplateDto("RIGHT_TILT", validVector));
+
+                KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
+                                plainOtp,
+                                st.sessionToken(),
+                                templates,
+                                null);
+
+                ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                                ApiException.class,
+                                () -> enrollmentService.enrollFace("KIOSK-HN-01", enrollRequest));
+                assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.INVALID_VECTOR_DIMENSION);
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Không truyền cả templates lẫn vector512 -> ném VALIDATION_FAILED")
+        void testEnrollFace_WhenNeitherTemplatesNorVector_ThrowsValidationFailed() {
+                String plainOtp = "839201";
+                SessionAndToken st = setupSessionAndToken(plainOtp);
+
+                KioskEnrollFaceRequest enrollRequest = new KioskEnrollFaceRequest(
+                                plainOtp,
+                                st.sessionToken(),
+                                null,
+                                null);
+
+                ApiException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                                ApiException.class,
+                                () -> enrollmentService.enrollFace("KIOSK-HN-01", enrollRequest));
+                assertThat(ex.getErrorCode()).isEqualTo(ApiErrorCode.VALIDATION_FAILED);
+        }
+
+        @Test
+        @DisplayName("FEAT-ENROLL-001: Lấy gallery đa mẫu trả về đủ 3 tư thế")
+        void testGetGallery_MultiTemplate_ReturnsAllPoses() {
+                User activeUser = User.builder()
+                                .id(1042L)
+                                .employeeCode("NV-1042")
+                                .fullName("Ngô Văn Dũng")
+                                .status(EmployeeStatus.ACTIVE)
+                                .department("Phòng Kỹ thuật")
+                                .build();
+
+                BiometricTemplate t1 = BiometricTemplate.builder()
+                                .id(1L)
+                                .user(activeUser)
+                                .poseType(PoseType.FRONTAL)
+                                .encryptedVector(new byte[] { 1 })
+                                .encryptionIv(new byte[] { 2 })
+                                .version(1)
+                                .isActive(true)
+                                .createdAt(Instant.now())
+                                .build();
+
+                BiometricTemplate t2 = BiometricTemplate.builder()
+                                .id(2L)
+                                .user(activeUser)
+                                .poseType(PoseType.LEFT_TILT)
+                                .encryptedVector(new byte[] { 3 })
+                                .encryptionIv(new byte[] { 4 })
+                                .version(1)
+                                .isActive(true)
+                                .createdAt(Instant.now())
+                                .build();
+
+                BiometricTemplate t3 = BiometricTemplate.builder()
+                                .id(3L)
+                                .user(activeUser)
+                                .poseType(PoseType.RIGHT_TILT)
+                                .encryptedVector(new byte[] { 5 })
+                                .encryptionIv(new byte[] { 6 })
+                                .version(1)
+                                .isActive(true)
+                                .createdAt(Instant.now())
+                                .build();
+
+                when(biometricTemplateRepository.findByIsActiveTrue()).thenReturn(List.of(t1, t2, t3));
+
+                float[] decrypted = new float[512];
+                decrypted[0] = 1.0f;
+                when(biometricCryptoService.decryptVector(any(byte[].class), any(byte[].class)))
+                                .thenReturn(decrypted);
+
+                GalleryResponse response = enrollmentService.getGallery();
+
+                assertThat(response).isNotNull();
+                assertThat(response.totalCount()).isEqualTo(3);
+                assertThat(response.items()).hasSize(3);
+
+                List<String> returnedPoses = response.items().stream()
+                                .map(GalleryItem::poseType)
+                                .toList();
+                assertThat(returnedPoses).containsExactlyInAnyOrder("FRONTAL", "LEFT_TILT", "RIGHT_TILT");
+        }
+
+        private List<Float> createValidVector512() {
+                List<Float> list = new ArrayList<>(512);
+                list.add(1.0f);
+                for (int i = 1; i < 512; i++) {
+                        list.add(0.0f);
+                }
+                return list;
+        }}
+
+        
+                        
+                        
+
+        

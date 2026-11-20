@@ -129,15 +129,6 @@ public class NotificationService {
         if (!userRepository.existsById(userId)) {
             throw new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy nhân viên ID=" + userId);
         }
-        Page<Notification> unreadPage = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, Pageable.unpaged());
-        Instant now = clock.instant();
-        List<Notification> unreadList = unreadPage.getContent().stream()
-                .filter(n -> n.getReadAt() == null)
-                .peek(n -> n.setReadAt(now))
-                .toList();
-
-        if (!unreadList.isEmpty()) {
-            notificationRepository.saveAll(unreadList);
-        }
+        notificationRepository.markAllAsReadByUserId(userId, clock.instant());
     }
 }

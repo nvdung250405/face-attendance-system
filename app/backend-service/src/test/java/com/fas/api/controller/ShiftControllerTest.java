@@ -96,6 +96,37 @@ class ShiftControllerTest {
         }
 
         @Test
+        @DisplayName("Khởi tạo ca không truyền shiftCode thành công -> tự động sinh shiftCode")
+        void createShift_WithoutShiftCode_Success_Returns201() throws Exception {
+            CreateShiftRequest request = new CreateShiftRequest(
+                    null,
+                    "Ca sáng tiêu chuẩn",
+                    LocalTime.of(8, 0),
+                    LocalTime.of(12, 0),
+                    15
+            );
+
+            ShiftResponse response = new ShiftResponse(
+                    1L,
+                    "SHF-ABC123",
+                    "Ca sáng tiêu chuẩn",
+                    LocalTime.of(8, 0),
+                    LocalTime.of(12, 0),
+                    15,
+                    true
+            );
+
+            when(shiftManagementService.createShift(any(CreateShiftRequest.class))).thenReturn(response);
+
+            mockMvc.perform(post("/api/v1/admin/shifts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.shiftCode").value("SHF-ABC123"));
+        }
+
+        @Test
         @DisplayName("Validation thất bại khi thiếu shiftCode hoặc startTime -> trả về 400 Bad Request")
         void createShift_ValidationFailed_Returns400() throws Exception {
             // Thiếu shiftCode và startTime

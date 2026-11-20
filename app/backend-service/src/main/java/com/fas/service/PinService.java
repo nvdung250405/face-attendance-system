@@ -26,15 +26,21 @@ import java.util.regex.Pattern;
  * Dịch vụ Quản lý Mã PIN & Thẩm định PIN cho Trạm Kiosk
  * (SOL-BE-016, FR-BE-012, DATA-BE-012, BLD-BE-020, TASK-BE-025).
  *
- * <p>Quy tắc cốt lõi:
+ * <p>
+ * Quy tắc cốt lõi:
  * <ul>
- *   <li>Mã PIN gồm đúng 6 chữ số, lưu trữ dưới dạng băm một chiều (BCrypt) tại {@code users.pin_hash}.</li>
- *   <li>Thiết lập lần đầu kiểm tra xác nhận trùng khớp; đổi PIN yêu cầu mã PIN hiện tại; đặt lại PIN yêu cầu mật khẩu tài khoản.</li>
- *   <li>Thẩm định mã PIN tại trạm Kiosk: PIN đúng trả về thông tin nhân viên; PIN sai ném 401 {@code PIN_INVALID}.</li>
- *   <li>Sai 5 lần liên tiếp đặt {@code pin_locked_until = NOW() + 15m} và ném 423 {@code PIN_LOCKED}.</li>
- *   <li>Bộ đếm lần sai được lưu bền vững tại cột {@code users.pin_failed_attempts} (không phụ thuộc RAM/JVM,
- *       không bị reset khi restart hay khi chạy nhiều instance).</li>
- *   <li>Không tạo bất kỳ bản ghi điểm danh nào khi thẩm định thất bại.</li>
+ * <li>Mã PIN gồm đúng 6 chữ số, lưu trữ dưới dạng băm một chiều (BCrypt) tại
+ * {@code users.pin_hash}.</li>
+ * <li>Thiết lập lần đầu kiểm tra xác nhận trùng khớp; đổi PIN yêu cầu mã PIN
+ * hiện tại; đặt lại PIN yêu cầu mật khẩu tài khoản.</li>
+ * <li>Thẩm định mã PIN tại trạm Kiosk: PIN đúng trả về thông tin nhân viên; PIN
+ * sai ném 401 {@code PIN_INVALID}.</li>
+ * <li>Sai 5 lần liên tiếp đặt {@code pin_locked_until = NOW() + 15m} và ném 423
+ * {@code PIN_LOCKED}.</li>
+ * <li>Bộ đếm lần sai được lưu bền vững tại cột
+ * {@code users.pin_failed_attempts} (không phụ thuộc RAM/JVM,
+ * không bị reset khi restart hay khi chạy nhiều instance).</li>
+ * <li>Không tạo bất kỳ bản ghi điểm danh nào khi thẩm định thất bại.</li>
  * </ul>
  */
 @Service
@@ -155,12 +161,12 @@ public class PinService {
      * Đặt lại mã PIN dự phòng bằng mật khẩu tài khoản khi nhân viên quên PIN.
      *
      * @param userId  định danh nhân viên
-     * @param request dữ liệu gồm mật khẩu hiện tại, PIN mới và xác nhận PIN mới
+     * @param request dữ liệu gồm mật khẩu hiện tại và PIN mới
      * @return kết quả thao tác chứa cờ hasPin = true
      */
     @Transactional
     public PinOperationResult resetPinWithPassword(Long userId, PinResetRequest request) {
-        return resetPinWithPassword(userId, request.currentPassword(), request.newPin(), request.confirmPin());
+        return resetPinWithPassword(userId, request.currentPassword(), request.newPin());
     }
 
     /**
@@ -169,11 +175,10 @@ public class PinService {
      * @param userId          định danh nhân viên
      * @param currentPassword mật khẩu đăng nhập hiện tại
      * @param newPin          mã PIN mới gồm 6 chữ số
-     * @param confirmPin      mã PIN mới xác nhận lại
      * @return kết quả thao tác chứa cờ hasPin = true
      */
     @Transactional
-    public PinOperationResult resetPinWithPassword(Long userId, String currentPassword, String newPin, String confirmPin) {
+    public PinOperationResult resetPinWithPassword(Long userId, String currentPassword, String newPin) {
         User user = findUserById(userId);
 
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
@@ -181,9 +186,6 @@ public class PinService {
         }
 
         validatePinFormat(newPin);
-        if (!newPin.equals(confirmPin)) {
-            throw new ApiException(ApiErrorCode.VALIDATION_FAILED, "Mã PIN xác nhận không khớp.");
-        }
 
         user.setPinHash(passwordEncoder.encode(newPin));
         user.setPinLockedUntil(null);
@@ -195,7 +197,8 @@ public class PinService {
     }
 
     /**
-     * Thẩm định mã PIN dự phòng gửi từ trạm Kiosk ({@code POST /api/v1/kiosk/verify-pin}).
+     * Thẩm định mã PIN dự phòng gửi từ trạm Kiosk
+     * ({@code POST /api/v1/kiosk/verify-pin}).
      *
      * @param request dữ liệu yêu cầu từ trạm Kiosk gồm mã nhân viên và mã PIN
      * @return kết quả thẩm định chứa định danh nhân viên
@@ -279,7 +282,8 @@ public class PinService {
         }
 
         // 3. Xác thực thành công: xóa bộ đếm sai và xóa mốc khóa nếu có
-        if (user.getPinLockedUntil() != null || (user.getPinFailedAttempts() != null && user.getPinFailedAttempts() != 0)) {
+        if (user.getPinLockedUntil() != null
+                || (user.getPinFailedAttempts() != null && user.getPinFailedAttempts() != 0)) {
             user.setPinLockedUntil(null);
             user.setPinFailedAttempts(0);
             userRepository.save(user);
@@ -290,8 +294,7 @@ public class PinService {
                 user.getId(),
                 user.getEmployeeCode(),
                 user.getFullName(),
-                user.getDepartment()
-        );
+                user.getDepartment());
     }
 
     /**

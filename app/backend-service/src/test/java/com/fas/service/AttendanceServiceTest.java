@@ -49,551 +49,640 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Kiểm thử đơn vị cho {@link AttendanceService} (TASK-BE-013, BLD-BE-011, TST-BE-010).
+ * Kiểm thử đơn vị cho {@link AttendanceService} (TASK-BE-013, BLD-BE-011,
+ * TST-BE-010).
  */
 @ExtendWith(MockitoExtension.class)
 class AttendanceServiceTest {
 
-    @Mock
-    private AttendanceLogRepository attendanceLogRepository;
+        @Mock
+        private AttendanceLogRepository attendanceLogRepository;
 
-    @Mock
-    private UserRepository userRepository;
+        @Mock
+        private UserRepository userRepository;
 
-    @Mock
-    private KioskRepository kioskRepository;
+        @Mock
+        private KioskRepository kioskRepository;
 
-    @Mock
-    private ShiftManagementService shiftManagementService;
+        @Mock
+        private ShiftManagementService shiftManagementService;
 
-    @Mock
-    private CooldownManager cooldownManager;
+        @Mock
+        private CooldownManager cooldownManager;
 
-    @Mock
-    private StompEventBroadcaster stompEventBroadcaster;
+        @Mock
+        private StompEventBroadcaster stompEventBroadcaster;
 
-    @InjectMocks
-    private AttendanceService attendanceService;
+        @InjectMocks
+        private AttendanceService attendanceService;
 
-    private User sampleEmployee;
-    private Kiosk sampleKiosk;
-    private Shift standardShift;
+        private User sampleEmployee;
+        private Kiosk sampleKiosk;
+        private Shift standardShift;
 
-    private final OffsetDateTime sampleTime = OffsetDateTime.of(2026, 10, 8, 8, 5, 0, 0, ZoneOffset.ofHours(7));
+        private final OffsetDateTime sampleTime = OffsetDateTime.of(2026, 10, 8, 8, 5, 0, 0, ZoneOffset.ofHours(7));
 
-    @BeforeEach
-    void setUp() {
-        sampleEmployee = User.builder()
-                .id(1042L)
-                .employeeCode("NV-1042")
-                .fullName("Ngô Văn Dũng")
-                .department("Phòng Kỹ thuật")
-                .email("dung@company.com")
-                .status(EmployeeStatus.ACTIVE)
-                .role(Role.EMPLOYEE)
-                .build();
+        @BeforeEach
+        void setUp() {
+                sampleEmployee = User.builder()
+                                .id(1042L)
+                                .employeeCode("NV-1042")
+                                .fullName("Ngô Văn Dũng")
+                                .department("Phòng Kỹ thuật")
+                                .email("dung@company.com")
+                                .status(EmployeeStatus.ACTIVE)
+                                .role(Role.EMPLOYEE)
+                                .build();
 
-        sampleKiosk = Kiosk.builder()
-                .id("KIOSK-HN-01")
-                .locationName("Sảnh Tầng 1 - Cửa Chính")
-                .secretTokenHash("hashed-token-123")
-                .isActive(true)
-                .build();
+                sampleKiosk = Kiosk.builder()
+                                .id("KIOSK-HN-01")
+                                .locationName("Sảnh Tầng 1 - Cửa Chính")
+                                .secretTokenHash("hashed-token-123")
+                                .isActive(true)
+                                .build();
 
-        standardShift = Shift.builder()
-                .id(1L)
-                .shiftCode("CA-HANH-CHINH")
-                .shiftName("Ca Hành Chính Chuẩn")
-                .startTime(LocalTime.of(8, 0))
-                .endTime(LocalTime.of(17, 0))
-                .gracePeriodMinutes(15)
-                .isActive(true)
-                .build();
-    }
-
-    private KioskPunchRequest createRequest(OffsetDateTime time, String method) {
-        return new KioskPunchRequest(
-                sampleEmployee.getId(),
-                time,
-                method,
-                BigDecimal.valueOf(0.9234),
-                sampleKiosk.getId()
-        );
-    }
-
-    @Nested
-    @DisplayName("1. Ghi nhận CHECK_IN (Lượt đầu tiên trong ngày)")
-    class CheckInTests {
-
-        @Test
-        @DisplayName("CHECK_IN đúng giờ -> Trạng thái ON_TIME, lateMinutes = 0, phát sóng STOMP")
-        void recordPunch_CheckIn_OnTime() {
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
-
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class), any(PunchType.class), eq(sampleKiosk.getId())))
-                    .thenReturn(true);
-
-            // Chưa có log nào trong ngày -> CHECK_IN
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(eq(sampleEmployee.getId()), any(), any()))
-                    .thenReturn(Optional.empty());
-
-            // Ca kíp đánh giá: đúng giờ
-            when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
-                    .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH", LocalTime.of(8, 0), 15));
-
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1001L);
-                return log;
-            });
-
-            PunchResult result = attendanceService.recordPunch(req);
-
-            assertThat(result).isNotNull();
-            assertThat(result.recordId()).isEqualTo(1001L);
-            assertThat(result.employeeId()).isEqualTo(sampleEmployee.getId());
-            assertThat(result.employeeCode()).isEqualTo("NV-1042");
-            assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
-            assertThat(result.status()).isEqualTo(AttendanceStatus.ON_TIME);
-            assertThat(result.lateMinutes()).isEqualTo(0);
-
-            // Xác nhận lưu CSDL
-            ArgumentCaptor<AttendanceLog> logCaptor = ArgumentCaptor.forClass(AttendanceLog.class);
-            verify(attendanceLogRepository).save(logCaptor.capture());
-            AttendanceLog saved = logCaptor.getValue();
-            assertThat(saved.getPunchType()).isEqualTo(PunchType.CHECK_IN);
-            assertThat(saved.getStatus()).isEqualTo(AttendanceStatus.ON_TIME);
-            assertThat(saved.getLateMinutes()).isEqualTo(0);
-            assertThat(saved.getVerificationMethod()).isEqualTo(VerificationMethod.VERIFICATION_FACE);
-
-            // Xác nhận cập nhật Cooldown
-            verify(cooldownManager).tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class), eq(PunchType.CHECK_IN), eq(sampleKiosk.getId()));
-
-            // Xác nhận phát sóng STOMP
-            verify(stompEventBroadcaster).broadcastAttendancePunch(any(AttendanceLogItem.class));
+                standardShift = Shift.builder()
+                                .id(1L)
+                                .shiftCode("CA-HANH-CHINH")
+                                .shiftName("Ca Hành Chính Chuẩn")
+                                .startTime(LocalTime.of(8, 0))
+                                .endTime(LocalTime.of(17, 0))
+                                .gracePeriodMinutes(15)
+                                .isActive(true)
+                                .build();
         }
 
-        @Test
-        @DisplayName("CHECK_IN đi muộn -> Trạng thái LATE, tính đúng lateMinutes")
-        void recordPunch_CheckIn_Late() {
-            OffsetDateTime lateTime = OffsetDateTime.of(2026, 10, 8, 8, 45, 0, 0, ZoneOffset.ofHours(7));
-            KioskPunchRequest req = createRequest(lateTime, "VERIFICATION_FACE");
-
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.empty());
-
-            // Ca kíp đánh giá: muộn 45 phút
-            when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
-                    .thenReturn(ShiftEvaluationResult.late(1L, "CA-HANH-CHINH", 45L, LocalTime.of(8, 0), 15));
-
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1002L);
-                return log;
-            });
-
-            PunchResult result = attendanceService.recordPunch(req);
-
-            assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
-            assertThat(result.status()).isEqualTo(AttendanceStatus.LATE);
-            assertThat(result.lateMinutes()).isEqualTo(45);
+        private KioskPunchRequest createRequest(OffsetDateTime time, String method) {
+                return new KioskPunchRequest(
+                                sampleEmployee.getId(),
+                                time,
+                                method,
+                                BigDecimal.valueOf(0.9234));
         }
 
-        @Test
-        @DisplayName("CHECK_IN nhân viên chưa được phân ca -> Trạng thái ANOMALOUS, lateMinutes = 0")
-        void recordPunch_CheckIn_Anomalous() {
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_PIN");
+        @Nested
+        @DisplayName("1. Ghi nhận CHECK_IN (Lượt đầu tiên trong ngày)")
+        class CheckInTests {
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.empty());
+                @Test
+                @DisplayName("CHECK_IN đúng giờ -> Trạng thái ON_TIME, lateMinutes = 0, phát sóng STOMP")
+                void recordPunch_CheckIn_OnTime() {
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
 
-            when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
-                    .thenReturn(ShiftEvaluationResult.anomalous());
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(Instant.class), any(PunchType.class), eq(sampleKiosk.getId())))
+                                        .thenReturn(true);
 
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1003L);
-                return log;
-            });
+                        // Chưa có log nào trong ngày -> CHECK_IN
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        eq(sampleEmployee.getId()), any(), any()))
+                                        .thenReturn(Optional.empty());
 
-            PunchResult result = attendanceService.recordPunch(req);
+                        // Ca kíp đánh giá: đúng giờ
+                        when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(LocalTime.class)))
+                                        .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH",
+                                                        LocalTime.of(8, 0), 15));
 
-            assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
-            assertThat(result.status()).isEqualTo(AttendanceStatus.ANOMALOUS);
-            assertThat(result.lateMinutes()).isEqualTo(0);
-        }
-    }
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1001L);
+                                return log;
+                        });
 
-    @Nested
-    @DisplayName("2. Ghi nhận CHECK_OUT (Lượt tiếp theo trong ngày)")
-    class CheckOutTests {
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
 
-        @Test
-        @DisplayName("CHECK_OUT sau giờ tan ca -> Trạng thái ON_TIME")
-        void recordPunch_CheckOut_OnTime() {
-            OffsetDateTime checkOutTime = OffsetDateTime.of(2026, 10, 8, 17, 10, 0, 0, ZoneOffset.ofHours(7));
-            KioskPunchRequest req = createRequest(checkOutTime, "VERIFICATION_FACE");
+                        assertThat(result).isNotNull();
+                        assertThat(result.recordId()).isEqualTo(1001L);
+                        assertThat(result.employeeId()).isEqualTo(sampleEmployee.getId());
+                        assertThat(result.employeeCode()).isEqualTo("NV-1042");
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.ON_TIME);
+                        assertThat(result.lateMinutes()).isEqualTo(0);
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        // Xác nhận lưu CSDL
+                        ArgumentCaptor<AttendanceLog> logCaptor = ArgumentCaptor.forClass(AttendanceLog.class);
+                        verify(attendanceLogRepository).save(logCaptor.capture());
+                        AttendanceLog saved = logCaptor.getValue();
+                        assertThat(saved.getPunchType()).isEqualTo(PunchType.CHECK_IN);
+                        assertThat(saved.getStatus()).isEqualTo(AttendanceStatus.ON_TIME);
+                        assertThat(saved.getLateMinutes()).isEqualTo(0);
+                        assertThat(saved.getVerificationMethod()).isEqualTo(VerificationMethod.VERIFICATION_FACE);
 
-            // Đã có 1 log CHECK_IN trước đó
-            AttendanceLog previousIn = AttendanceLog.builder()
-                    .id(1001L)
-                    .punchType(PunchType.CHECK_IN)
-                    .punchTimestamp(sampleTime.toInstant())
-                    .build();
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.of(previousIn));
+                        // Xác nhận cập nhật Cooldown
+                        verify(cooldownManager).tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(Instant.class), eq(PunchType.CHECK_IN), eq(sampleKiosk.getId()));
 
-            // Ca kết thúc lúc 17:00
-            when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
-                    .thenReturn(Optional.of(standardShift));
+                        // Xác nhận phát sóng STOMP
+                        verify(stompEventBroadcaster).broadcastAttendancePunch(any(AttendanceLogItem.class));
+                }
 
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1004L);
-                return log;
-            });
+                @Test
+                @DisplayName("CHECK_IN đi muộn -> Trạng thái LATE, tính đúng lateMinutes")
+                void recordPunch_CheckIn_Late() {
+                        OffsetDateTime lateTime = OffsetDateTime.of(2026, 10, 8, 8, 45, 0, 0, ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = createRequest(lateTime, "VERIFICATION_FACE");
 
-            PunchResult result = attendanceService.recordPunch(req);
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.empty());
 
-            assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
-            assertThat(result.status()).isEqualTo(AttendanceStatus.ON_TIME);
-            assertThat(result.lateMinutes()).isEqualTo(0);
-        }
+                        // Ca kíp đánh giá: muộn 45 phút
+                        when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(LocalTime.class)))
+                                        .thenReturn(ShiftEvaluationResult.late(1L, "CA-HANH-CHINH", 45L,
+                                                        LocalTime.of(8, 0), 15));
 
-        @Test
-        @DisplayName("CHECK_OUT trước giờ tan ca -> Trạng thái EARLY_LEAVE")
-        void recordPunch_CheckOut_EarlyLeave() {
-            OffsetDateTime earlyOutTime = OffsetDateTime.of(2026, 10, 8, 16, 30, 0, 0, ZoneOffset.ofHours(7));
-            KioskPunchRequest req = createRequest(earlyOutTime, "VERIFICATION_FACE");
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1002L);
+                                return log;
+                        });
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
 
-            AttendanceLog previousIn = AttendanceLog.builder()
-                    .id(1001L)
-                    .punchType(PunchType.CHECK_IN)
-                    .punchTimestamp(sampleTime.toInstant())
-                    .build();
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.of(previousIn));
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.LATE);
+                        assertThat(result.lateMinutes()).isEqualTo(45);
+                }
 
-            when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
-                    .thenReturn(Optional.of(standardShift));
+                @Test
+                @DisplayName("CHECK_IN nhân viên chưa được phân ca -> Trạng thái ANOMALOUS, lateMinutes = 0")
+                void recordPunch_CheckIn_Anomalous() {
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_PIN");
 
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1005L);
-                return log;
-            });
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.empty());
 
-            PunchResult result = attendanceService.recordPunch(req);
+                        when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(LocalTime.class)))
+                                        .thenReturn(ShiftEvaluationResult.anomalous());
 
-            assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
-            assertThat(result.status()).isEqualTo(AttendanceStatus.EARLY_LEAVE);
-            assertThat(result.lateMinutes()).isEqualTo(0);
-        }
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1003L);
+                                return log;
+                        });
 
-        @Test
-        @DisplayName("CHECK_OUT khi chưa được phân ca -> Trạng thái ANOMALOUS")
-        void recordPunch_CheckOut_Anomalous() {
-            OffsetDateTime outTime = OffsetDateTime.of(2026, 10, 8, 17, 30, 0, 0, ZoneOffset.ofHours(7));
-            KioskPunchRequest req = createRequest(outTime, "VERIFICATION_FACE");
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
-
-            AttendanceLog previousIn = AttendanceLog.builder()
-                    .id(1001L)
-                    .punchType(PunchType.CHECK_IN)
-                    .punchTimestamp(sampleTime.toInstant())
-                    .build();
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.of(previousIn));
-
-            when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
-                    .thenReturn(Optional.empty());
-
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1006L);
-                return log;
-            });
-
-            PunchResult result = attendanceService.recordPunch(req);
-
-            assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
-            assertThat(result.status()).isEqualTo(AttendanceStatus.ANOMALOUS);
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.ANOMALOUS);
+                        assertThat(result.lateMinutes()).isEqualTo(0);
+                }
         }
 
-        @Test
-        @DisplayName("Sau CHECK_OUT, lượt quẹt tiếp theo chuyển lại thành CHECK_IN")
-        void recordPunch_SubsequentPunch_TogglesTo_CheckIn() {
-            OffsetDateTime eveningInTime = OffsetDateTime.of(2026, 10, 8, 18, 0, 0, 0, ZoneOffset.ofHours(7));
-            KioskPunchRequest req = createRequest(eveningInTime, "VERIFICATION_FACE");
+        @Nested
+        @DisplayName("2. Ghi nhận CHECK_OUT (Lượt tiếp theo trong ngày)")
+        class CheckOutTests {
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                @Test
+                @DisplayName("CHECK_OUT sau giờ tan ca -> Trạng thái ON_TIME")
+                void recordPunch_CheckOut_OnTime() {
+                        OffsetDateTime checkOutTime = OffsetDateTime.of(2026, 10, 8, 17, 10, 0, 0,
+                                        ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = createRequest(checkOutTime, "VERIFICATION_FACE");
 
-            // Đã có 1 log CHECK_IN và 1 log CHECK_OUT
-            AttendanceLog log1 = AttendanceLog.builder().punchType(PunchType.CHECK_IN).punchTimestamp(sampleTime.toInstant()).build();
-            AttendanceLog log2 = AttendanceLog.builder().punchType(PunchType.CHECK_OUT).punchTimestamp(eveningInTime.minusMinutes(30).toInstant()).build();
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.of(log2));
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
-            when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class), any(LocalTime.class)))
-                    .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH", LocalTime.of(8, 0), 15));
+                        // Đã có 1 log CHECK_IN trước đó
+                        AttendanceLog previousIn = AttendanceLog.builder()
+                                        .id(1001L)
+                                        .punchType(PunchType.CHECK_IN)
+                                        .punchTimestamp(sampleTime.toInstant())
+                                        .build();
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(previousIn));
 
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1007L);
-                return log;
-            });
+                        // Ca kết thúc lúc 17:00
+                        when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()),
+                                        any(LocalDate.class)))
+                                        .thenReturn(Optional.of(standardShift));
 
-            PunchResult result = attendanceService.recordPunch(req);
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1004L);
+                                return log;
+                        });
 
-            assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
-        }
-    }
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
 
-    @Nested
-    @DisplayName("3. Kiểm tra các ngoại lệ & Chặn vi phạm")
-    class ValidationAndExceptionTests {
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.ON_TIME);
+                        assertThat(result.lateMinutes()).isEqualTo(0);
+                }
 
-        @Test
-        @DisplayName("Trạm Kiosk không tồn tại hoặc inactive -> 401 KIOSK_UNAUTHORIZED")
-        void recordPunch_KioskNotFound_Throws401() {
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.empty());
+                @Test
+                @DisplayName("CHECK_OUT trước giờ tan ca -> Trạng thái EARLY_LEAVE")
+                void recordPunch_CheckOut_EarlyLeave() {
+                        OffsetDateTime earlyOutTime = OffsetDateTime.of(2026, 10, 8, 16, 30, 0, 0,
+                                        ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = createRequest(earlyOutTime, "VERIFICATION_FACE");
 
-            assertThatThrownBy(() -> attendanceService.recordPunch(req))
-                    .isInstanceOf(ApiException.class)
-                    .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.KIOSK_UNAUTHORIZED));
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
-            verify(attendanceLogRepository, never()).save(any());
-        }
+                        AttendanceLog previousIn = AttendanceLog.builder()
+                                        .id(1001L)
+                                        .punchType(PunchType.CHECK_IN)
+                                        .punchTimestamp(sampleTime.toInstant())
+                                        .build();
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(previousIn));
 
-        @Test
-        @DisplayName("Nhân viên không tồn tại -> 404 EMPLOYEE_NOT_FOUND")
-        void recordPunch_EmployeeNotFound_Throws404() {
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.empty());
+                        when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()),
+                                        any(LocalDate.class)))
+                                        .thenReturn(Optional.of(standardShift));
 
-            assertThatThrownBy(() -> attendanceService.recordPunch(req))
-                    .isInstanceOf(ApiException.class)
-                    .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.EMPLOYEE_NOT_FOUND));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1005L);
+                                return log;
+                        });
 
-            verify(attendanceLogRepository, never()).save(any());
-        }
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
 
-        @Test
-        @DisplayName("Nhân viên đã nghỉ việc (TERMINATED) -> 403 ACCESS_DENIED")
-        void recordPunch_EmployeeTerminated_Throws403() {
-            sampleEmployee.setStatus(EmployeeStatus.TERMINATED);
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.EARLY_LEAVE);
+                        assertThat(result.lateMinutes()).isEqualTo(0);
+                }
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                @Test
+                @DisplayName("CHECK_OUT khi chưa được phân ca -> Trạng thái ANOMALOUS")
+                void recordPunch_CheckOut_Anomalous() {
+                        OffsetDateTime outTime = OffsetDateTime.of(2026, 10, 8, 17, 30, 0, 0, ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = createRequest(outTime, "VERIFICATION_FACE");
 
-            assertThatThrownBy(() -> attendanceService.recordPunch(req))
-                    .isInstanceOf(ApiException.class)
-                    .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.ACCESS_DENIED));
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
-            verify(attendanceLogRepository, never()).save(any());
-        }
+                        AttendanceLog previousIn = AttendanceLog.builder()
+                                        .id(1001L)
+                                        .punchType(PunchType.CHECK_IN)
+                                        .punchTimestamp(sampleTime.toInstant())
+                                        .build();
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(previousIn));
 
-        @Test
-        @DisplayName("Kích hoạt Cooldown 120s -> 409 COOLDOWN_ACTIVE, không chạm CSDL điểm danh")
-        void recordPunch_CooldownActive_Throws409() {
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+                        when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()),
+                                        any(LocalDate.class)))
+                                        .thenReturn(Optional.empty());
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class), any(Instant.class), any(PunchType.class), eq(sampleKiosk.getId())))
-                    .thenReturn(false);
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1006L);
+                                return log;
+                        });
 
-            assertThatThrownBy(() -> attendanceService.recordPunch(req))
-                    .isInstanceOf(ApiException.class)
-                    .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.COOLDOWN_ACTIVE));
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
 
-            verify(attendanceLogRepository, never()).save(any());
-            verify(stompEventBroadcaster, never()).broadcastAttendancePunch(any());
-        }
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.ANOMALOUS);
+                }
 
-        @Test
-        @DisplayName("Phương thức xác thực không hợp lệ -> 400 VALIDATION_FAILED")
-        void recordPunch_InvalidMethod_Throws400() {
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FINGERPRINT"); // Không hỗ trợ
+                @Test
+                @DisplayName("Sau CHECK_OUT, lượt quẹt tiếp theo chuyển lại thành CHECK_IN")
+                void recordPunch_SubsequentPunch_TogglesTo_CheckIn() {
+                        OffsetDateTime eveningInTime = OffsetDateTime.of(2026, 10, 8, 18, 0, 0, 0,
+                                        ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = createRequest(eveningInTime, "VERIFICATION_FACE");
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.empty());
-            when(shiftManagementService.evaluatePunch(any(), any(), any()))
-                    .thenReturn(ShiftEvaluationResult.onTime(1L, "CA", LocalTime.of(8, 0), 15));
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
 
-            assertThatThrownBy(() -> attendanceService.recordPunch(req))
-                    .isInstanceOf(ApiException.class)
-                    .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.VALIDATION_FAILED));
+                        // Đã có 1 log CHECK_IN và 1 log CHECK_OUT
+                        AttendanceLog log1 = AttendanceLog.builder().punchType(PunchType.CHECK_IN)
+                                        .punchTimestamp(sampleTime.toInstant()).build();
+                        AttendanceLog log2 = AttendanceLog.builder().punchType(PunchType.CHECK_OUT)
+                                        .punchTimestamp(eveningInTime.minusMinutes(30).toInstant()).build();
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(log2));
 
-            verify(attendanceLogRepository, never()).save(any());
-        }
+                        when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(LocalTime.class)))
+                                        .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH",
+                                                        LocalTime.of(8, 0), 15));
 
-        @Test
-        @DisplayName("Lỗi STOMP không làm sập giao dịch điểm danh -> Vẫn trả về PunchResult")
-        void recordPunch_StompFailure_HandledGracefully() {
-            KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1007L);
+                                return log;
+                        });
 
-            when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.of(sampleKiosk));
-            when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
-            when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
-            when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(any(), any(), any()))
-                    .thenReturn(Optional.empty());
-            when(shiftManagementService.evaluatePunch(any(), any(), any()))
-                    .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH", LocalTime.of(8, 0), 15));
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
 
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
-                AttendanceLog log = inv.getArgument(0);
-                log.setId(1008L);
-                return log;
-            });
-
-            doThrow(new RuntimeException("WebSocket broker down"))
-                    .when(stompEventBroadcaster).broadcastAttendancePunch(any());
-
-            PunchResult result = attendanceService.recordPunch(req);
-
-            assertThat(result).isNotNull();
-            assertThat(result.recordId()).isEqualTo(1008L);
-        }
-    }
-
-    @Nested
-    @DisplayName("Kịch bản điều chỉnh giờ công thủ công (adjustAttendanceLog - FR-BE-008, SOL-BE-007)")
-    class AdjustAttendanceLogTests {
-
-        @Test
-        @DisplayName("Điều chỉnh giờ công thành công -> Cập nhật các trường và trả về AttendanceLogItem")
-        void adjustAttendanceLog_Success() {
-            Long logId = 500L;
-            AttendanceLog existingLog = AttendanceLog.builder()
-                    .id(logId)
-                    .user(sampleEmployee)
-                    .kiosk(sampleKiosk)
-                    .punchTimestamp(sampleTime.toInstant())
-                    .punchType(PunchType.CHECK_IN)
-                    .verificationMethod(VerificationMethod.VERIFICATION_FACE)
-                    .status(AttendanceStatus.LATE)
-                    .lateMinutes(25)
-                    .build();
-
-            when(attendanceLogRepository.findById(logId)).thenReturn(Optional.of(existingLog));
-            when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            OffsetDateTime newTimestamp = sampleTime.minusMinutes(25);
-            AdjustAttendanceRequest request = new AdjustAttendanceRequest(
-                    newTimestamp,
-                    AttendanceStatus.ON_TIME,
-                    0,
-                    "Nhân viên có giải trình được duyệt"
-            );
-
-            AttendanceLogItem item = attendanceService.adjustAttendanceLog(logId, request);
-
-            assertThat(item).isNotNull();
-            assertThat(item.recordId()).isEqualTo(logId);
-            assertThat(item.status()).isEqualTo(AttendanceStatus.ON_TIME);
-            assertThat(item.lateMinutes()).isEqualTo(0);
-
-            ArgumentCaptor<AttendanceLog> captor = ArgumentCaptor.forClass(AttendanceLog.class);
-            verify(attendanceLogRepository).save(captor.capture());
-            AttendanceLog saved = captor.getValue();
-            assertThat(saved.getStatus()).isEqualTo(AttendanceStatus.ON_TIME);
-            assertThat(saved.getLateMinutes()).isEqualTo(0);
-            assertThat(saved.getPunchTimestamp()).isEqualTo(newTimestamp.toInstant());
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_IN);
+                }
         }
 
-        @Test
-        @DisplayName("Không tìm thấy bản ghi điểm danh -> Ném ApiException RESOURCE_NOT_FOUND")
-        void adjustAttendanceLog_NotFound_ThrowsApiException() {
-            Long notFoundId = 9999L;
-            when(attendanceLogRepository.findById(notFoundId)).thenReturn(Optional.empty());
+        @Nested
+        @DisplayName("3. Kiểm tra các ngoại lệ & Chặn vi phạm")
+        class ValidationAndExceptionTests {
 
-            AdjustAttendanceRequest request = new AdjustAttendanceRequest(
-                    null,
-                    AttendanceStatus.ON_TIME,
-                    0,
-                    "Không tìm thấy log"
-            );
+                @Test
+                @DisplayName("Trạm Kiosk không tồn tại hoặc inactive -> 401 KIOSK_UNAUTHORIZED")
+                void recordPunch_KioskNotFound_Throws401() {
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId())).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> attendanceService.adjustAttendanceLog(notFoundId, request))
-                    .isInstanceOf(ApiException.class)
-                    .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode()).isEqualTo(ApiErrorCode.RESOURCE_NOT_FOUND));
+                        assertThatThrownBy(() -> attendanceService.recordPunch(sampleKiosk.getId(), req))
+                                        .isInstanceOf(ApiException.class)
+                                        .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                                                        .isEqualTo(ApiErrorCode.KIOSK_UNAUTHORIZED));
 
-            verify(attendanceLogRepository, never()).save(any());
+                        verify(attendanceLogRepository, never()).save(any());
+                }
+
+                @Test
+                @DisplayName("Nhân viên không tồn tại -> 404 EMPLOYEE_NOT_FOUND")
+                void recordPunch_EmployeeNotFound_Throws404() {
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.empty());
+
+                        assertThatThrownBy(() -> attendanceService.recordPunch(sampleKiosk.getId(), req))
+                                        .isInstanceOf(ApiException.class)
+                                        .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                                                        .isEqualTo(ApiErrorCode.EMPLOYEE_NOT_FOUND));
+
+                        verify(attendanceLogRepository, never()).save(any());
+                }
+
+                @Test
+                @DisplayName("Nhân viên đã nghỉ việc (TERMINATED) -> 403 ACCESS_DENIED")
+                void recordPunch_EmployeeTerminated_Throws403() {
+                        sampleEmployee.setStatus(EmployeeStatus.TERMINATED);
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+
+                        assertThatThrownBy(() -> attendanceService.recordPunch(sampleKiosk.getId(), req))
+                                        .isInstanceOf(ApiException.class)
+                                        .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                                                        .isEqualTo(ApiErrorCode.ACCESS_DENIED));
+
+                        verify(attendanceLogRepository, never()).save(any());
+                }
+
+                @Test
+                @DisplayName("Kích hoạt Cooldown 120s -> 409 COOLDOWN_ACTIVE, không chạm CSDL điểm danh")
+                void recordPunch_CooldownActive_Throws409() {
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(Instant.class), any(PunchType.class), eq(sampleKiosk.getId())))
+                                        .thenReturn(false);
+
+                        assertThatThrownBy(() -> attendanceService.recordPunch(sampleKiosk.getId(), req))
+                                        .isInstanceOf(ApiException.class)
+                                        .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                                                        .isEqualTo(ApiErrorCode.COOLDOWN_ACTIVE));
+
+                        verify(attendanceLogRepository, never()).save(any());
+                        verify(stompEventBroadcaster, never()).broadcastAttendancePunch(any());
+                }
+
+                @Test
+                @DisplayName("Phương thức xác thực không hợp lệ -> 400 VALIDATION_FAILED")
+                void recordPunch_InvalidMethod_Throws400() {
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FINGERPRINT"); // Không hỗ trợ
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.empty());
+                        when(shiftManagementService.evaluatePunch(any(), any(), any()))
+                                        .thenReturn(ShiftEvaluationResult.onTime(1L, "CA", LocalTime.of(8, 0), 15));
+
+                        assertThatThrownBy(() -> attendanceService.recordPunch(sampleKiosk.getId(), req))
+                                        .isInstanceOf(ApiException.class)
+                                        .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                                                        .isEqualTo(ApiErrorCode.VALIDATION_FAILED));
+
+                        verify(attendanceLogRepository, never()).save(any());
+                }
+
+                @Test
+                @DisplayName("Lỗi STOMP không làm sập giao dịch điểm danh -> Vẫn trả về PunchResult")
+                void recordPunch_StompFailure_HandledGracefully() {
+                        KioskPunchRequest req = createRequest(sampleTime, "VERIFICATION_FACE");
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId())).thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.empty());
+                        when(shiftManagementService.evaluatePunch(any(), any(), any()))
+                                        .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HANH-CHINH",
+                                                        LocalTime.of(8, 0), 15));
+
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(inv -> {
+                                AttendanceLog log = inv.getArgument(0);
+                                log.setId(1008L);
+                                return log;
+                        });
+
+                        doThrow(new RuntimeException("WebSocket broker down"))
+                                        .when(stompEventBroadcaster).broadcastAttendancePunch(any());
+
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
+
+                        assertThat(result).isNotNull();
+                        assertThat(result.recordId()).isEqualTo(1008L);
+                }
         }
-    }
 
-    @Nested
-    @DisplayName("Ca kiểm thử getAttendanceStats")
-    class GetAttendanceStatsTests {
+        @Nested
+        @DisplayName("Kịch bản điều chỉnh giờ công thủ công (adjustAttendanceLog - FR-BE-008, SOL-BE-007)")
+        class AdjustAttendanceLogTests {
 
-        @Test
-        @DisplayName("Thống kê KPI với ngày cụ thể thành công")
-        void getAttendanceStats_WithTargetDate_ReturnsValidKpis() {
-            java.time.LocalDate targetDate = java.time.LocalDate.of(2026, 10, 30);
-            java.time.Instant start = targetDate.atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant();
-            java.time.Instant end = targetDate.plusDays(1).atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant();
+                @Test
+                @DisplayName("Điều chỉnh giờ công thành công -> Cập nhật các trường và trả về AttendanceLogItem")
+                void adjustAttendanceLog_Success() {
+                        Long logId = 500L;
+                        AttendanceLog existingLog = AttendanceLog.builder()
+                                        .id(logId)
+                                        .user(sampleEmployee)
+                                        .kiosk(sampleKiosk)
+                                        .punchTimestamp(sampleTime.toInstant())
+                                        .punchType(PunchType.CHECK_IN)
+                                        .verificationMethod(VerificationMethod.VERIFICATION_FACE)
+                                        .status(AttendanceStatus.LATE)
+                                        .lateMinutes(25)
+                                        .build();
 
-            when(userRepository.countByStatus(EmployeeStatus.ACTIVE)).thenReturn(100L);
-            when(attendanceLogRepository.countDistinctUserByPunchTimestampBetween(start, end)).thenReturn(85L);
-            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end, AttendanceStatus.ON_TIME)).thenReturn(80L);
-            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end, AttendanceStatus.LATE)).thenReturn(5L);
+                        when(attendanceLogRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class)))
+                                        .thenAnswer(inv -> inv.getArgument(0));
+                        when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(LocalTime.class)))
+                                        .thenReturn(ShiftEvaluationResult.onTime(1L, "SHF-01", LocalTime.of(8, 0), 15));
 
-            var response = attendanceService.getAttendanceStats(targetDate);
+                        OffsetDateTime newTimestamp = sampleTime.minusMinutes(25);
+                        AdjustAttendanceRequest request = new AdjustAttendanceRequest(
+                                        newTimestamp,
+                                        AttendanceStatus.ON_TIME,
+                                        "Nhân viên có giải trình được duyệt");
 
-            assertThat(response).isNotNull();
-            assertThat(response.totalEmployees()).isEqualTo(100L);
-            assertThat(response.presentCount()).isEqualTo(85L);
-            assertThat(response.onTimeCount()).isEqualTo(80L);
-            assertThat(response.lateCount()).isEqualTo(5L);
-            assertThat(response.absentCount()).isEqualTo(15L);
+                        AttendanceLogItem item = attendanceService.adjustAttendanceLog(logId, request);
+
+                        assertThat(item).isNotNull();
+                        assertThat(item.recordId()).isEqualTo(logId);
+                        assertThat(item.status()).isEqualTo(AttendanceStatus.ON_TIME);
+                        assertThat(item.lateMinutes()).isEqualTo(0);
+
+                        ArgumentCaptor<AttendanceLog> captor = ArgumentCaptor.forClass(AttendanceLog.class);
+                        verify(attendanceLogRepository).save(captor.capture());
+                        AttendanceLog saved = captor.getValue();
+                        assertThat(saved.getStatus()).isEqualTo(AttendanceStatus.ON_TIME);
+                        assertThat(saved.getLateMinutes()).isEqualTo(0);
+                        assertThat(saved.getPunchTimestamp()).isEqualTo(newTimestamp.toInstant());
+                }
+
+                @Test
+                @DisplayName("Điều chỉnh punchTimestamp khi status=null -> Tự động đánh giá ca làm việc và tính lateMinutes")
+                void adjustAttendanceLog_AutoCalculatesShiftAndLateMinutes() {
+                        Long logId = 1001L;
+                        AttendanceLog existingLog = AttendanceLog.builder()
+                                        .id(logId)
+                                        .user(sampleEmployee)
+                                        .kiosk(sampleKiosk)
+                                        .punchTimestamp(sampleTime.toInstant())
+                                        .punchType(PunchType.CHECK_IN)
+                                        .verificationMethod(VerificationMethod.VERIFICATION_FACE)
+                                        .status(AttendanceStatus.ON_TIME)
+                                        .lateMinutes(0)
+                                        .build();
+
+                        when(attendanceLogRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class)))
+                                        .thenAnswer(inv -> inv.getArgument(0));
+
+                        OffsetDateTime lateTimestamp = sampleTime.plusMinutes(30);
+                        when(shiftManagementService.evaluatePunch(eq(sampleEmployee.getId()), any(LocalDate.class),
+                                        any(LocalTime.class)))
+                                        .thenReturn(ShiftEvaluationResult.late(1L, "SHF-01", 30, LocalTime.of(8, 0),
+                                                        15));
+
+                        AdjustAttendanceRequest request = new AdjustAttendanceRequest(
+                                        lateTimestamp,
+                                        null,
+                                        "Tự động tính giờ trễ");
+
+                        AttendanceLogItem item = attendanceService.adjustAttendanceLog(logId, request);
+
+                        assertThat(item).isNotNull();
+                        assertThat(item.status()).isEqualTo(AttendanceStatus.LATE);
+                        assertThat(item.lateMinutes()).isEqualTo(30);
+                }
+
+                @Test
+                @DisplayName("Không tìm thấy bản ghi điểm danh -> Ném ApiException RESOURCE_NOT_FOUND")
+                void adjustAttendanceLog_NotFound_ThrowsApiException() {
+                        Long notFoundId = 9999L;
+                        when(attendanceLogRepository.findById(notFoundId)).thenReturn(Optional.empty());
+
+                        AdjustAttendanceRequest request = new AdjustAttendanceRequest(
+                                        null,
+                                        AttendanceStatus.ON_TIME,
+                                        "Không tìm thấy log");
+
+                        assertThatThrownBy(() -> attendanceService.adjustAttendanceLog(notFoundId, request))
+                                        .isInstanceOf(ApiException.class)
+                                        .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                                                        .isEqualTo(ApiErrorCode.RESOURCE_NOT_FOUND));
+
+                        verify(attendanceLogRepository, never()).save(any());
+                }
         }
 
-        @Test
-        @DisplayName("Thống kê KPI với targetDate null sẽ mặc định hôm nay")
-        void getAttendanceStats_WithNullDate_DefaultsToToday() {
-            when(userRepository.countByStatus(EmployeeStatus.ACTIVE)).thenReturn(0L);
-            when(userRepository.count()).thenReturn(50L);
-            when(attendanceLogRepository.countDistinctUserByPunchTimestampBetween(any(java.time.Instant.class), any(java.time.Instant.class))).thenReturn(40L);
-            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(any(java.time.Instant.class), any(java.time.Instant.class), eq(AttendanceStatus.ON_TIME))).thenReturn(38L);
-            when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(any(java.time.Instant.class), any(java.time.Instant.class), eq(AttendanceStatus.LATE))).thenReturn(2L);
+        @Nested
+        @DisplayName("Ca kiểm thử getAttendanceStats")
+        class GetAttendanceStatsTests {
 
-            var response = attendanceService.getAttendanceStats(null);
+                @Test
+                @DisplayName("Thống kê KPI với ngày cụ thể thành công")
+                void getAttendanceStats_WithTargetDate_ReturnsValidKpis() {
+                        java.time.LocalDate targetDate = java.time.LocalDate.of(2026, 10, 30);
+                        java.time.Instant start = targetDate.atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE)
+                                        .toInstant();
+                        java.time.Instant end = targetDate.plusDays(1)
+                                        .atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant();
 
-            assertThat(response).isNotNull();
-            assertThat(response.totalEmployees()).isEqualTo(50L);
-            assertThat(response.presentCount()).isEqualTo(40L);
-            assertThat(response.onTimeCount()).isEqualTo(38L);
-            assertThat(response.lateCount()).isEqualTo(2L);
-            assertThat(response.absentCount()).isEqualTo(10L);
+                        when(userRepository.countByStatus(EmployeeStatus.ACTIVE)).thenReturn(100L);
+                        when(attendanceLogRepository.countDistinctUserByPunchTimestampBetween(start, end))
+                                        .thenReturn(85L);
+                        when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end,
+                                        AttendanceStatus.ON_TIME)).thenReturn(80L);
+                        when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(start, end,
+                                        AttendanceStatus.LATE)).thenReturn(5L);
+
+                        var response = attendanceService.getAttendanceStats(targetDate);
+
+                        assertThat(response).isNotNull();
+                        assertThat(response.totalEmployees()).isEqualTo(100L);
+                        assertThat(response.presentCount()).isEqualTo(85L);
+                        assertThat(response.onTimeCount()).isEqualTo(80L);
+                        assertThat(response.lateCount()).isEqualTo(5L);
+                        assertThat(response.absentCount()).isEqualTo(15L);
+                }
+
+                @Test
+                @DisplayName("Thống kê KPI với targetDate null sẽ mặc định hôm nay")
+                void getAttendanceStats_WithNullDate_DefaultsToToday() {
+                        when(userRepository.countByStatus(EmployeeStatus.ACTIVE)).thenReturn(0L);
+                        when(userRepository.count()).thenReturn(50L);
+                        when(attendanceLogRepository.countDistinctUserByPunchTimestampBetween(
+                                        any(java.time.Instant.class), any(java.time.Instant.class))).thenReturn(40L);
+                        when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(any(java.time.Instant.class),
+                                        any(java.time.Instant.class), eq(AttendanceStatus.ON_TIME))).thenReturn(38L);
+                        when(attendanceLogRepository.countByPunchTimestampBetweenAndStatus(any(java.time.Instant.class),
+                                        any(java.time.Instant.class), eq(AttendanceStatus.LATE))).thenReturn(2L);
+
+                        var response = attendanceService.getAttendanceStats(null);
+
+                        assertThat(response).isNotNull();
+                        assertThat(response.totalEmployees()).isEqualTo(50L);
+                        assertThat(response.presentCount()).isEqualTo(40L);
+                        assertThat(response.onTimeCount()).isEqualTo(38L);
+                        assertThat(response.lateCount()).isEqualTo(2L);
+                        assertThat(response.absentCount()).isEqualTo(10L);
+                }
         }
-    }
 }
-

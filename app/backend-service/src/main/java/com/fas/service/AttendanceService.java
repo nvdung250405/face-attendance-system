@@ -67,6 +67,7 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
+@Transactional(readOnly = true)
 public class AttendanceService {
 
     private final AttendanceLogRepository attendanceLogRepository;
@@ -95,18 +96,19 @@ public class AttendanceService {
     /**
      * Tiếp nhận và ghi nhận một lượt điểm danh thời gian thực từ trạm Kiosk.
      *
+     * @param kioskId mã trạm Kiosk gửi yêu cầu từ header X-Kiosk-Id
      * @param request dữ liệu lượt quẹt gửi từ Kiosk
      * @return kết quả lượt điểm danh đã xử lý
      */
     @CacheEvict(value = CacheConfig.ATTENDANCE_STATS_CACHE, allEntries = true)
     @Transactional
-    public PunchResult recordPunch(KioskPunchRequest request) {
+    public PunchResult recordPunch(String kioskId, KioskPunchRequest request) {
         // 1. Thẩm định trạm Kiosk
-        Kiosk kiosk = kioskRepository.findByIdAndIsActiveTrue(request.kioskId())
+        Kiosk kiosk = kioskRepository.findByIdAndIsActiveTrue(kioskId)
                 .orElseThrow(() -> {
-                    log.warn("Từ chối điểm danh: Trạm Kiosk '{}' không tồn tại hoặc đã bị vô hiệu hóa", request.kioskId());
+                    log.warn("Từ chối điểm danh: Trạm Kiosk '{}' không tồn tại hoặc đã bị vô hiệu hóa", kioskId);
                     return new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
-                            "Trạm Kiosk không tồn tại hoặc đã bị vô hiệu hóa: " + request.kioskId());
+                            "Trạm Kiosk không tồn tại hoặc đã bị vô hiệu hóa: " + kioskId);
                 });
 
         // 2. Thẩm định nhân sự
@@ -283,12 +285,41 @@ public class AttendanceService {
         // 2. Cập nhật các trường dữ liệu theo yêu cầu
         if (request.punchTimestamp() != null) {
             attendanceLog.setPunchTimestamp(request.punchTimestamp().toInstant());
-        }
-        if (request.status() != null) {
+            User user = attendanceLog.getUser();
+            if (user != null) {
+                LocalDate punchDate = request.punchTimestamp().atZoneSameInstant(ApiResponse.VIETNAM_ZONE).toLocalDate();
+                LocalTime punchTime = request.punchTimestamp().atZoneSameInstant(ApiResponse.VIETNAM_ZONE).toLocalTime();
+
+                AttendanceStatus evaluatedStatus;
+                int lateMinutes = 0;
+
+                PunchType punchType = attendanceLog.getPunchType() != null ? attendanceLog.getPunchType() : PunchType.CHECK_IN;
+                if (punchType == PunchType.CHECK_IN) {
+                    ShiftEvaluationResult evalResult = shiftManagementService.evaluatePunch(user.getId(), punchDate, punchTime);
+                    evaluatedStatus = evalResult.status();
+                    lateMinutes = (int) evalResult.lateMinutes();
+                } else {
+                    Optional<Shift> activeShiftOpt = shiftManagementService.findActiveShiftForUser(user.getId(), punchDate);
+                    if (activeShiftOpt.isPresent()) {
+                        Shift shift = activeShiftOpt.get();
+                        if (punchTime.isBefore(shift.getEndTime())) {
+                            evaluatedStatus = AttendanceStatus.EARLY_LEAVE;
+                        } else {
+                            evaluatedStatus = AttendanceStatus.ON_TIME;
+                        }
+                    } else {
+                        evaluatedStatus = AttendanceStatus.ANOMALOUS;
+                    }
+                    lateMinutes = 0;
+                }
+
+                attendanceLog.setStatus(request.status() != null ? request.status() : evaluatedStatus);
+                attendanceLog.setLateMinutes(lateMinutes);
+            } else if (request.status() != null) {
+                attendanceLog.setStatus(request.status());
+            }
+        } else if (request.status() != null) {
             attendanceLog.setStatus(request.status());
-        }
-        if (request.lateMinutes() != null) {
-            attendanceLog.setLateMinutes(Math.max(0, request.lateMinutes()));
         }
 
         AttendanceLog saved = attendanceLogRepository.save(attendanceLog);

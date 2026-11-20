@@ -15,6 +15,8 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
     Optional<Shift> findByShiftCode(String shiftCode);
 
+    Optional<Shift> findTopByShiftCodeStartingWithOrderByShiftCodeDesc(String prefix);
+
     boolean existsByShiftCode(String shiftCode);
 
     List<Shift> findByIsActiveTrue();

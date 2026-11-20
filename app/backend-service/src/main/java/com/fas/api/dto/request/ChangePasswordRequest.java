@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Size;
  *
  * @param currentPassword mật khẩu hiện tại của tài khoản
  * @param newPassword     mật khẩu mới (tối thiểu 8 ký tự, phải khác mật khẩu hiện tại)
- * @param confirmPassword xác nhận lại mật khẩu mới (phải khớp với newPassword)
  */
 public record ChangePasswordRequest(
         @NotBlank(message = "Mật khẩu hiện tại không được để trống")
@@ -17,9 +16,6 @@ public record ChangePasswordRequest(
 
         @NotBlank(message = "Mật khẩu mới không được để trống")
         @Size(min = 8, message = "Mật khẩu mới phải có tối thiểu 8 ký tự")
-        String newPassword,
-
-        @NotBlank(message = "Xác nhận mật khẩu không được để trống")
-        String confirmPassword
+        String newPassword
 ) {
 }
