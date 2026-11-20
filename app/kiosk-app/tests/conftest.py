@@ -9,6 +9,7 @@ if str(src_dir) not in sys.path:
 
 try:
     from PySide6.QtWidgets import QApplication
+
     HAS_QT_WIDGETS = True
 except (ImportError, Exception):
     QApplication = None

@@ -23,7 +23,9 @@ def _create_unit_vector(dim: int = 512, seed: int | None = None) -> np.ndarray:
     return v / np.linalg.norm(v)
 
 
-def _create_vector_with_exact_similarity(base_vec: np.ndarray, target_sim: float, seed: int | None = None) -> np.ndarray:
+def _create_vector_with_exact_similarity(
+    base_vec: np.ndarray, target_sim: float, seed: int | None = None
+) -> np.ndarray:
     """Creates a unit vector with exact cosine similarity to base_vec using Gram-Schmidt."""
     if seed is not None:
         np.random.seed(seed)
@@ -48,6 +50,7 @@ def _create_vector_with_exact_similarity(base_vec: np.ndarray, target_sim: float
 # ============================================================================
 # CHALLENGE 1: Best Score Selection
 # ============================================================================
+
 
 def test_challenge_1_best_score_selection_left_tilt():
     """Probe matches LEFT_TILT with 0.82, FRONTAL with 0.52, RIGHT_TILT with 0.45.
@@ -97,16 +100,18 @@ def test_challenge_1_best_score_selection_permutations():
     v_l_mid = _create_vector_with_exact_similarity(probe, 0.60, seed=203)
     v_r_low = _create_vector_with_exact_similarity(probe, 0.50, seed=204)
 
-    matcher.load_gallery([
-        {
-            "employee_id": 201,
-            "templates": [
-                {"pose_type": "FRONTAL", "vector": v_f_high},
-                {"pose_type": "LEFT_TILT", "vector": v_l_mid},
-                {"pose_type": "RIGHT_TILT", "vector": v_r_low},
-            ],
-        }
-    ])
+    matcher.load_gallery(
+        [
+            {
+                "employee_id": 201,
+                "templates": [
+                    {"pose_type": "FRONTAL", "vector": v_f_high},
+                    {"pose_type": "LEFT_TILT", "vector": v_l_mid},
+                    {"pose_type": "RIGHT_TILT", "vector": v_r_low},
+                ],
+            }
+        ]
+    )
     matched_id, score, pose = matcher.match_with_pose(probe)
     assert matched_id == 201
     assert pytest.approx(score, abs=1e-3) == 0.88
@@ -117,16 +122,18 @@ def test_challenge_1_best_score_selection_permutations():
     v_l_low = _create_vector_with_exact_similarity(probe, 0.42, seed=206)
     v_r_high = _create_vector_with_exact_similarity(probe, 0.84, seed=207)
 
-    matcher.load_gallery([
-        {
-            "employee_id": 202,
-            "templates": [
-                {"pose_type": "FRONTAL", "vector": v_f_low},
-                {"pose_type": "LEFT_TILT", "vector": v_l_low},
-                {"pose_type": "RIGHT_TILT", "vector": v_r_high},
-            ],
-        }
-    ])
+    matcher.load_gallery(
+        [
+            {
+                "employee_id": 202,
+                "templates": [
+                    {"pose_type": "FRONTAL", "vector": v_f_low},
+                    {"pose_type": "LEFT_TILT", "vector": v_l_low},
+                    {"pose_type": "RIGHT_TILT", "vector": v_r_high},
+                ],
+            }
+        ]
+    )
     matched_id, score, pose = matcher.match_with_pose(probe)
     assert matched_id == 202
     assert pytest.approx(score, abs=1e-3) == 0.84
@@ -136,6 +143,7 @@ def test_challenge_1_best_score_selection_permutations():
 # ============================================================================
 # CHALLENGE 2: Ambiguous Distractors
 # ============================================================================
+
 
 def test_challenge_2_ambiguous_distractor_target_wins():
     """Distractor employee 999 has similarity 0.75, target employee 101 has best 0.78.
@@ -232,19 +240,24 @@ def test_challenge_2_multiple_distractors_stress():
     for i in range(50):
         sim = 0.60 + (i % 16) * 0.01  # up to 0.75
         vec = _create_vector_with_exact_similarity(probe, sim, seed=1000 + i)
-        records.append({
-            "employee_id": 2000 + i,
-            "templates": [{"pose_type": "FRONTAL", "vector": vec}],
-        })
+        records.append(
+            {
+                "employee_id": 2000 + i,
+                "templates": [{"pose_type": "FRONTAL", "vector": vec}],
+            }
+        )
 
     # Target employee in the middle
     v_target_left = _create_vector_with_exact_similarity(probe, 0.78, seed=502)
-    records.insert(25, {
-        "employee_id": 101,
-        "templates": [
-            {"pose_type": "LEFT_TILT", "vector": v_target_left},
-        ],
-    })
+    records.insert(
+        25,
+        {
+            "employee_id": 101,
+            "templates": [
+                {"pose_type": "LEFT_TILT", "vector": v_target_left},
+            ],
+        },
+    )
 
     matcher.load_gallery(records)
     matched_id, score, pose = matcher.match_with_pose(probe)
@@ -256,6 +269,7 @@ def test_challenge_2_multiple_distractors_stress():
 # ============================================================================
 # CHALLENGE 3: Boundary Threshold (0.6499 vs 0.6501)
 # ============================================================================
+
 
 def test_challenge_3_boundary_threshold_rejection():
     """Similarity 0.6499 (< 0.6500) must strictly be rejected."""
@@ -282,12 +296,14 @@ def test_challenge_3_boundary_threshold_acceptance():
     probe = _create_unit_vector(seed=701)
 
     v_above = _create_vector_with_exact_similarity(probe, 0.6501, seed=702)
-    matcher.load_gallery([
-        {
-            "employee_id": 101,
-            "templates": [{"pose_type": "FRONTAL", "vector": v_above}],
-        }
-    ])
+    matcher.load_gallery(
+        [
+            {
+                "employee_id": 101,
+                "templates": [{"pose_type": "FRONTAL", "vector": v_above}],
+            }
+        ]
+    )
 
     matched_id, score = matcher.match(probe)
     assert matched_id == 101, f"Expected 101 for score {score:.4f} >= 0.65, got {matched_id}"
@@ -322,6 +338,7 @@ def test_challenge_3_boundary_threshold_override():
 # ============================================================================
 # CHALLENGE 4: Hybrid Coexistence
 # ============================================================================
+
 
 def test_challenge_4_hybrid_coexistence():
     """Mix of single-template employees and multi-template employees."""
@@ -395,6 +412,7 @@ def test_challenge_4_hybrid_coexistence():
 # ============================================================================
 # CHALLENGE 5: Dirty Inputs & Robustness
 # ============================================================================
+
 
 def test_challenge_5_dirty_query_vector():
     """Adversarial query vectors: None, wrong dimensions, empty, un-normalized, NaN, Inf."""
@@ -510,10 +528,10 @@ def test_challenge_5_nan_matrix_poisoning_denial_of_service():
     assert pytest.approx(score, abs=1e-4) == 1.0
 
 
-
 # ============================================================================
 # CHALLENGE 6: Atomic Removal
 # ============================================================================
+
 
 def test_challenge_6_atomic_removal_multi_pose():
     """Enroll employee with 3 poses, call remove(), verify 100% atomic purge across all structures."""

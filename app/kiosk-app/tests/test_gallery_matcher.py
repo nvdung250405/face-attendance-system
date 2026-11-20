@@ -54,6 +54,7 @@ def _create_vector_with_similarity(base_vec: np.ndarray, target_sim: float) -> n
 # 1. BASELINE TESTS (Bảo toàn tương thích ngược 100%)
 # ============================================================================
 
+
 def test_gallery_empty_matching():
     """Kiểm tra Gallery trống trả về (None, 0.0) và match_with_pose trả về (None, 0.0, None)."""
     matcher = GalleryCacheManager(default_threshold=0.50)
@@ -81,7 +82,11 @@ def test_gallery_load_and_exact_match():
     vec3 = _create_random_unit_vector()
 
     records = [
-        {"employee_id": 101, "vector": vec1, "metadata": {"name": "Nguyen Van A", "code": "NV-101"}},
+        {
+            "employee_id": 101,
+            "vector": vec1,
+            "metadata": {"name": "Nguyen Van A", "code": "NV-101"},
+        },
         {"employee_id": 102, "vector": vec2, "metadata": {"name": "Tran Thi B", "code": "NV-102"}},
         {"employee_id": 103, "vector": vec3, "metadata": {"name": "Le Van C", "code": "NV-103"}},
     ]
@@ -145,6 +150,7 @@ def test_tst_ksk_dat_003_speed_benchmark_1000_faces():
 # ============================================================================
 # 2. TASK 11 COMPREHENSIVE SCENARIOS (Multi-Template & SLA Benchmark)
 # ============================================================================
+
 
 def test_scenario_1_multi_template_best_score_matching():
     """Scenario 1: So khớp đa mẫu lấy Best Score = max(sim_front, sim_left, sim_right).
@@ -341,15 +347,19 @@ def test_benchmark_multi_template_matching_3000_vectors_sla():
         emp_templates = []
         for p_idx, pose in enumerate(poses):
             row_idx = i * templates_per_emp + p_idx
-            emp_templates.append({
-                "pose_type": pose,
-                "vector": normalized_matrix[row_idx],
-            })
-        records.append({
-            "employee_id": emp_id,
-            "metadata": {"name": f"Employee {emp_id}", "code": f"EMP-{emp_id}"},
-            "templates": emp_templates,
-        })
+            emp_templates.append(
+                {
+                    "pose_type": pose,
+                    "vector": normalized_matrix[row_idx],
+                }
+            )
+        records.append(
+            {
+                "employee_id": emp_id,
+                "metadata": {"name": f"Employee {emp_id}", "code": f"EMP-{emp_id}"},
+                "templates": emp_templates,
+            }
+        )
 
     t_load_0 = time.perf_counter()
     matcher.load_gallery(records)
@@ -406,9 +416,7 @@ def test_benchmark_multi_template_matching_3000_vectors_sla():
     assert mean_latency <= 2.0, (
         f"Độ trễ trung bình {mean_latency:.4f} ms vượt quá ngưỡng SLA 2.0 ms"
     )
-    assert p95_latency <= 3.0, (
-        f"Độ trễ P95 {p95_latency:.4f} ms vượt quá ngưỡng an toàn 3.0 ms"
-    )
+    assert p95_latency <= 3.0, f"Độ trễ P95 {p95_latency:.4f} ms vượt quá ngưỡng an toàn 3.0 ms"
 
 
 def test_tst_ksk_dat_004_hot_patching_and_concurrency():
@@ -460,4 +468,3 @@ def test_tst_ksk_dat_004_hot_patching_and_concurrency():
     removed = matcher.remove(501)
     assert removed is True
     assert matcher.get_metadata(501) is None
-

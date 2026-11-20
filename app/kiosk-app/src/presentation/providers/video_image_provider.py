@@ -34,7 +34,9 @@ class VideoImageProvider(QQuickImageProvider):
             return
         self._current_pixmap = self._to_pixmap(frame)
 
-    def requestPixmap(self, id_str: str, size: tuple[int, int] | None, requested_size: tuple[int, int] | None) -> QPixmap:
+    def requestPixmap(
+        self, id_str: str, size: tuple[int, int] | None, requested_size: tuple[int, int] | None
+    ) -> QPixmap:
         """QML gọi hàm này mỗi khi cần vẽ lại khung hình camera."""
         if self._current_pixmap.isNull():
             return QPixmap(640, 480)

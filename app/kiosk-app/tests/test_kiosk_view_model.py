@@ -41,11 +41,13 @@ def _create_mock_detection(
             bbox = (270, 137, 100, 110)  # Chuẩn tâm Oval cho frame 480x640
 
     landmarks = np.array(
-        [[bbox[0] + 30, bbox[1] + 30],
-         [bbox[0] + 70, bbox[1] + 30],
-         [bbox[0] + 50, bbox[1] + 55],
-         [bbox[0] + 35, bbox[1] + 85],
-         [bbox[0] + 65, bbox[1] + 85]],
+        [
+            [bbox[0] + 30, bbox[1] + 30],
+            [bbox[0] + 70, bbox[1] + 30],
+            [bbox[0] + 50, bbox[1] + 55],
+            [bbox[0] + 35, bbox[1] + 85],
+            [bbox[0] + 65, bbox[1] + 85],
+        ],
         dtype=np.float32,
     )
     yaw = 25.0 if is_tilted else 2.0
@@ -388,6 +390,7 @@ def test_kiosk_view_model_stability_resets_on_movement(qapp):
 def test_nfr_ksk_001_full_pipeline_cycle_time(qapp):
     """NFR-KSK-001: Tổng thời gian chu kỳ nhận diện trọn vòng đạt <= 350 ms."""
     import time
+
     detector = MagicMock()
     detector.detect_face.return_value = _create_mock_detection()
 
@@ -417,5 +420,3 @@ def test_nfr_ksk_001_full_pipeline_cycle_time(qapp):
 
     assert vm.ovalState == OvalState.SUCCESS
     assert latency_ms < 350.0
-
-

@@ -107,5 +107,3 @@ def test_qml_mvc_environment_readiness(qapp):
         target = kiosk_root / rel_path
         assert target.exists(), f"Thiếu file: {target}"
         assert target.stat().st_size > 0, f"File rỗng: {target}"
-
-

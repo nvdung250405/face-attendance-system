@@ -20,10 +20,14 @@ from presentation.controllers.enrollment_controller import (
 )
 
 
-def _create_mock_detection(yaw: float = 0.0, pitch: float = 0.0, roll: float = 0.0) -> FaceDetectionResult:
+def _create_mock_detection(
+    yaw: float = 0.0, pitch: float = 0.0, roll: float = 0.0
+) -> FaceDetectionResult:
     return FaceDetectionResult(
         bbox=(280, 142, 80, 100),
-        landmarks=np.array([[295, 165], [345, 165], [320, 192], [300, 222], [340, 222]], dtype=np.float32),
+        landmarks=np.array(
+            [[295, 165], [345, 165], [320, 192], [300, 222], [340, 222]], dtype=np.float32
+        ),
         score=0.98,
         euler_angles=(yaw, pitch, roll),
         is_valid_size=True,
@@ -236,10 +240,14 @@ def test_enrollment_reset_clears_dialog_and_enrolling_state(qapp):
     assert controller.progressPercent == 0.0, "progressPercent bắt buộc phải là 0.0"
     assert controller.currentOtp == "", "currentOtp bắt buộc phải rỗng"
     assert len(controller.capturedTemplates) == 0, "capturedTemplates bắt buộc phải được dọn dẹp"
-    assert len(controller._captured_embeddings) == 0, "captured_embeddings bắt buộc phải được dọn dẹp"
+    assert len(controller._captured_embeddings) == 0, (
+        "captured_embeddings bắt buộc phải được dọn dẹp"
+    )
 
     # 4. Khẳng định tín hiệu được phát:
-    assert dialog_signals == [False], "dialogOpenChanged(False) bắt buộc phải được phát ra khi reset"
+    assert dialog_signals == [False], (
+        "dialogOpenChanged(False) bắt buộc phải được phát ra khi reset"
+    )
     assert step_signals == [1], "currentStepChanged(1) bắt buộc phải được phát ra khi reset"
     assert len(cancel_signals) == 1, "enrollmentCancelled bắt buộc phải được phát ra khi reset"
 

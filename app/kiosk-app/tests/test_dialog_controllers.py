@@ -43,6 +43,7 @@ def _create_mock_detection(is_valid: bool = True, yaw: float = 0.0) -> FaceDetec
 # 1. Kiểm thử PinController
 # ------------------------------------------------------------------------------
 
+
 def test_pin_controller_typing_and_backspace(qapp):
     """Kiểm tra gõ số, backspace và clear trên bàn phím ảo."""
     controller = PinController()
@@ -113,6 +114,7 @@ def test_pin_controller_lockout_on_consecutive_failures(qapp):
 # ------------------------------------------------------------------------------
 # 2. Kiểm thử EnrollmentController
 # ------------------------------------------------------------------------------
+
 
 def test_enrollment_controller_otp_typing(qapp):
     """Kiểm tra nhập mã OTP trên EnrollmentController."""
@@ -305,7 +307,7 @@ def test_tst_ksk_026_api_contract_alignment(qapp):
 
     assert "/kiosk/verify-otp" in verify_url
     assert verify_payload["otp"] == "123456"
-    assert "kioskId" in verify_payload
+    assert "kioskId" not in verify_payload
     assert "X-Kiosk-Id" in verify_headers
     assert "X-Kiosk-Secret" in verify_headers
 
@@ -343,9 +345,8 @@ def test_tst_ksk_026_api_contract_alignment(qapp):
     assert "/kiosk/enroll-face" in enroll_url
     assert enroll_payload["otp"] == "123456"
     assert enroll_payload["sessionToken"] == "test-session-token-xyz"
+    assert "kioskId" not in enroll_payload
     assert len(enroll_payload["vector512"]) == 512
     # L2 norm phải bằng 1.0 (sai số float 1e-4)
     vec_norm = np.linalg.norm(np.array(enroll_payload["vector512"]))
     assert pytest.approx(vec_norm, 1e-4) == 1.0
-
-

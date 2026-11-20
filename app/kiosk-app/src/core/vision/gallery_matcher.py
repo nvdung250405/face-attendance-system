@@ -102,7 +102,9 @@ class GalleryCacheManager:
                 self._embeddings_matrix = np.empty((0, 512), dtype=np.float32)
                 self._metadata_registry.clear()
                 self._last_matched_pose = None
-                self._gallery_version = version if version is not None else (self._gallery_version + 1)
+                self._gallery_version = (
+                    version if version is not None else (self._gallery_version + 1)
+                )
                 logger.info("Đã xóa trắng bộ nhớ đệm Gallery (0 nhân sự).")
                 return 0
 
@@ -167,7 +169,9 @@ class GalleryCacheManager:
                         norm_vec = self._normalize_vector(t_vec)
                         if norm_vec is None:
                             continue
-                        p_type = str(tmpl.get("poseType") or tmpl.get("pose_type") or "FRONTAL").upper()
+                        p_type = str(
+                            tmpl.get("poseType") or tmpl.get("pose_type") or "FRONTAL"
+                        ).upper()
                         ids.append(emp_id)
                         poses.append(p_type)
                         vectors.append(norm_vec)
@@ -190,15 +194,11 @@ class GalleryCacheManager:
                 vectors.append(norm_vec)
 
             if vectors:
-                self._embeddings_matrix = np.ascontiguousarray(
-                    np.vstack(vectors), dtype=np.float32
-                )
+                self._embeddings_matrix = np.ascontiguousarray(np.vstack(vectors), dtype=np.float32)
                 self._id_map = np.array(ids, dtype=np.int64)
                 self._pose_map = np.array(poses, dtype="<U20")
                 valid_ids = set(ids)
-                self._metadata_registry = {
-                    k: v for k, v in metadata_map.items() if k in valid_ids
-                }
+                self._metadata_registry = {k: v for k, v in metadata_map.items() if k in valid_ids}
             else:
                 self._embeddings_matrix = np.empty((0, 512), dtype=np.float32)
                 self._id_map = np.empty((0,), dtype=np.int64)
@@ -211,8 +211,10 @@ class GalleryCacheManager:
             else:
                 self._gallery_version += 1
 
-            emp_count = len(self._metadata_registry) if self._metadata_registry else (
-                len(np.unique(self._id_map)) if len(self._id_map) > 0 else 0
+            emp_count = (
+                len(self._metadata_registry)
+                if self._metadata_registry
+                else (len(np.unique(self._id_map)) if len(self._id_map) > 0 else 0)
             )
             template_count = len(self._id_map)
             mem_mb = self._embeddings_matrix.nbytes / (1024 * 1024)
@@ -275,7 +277,9 @@ class GalleryCacheManager:
             scores = np.dot(self._embeddings_matrix, q)
             best_idx = int(np.argmax(scores))
             best_score = float(scores[best_idx])
-            matched_pose = str(self._pose_map[best_idx]) if len(self._pose_map) > best_idx else "FRONTAL"
+            matched_pose = (
+                str(self._pose_map[best_idx]) if len(self._pose_map) > best_idx else "FRONTAL"
+            )
 
             if not np.isfinite(best_score):
                 self._last_matched_pose = None
@@ -430,8 +434,12 @@ class GalleryCacheManager:
                             np.vstack([self._embeddings_matrix, np.vstack(new_vecs)]),
                             dtype=np.float32,
                         )
-                        self._id_map = np.concatenate([self._id_map, np.array(new_ids, dtype=np.int64)])
-                        self._pose_map = np.concatenate([self._pose_map, np.array(new_poses, dtype="<U20")])
+                        self._id_map = np.concatenate(
+                            [self._id_map, np.array(new_ids, dtype=np.int64)]
+                        )
+                        self._pose_map = np.concatenate(
+                            [self._pose_map, np.array(new_poses, dtype="<U20")]
+                        )
 
                     if metadata is not None:
                         self._metadata_registry[employee_id] = metadata
@@ -513,4 +521,3 @@ class GalleryCacheManager:
             if self._metadata_registry:
                 return [int(x) for x in self._metadata_registry.keys()]
             return [int(x) for x in np.unique(self._id_map)]
-

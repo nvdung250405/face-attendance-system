@@ -32,9 +32,8 @@ class PinSecurityManager:
             max_attempts if max_attempts is not None else settings.max_pin_attempts
         )
         self.lockout_duration_sec: int = (
-            (lockout_minutes if lockout_minutes is not None else settings.pin_lockout_minutes)
-            * 60
-        )
+            lockout_minutes if lockout_minutes is not None else settings.pin_lockout_minutes
+        ) * 60
         self.failed_attempts: int = 0
         self.lockout_until_timestamp: float | None = None
 
@@ -64,9 +63,7 @@ class PinSecurityManager:
         """Ghi nhận một lần nhập sai mã PIN và kích hoạt khóa nếu đạt ngưỡng."""
         now = current_time if current_time is not None else time.time()
         self.failed_attempts += 1
-        logger.warning(
-            "Nhập sai mã PIN lần thứ %d/%d", self.failed_attempts, self.max_attempts
-        )
+        logger.warning("Nhập sai mã PIN lần thứ %d/%d", self.failed_attempts, self.max_attempts)
 
         if self.failed_attempts >= self.max_attempts:
             self.lockout_until_timestamp = now + self.lockout_duration_sec

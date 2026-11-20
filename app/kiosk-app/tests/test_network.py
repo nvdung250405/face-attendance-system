@@ -36,7 +36,7 @@ def test_tst_ksk_api_001_send_punch_headers_and_success():
             assert body["employeeId"] == 1042
             assert body["verificationMethod"] == "VERIFICATION_FACE"
             assert pytest.approx(body["confidenceScore"]) == 0.8924
-            assert body["kioskId"] == "KIOSK-HN-01"
+            assert "kioskId" not in body
             return httpx.Response(
                 200,
                 json={
@@ -82,8 +82,11 @@ def test_tst_ksk_api_001_send_punch_headers_and_success():
 
 def test_tst_ksk_api_001_send_punch_cooldown_conflict():
     """Kiểm tra phản hồi 409 COOLDOWN_ACTIVE ném KioskCooldownConflict."""
+
     def mock_handler(request: httpx.Request):
-        return httpx.Response(409, json={"code": "COOLDOWN_ACTIVE", "message": "Bạn vừa điểm danh rồi!"})
+        return httpx.Response(
+            409, json={"code": "COOLDOWN_ACTIVE", "message": "Bạn vừa điểm danh rồi!"}
+        )
 
     client = httpx.Client(transport=httpx.MockTransport(mock_handler))
     http_client = KioskHttpClient(client=client)
@@ -94,6 +97,7 @@ def test_tst_ksk_api_001_send_punch_cooldown_conflict():
 
 def test_tst_ksk_api_002_offline_fallback_on_network_error(tmp_path):
     """TST-KSK-API-002: Khi mạng lỗi, client ném KioskNetworkError để lưu trữ ngoại tuyến vào SQLite WAL."""
+
     def error_handler(request: httpx.Request):
         raise httpx.ConnectError("Network unreachable")
 
@@ -124,9 +128,12 @@ def test_tst_ksk_api_002_offline_fallback_on_network_error(tmp_path):
 
 def test_tst_ksk_api_003_sync_batch_payload_and_response():
     """TST-KSK-API-003: Đồng bộ bù gói lô tối đa 50 bản ghi và xử lý danh sách syncedLocalIds."""
+
     def mock_handler(request: httpx.Request):
         body = json.loads(request.content)
-        assert body["batchSize"] == 2
+        assert len(body["records"]) == 2
+        assert "batchSize" not in body
+        assert "kioskId" not in body
         return httpx.Response(
             200,
             json={
@@ -203,6 +210,7 @@ def test_tst_ksk_api_004_stomp_hot_patching_add_and_delete(qapp):
 
 def test_fetch_gallery_and_enrollment_api():
     """Kiểm tra các endpoint phụ trợ: fetch_gallery, verify_otp, enroll_face."""
+
     def mock_handler(request: httpx.Request):
         path = request.url.path
         if path.endswith("/kiosk/gallery"):
@@ -267,6 +275,7 @@ def test_fetch_gallery_and_enrollment_api():
 
 def test_verify_pin_api():
     """Kiểm tra gọi API POST /kiosk/verify-pin thành công, sai mã và bị khóa (API-KSK-007)."""
+
     def mock_handler(request: httpx.Request):
         if request.url.path.endswith("/kiosk/verify-pin"):
             body = json.loads(request.content)
@@ -392,7 +401,8 @@ def test_enroll_face_multi_template_and_validation():
     req_body = json.loads(captured_requests[0].content)
     assert req_body["otp"] == "123456"
     assert req_body["sessionToken"] == "tok_abc"
-    assert req_body["kioskId"] == "KIOSK-HN-01"
+    assert "kioskId" not in req_body
+    assert captured_requests[0].headers["X-Kiosk-Id"] == "KIOSK-HN-01"
     assert "templates" in req_body
     assert len(req_body["templates"]) == 3
     assert req_body["templates"][0]["poseType"] == "FRONTAL"
@@ -402,9 +412,7 @@ def test_enroll_face_multi_template_and_validation():
     assert pytest.approx(req_body["vector512"][0]) == 1.0
 
     # 2. ValueError khi len(templates) != 3 (2 templates)
-    with pytest.raises(
-        ValueError, match="templates bắt buộc phải có đúng 3 phần tử"
-    ):
+    with pytest.raises(ValueError, match="templates bắt buộc phải có đúng 3 phần tử"):
         http_client.enroll_face(
             otp="123456",
             session_token="tok_abc",
@@ -413,9 +421,7 @@ def test_enroll_face_multi_template_and_validation():
         )
 
     # 3. ValueError khi len(templates) != 3 (4 templates)
-    with pytest.raises(
-        ValueError, match="templates bắt buộc phải có đúng 3 phần tử"
-    ):
+    with pytest.raises(ValueError, match="templates bắt buộc phải có đúng 3 phần tử"):
         http_client.enroll_face(
             otp="123456",
             session_token="tok_abc",
@@ -424,13 +430,10 @@ def test_enroll_face_multi_template_and_validation():
         )
 
     # 4. ValueError khi cả templates và vector512 đều None
-    with pytest.raises(
-        ValueError, match="Cần cung cấp ít nhất templates hoặc vector512"
-    ):
+    with pytest.raises(ValueError, match="Cần cung cấp ít nhất templates hoặc vector512"):
         http_client.enroll_face(
             otp="123456",
             session_token="tok_abc",
             templates=None,
             vector512=None,
         )
-

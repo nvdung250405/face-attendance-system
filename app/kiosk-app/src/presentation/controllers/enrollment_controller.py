@@ -292,7 +292,6 @@ class EnrollmentController(QObject):
         }
         payload = {
             "otp": self._otp,
-            "kioskId": settings.kiosk_id,
         }
 
         try:
@@ -354,7 +353,9 @@ class EnrollmentController(QObject):
                 self.progressPercentChanged.emit(0.0)
                 self.statusMessageChanged.emit(self._status_message)
                 return True
-            self._status_message = "Không thể kết nối máy chủ xác thực OTP. Vui lòng kiểm tra mạng và thử lại."
+            self._status_message = (
+                "Không thể kết nối máy chủ xác thực OTP. Vui lòng kiểm tra mạng và thử lại."
+            )
             self.statusMessageChanged.emit(self._status_message)
             return False
 
@@ -468,7 +469,9 @@ class EnrollmentController(QObject):
         if self._pose_hold_duration > 0 and self._capture_interval > 0:
             if self._pose_hold_start is None:
                 self._pose_hold_start = now
-                self._status_message = f"Tư thế {target_cfg['title']} đạt chuẩn! Vui lòng giữ yên..."
+                self._status_message = (
+                    f"Tư thế {target_cfg['title']} đạt chuẩn! Vui lòng giữ yên..."
+                )
                 self.statusMessageChanged.emit(self._status_message)
                 return
             elif now - self._pose_hold_start < self._pose_hold_duration:
@@ -584,19 +587,22 @@ class EnrollmentController(QObject):
                 if v_norm > 1e-6:
                     v_arr = v_arr / v_norm
                 cfg = POSE_CONFIGS[p]
-                self._captured_templates.append({
-                    "poseType": cfg["name"],
-                    "vector512": [float(x) for x in v_arr],
-                    "yaw": 0.0 if p == PoseType.FRONTAL else (18.0 if p == PoseType.LEFT_TILT else -18.0),
-                    "pitch": 0.0,
-                    "laplacian": 40.0,
-                    "livenessScore": 0.95,
-                })
+                self._captured_templates.append(
+                    {
+                        "poseType": cfg["name"],
+                        "vector512": [float(x) for x in v_arr],
+                        "yaw": 0.0
+                        if p == PoseType.FRONTAL
+                        else (18.0 if p == PoseType.LEFT_TILT else -18.0),
+                        "pitch": 0.0,
+                        "laplacian": 40.0,
+                        "livenessScore": 0.95,
+                    }
+                )
 
         payload: dict[str, Any] = {
             "otp": self._otp,
             "sessionToken": getattr(self, "_session_token", "") or "demo-session-token",
-            "kioskId": settings.kiosk_id,
             "templates": self._captured_templates,
             "vector512": frontal_vec,
         }
@@ -670,15 +676,21 @@ class EnrollmentController(QObject):
                 vec = np.random.randn(512).astype(np.float32)
                 vec = (vec / np.linalg.norm(vec)).tolist()
                 cfg = POSE_CONFIGS[pose]
-                y_val = 0.0 if pose == PoseType.FRONTAL else (18.0 if pose == PoseType.LEFT_TILT else -18.0)
-                self._captured_templates.append({
-                    "poseType": cfg["name"],
-                    "vector512": vec,
-                    "yaw": y_val,
-                    "pitch": 0.0,
-                    "laplacian": 45.0,
-                    "livenessScore": 0.95,
-                })
+                y_val = (
+                    0.0
+                    if pose == PoseType.FRONTAL
+                    else (18.0 if pose == PoseType.LEFT_TILT else -18.0)
+                )
+                self._captured_templates.append(
+                    {
+                        "poseType": cfg["name"],
+                        "vector512": vec,
+                        "yaw": y_val,
+                        "pitch": 0.0,
+                        "laplacian": 45.0,
+                        "livenessScore": 0.95,
+                    }
+                )
                 self._captured_embeddings.append(vec)
 
         self._current_step = 3

@@ -162,7 +162,11 @@ class OfflineSyncWorker(QThread):
             else:
                 method = "VERIFICATION_FACE"
 
-            raw_score = p.get("confidence_score") if p.get("confidence_score") is not None else p.get("similarity_score")
+            raw_score = (
+                p.get("confidence_score")
+                if p.get("confidence_score") is not None
+                else p.get("similarity_score")
+            )
             score = round(float(raw_score), 4) if raw_score is not None else 0.85
 
             rec = {
@@ -177,8 +181,6 @@ class OfflineSyncWorker(QThread):
             records_payload.append(rec)
 
         payload = {
-            "kioskId": self.kiosk_id,
-            "batchSize": len(records_payload),
             "batchCount": len(records_payload),
             "records": records_payload,
         }
