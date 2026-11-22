@@ -19,6 +19,7 @@ Thư mục `scripts/` chứa các kịch bản phụ trợ phục vụ môi trư
 | Kịch bản / Công cụ | Loại tệp | Trách nhiệm chi tiết | Lệnh thực thi mẫu |
 |:---|:---|:---|:---|
 | [**`setup/download_kiosk_models.py`**](setup/download_kiosk_models.py) | Python Downloader | Tải bộ 3 trọng số mô hình AI ONNX (YuNet, MiniFASNet, ArcFace) và xác thực checksum SHA-256 | `python scripts/setup/download_kiosk_models.py` |
+| [**`verify_contracts.py`**](verify_contracts.py) | Contract Verifier | Kiểm định tính toàn vẹn và cú pháp của toàn bộ hợp đồng API, STOMP và JSON Schema | `python scripts/verify_contracts.py --dir contracts` |
 
 > [!NOTE]
 > **Tài nguyên Cơ sở Dữ liệu:** Toàn bộ tệp nạp dữ liệu mẫu (`seed-e2e-data.sql`) và kịch bản làm sạch (`clean-db-data.sql`) được quản lý tập trung tại [**`database/`**](../database/README.md).

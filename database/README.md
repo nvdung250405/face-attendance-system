@@ -1,32 +1,25 @@
 # Trung Tâm Quản Trị Cơ Sở Dữ Liệu (`database/`)
 
-> **Mã phân vùng:** `WORKSPACE-DATABASE`  
-> **Cấp độ không gian:** Parent Database & Data Management Hub  
-> **Đường dẫn:** `database/`  
+> **Cấp độ không gian:** Cấp 2 (Database Hub)  
 > **Không gian cha:** [`README.md`](../README.md) (Thư mục Gốc)  
-> **Công nghệ lưu trữ:** PostgreSQL 16 (Container `fas-postgres`), Flyway 10.x, SQLite (Edge Kiosk)  
-> **Trách nhiệm cốt lõi (Single Responsibility):** Quản lý tập trung toàn bộ kiến trúc CSDL hệ thống, sơ đồ quan hệ thực thể (ERD), bộ dữ liệu mẫu (Seeds) cho môi trường Dev/Staging, các kịch bản làm sạch dữ liệu (Data Cleanup) và cẩm nang vòng đời lược đồ bảng (Migrations).
+> **Công nghệ lưu trữ:** PostgreSQL 16 (Container `fas-postgres`), Flyway 10.x, SQLite (Edge Kiosk).
 
 ---
 
-## 1. Sơ Đồ Quan Hệ Thực Thể Tổng Quan (ERD Diagram)
+## 1. Sơ Đồ Thực Thể Liên Kết (ERD)
 
 ```mermaid
 erDiagram
-    users ||--o{ biometric_templates : "sở hữu (1..N tư thế)"
-    users ||--o{ employee_shifts : "được phân công"
+    users ||--o{ biometric_templates : "sở hữu (1..3 tư thế)"
+    users ||--o{ employee_shifts : "phân ca"
     users ||--o{ attendance_logs : "chấm công"
     users ||--o{ enrollment_sessions : "đăng ký OTP"
-    users ||--o{ excuse_requests : "gửi giải trình"
-    users ||--o{ refresh_tokens : "phiên đăng nhập"
-    users ||--o{ notifications : "nhận thông báo"
-    users ||--o{ consent_withdrawals : "rút đồng thuận"
-    users ||--o{ data_subject_requests : "yêu cầu dữ liệu"
-    users ||--o{ payroll_periods : "khóa/mở kỳ công"
-    
-    shifts ||--o{ employee_shifts : "áp dụng cho"
+    users ||--o{ excuse_requests : "khiếu nại"
+    users ||--o{ refresh_tokens : "phiên JWT"
+    users ||--o{ notifications : "thông báo"
+    shifts ||--o{ employee_shifts : "áp dụng"
     kiosks ||--o{ attendance_logs : "ghi nhận tại"
-    attendance_logs ||--o{ excuse_requests : "khiếu nại giải trình"
+    attendance_logs ||--o{ excuse_requests : "giải trình"
 
     users {
         bigserial id PK
@@ -58,191 +51,60 @@ erDiagram
         time start_time
         time end_time
         int grace_period_minutes
-        boolean is_active
-    }
-
-    employee_shifts {
-        bigserial id PK
-        bigint user_id FK
-        bigint shift_id FK
-        date effective_from
-        date effective_to
-    }
-
-    kiosks {
-        varchar id PK
-        varchar location_name
-        varchar secret_token_hash
-        boolean is_active
-        timestamp last_ping_at
     }
 
     attendance_logs {
         bigserial id PK
         bigint user_id FK
-        varchar kiosk_id FK
-        timestamp punch_timestamp
+        bigint kiosk_id FK
+        bigint shift_id FK
+        timestamp punch_time
         varchar punch_type
         varchar verification_method
-        numeric confidence_score
         varchar status
-        int late_minutes
         boolean is_offline_sync
     }
-
-    excuse_requests {
-        bigserial id PK
-        bigint user_id FK
-        bigint attendance_log_id FK
-        varchar reason
-        timestamp requested_punch_timestamp
-        varchar status
-        bigint decided_by FK
-        timestamp decided_at
-        varchar rejection_reason
-    }
-
-    enrollment_sessions {
-        bigserial id PK
-        bigint user_id FK
-        varchar otp_hash
-        varchar consent_version
-        timestamp consent_signed_at
-        varchar client_ip
-        timestamp expires_at
-        boolean is_used
-    }
-
-    payroll_periods {
-        bigserial id PK
-        int period_year
-        int period_month
-        varchar status
-        bigint locked_by FK
-        timestamp locked_at
-        bigint unlocked_by FK
-        timestamp unlocked_at
-        varchar unlock_reason
-    }
-
-    refresh_tokens {
-        bigserial id PK
-        bigint user_id FK
-        varchar token_hash UK
-        timestamp expires_at
-        timestamp revoked_at
-        varchar client_ip
-        varchar user_agent
-    }
-
-    notifications {
-        bigserial id PK
-        bigint user_id FK
-        varchar event_type
-        varchar title
-        varchar body
-        varchar reference_type
-        varchar reference_id
-        timestamp read_at
-        timestamp created_at
-    }
-
-    consent_withdrawals {
-        bigserial id PK
-        bigint user_id FK
-        timestamp withdrawn_at
-        varchar client_ip
-        timestamp biometric_disposal_due_at
-        timestamp processed_at
-    }
-
-    data_subject_requests {
-        bigserial id PK
-        bigint user_id FK
-        varchar request_type
-        varchar detail
-        varchar status
-        bigint handled_by FK
-        varchar response
-        timestamp responded_at
-    }
-
-    audit_logs {
-        bigserial id PK
-        bigint actor_id FK
-        varchar action
-        varchar entity_type
-        varchar entity_id
-        jsonb before_state
-        jsonb after_state
-    }
 ```
 
 ---
 
-## 2. Bản Đồ Cấu Trúc Không Gian Dữ Liệu (Internal Layout)
+## 2. Danh Mục Các Phiên Bản Migration (Flyway V1..V9)
 
-| Phân Vùng / Thư Mục | Loại Dữ Liệu | Mục Đích & Trách Nhiệm Chi Tiết |
+Toàn bộ script DDL gốc nằm tại [`app/backend-service/src/main/resources/db/migration/`](../app/backend-service/src/main/resources/db/migration/):
+
+| Phiên Bản | Tệp Migration | Phạm Vi Thay Đổi Cốt Lõi |
+| :---: | :--- | :--- |
+| **`V1`** | `V1__initial_schema.sql` | Khởi tạo 8 bảng gốc: `users`, `shifts`, `kiosks`, `attendance_logs`, `biometric_templates`... |
+| **`V2`** | `V2__add_credential_lifecycle.sql` | Bổ sung cờ bắt buộc đổi mật khẩu lần đầu |
+| **`V3`** | `V3__add_excuse_requests_and_kiosk_lifecycle.sql` | Bổ sung bảng đơn giải trình `excuse_requests` và chỉ mục kiểm toán |
+| **`V4`** | `V4__add_lifecycle_entities.sql` | Bổ sung kỳ công lương `payroll_periods`, `refresh_tokens`, `notifications` |
+| **`V5`** | `V5__drop_must_change_password.sql` | Tối ưu hóa chu trình đăng nhập lần đầu |
+| **`V6`** | `V6__add_pin_failed_attempts.sql` | Bổ sung bộ đếm số lần nhập sai mã PIN và khóa trạm tạm thời |
+| **`V7`** | `V7__add_audit_logs_entity_type_created_idx.sql` | Bổ sung chỉ mục hiệu năng cho bảng nhật ký kiểm toán |
+| **`V8`** | `V8__add_pose_type_to_biometric_templates.sql` | Thêm cột `pose_type` lưu 3 tư thế khuôn mặt (`FRONTAL`, `LEFT_TILT`, `RIGHT_TILT`) |
+| **`V9`** | `V9__performance_and_foreign_key_indexes.sql` | Bổ sung chỉ mục khóa ngoại, Composite Index và Partial Index tăng tốc truy vấn |
+
+---
+
+## 3. Danh Mục Bộ Dữ Liệu Mẫu (Seeds & Scripts)
+
+| Đường dẫn tệp | Loại tài nguyên | Mục đích sử dụng |
 | :--- | :--- | :--- |
-| [**`seeds/`**](seeds/) | SQL Fixtures | Chứa các kịch bản nạp dữ liệu mẫu:<br/>• [**`seed-e2e-data.sql`**](seeds/seed-e2e-data.sql): Dữ liệu mẫu E2E cho môi trường phát triển cục bộ (Local Dev).<br/>• [**`seed-staging-data.sql`**](seeds/seed-staging-data.sql): Dữ liệu chuẩn doanh nghiệp cho môi trường tiền phát hành (Staging/UAT), đầy đủ 5 khối phòng ban, RBAC, và các case chấm công/giải trình thực tế. |
-| [**`scripts/`**](scripts/) | SQL Utilities | Chứa các tiện ích quản trị dữ liệu (`clean-db-data.sql`): Dọn sạch dữ liệu thử nghiệm, xóa rác điểm danh, đưa hệ thống về trạng thái sạch (Clean State) mà không phá vỡ cấu trúc bảng. |
-| [**`migrations/`**](migrations/) | Lược Đồ Bảng | Cẩm nang ghi chú và danh mục 8 phiên bản nâng cấp cấu trúc bảng tự động (Flyway `V1..V8`). Mã nguồn migration thực thi nằm tại [`app/backend-service/src/main/resources/db/migration/`](../app/backend-service/src/main/resources/db/migration/). |
+| [**`database/seeds/seed-staging-data.sql`**](seeds/seed-staging-data.sql) | Dữ liệu Staging/UAT | Nạp 5 Kiosk, 6 Ca kíp, 14 Nhân sự (đủ role), 24 logs điểm danh mẫu |
+| [**`database/seeds/seed-e2e-data.sql`**](seeds/seed-e2e-data.sql) | Dữ liệu Test E2E | Phục vụ bộ chạy tự động FlaUI, Playwright và System Integration |
+| [**`database/scripts/clean-db-data.sql`**](scripts/clean-db-data.sql) | Kịch bản dọn dẹp | `TRUNCATE CASCADE` toàn bộ dữ liệu nghiệp vụ, giữ nguyên bảng phân ca và admin gốc |
 
 ---
 
-## 3. Cẩm Nang Thao Tác CSDL Qua CLI (Cheat Sheet)
+## 4. Lệnh Thao Tác CSDL Thường Dùng
 
-Toàn bộ thao tác nạp và dọn dẹp dữ liệu được thực thi trực tiếp qua lệnh Docker chuẩn (chạy được trên mọi hệ điều hành Windows, Linux, macOS):
-
-### 1. Nạp dữ liệu mẫu toàn diện (E2E Demo Seed)
-Nạp dữ liệu mẫu phát triển cục bộ (Local Dev):
 ```bash
-docker exec -i fas-postgres psql -U fas_admin -d fas_db < database/seeds/seed-e2e-data.sql
-```
+# 1. Nạp dữ liệu mẫu Staging vào container đang chạy
+docker exec -i fas-postgres psql -U fas_admin -d fas_db < database/seeds/seed-staging-data.sql
 
-### 2. Nạp dữ liệu chuẩn Doanh nghiệp cho Môi trường STAGING (Pre-production / UAT)
-Nạp toàn bộ cơ cấu phòng ban, 4 trạm Kiosk địa bàn, mẫu 3 tư thế khuôn mặt, đơn giải trình và kỳ công cho môi trường Staging:
-```bash
-# Nạp trực tiếp vào container PostgreSQL Staging:
-docker exec -i fas-postgres-staging psql -U fas_staging_admin -d fas_staging_db < database/seeds/seed-staging-data.sql
-```
-
-### 3. Dọn sạch dữ liệu thử nghiệm (Clean Mode)
-Xóa toàn bộ dữ liệu chấm công và người dùng thử nghiệm, **chỉ giữ lại duy nhất tài khoản `admin@fas.company.com` gốc**:
-```bash
-# Đưa hệ thống về trạng thái sạch:
+# 2. Làm sạch toàn bộ dữ liệu nghiệp vụ về trạng thái ban đầu
 docker exec -i fas-postgres psql -U fas_admin -d fas_db < database/scripts/clean-db-data.sql
+
+# 3. Đăng nhập trực tiếp vào dòng lệnh psql của CSDL
+docker exec -it fas-postgres psql -U fas_admin -d fas_db
 ```
-
-### 3. Sao lưu & Phục hồi CSDL (Backup & Restore)
-```bash
-# Xuất dump toàn bộ CSDL ra file:
-docker exec -t fas-postgres pg_dump -U fas_admin fas_db > database/fas_db_backup.sql
-
-# Phục hồi CSDL từ file dump:
-docker exec -i fas-postgres psql -U fas_admin -d fas_db < database/fas_db_backup.sql
-```
-
----
-
-## 4. Bảng Phân Quyền Tài Khoản Mẫu
-
-### A. Môi trường Staging ([`seeds/seed-staging-data.sql`](seeds/seed-staging-data.sql))
-* Mật khẩu đăng nhập: **`Staging@FAS2026!`** (hoặc `StagingAdmin@2026!` đối với admin bootstrap)
-* Mã PIN Kiosk: **`123456`**
-
-| Mã Nhân Viên | Họ và Tên | Email Đăng Nhập | Vai Trò Hệ Thống (Role) | Phòng Ban |
-| :--- | :--- | :--- | :--- | :--- |
-| `STG-ADM-001` | Nguyễn Thành Nam | `staging-admin@fas.company.com` | `ADMIN` | Ban Quản Trị Hệ Thống |
-| `STG-ADM-002` | Trần Quốc Bảo | `dpo.officer@fas.company.com` | `DPO` | Ban An Toàn & Pháp Chế |
-| `STG-HR-001` | Lê Thị Thu Hương | `hr.manager@fas.company.com` | `HR_MANAGER` | Phòng Quản Trị Nhân Sự |
-| `STG-HR-002` | Phạm Quỳnh Nga | `hr.specialist@fas.company.com` | `HR_MANAGER` | Phòng Quản Trị Nhân Sự |
-| `STG-ENG-001` | Vũ Hoàng Đăng | `tech.lead@fas.company.com` | `EMPLOYEE` | Khối Kỹ Thuật Phần Mềm |
-| `STG-ENG-002` | Đỗ Tuấn An | `dev.an@fas.company.com` | `EMPLOYEE` | Khối Kỹ Thuật Phần Mềm |
-| `STG-ENG-003` | Hoàng Thúy Bình | `qa.binh@fas.company.com` | `EMPLOYEE` | Khối Kỹ Thuật Phần Mềm |
-| `STG-ENG-004` | Bùi Quang Hùng | `intern.hung@fas.company.com` | `EMPLOYEE` *(PENDING_CONSENT)* | Khối Kỹ Thuật Phần Mềm |
-| `STG-OPS-001` | Đinh Văn Mạnh | `ops.lead@fas.company.com` | `EMPLOYEE` | Khối Sản Xuất & Vận Hành |
-| `STG-OPS-002` | Phan Đình Cường | `worker.cuong@fas.company.com` | `EMPLOYEE` | Khối Sản Xuất & Vận Hành |
-| `STG-OPS-003` | Nguyễn Văn Dũng | `worker.dung@fas.company.com` | `EMPLOYEE` *(PIN Fallback)* | Khối Sản Xuất & Vận Hành |
-| `STG-OPS-004` | Vũ Thị Phương Thảo | `worker.thao@fas.company.com` | `EMPLOYEE` *(CONSENT_WITHDRAWN)* | Khối Sản Xuất & Vận Hành |
-| `STG-OPS-005` | Trần Đình Tuấn | `worker.tuan@fas.company.com` | `EMPLOYEE` *(TERMINATED)* | Khối Sản Xuất & Vận Hành |

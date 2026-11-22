@@ -1,31 +1,74 @@
-# Project Operating Guidelines (AGENTS.md)
+# Behavioral Guidelines & Operating Principles (AGENTS.md)
 
-## 0. Tool Isolation Boundary
-- Harness scripts (`bounded_run`, `repo_map`, `scaffold`, `verify_contracts`, `ast-grep`) belong to the agent environment. NEVER copy or commit them into the repository. Invoke via global CLI or environment path.
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-## 1. Agent Environment Stack
-- **Discovered Host Toolchains:** ast-grep, curl, docker, docker-compose, dotnet, flaui, gh, git, jq, kubectl, mvn, node, npm, playwright, pytest, python
-- **Harness & Guards:**
-  - Wrap commands: `bounded_run "<cmd>"`
-  - Viewport slice: `bounded_run view <file> --line <N> --window <W>`
-  - Structural AST map: `.agents/repo_map.txt` (via `repo_map`)
-- **State & Memory:**
-  - Task session: `.agents/tasks/<id>.md` (`task-handoff`)
-  - Invariants: MCP `memory` (`create_entities`, `read_graph`)
-  - AST refactor: MCP `ast-grep` (`find_code`, `rewrite_code`)
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## 2. Target Project Stack
-- **Docker Services:** fas-postgres, fas-backend, fas-web
-- **Services:**
-  - `app/backend-service`: Java 21 / Spring Boot & Maven
-  - `app/kiosk-app`: Python
-  - `app/web-portal`: React / TypeScript
+---
 
-## 3. Mandatory Verification Commands
-- backend-service test: `bounded_run "cd app/backend-service && ./mvnw test"`
-- backend-service lint: `bounded_run "cd app/backend-service && ./mvnw checkstyle:check"`
-- kiosk-app test: `bounded_run "cd app/kiosk-app && pytest"`
-- kiosk-app lint: `bounded_run "cd app/kiosk-app && ruff check ."`
-- web-portal test: `bounded_run "cd app/web-portal && npm test"`
-- web-portal lint: `bounded_run "cd app/web-portal && npm run lint"`
-- Run tests and linters before declaring work done.
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+---
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- No decorative emojis, redundant icon labels, or visual clutter in documentation, reports, or commits.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+---
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+---
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
