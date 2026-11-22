@@ -40,19 +40,19 @@ Agent tra cứu trực tiếp file xử lý mà không cần tìm kiếm:
 
 ```bash
 # 1. Khởi chạy chế độ phát triển (Dev Mode: Bật phím tắt mô phỏng Space, 0, 1)
-python app/kiosk-app/main.py --dev
+python apps/kiosk-app/main.py --dev
 
 # 2. Khởi chạy không cần camera (Mô phỏng ảnh chụp bằng phím Space)
-python app/kiosk-app/main.py --dev --no-camera
+python apps/kiosk-app/main.py --dev --no-camera
 
 # 3. Khởi chạy môi trường sản xuất (Production Clean)
-python app/kiosk-app/main.py --prod
+python apps/kiosk-app/main.py --prod
 
 # 4. Chạy toàn bộ Unit Tests (Bắt buộc)
-cd app/kiosk-app && pytest
+cd apps/kiosk-app && pytest
 
 # 5. Kiểm tra lỗi cú pháp và lint mã nguồn (Bắt buộc)
-cd app/kiosk-app && ruff check .
+cd apps/kiosk-app && ruff check .
 ```
 
 * **Phím tắt nhanh chế độ Dev:** `F1` (Trợ giúp), `F2` (Mở PIN Pad), `F3` (Đăng ký OTP), `Space` (Mô phỏng quét mặt thành công).

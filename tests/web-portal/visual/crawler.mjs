@@ -78,12 +78,12 @@ export async function runCrawler(options = {}) {
     VITE_TEST_URL: `http://127.0.0.1:${port}`,
     VISUAL_FILTER: filter,
     UPDATE_BASELINE: options.updateBaseline ? 'true' : 'false',
-    NODE_PATH: path.resolve(REPO_ROOT, 'app/web-portal/node_modules'),
+    NODE_PATH: path.resolve(REPO_ROOT, 'apps/web-portal/node_modules'),
   };
 
   const args = [
     '--prefix',
-    'app/web-portal',
+    'apps/web-portal',
     'playwright',
     'test',
     'tests/web-portal/visual/visual-responsive.spec.ts',

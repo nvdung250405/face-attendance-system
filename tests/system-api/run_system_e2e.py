@@ -439,7 +439,7 @@ def run_tests():
         # ----------------------------------------------------------------------
         print("\n--- PHẦN 13: KIỂM TRA ZERO RAW IMAGE RETENTION (TST-SYS-034) ---")
         raw_images_found = []
-        kiosk_dir = "d:/workspace/VSCode/nvdung/face-attendance-system/app/kiosk-app"
+        kiosk_dir = "d:/workspace/VSCode/nvdung/face-attendance-system/apps/kiosk-app"
         for root, dirs, files in os.walk(kiosk_dir):
             # Bỏ qua thư mục môi trường ảo .venv, tài nguyên tĩnh assets và tài liệu screenshots
             if any(part in root for part in [".venv", "assets", "screenshots", "docs"]):

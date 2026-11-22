@@ -13,7 +13,7 @@ from pathlib import Path
 DESKTOP_TESTS_DIR = Path(__file__).resolve().parent
 TESTS_DIR = DESKTOP_TESTS_DIR.parent
 WORKSPACE_DIR = TESTS_DIR.parent
-KIOSK_DIR = WORKSPACE_DIR / "app" / "kiosk-app"
+KIOSK_DIR = WORKSPACE_DIR / "apps" / "kiosk-app"
 KIOSK_SRC_DIR = KIOSK_DIR / "src"
 KIOSK_QML_DIR = KIOSK_DIR / "resources" / "qml"
 

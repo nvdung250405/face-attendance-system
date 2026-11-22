@@ -16,9 +16,9 @@
 
 Hệ thống Chấm công Doanh nghiệp Bằng Nhận Diện Khuôn Mặt (**Enterprise Face Attendance System — FAS**) là giải pháp điểm danh tự động, không chạm (**Touchless Biometric Attendance**), hoạt động trên mô hình 3 phân hệ liên kết chặt chẽ:
 
-1. **Edge Kiosk Desktop (`app/kiosk-app`)**: Trạm điểm danh độc lập tại chỗ, suy luận Edge AI thuần CPU (YuNet + MiniFASNet + ArcFace 512D) kết hợp CSDL đệm ngoại tuyến SQLite WAL (`kiosk_local.db`).
-2. **Central Backend Service (`app/backend-service`)**: Máy chủ trung tâm Spring Boot 3.4.x (Java 21 LTS), quản lý phiên JWT, mã hóa vector khuôn mặt AES-256-GCM, phát sóng thời gian thực WebSocket STOMP, và CSDL trung tâm PostgreSQL 16.
-3. **Web Portal Client (`app/web-portal`)**: Ứng dụng SPA React 19 + TypeScript + Tailwind CSS 4 phục vụ Quản trị HR theo dõi chấm công thời gian thực (Live Dashboard) và Nhân viên ký cam kết điện tử Informed Consent nhận mã OTP kích hoạt khuôn mặt.
+1. **Edge Kiosk Desktop (`apps/kiosk-app`)**: Trạm điểm danh độc lập tại chỗ, suy luận Edge AI thuần CPU (YuNet + MiniFASNet + ArcFace 512D) kết hợp CSDL đệm ngoại tuyến SQLite WAL (`kiosk_local.db`).
+2. **Central Backend Service (`apps/backend-service`)**: Máy chủ trung tâm Spring Boot 3.4.x (Java 21 LTS), quản lý phiên JWT, mã hóa vector khuôn mặt AES-256-GCM, phát sóng thời gian thực WebSocket STOMP, và CSDL trung tâm PostgreSQL 16.
+3. **Web Portal Client (`apps/web-portal`)**: Ứng dụng SPA React 19 + TypeScript + Tailwind CSS 4 phục vụ Quản trị HR theo dõi chấm công thời gian thực (Live Dashboard) và Nhân viên ký cam kết điện tử Informed Consent nhận mã OTP kích hoạt khuôn mặt.
 
 Hệ thống hoạt động theo triết lý kiến trúc **Zero Raw Photo Upload** (tuyệt đối không tải hay lưu ảnh chân dung thô lên máy chủ), suy luận AI thuần túy trên CPU máy trạm phổ thông ($0\text{ VNĐ}$ chi phí phần cứng GPU), và lưu trữ đa mẫu (**Guided Multi-Pose Capture**: Frontal, Left Tilt, Right Tilt).
 

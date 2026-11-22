@@ -8,7 +8,7 @@ Implementation profile của [docs/README.md](../docs/README.md) trên nền t�
 | --------- | -------------------------- | --------------------------------------- |
 | Quy trình | `github-docs.md`           | Team làm việc với GitHub như thế nào?   |
 | Thực thi  | `.github/` & Repo Settings | Tự động hóa và ép buộc quy tắc qua máy. |
-| Nội dung  | `docs/` & `app/`           | Tài liệu SDLC và mã nguồn sản phẩm.     |
+| Nội dung  | `docs/` & `apps/`           | Tài liệu SDLC và mã nguồn sản phẩm.     |
 
 - **Trong phạm vi:** Issue, branch, commit, PR, review/merge, CI/CD, release, CODEOWNERS, templates, repo settings, evidence trace, hướng dẫn AI.
 - **Ngoài phạm vi:** Nội dung, cấu trúc, schema, ID tài liệu (`sdlc-docs.md`); quyết định công nghệ/lệnh cụ thể của dự án (STACK, PLAN).

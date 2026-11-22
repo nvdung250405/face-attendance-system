@@ -13,8 +13,8 @@
 
 Hệ thống Chấm công Doanh nghiệp Bằng Nhận Diện Khuôn Mặt (**Enterprise Face Attendance System — FAS**) tích hợp hai giao diện tương tác độc lập phục vụ hai bối cảnh sử dụng khác biệt:
 
-1. **Web Portal Client (`app/web-portal`)**: Ứng dụng Quản trị Doanh nghiệp (SaaS Web App) xây dựng trên React 19 và Tailwind CSS v4, tối ưu hóa cho Quản trị viên HR, DPO và Nhân viên tra cứu dữ liệu, giám sát trực tiếp (Live Attendance) và xử lý yêu cầu quyền riêng tư.
-2. **Kiosk Desktop App (`app/kiosk-app`)**: Ứng dụng Trạm Điểm danh Cảm ứng (Edge Kiosk HMI) xây dựng trên PySide6 (Qt Quick / QML), hoạt động theo tỷ lệ màn hình dọc 9:16 (`1080 x 1920 px`), tối ưu hóa công thái học cảm ứng đứng (Touch Ergonomics) và đáp ứng quy chuẩn thời gian thực không giật lag.
+1. **Web Portal Client (`apps/web-portal`)**: Ứng dụng Quản trị Doanh nghiệp (SaaS Web App) xây dựng trên React 19 và Tailwind CSS v4, tối ưu hóa cho Quản trị viên HR, DPO và Nhân viên tra cứu dữ liệu, giám sát trực tiếp (Live Attendance) và xử lý yêu cầu quyền riêng tư.
+2. **Kiosk Desktop App (`apps/kiosk-app`)**: Ứng dụng Trạm Điểm danh Cảm ứng (Edge Kiosk HMI) xây dựng trên PySide6 (Qt Quick / QML), hoạt động theo tỷ lệ màn hình dọc 9:16 (`1080 x 1920 px`), tối ưu hóa công thái học cảm ứng đứng (Touch Ergonomics) và đáp ứng quy chuẩn thời gian thực không giật lag.
 
 ### Bộ Ba Nguyên Tắc Thiết Kế (Core Invariants)
 
@@ -347,18 +347,18 @@ Trước khi đóng bất kỳ thay đổi nào liên quan đến giao diện ng
 
 ```bash
 # Kiểm tra giao diện Web Portal (Unit Test & Linter)
-cd app/web-portal && npm test && npm run lint
+cd apps/web-portal && npm test && npm run lint
 
 # Kiểm tra giao diện Kiosk Desktop App (PySide6 UI/UX Suites & Ruff Linter)
-cd app/kiosk-app && pytest tests/test_ui_ux.py && ruff check .
+cd apps/kiosk-app && pytest tests/test_ui_ux.py && ruff check .
 ```
 
 ### 5.2 Ma Trận Truy Vết Kỹ Thuật (Traceability Matrix)
 
 | Thành Phần Giao Diện | Yêu Cầu SRS / Phân Tích | Quyết Định Thiết Kế (ADR) | Mã Nguồn Triển Khai |
 | :--- | :--- | :--- | :--- |
-| **Triết lý Zero Raw Photo** | SRS-FAS-001 (Zero-Upload) | [ADR-001](adr/ADR-001-zero-photo-upload-multi-pose.md) | `app/kiosk-app/src/ui/qml/components/OvalOverlay.qml` |
-| **Bảng Theo Dõi Trực Tiếp STOMP**| SRS-FAS-004 (Live Feed) | [ADR-004](adr/ADR-004-stomp-websocket-realtime-feed.md) | `app/web-portal/src/views/LiveAttendanceDashboard.tsx` |
-| **Khóa Bàn Phím PIN 15 Phút** | SRS-FAS-005 (PIN Fallback) | [ADR-005](adr/ADR-005-pin-fallback-and-lockout.md) | `app/kiosk-app/src/security/pin_security.py` |
-| **Đệm Ngoại Tuyến SQLite WAL** | SRS-FAS-002 (Offline RPO=0)| [ADR-002](adr/ADR-002-edge-sqlite-wal-offline-sync.md) | `app/kiosk-app/src/workers/offline_sync_worker.py` |
-| **Quy Chuẩn Nhãn Trạng Thái** | SRS-FAS-003 (Status Model) | [architecture.md](architecture.md) §3.3 | `app/web-portal/src/components/ui/attendance-status-badge.tsx` |
+| **Triết lý Zero Raw Photo** | SRS-FAS-001 (Zero-Upload) | [ADR-001](adr/ADR-001-zero-photo-upload-multi-pose.md) | `apps/kiosk-app/src/ui/qml/components/OvalOverlay.qml` |
+| **Bảng Theo Dõi Trực Tiếp STOMP**| SRS-FAS-004 (Live Feed) | [ADR-004](adr/ADR-004-stomp-websocket-realtime-feed.md) | `apps/web-portal/src/views/LiveAttendanceDashboard.tsx` |
+| **Khóa Bàn Phím PIN 15 Phút** | SRS-FAS-005 (PIN Fallback) | [ADR-005](adr/ADR-005-pin-fallback-and-lockout.md) | `apps/kiosk-app/src/security/pin_security.py` |
+| **Đệm Ngoại Tuyến SQLite WAL** | SRS-FAS-002 (Offline RPO=0)| [ADR-002](adr/ADR-002-edge-sqlite-wal-offline-sync.md) | `apps/kiosk-app/src/workers/offline_sync_worker.py` |
+| **Quy Chuẩn Nhãn Trạng Thái** | SRS-FAS-003 (Status Model) | [architecture.md](architecture.md) §3.3 | `apps/web-portal/src/components/ui/attendance-status-badge.tsx` |

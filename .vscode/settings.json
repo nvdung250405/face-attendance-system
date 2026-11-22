@@ -4,24 +4,24 @@
   "files.insertFinalNewline": true,
 
   // Python Configuration for Kiosk App
-  "python.defaultInterpreterPath": "${workspaceFolder}/app/kiosk-app/.venv/Scripts/python.exe",
+  "python.defaultInterpreterPath": "${workspaceFolder}/apps/kiosk-app/.venv/Scripts/python.exe",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",
 
   // QML & Qt Configuration for Kiosk App
   "qml.qmlImportPaths": [
-    "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
-    "${workspaceFolder}/app/kiosk-app/resources/qml"
+    "${workspaceFolder}/apps/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
+    "${workspaceFolder}/apps/kiosk-app/resources/qml"
   ],
   "qt.qmlImportPaths": [
-    "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
-    "${workspaceFolder}/app/kiosk-app/resources/qml"
+    "${workspaceFolder}/apps/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
+    "${workspaceFolder}/apps/kiosk-app/resources/qml"
   ],
   "qmlls.includePaths": [
-    "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
-    "${workspaceFolder}/app/kiosk-app/resources/qml"
+    "${workspaceFolder}/apps/kiosk-app/.venv/Lib/site-packages/PySide6/qml",
+    "${workspaceFolder}/apps/kiosk-app/resources/qml"
   ],
-  "qml.qmllint.executablePath": "${workspaceFolder}/app/kiosk-app/.venv/Lib/site-packages/PySide6/qmllint.exe",
+  "qml.qmllint.executablePath": "${workspaceFolder}/apps/kiosk-app/.venv/Lib/site-packages/PySide6/qmllint.exe",
 
   // Java Configuration for Backend Service
   "java.jdt.ls.java.home": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.11.10-hotspot",
@@ -51,10 +51,10 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.python"
   },
-  "ruff.configuration": "${workspaceFolder}/app/kiosk-app/pyproject.toml",
+  "ruff.configuration": "${workspaceFolder}/apps/kiosk-app/pyproject.toml",
   "ruff.lint.args": [
     "--cache-dir",
-    "${workspaceFolder}/app/kiosk-app/.ruff_cache"
+    "${workspaceFolder}/apps/kiosk-app/.ruff_cache"
   ],
   "tailwindCSS.includeLanguages": {
     "typescript": "javascript",

@@ -53,4 +53,4 @@ docker compose down -v
 ## 4. Chính sách Dữ liệu & Quy tắc Git
 
 * **Tài nguyên theo dõi (Tracked)**: Toàn bộ kịch bản mã nguồn `.py` trong thư mục này.
-* **Tài nguyên bỏ qua (Ignored 100%)**: Các tệp trọng số nhị phân `*.onnx` (được lưu tại `app/kiosk-app/resources/assets/models/`).
+* **Tài nguyên bỏ qua (Ignored 100%)**: Các tệp trọng số nhị phân `*.onnx` (được lưu tại `apps/kiosk-app/resources/assets/models/`).

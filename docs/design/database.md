@@ -10,7 +10,7 @@
 ## 1. Chiến Lược Quản Trị Phiên Bản Schema (Flyway Migration Strategy)
 
 Mọi thay đổi cấu trúc bảng, kiểu dữ liệu, index và ràng buộc kiểm tra PHẢI được quản lý tập trung qua các file Flyway SQL migration:
-- **Thư mục lưu trữ:** `app/backend-service/src/main/resources/db/migration/`
+- **Thư mục lưu trữ:** `apps/backend-service/src/main/resources/db/migration/`
 - **Quy ước đặt tên:** `V<Version>__<Mo_ta_ngan_gon>.sql` (hai dấu gạch dưới liên tiếp).
 - **Nguyên tắc Bất biến:** Tuyệt đối không sửa đổi file migration đã merge và chạy trên môi trường Staging/Production. Mọi tinh chỉnh bắt buộc tạo version mới (`V11`, `V12`...).
 

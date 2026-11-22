@@ -39,7 +39,7 @@ Agent tra cứu trực tiếp file code tương ứng theo nghiệp vụ mà kh�
 
 ## 3. Lệnh Khởi Chạy & Kiểm Thử Chuẩn
 
-Thực hiện từ thư mục `app/backend-service/`:
+Thực hiện từ thư mục `apps/backend-service/`:
 
 ```bash
 # 1. Khởi chạy máy chủ cục bộ (Local Run)

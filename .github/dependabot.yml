@@ -8,21 +8,21 @@ updates:
       prefix: "ci"
 
   - package-ecosystem: "npm"
-    directory: "/app/web-portal"
+    directory: "/apps/web-portal"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "chore"
 
   - package-ecosystem: "maven"
-    directory: "/app/backend-service"
+    directory: "/apps/backend-service"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "chore"
 
   - package-ecosystem: "pip"
-    directory: "/app/kiosk-app"
+    directory: "/apps/kiosk-app"
     schedule:
       interval: "weekly"
     commit-message:

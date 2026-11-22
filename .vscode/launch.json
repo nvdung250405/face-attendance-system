@@ -13,9 +13,9 @@
       "name": "Debug Kiosk App (Python)",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/app/kiosk-app/main.py",
+      "program": "${workspaceFolder}/apps/kiosk-app/main.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}/app/kiosk-app",
+      "cwd": "${workspaceFolder}/apps/kiosk-app",
       "envFile": "${workspaceFolder}/.env"
     },
     {
@@ -23,7 +23,7 @@
       "request": "launch",
       "name": "Debug Web Portal (Chrome)",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/app/web-portal/src"
+      "webRoot": "${workspaceFolder}/apps/web-portal/src"
     }
   ],
   "compounds": [

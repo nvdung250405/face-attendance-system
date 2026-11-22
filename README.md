@@ -14,7 +14,7 @@ docker compose up -d --build
 docker exec -i fas-postgres psql -U fas_admin -d fas_db < database/seeds/seed-staging-data.sql
 
 # 3. Khởi chạy Trạm Kiosk Desktop (Chế độ Dev)
-python app/kiosk-app/main.py --dev
+python apps/kiosk-app/main.py --dev
 ```
 
 * **Web Portal:** [http://localhost:5173](http://localhost:5173) (Tài khoản: `staging-admin@fas.company.com` / `StagingAdmin@2026!`)
@@ -29,9 +29,9 @@ Hệ thống tuân thủ mô hình **Metadata 2 Cấp (Flat Two-Tier)**. Mọi c
 
 | Không gian Cấp 2 | Phân loại | Công nghệ cốt lõi | Trách nhiệm & Chỉ mục nghiệp vụ |
 | :--- | :--- | :--- | :--- |
-| [**`app/backend-service/`**](app/backend-service/README.md) | Dịch vụ Trung tâm | Java 21, Spring Boot 4.x, PostgreSQL, JPA, STOMP | REST APIs (Auth, Kiosk, Admin), tính ca kíp, mã hóa AES-256-GCM, cron 20 ngày |
-| [**`app/kiosk-app/`**](app/kiosk-app/README.md) | Trạm Kiosk Biên | Python 3.12, PySide6 QML, OpenCV, ONNX Runtime | Điểm danh thời gian thực, MiniFASNet Liveness, ArcFace 512D, hàng đợi SQLite |
-| [**`app/web-portal/`**](app/web-portal/README.md) | Cổng Web SPA | React 18, TypeScript, Vite, Tailwind CSS, Zustand | Bảng giám sát quân số Live STOMP, Onboarding OTP, quản trị nhân sự & ca kíp |
+| [**`apps/backend-service/`**](apps/backend-service/README.md) | Dịch vụ Trung tâm | Java 21, Spring Boot 4.x, PostgreSQL, JPA, STOMP | REST APIs (Auth, Kiosk, Admin), tính ca kíp, mã hóa AES-256-GCM, cron 20 ngày |
+| [**`apps/kiosk-app/`**](apps/kiosk-app/README.md) | Trạm Kiosk Biên | Python 3.12, PySide6 QML, OpenCV, ONNX Runtime | Điểm danh thời gian thực, MiniFASNet Liveness, ArcFace 512D, hàng đợi SQLite |
+| [**`apps/web-portal/`**](apps/web-portal/README.md) | Cổng Web SPA | React 18, TypeScript, Vite, Tailwind CSS, Zustand | Bảng giám sát quân số Live STOMP, Onboarding OTP, quản trị nhân sự & ca kíp |
 | [**`database/`**](database/README.md) | Quản trị CSDL | PostgreSQL 16, Flyway V1-V9, SQLite | Sơ đồ quan hệ ERD, 9 tệp Flyway migration, bộ dữ liệu mẫu (Seeds), kịch bản dọn dẹp |
 | [**`contracts/`**](contracts/README.md) | Hợp đồng Giao tiếp | OpenAPI 3.0.3, STOMP 1.2, JSON Schema | Hợp đồng REST `openapi.yaml`, WebSocket `stomp-websocket.yaml`, Domain models |
 | [**`tests/`**](tests/README.md) | Trung tâm Kiểm thử | Pytest, Playwright, FlaUI, Vitest | Kim tự tháp kiểm thử 3 tầng: Desktop Kiosk, Web Portal E2E, System Integration |

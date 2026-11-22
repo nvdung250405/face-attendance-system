@@ -44,7 +44,7 @@ services:
   # ----------------------------------------------------------------------------
   fas-backend:
     build:
-      context: ./app/backend-service
+      context: ./apps/backend-service
       dockerfile: Dockerfile
     container_name: fas-backend-staging
     restart: unless-stopped
@@ -87,7 +87,7 @@ services:
   # ----------------------------------------------------------------------------
   fas-web:
     build:
-      context: ./app/web-portal
+      context: ./apps/web-portal
       dockerfile: Dockerfile
     container_name: fas-web-staging
     restart: unless-stopped
