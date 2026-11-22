@@ -387,7 +387,7 @@ jobs:
           sarif_file: semgrep.sarif
 
       - name: Run Trivy Vulnerability & Secret Scanner
-        uses: aquasecurity/trivy-action@v0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: 'app'
