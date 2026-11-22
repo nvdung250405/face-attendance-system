@@ -1,24 +1,20 @@
 # ==============================================================================
-# CODEOWNERS — Phân định trách nhiệm review theo đường dẫn (github-docs.md 13.1)
+# CODEOWNERS — Phân định trách nhiệm review theo đường dẫn
 # ==============================================================================
 
 # Mặc định toàn bộ repository
 * @nvdung250405
 
-# Hệ thống tài liệu SDLC cốt lõi
-/docs/meta.md                          @nvdung250405
-/docs/sdlc-docs.md                     @nvdung250405
-/docs/system-docs/                     @nvdung250405
-
-# Tài liệu và mã nguồn từng phân hệ dịch vụ
-/docs/subsystem-docs/backend-service/    @nvdung250405
+# 9 Không gian Chức năng Cấp 2 (Master Subspaces)
 /app/backend-service/                  @nvdung250405
-
-/docs/subsystem-docs/kiosk-app/          @nvdung250405
 /app/kiosk-app/                        @nvdung250405
-
-/docs/subsystem-docs/web-portal/         @nvdung250405
 /app/web-portal/                       @nvdung250405
+/database/                             @nvdung250405
+/contracts/                            @nvdung250405
+/tests/                                @nvdung250405
+/docs/                                 @nvdung250405
+/scripts/                              @nvdung250405
+/.agents/                              @nvdung250405
 
-# Cấu hình GitHub & CI/CD Pipelines
+# Quản trị Dự án & Cấu hình GitHub / CI/CD
 /.github/                              @nvdung250405

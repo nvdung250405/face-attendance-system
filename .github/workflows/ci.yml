@@ -23,9 +23,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
-  security-events: write
-  checks: write
 
 jobs:
   # ----------------------------------------------------------------------------
@@ -155,6 +152,9 @@ jobs:
   # ----------------------------------------------------------------------------
   backend-ci:
     name: Backend CI (Java 21 & JaCoCo Gate)
+    permissions:
+      contents: read
+      checks: write
     needs: changes
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
@@ -344,6 +344,9 @@ jobs:
   # ----------------------------------------------------------------------------
   security-scan:
     name: Security & SAST Scan (Semgrep + Trivy)
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -368,6 +371,8 @@ jobs:
             --config "p/typescript" \
             --config "p/react" \
             --config "p/java" \
+            --severity ERROR \
+            --error \
             --sarif --output semgrep.sarif \
             --exclude "node_modules" \
             --exclude ".venv" \
@@ -381,35 +386,39 @@ jobs:
         with:
           sarif_file: semgrep.sarif
 
-      - name: Get Current Date for Trivy DB Cache
-        id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-
-      - name: Cache Trivy Vulnerability DB
-        uses: actions/cache@v4
+      - name: Run Trivy Vulnerability & Secret Scanner
+        uses: aquasecurity/trivy-action@0.29.0
         with:
-          path: ~/.cache/trivy
-          key: trivy-db-${{ runner.os }}-${{ steps.date.outputs.date }}
-          restore-keys: trivy-db-${{ runner.os }}-
-
-      - name: Install Trivy CLI
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-
-      - name: Download Trivy Vulnerability Database
-        run: trivy image --download-db-only
-
-      - name: Run Trivy Vulnerability Scanner (Offline Scan with Cached DB)
-        run: |
-          trivy fs app \
-            --offline-scan \
-            --scanners vuln,secret \
-            --severity CRITICAL,HIGH \
-            --skip-dirs "**/node_modules,**/.venv,**/target,**/dist" \
-            --exit-code 1
+          scan-type: 'fs'
+          scan-ref: 'app'
+          scanners: 'vuln,secret'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          skip-dirs: '**/node_modules,**/.venv,**/target,**/dist'
 
   # ----------------------------------------------------------------------------
-  # 8. Cổng Tổng Hợp Kiểm Định Monorepo (ci-passed Gatekeeper)
+  # 8. Kiểm Định Định Dạng Tiêu Đề Pull Request (Conventional Commits)
+  # ----------------------------------------------------------------------------
+  pr-title-ci:
+    name: Validate PR Title (Conventional Commits)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR Title Format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "Kiểm tra tiêu đề PR: $PR_TITLE"
+          REGEX="^(feat|fix|docs|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9_-]+\))?!?: .+"
+          if [[ ! "$PR_TITLE" =~ $REGEX ]]; then
+            echo "ERROR: Tiêu đề PR '$PR_TITLE' không đúng định dạng Conventional Commits!"
+            echo "Định dạng hợp lệ: <type>(<SCOPE>): <subject> [<ID>]"
+            exit 1
+          fi
+          echo "Tiêu đề PR hợp lệ!"
+
+  # ----------------------------------------------------------------------------
+  # 9. Cổng Tổng Hợp Kiểm Định Monorepo (ci-passed Gatekeeper)
   # ----------------------------------------------------------------------------
   ci-passed:
     name: Monorepo CI Aggregation (ci-passed)
@@ -417,6 +426,7 @@ jobs:
     needs:
       [
         changes,
+        pr-title-ci,
         contract-ci,
         db-parity-ci,
         backend-ci,
@@ -432,6 +442,7 @@ jobs:
           echo "============================================================"
           echo "BÁO CÁO CỔNG KIỂM ĐỊNH TOÀN DIỆN MONOREPO CI (CI-PASSED)"
           echo "============================================================"
+          echo "PR Title CI:      ${{ needs.pr-title-ci.result }}"
           echo "Contract CI:      ${{ needs.contract-ci.result }}"
           echo "Database Parity:  ${{ needs.db-parity-ci.result }}"
           echo "Backend CI:       ${{ needs.backend-ci.result }}"
@@ -442,6 +453,7 @@ jobs:
           echo "============================================================"
 
           RESULTS=(
+            "${{ needs.pr-title-ci.result }}"
             "${{ needs.contract-ci.result }}"
             "${{ needs.db-parity-ci.result }}"
             "${{ needs.backend-ci.result }}"
@@ -467,13 +479,14 @@ jobs:
 
           | Phân Hệ / Chốt Kiểm Định | Kết Quả Thực Thi | Ghi Chú Kỹ Thuật |
           | :--- | :---: | :--- |
+          | **PR Title Convention** | ${{ needs.pr-title-ci.result == 'success' && '✅ PASSED' || (needs.pr-title-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Conventional Commits Pattern |
           | **Contract Integrity** | ${{ needs.contract-ci.result == 'success' && '✅ PASSED' || (needs.contract-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Spectral OAS 3.0 & JSON Schema |
           | **Database Parity** | ${{ needs.db-parity-ci.result == 'success' && '✅ PASSED' || (needs.db-parity-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | PostgreSQL 16 Flyway & Seeds Ingestion |
           | **Backend Service** | ${{ needs.backend-ci.result == 'success' && '✅ PASSED' || (needs.backend-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Java 21, Checkstyle & JaCoCo >=80% |
           | **Web Portal** | ${{ needs.web-portal-ci.result == 'success' && '✅ PASSED' || (needs.web-portal-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | React 19, Strict ESLint & Vitest Coverage |
           | **Kiosk Desktop** | ${{ needs.kiosk-app-ci.result == 'success' && '✅ PASSED' || (needs.kiosk-app-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Python 3.11, Ruff & Pytest Coverage |
           | **Web E2E Journeys** | ${{ needs.web-e2e-ci.result == 'success' && '✅ PASSED' || (needs.web-e2e-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Playwright Headless Chromium |
-          | **Security & SAST** | ${{ needs.security-scan.result == 'success' && '✅ PASSED' || (needs.security-scan.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Semgrep SARIF & Trivy Online DB |
+          | **Security & SAST** | ${{ needs.security-scan.result == 'success' && '✅ PASSED' || (needs.security-scan.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Semgrep SARIF & Trivy Vulnerability Scan |
 
           > **Trạng thái cổng tích hợp:** `ci-passed` sẵn sàng phục vụ quy tắc Branch Protection (`main`, `develop`).
           EOF
