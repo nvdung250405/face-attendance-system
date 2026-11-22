@@ -10,7 +10,6 @@
 .env.*.local
 .env.staging
 !.env.example
-!.env.staging.example
 
 # ------------------------------------------------------------------------------
 # 2. Python & Phân hệ Kiosk Desktop (app/kiosk-app)
