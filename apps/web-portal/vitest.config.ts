@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    include: ['tests/**/*.{test,spec}.{ts,tsx}'],
     env: {
       VITE_API_BASE_URL: 'http://localhost:8080',
     },
@@ -16,8 +17,6 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/*.d.ts',
-        'src/**/__tests__/**',
-        'src/mocks/**',
         'src/types/**',
         'src/views/dev/**',
         'src/views/NotFoundView.tsx',
@@ -42,7 +41,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@tests': fileURLToPath(new URL('./tests', import.meta.url)),
     },
   },
 })
-

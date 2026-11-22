@@ -7,7 +7,7 @@ import {
   extractShiftSlug,
   extractLocationSlug,
   extractDepartmentSlug,
-} from '../codePreview'
+} from '@/utils/codePreview'
 
 describe('codePreview utility tests', () => {
   describe('removeVietnameseTones', () => {

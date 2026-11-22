@@ -8,9 +8,9 @@ import axios, { type AxiosInstance, AxiosError, AxiosHeaders } from 'axios'
 import {
   attachTokenRefreshInterceptor,
   resetRefreshState,
-} from '../tokenRefreshInterceptor'
-import { safeLocalStorage } from '../storage'
-import { AUTH_STORAGE_KEY } from '../apiClient'
+} from '@/services/tokenRefreshInterceptor'
+import { safeLocalStorage } from '@/services/storage'
+import { AUTH_STORAGE_KEY } from '@/services/apiClient'
 import { useAuthStore } from '@/store/authStore'
 import type { AuthSession, ApiResponse, TokenResponse } from '@/types'
 

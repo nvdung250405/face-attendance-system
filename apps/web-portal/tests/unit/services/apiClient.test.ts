@@ -12,7 +12,7 @@ import {
   attachRequestInterceptor,
   AUTH_STORAGE_KEY,
   DEFAULT_TIMEOUT_MS,
-} from '../apiClient'
+} from '@/services/apiClient'
 
 describe('ApiClient & Request Interceptor (TASK-WEB-013)', () => {
   beforeEach(() => {

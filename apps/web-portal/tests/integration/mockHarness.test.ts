@@ -10,7 +10,7 @@ import {
   mockConflictError,
   restoreMockServer,
   stompMockHarness,
-} from '@/mocks'
+} from '@tests/mocks'
 import type MockAdapter from 'axios-mock-adapter'
 
 describe('Bộ Khung Kiểm thử Hợp đồng Giao diện & Mock Client (TASK-WEB-032, FND-WEB-007)', () => {

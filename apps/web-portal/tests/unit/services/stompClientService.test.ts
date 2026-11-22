@@ -12,11 +12,11 @@ import {
   StompWebSocketService,
   createStompWebSocketService,
   stompClientService,
-} from '../stompClientService'
-import { useLiveAttendance, LIVE_ATTENDANCE_TOPIC } from '../hooks/useLiveAttendance'
-import { useEnrollmentStatus } from '../hooks/useEnrollmentStatus'
+} from '@/services/stompClientService'
+import { useLiveAttendance, LIVE_ATTENDANCE_TOPIC } from '@/services/hooks/useLiveAttendance'
+import { useEnrollmentStatus } from '@/services/hooks/useEnrollmentStatus'
 import type { AttendanceRecord, EnrollmentSuccessMessage } from '@/types'
-import { attendanceKeys } from '../queryClient'
+import { attendanceKeys } from '@/services/queryClient'
 
 // Mock dữ liệu điểm danh mẫu
 const mockAttendanceRecord: AttendanceRecord = {

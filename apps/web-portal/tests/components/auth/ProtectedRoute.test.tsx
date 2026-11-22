@@ -5,8 +5,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
-import { ProtectedRoute } from '../ProtectedRoute'
-import { PublicRoute } from '../PublicRoute'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { PublicRoute } from '@/components/auth/PublicRoute'
 import { useAuthStore } from '@/store/authStore'
 import type { AuthSession } from '@/types'
 

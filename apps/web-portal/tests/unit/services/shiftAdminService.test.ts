@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { apiClient } from '../apiClient'
-import { shiftAdminService } from '../shiftAdminService'
+import { apiClient } from '@/services/apiClient'
+import { shiftAdminService } from '@/services/shiftAdminService'
 
 describe('ShiftAdminService - Batch Assign Shifts (TASK-BE-042 / TASK-WEB-034)', () => {
   beforeEach(() => {

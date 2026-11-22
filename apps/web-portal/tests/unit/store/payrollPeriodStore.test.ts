@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { usePayrollPeriodStore, useIsAdjustmentLocked } from '../payrollPeriodStore'
+import { usePayrollPeriodStore, useIsAdjustmentLocked } from '@/store/payrollPeriodStore'
 import { safeLocalStorage, safeSessionStorage } from '@/services/storage'
 import type { PayrollPeriodResponse } from '@/types'
 

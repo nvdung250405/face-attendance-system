@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { consentService, CONSENT_ENDPOINT } from '../consentService'
-import { apiClient } from '../apiClient'
-import { safeSessionStorage, STORAGE_KEYS } from '../storage'
+import { consentService, CONSENT_ENDPOINT } from '@/services/consentService'
+import { apiClient } from '@/services/apiClient'
+import { safeSessionStorage, STORAGE_KEYS } from '@/services/storage'
 import type { ConsentResult } from '@/types'
 
 describe('ConsentService (TASK-WEB-017)', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { apiClient } from '../apiClient'
-import { excuseService } from '../excuseService'
+import { apiClient } from '@/services/apiClient'
+import { excuseService } from '@/services/excuseService'
 
 describe('ExcuseService (API-BE-026, API-BE-027, API-BE-028, API-BE-029)', () => {
   beforeEach(() => {

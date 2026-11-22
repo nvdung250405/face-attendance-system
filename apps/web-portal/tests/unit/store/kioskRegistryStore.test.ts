@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useKioskRegistryStore } from '../kioskRegistryStore'
+import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { safeLocalStorage, safeSessionStorage } from '@/services/storage'
 import type { KioskItemResponse } from '@/types'
 

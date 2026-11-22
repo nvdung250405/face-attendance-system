@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import { ConsentModal } from '../ConsentModal'
+import { ConsentModal } from '@/components/consent/ConsentModal'
 import { consentService } from '@/services/consentService'
 import { safeSessionStorage, STORAGE_KEYS } from '@/services/storage'
 import { useAuthStore } from '@/store/authStore'
