@@ -33,7 +33,6 @@ playwright-report
 .env
 .env.*
 !.env.example
-!.env.staging.example
 
 # Documentation
 docs/
