@@ -88,7 +88,7 @@ export async function runCrawler(options = {}) {
     'test',
     'tests/web-portal/visual/visual-responsive.spec.ts',
     '--config',
-    'tests/web-portal/playwright.visual.config.ts',
+    'tests/web-portal/playwright.config.ts',
   ];
 
   const exitCode = await new Promise((resolve) => {

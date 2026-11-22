@@ -1,7 +1,7 @@
 """Cấu hình tập trung cho Phân hệ Kiểm thử Kiosk Desktop (FlaUI & PySide6 Visual).
 
 Tự động nhận diện công cụ môi trường (FlaUI CLI, Python Interpreter) và xác định
-các đường dẫn báo cáo cục bộ (tests/reports/desktop-kiosk/).
+các đường dẫn báo cáo cục bộ (tests/reports/kiosk-app/).
 """
 
 import os
@@ -18,7 +18,7 @@ KIOSK_SRC_DIR = KIOSK_DIR / "src"
 KIOSK_QML_DIR = KIOSK_DIR / "resources" / "qml"
 
 # Thư mục báo cáo & Artifacts (Local Only)
-REPORTS_DIR = TESTS_DIR / "reports" / "desktop-kiosk"
+REPORTS_DIR = TESTS_DIR / "reports" / "kiosk-app"
 SCREENSHOTS_DIR = REPORTS_DIR / "screenshots"
 BASELINES_DIR = SCREENSHOTS_DIR / "baselines"
 E2E_SCREENSHOTS_DIR = SCREENSHOTS_DIR / "e2e"
