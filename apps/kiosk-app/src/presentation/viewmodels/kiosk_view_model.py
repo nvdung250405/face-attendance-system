@@ -505,9 +505,7 @@ class KioskViewModel(QObject):
 
         # Điểm danh thành công! Lưu vào SQLite WAL ngoại tuyến
         punch_time = datetime.now().strftime("%H:%M:%S")
-        last_punch = (
-            self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
-        )
+        last_punch = self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
         punch_type = "CHECK_OUT" if last_punch == "CHECK_IN" else "CHECK_IN"
 
         if self.queue_manager:
@@ -571,9 +569,7 @@ class KioskViewModel(QObject):
                 return
 
         punch_time = datetime.now().strftime("%H:%M:%S")
-        last_punch = (
-            self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
-        )
+        last_punch = self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
         punch_type = "CHECK_OUT" if last_punch == "CHECK_IN" else "CHECK_IN"
 
         if self.queue_manager:
