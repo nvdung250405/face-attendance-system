@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
 import { attendanceService } from '@/services/attendanceService'
 import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'

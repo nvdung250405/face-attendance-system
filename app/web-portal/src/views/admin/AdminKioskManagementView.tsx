@@ -16,9 +16,11 @@ import {
   Info,
   AlertTriangle,
   Monitor,
+  Search,
+  RotateCcw,
 } from 'lucide-react'
-import { Button } from '@/components/common'
-import { toast } from '@/components/ui'
+import { Button, TableSkeleton, toast } from '@/components/ui'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { complianceAdminService } from '@/services/complianceAdminService'
@@ -53,6 +55,11 @@ export const AdminKioskManagementView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false)
+
+  // Tìm kiếm & Lọc trạng thái (GAP-COMP-02, STAB-004)
+  const [searchKeyword, setSearchKeyword] = useState<string>('')
+  const debouncedSearch = useDebounce(searchKeyword, 350)
+  const [statusFilter, setStatusFilter] = useState<string>('ALL')
 
   // Modal hiển thị Secret Token khi cấp lại
   const [reissuedTokenKiosk, setReissuedTokenKiosk] = useState<{
@@ -132,6 +139,21 @@ export const AdminKioskManagementView: React.FC = () => {
     }
     return { staleKiosks: stale, onlineCount: online, warningCount: warning, offlineCount: offline }
   }, [kiosks, isPingStale])
+
+  // Danh sách Kiosk đã lọc theo từ khóa và trạng thái (GAP-COMP-02)
+  const filteredKiosks = useMemo(() => {
+    return kiosks.filter((k) => {
+      if (statusFilter !== 'ALL' && k.status !== statusFilter) return false
+      if (debouncedSearch.trim()) {
+        const kw = debouncedSearch.trim().toLowerCase()
+        const matchId = (k.kioskId || '').toLowerCase().includes(kw)
+        const matchName = (k.name || '').toLowerCase().includes(kw)
+        const matchLoc = (k.location || '').toLowerCase().includes(kw)
+        if (!matchId && !matchName && !matchLoc) return false
+      }
+      return true
+    })
+  }, [kiosks, debouncedSearch, statusFilter])
 
   return (
     <div className="space-y-6">
@@ -236,19 +258,74 @@ export const AdminKioskManagementView: React.FC = () => {
       )}
 
       {/* ── Bảng Danh mục Trạm Kiosk ── */}
+      {/* ── Thanh Công Cụ Tìm Kiếm & Lọc Trạm Kiosk (GAP-COMP-02) ── */}
+      <div className="card-surface p-3.5 sm:p-4 rounded-xl border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          {/* Tìm kiếm theo mã trạm, tên hoặc vị trí */}
+          <div className="relative w-full sm:w-72">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <Search className="w-4 h-4 shrink-0" />
+            </div>
+            <input
+              type="text"
+              maxLength={100}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              data-testid="search-kiosk-input"
+              placeholder="Tìm theo mã trạm, tên, vị trí..."
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+          </div>
+
+          {/* Lọc theo trạng thái */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            data-testid="filter-kiosk-status-select"
+            className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-auto cursor-pointer"
+          >
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="ONLINE">Trực tuyến</option>
+            <option value="WARNING">Cảnh báo</option>
+            <option value="OFFLINE">Ngoại tuyến</option>
+          </select>
+
+          {(searchKeyword || statusFilter !== 'ALL') && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setSearchKeyword('')
+                setStatusFilter('ALL')
+              }}
+              data-testid="reset-kiosk-filter-btn"
+              leftIcon={<RotateCcw className="w-3.5 h-3.5 shrink-0" />}
+              className="text-xs"
+            >
+              Đặt lại
+            </Button>
+          )}
+        </div>
+
+        <span className="text-xs text-text-secondary self-end sm:self-auto font-medium">
+          Hiển thị <span className="font-semibold text-text-primary">{filteredKiosks.length}</span> / <span className="font-semibold text-text-primary">{kiosks.length}</span> trạm Kiosk
+        </span>
+      </div>
+
       <div className="card-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm" data-testid="kiosk-management-table">
             <thead>
               <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã Trạm</th>
-                <th className="py-3 px-4">Tên Trạm Kiosk</th>
-                <th className="py-3 px-4">Vị Trí Lắp Đặt</th>
-                <th className="py-3 px-4">Địa Chỉ IP / Phiên Bản</th>
-                <th className="py-3 px-4">Ping Gần Nhất</th>
-                <th className="py-3 px-4">Trạng Thái Kết Nối</th>
+                <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã Trạm</th>
+                <th scope="col" className="py-3 px-4">Tên Trạm Kiosk</th>
+                <th scope="col" className="py-3 px-4">Vị Trí Lắp Đặt</th>
+                <th scope="col" className="py-3 px-4">Địa Chỉ IP / Phiên Bản</th>
+                <th scope="col" className="py-3 px-4">Ping Gần Nhất</th>
+                <th scope="col" className="py-3 px-4">Trạng Thái Kết Nối</th>
                 {!isReadOnly && (
-                  <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                  <th scope="col" className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                     Thao Tác
                   </th>
                 )}
@@ -256,28 +333,30 @@ export const AdminKioskManagementView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
-                <tr>
-                  <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-secondary">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                      <span>Đang nạp danh sách trạm Kiosk...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : kiosks.length === 0 ? (
+                <TableSkeleton
+                  columns={isReadOnly ? 6 : 7}
+                  rows={5}
+                  hasActionColumn={!isReadOnly}
+                  ariaLabel="Đang nạp danh sách trạm Kiosk..."
+                />
+              ) : filteredKiosks.length === 0 ? (
                 <tr>
                   <td colSpan={isReadOnly ? 6 : 7} className="py-12 text-center text-text-secondary">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                        <Monitor size={24} />
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                        <Monitor size={24} className="shrink-0" />
                       </div>
-                      <p className="font-semibold text-text-secondary">Chưa có trạm Kiosk nào được đăng ký</p>
-                      <p className="text-xs text-slate-600">Bấm &quot;Đăng ký Kiosk Mới&quot; để thiết lập trạm đầu tiên.</p>
+                      <p className="font-semibold text-text-secondary">
+                        {kiosks.length === 0 ? 'Chưa có trạm Kiosk nào được đăng ký' : 'Không tìm thấy trạm Kiosk nào phù hợp với bộ lọc'}
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        {kiosks.length === 0 ? 'Bấm "Đăng ký Kiosk Mới" để thiết lập trạm đầu tiên.' : 'Thử thay đổi từ khóa hoặc điều kiện lọc.'}
+                      </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                kiosks.map((kiosk) => {
+                filteredKiosks.map((kiosk) => {
                   const stale = isPingStale(kiosk.lastPingAt)
                   const statusInfo = STATUS_CONFIG[kiosk.status] || {
                     label: kiosk.status,
@@ -293,11 +372,21 @@ export const AdminKioskManagementView: React.FC = () => {
                       <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                         {kiosk.kioskId}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-text-primary text-xs">
-                        {kiosk.name}
+                      <td className="py-3 px-4">
+                        <span
+                          className="font-semibold text-text-primary text-xs truncate max-w-[200px] block"
+                          title={kiosk.name}
+                        >
+                          {kiosk.name}
+                        </span>
                       </td>
                       <td className="py-3 px-4 text-xs text-text-secondary">
-                        {kiosk.location}
+                        <span
+                          className="truncate max-w-[200px] block"
+                          title={kiosk.location}
+                        >
+                          {kiosk.location}
+                        </span>
                       </td>
                       <td className="py-3 px-4 text-xs font-mono text-slate-600">
                         <div>{kiosk.ipAddress || '—'}</div>
@@ -306,7 +395,7 @@ export const AdminKioskManagementView: React.FC = () => {
                       <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`w-2 h-2 rounded-full ${
+                            className={`w-2 h-2 rounded-full shrink-0 ${
                               stale ? 'bg-amber-500 ring-2 ring-amber-200' : 'bg-emerald-500 ring-2 ring-emerald-200'
                             }`}
                           />
@@ -319,13 +408,13 @@ export const AdminKioskManagementView: React.FC = () => {
                             <span
                               data-testid={`ping-stale-badge-${kiosk.kioskId}`}
                               title="Không nhận được nhịp tim ping từ trạm trong hơn 5 phút"
-                              className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1 cursor-help"
+                              className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1 cursor-help shrink-0"
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
                               MẤT TÍN HIỆU &gt; 5P
                             </span>
                           ) : (
-                            <span className={statusInfo.className}>{statusInfo.label}</span>
+                            <span className={`${statusInfo.className} shrink-0`}>{statusInfo.label}</span>
                           )}
                         </div>
                       </td>
@@ -337,14 +426,11 @@ export const AdminKioskManagementView: React.FC = () => {
                             size="sm"
                             data-testid={`reissue-token-btn-${kiosk.kioskId}`}
                             onClick={() => handleReissueToken(kiosk)}
+                            isLoading={isReissuing === kiosk.kioskId}
                             disabled={isReissuing === kiosk.kioskId}
                             title="Cấp lại Secret Token"
                           >
-                            {isReissuing === kiosk.kioskId ? (
-                              <span>Đang xử lý...</span>
-                            ) : (
-                              <span>Cấp lại Token</span>
-                            )}
+                            Cấp lại Token
                           </Button>
                         </td>
                       )}

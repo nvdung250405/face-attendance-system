@@ -149,9 +149,9 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
           type="button"
           onClick={onClose}
           aria-label="Đóng Drawer"
-          className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors"
+          className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
         >
-          <X size={18} strokeWidth={2} />
+          <X size={18} strokeWidth={2} className="shrink-0" />
         </button>
       </div>
 
@@ -196,6 +196,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
                   data-testid="drawer-employee-code"
                   type="text"
                   value={employeeCode}
+                  maxLength={50}
                   onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
                   disabled={isLoading}
                   placeholder="Để trống hoặc nhập mã định danh riêng..."
@@ -239,6 +240,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
             data-testid="drawer-full-name"
             type="text"
             value={fullName}
+            maxLength={100}
             onChange={(e) => setFullName(e.target.value)}
             disabled={isLoading}
             placeholder="VD: Nguyễn Văn A"
@@ -262,6 +264,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
             data-testid="drawer-email"
             type="email"
             value={email}
+            maxLength={100}
             onChange={(e) => setEmail(e.target.value)}
             disabled={mode === 'edit' || isLoading}
             placeholder="VD: a.nv@company.com"
@@ -342,7 +345,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
 
         {mode === 'create' && (
           <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-amber-900 text-xs leading-relaxed">
-            💡 <span className="font-semibold">Lưu ý mật khẩu tạm:</span> Sau khi tạo hồ sơ, hệ thống sẽ tự động cấp một mật khẩu tạm thời hiển thị trên màn hình để bàn giao cho nhân viên.
+            <span className="font-semibold">Lưu ý mật khẩu tạm:</span> Sau khi tạo hồ sơ, hệ thống sẽ tự động cấp một mật khẩu tạm thời hiển thị trên màn hình để bàn giao cho nhân viên.
           </div>
         )}
       </form>
@@ -356,6 +359,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
           data-testid="drawer-btn-cancel"
           onClick={onClose}
           disabled={isLoading}
+          className="shrink-0"
         >
           Hủy bỏ
         </Button>
@@ -365,6 +369,7 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
           data-testid="drawer-btn-submit"
           onClick={handleSubmit}
           isLoading={isLoading}
+          className="shrink-0"
         >
           {mode === 'create' ? 'Tạo nhân sự' : 'Cập nhật hồ sơ'}
         </Button>

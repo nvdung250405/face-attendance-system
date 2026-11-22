@@ -5,6 +5,7 @@
 import React, { useState } from 'react'
 import { Clock, X, AlertTriangle, Sparkles, ChevronDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { previewShiftCode } from '@/utils/codePreview'
 import type { ShiftItem, CreateShiftRequest } from '@/types'
 
@@ -64,10 +65,11 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               aria-label="Đóng"
-              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 shrink-0" />
             </button>
           </div>
 
@@ -233,22 +235,26 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
 
           {/* Footer Modal */}
           <div className="px-6 py-4 border-t border-border-subtle flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white text-text-secondary hover:bg-slate-100 transition-colors shadow-xs"
+              disabled={isSubmitting}
             >
               Hủy bỏ
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               onClick={onSubmit}
+              isLoading={isSubmitting}
               disabled={isSubmitting}
               data-testid="submit-shift-btn"
-              className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50 transition-colors"
             >
-              {isSubmitting ? 'Đang lưu...' : editingShift ? 'Lưu Thay Đổi' : 'Tạo Ca'}
-            </button>
+              {editingShift ? 'Lưu Thay Đổi' : 'Tạo Ca'}
+            </Button>
           </div>
         </div>
       </DialogContent>

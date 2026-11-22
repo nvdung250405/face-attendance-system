@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
 import { excuseService } from '@/services/excuseService'
 import { AlertTriangle, Clock, Send, CheckCircle2 } from 'lucide-react'
 

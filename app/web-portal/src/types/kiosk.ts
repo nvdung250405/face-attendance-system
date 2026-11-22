@@ -23,6 +23,7 @@ export interface RegisterKioskRequest {
   kioskId?: string
   name: string
   location: string
+  locationName?: string
 }
 
 export interface RegisterKioskResponse {

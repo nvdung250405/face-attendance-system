@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { CheckCircle2, Check } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
 import {
   Dialog,
   DialogContent,

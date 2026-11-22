@@ -201,7 +201,7 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       expect(row.className).toContain('ring-emerald-400')
     })
 
-    it('lọc dữ liệu theo từ khóa tìm kiếm (Mã NV hoặc Họ Tên)', () => {
+    it('lọc dữ liệu theo từ khóa tìm kiếm (Mã NV hoặc Họ Tên)', async () => {
       render(
         <LiveAttendanceTable
           records={mockRecords}
@@ -213,9 +213,11 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       const searchInput = screen.getByTestId('live-search-input')
       fireEvent.change(searchInput, { target: { value: 'Bích' } })
 
-      expect(screen.getByText('Lê Thị Bích')).toBeTruthy()
-      expect(screen.queryByText('Trần Văn An')).toBeNull()
-      expect(screen.queryByText('Phạm Minh Châu')).toBeNull()
+      await waitFor(() => {
+        expect(screen.getByText('Lê Thị Bích')).toBeTruthy()
+        expect(screen.queryByText('Trần Văn An')).toBeNull()
+        expect(screen.queryByText('Phạm Minh Châu')).toBeNull()
+      })
     })
 
     it('lọc dữ liệu theo phòng ban và trạng thái', () => {

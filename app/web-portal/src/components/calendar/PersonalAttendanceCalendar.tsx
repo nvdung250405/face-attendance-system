@@ -23,7 +23,7 @@ import {
 } from 'lucide-react'
 import { attendanceService } from '@/services/attendanceService'
 import { useAuthStore } from '@/store/authStore'
-import { AttendanceStatusBadge } from '@/components/common'
+import { AttendanceStatusBadge } from '@/components/attendance'
 import { formatLocalDateISO } from '@/utils/date'
 import { AttendanceDayDetailDrawer } from './AttendanceDayDetailDrawer'
 import { SubmitExcuseModal } from '@/components/excuse/SubmitExcuseModal'
@@ -258,7 +258,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-subtle">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-brand-50 text-brand-600">
-            <CalendarIcon className="w-5 h-5" />
+            <CalendarIcon className="w-5 h-5 shrink-0" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-text-primary tracking-tight">
@@ -278,16 +278,16 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
               onClick={handlePrevMonth}
               data-testid="calendar-prev-month-btn"
               title="Tháng trước"
-              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors shrink-0"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4 shrink-0" />
             </button>
 
             <button
               type="button"
               onClick={handleCurrentMonth}
               data-testid="calendar-today-btn"
-              className="px-2.5 py-1 text-xs font-semibold text-text-secondary hover:text-brand-600 transition-colors"
+              className="px-2.5 py-1 text-xs font-semibold text-text-secondary hover:text-brand-600 transition-colors shrink-0"
             >
               Hôm nay
             </button>
@@ -297,9 +297,9 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
               onClick={handleNextMonth}
               data-testid="calendar-next-month-btn"
               title="Tháng sau"
-              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-slate-100 transition-colors shrink-0"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 shrink-0" />
             </button>
           </div>
 
@@ -311,18 +311,18 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
             }}
             data-testid="calendar-refresh-btn"
             title="Tải lại dữ liệu"
-            className="p-2 rounded-xl border border-border-subtle bg-white text-text-secondary hover:text-text-primary hover:bg-slate-50 transition-colors shadow-2xs"
+            className="p-2 rounded-xl border border-border-subtle bg-white text-text-secondary hover:text-text-primary hover:bg-slate-50 transition-colors shadow-2xs shrink-0"
           >
-            <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RotateCw className={`w-4 h-4 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             type="button"
             onClick={handleExportCsv}
             data-testid="calendar-export-csv-btn"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-2xs transition-all shadow-brand-500/20"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-2xs transition-all shadow-brand-500/20 shrink-0"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 shrink-0" />
             <span>Xuất Báo Cáo (.CSV)</span>
           </button>
         </div>
@@ -339,7 +339,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
 
         <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex flex-col justify-between">
           <span className="text-xs text-emerald-800 font-medium flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-status-success" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-status-success shrink-0" />
             <span>Đúng giờ</span>
           </span>
           <span data-testid="kpi-total-ontime-days" className="text-xl font-bold text-status-success mt-1">
@@ -349,7 +349,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
 
         <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/80 flex flex-col justify-between">
           <span className="text-xs text-amber-800 font-medium flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
             <span>Đi muộn</span>
           </span>
           <span data-testid="kpi-total-late-days" className="text-xl font-bold text-amber-700 mt-1">
@@ -359,7 +359,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
 
         <div className="p-3.5 rounded-xl bg-slate-50 border border-border-subtle flex flex-col justify-between">
           <span className="text-xs text-text-secondary font-medium flex items-center gap-1">
-            <MinusCircle className="w-3.5 h-3.5 text-slate-500" />
+            <MinusCircle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             <span>Nghỉ tuần / Lễ</span>
           </span>
           <span className="text-xl font-bold text-slate-700 mt-1">
@@ -390,7 +390,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
         {/* Lưới các ô ngày */}
         {isLoading ? (
           <div className="py-24 flex flex-col items-center justify-center gap-3 text-text-tertiary">
-            <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-brand-600 shrink-0" />
             <span className="text-sm">Đang tải lịch chấm công...</span>
           </div>
         ) : (

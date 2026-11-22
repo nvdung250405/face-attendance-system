@@ -10,8 +10,10 @@
  */
 
 import React, { useState, useMemo } from 'react'
-import { TableSkeleton, AttendanceStatusBadge } from '@/components/common'
+import { TableSkeleton } from '@/components/ui'
+import { AttendanceStatusBadge } from '@/components/attendance'
 import { formatTime } from '@/utils/date'
+import { useDebounce } from '@/hooks'
 import {
   ScanFace,
   Lock,
@@ -33,7 +35,7 @@ export interface LiveAttendanceTableProps {
   onEditRecord?: (record: AttendanceRecord) => void
 }
 
-export { AttendanceStatusBadge } from '@/components/common'
+export { AttendanceStatusBadge } from '@/components/attendance'
 
 interface AttendanceRowItemProps {
   record: AttendanceRecord
@@ -52,25 +54,31 @@ const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
             : 'hover:bg-indigo-50/25'
         }`}
       >
-        <td className="py-3 px-4 font-mono font-bold text-xs text-slate-900 whitespace-nowrap">
+        <td className="py-3 px-4 font-mono font-bold text-xs text-slate-900 whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
           {formatTime(record.punchTimestamp)}
         </td>
 
         <td className="py-3 px-4 font-mono font-bold text-xs text-indigo-600 whitespace-nowrap">
-          {record.employeeCode}
+          <span className="truncate max-w-[200px] block" title={record.employeeCode}>
+            {record.employeeCode}
+          </span>
         </td>
 
         <td className="py-3 px-4 text-xs font-semibold text-slate-900 whitespace-nowrap">
-          {record.fullName}
+          <span className="truncate max-w-[200px] block" title={record.fullName}>
+            {record.fullName}
+          </span>
         </td>
 
         <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-          {record.department || '—'}
+          <span className="truncate max-w-[200px] block" title={record.department || '—'}>
+            {record.department || '—'}
+          </span>
         </td>
 
         <td className="py-3 px-4 text-xs whitespace-nowrap">
           <span
-            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shrink-0 ${
               record.punchType === 'CHECK_IN'
                 ? 'bg-indigo-50 text-indigo-700 border-indigo-200/70'
                 : 'bg-slate-100 text-slate-700 border-slate-200'
@@ -85,18 +93,18 @@ const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
             {record.verificationMethod === 'VERIFICATION_FACE' ||
             record.verificationMethod === 'FACE_MATCH' ? (
               <>
-                <ScanFace size={15} className="text-indigo-600" />
+                <ScanFace size={15} className="text-indigo-600 shrink-0" />
                 <span>Khuôn mặt</span>
               </>
             ) : record.verificationMethod === 'MANUAL_HR' ||
               record.verificationMethod === 'HR_OVERRIDE' ? (
               <>
-                <UserCheck size={15} className="text-blue-600" />
+                <UserCheck size={15} className="text-blue-600 shrink-0" />
                 <span>HR Điều chỉnh</span>
               </>
             ) : (
               <>
-                <Lock size={15} className="text-amber-600" />
+                <Lock size={15} className="text-amber-600 shrink-0" />
                 <span>Mã PIN</span>
               </>
             )}
@@ -108,7 +116,9 @@ const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
         </td>
 
         <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
-          {record.kioskId}
+          <span className="truncate max-w-[200px] block" title={record.kioskId}>
+            {record.kioskId}
+          </span>
         </td>
 
         {onEditRecord && (
@@ -118,10 +128,10 @@ const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
               data-testid={`adjust-record-btn-${record.recordId}`}
               aria-label={`Điều chỉnh bản ghi điểm danh của ${record.fullName}`}
               onClick={() => onEditRecord(record)}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer shrink-0"
               title="Điều chỉnh giờ công / trạng thái"
             >
-              <Edit3 size={13} />
+              <Edit3 size={13} className="shrink-0" />
               <span>Sửa</span>
             </button>
           </td>
@@ -141,6 +151,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
   onEditRecord,
 }) => {
   const [filterKeyword, setFilterKeyword] = useState('')
+  const debouncedKeyword = useDebounce(filterKeyword, 350)
   const [filterDepartment, setFilterDepartment] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
 
@@ -149,9 +160,9 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
     return Array.from(new Set(records.map((r) => r.department).filter(Boolean)))
   }, [records])
 
-  // Lọc dữ liệu hiển thị (EXP2-08: Memoized)
+  // Lọc dữ liệu hiển thị (EXP2-08: Memoized, DEF-SAFE-01: useDebounce 350ms)
   const filteredRecords = useMemo(() => {
-    const q = filterKeyword.toLowerCase().trim()
+    const q = debouncedKeyword.toLowerCase().trim()
     return records.filter((rec) => {
       if (q) {
         const matchCode = (rec.employeeCode || '').toLowerCase().includes(q)
@@ -166,7 +177,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
       }
       return true
     })
-  }, [records, filterKeyword, filterDepartment, filterStatus])
+  }, [records, debouncedKeyword, filterDepartment, filterStatus])
 
   // Giữ slice ổn định (Slice stability)
   const displayRows = useMemo(() => {
@@ -199,13 +210,14 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
             <div className="relative flex items-center">
               <Search
                 size={14}
-                className="absolute left-3 text-slate-400 pointer-events-none"
+                className="absolute left-3 text-slate-400 pointer-events-none shrink-0"
               />
               <input
                 type="text"
                 data-testid="live-search-input"
                 aria-label="Tìm kiếm lượt điểm danh"
                 placeholder="Tìm theo Mã NV, Họ tên..."
+                maxLength={100}
                 value={filterKeyword}
                 onChange={(e) => setFilterKeyword(e.target.value)}
                 className="bg-white border border-slate-200 rounded-lg pl-8.5 pr-7 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-48 sm:w-60 focus:w-68 transition-all"
@@ -215,9 +227,9 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                   type="button"
                   onClick={() => setFilterKeyword('')}
                   aria-label="Xóa từ khóa tìm kiếm"
-                  className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-sm"
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-sm shrink-0"
                 >
-                  <X size={13} />
+                  <X size={13} className="shrink-0" />
                 </button>
               )}
             </div>
@@ -266,7 +278,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                 title="Đặt lại tất cả bộ lọc"
                 className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition-colors shrink-0"
               >
-                <RotateCcw size={12} />
+                <RotateCcw size={12} className="shrink-0" />
                 <span>Đặt lại</span>
               </button>
             )}
@@ -282,18 +294,18 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
         >
           <thead>
             <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
+              <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
                 Giờ Quẹt
               </th>
-              <th className="py-3 px-4">Mã NV</th>
-              <th className="py-3 px-4">Họ và Tên</th>
-              <th className="py-3 px-4">Phòng Ban</th>
-              <th className="py-3 px-4">Loại Quẹt</th>
-              <th className="py-3 px-4">Phương Thức</th>
-              <th className="py-3 px-4">Trạng Thái</th>
-              <th className="py-3 px-4">Trạm Kiosk</th>
+              <th scope="col" className="py-3 px-4">Mã NV</th>
+              <th scope="col" className="py-3 px-4">Họ và Tên</th>
+              <th scope="col" className="py-3 px-4">Phòng Ban</th>
+              <th scope="col" className="py-3 px-4">Loại Quẹt</th>
+              <th scope="col" className="py-3 px-4">Phương Thức</th>
+              <th scope="col" className="py-3 px-4">Trạng Thái</th>
+              <th scope="col" className="py-3 px-4">Trạm Kiosk</th>
               {onEditRecord && (
-                <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] z-20">
+                <th scope="col" className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] z-20">
                   Thao Tác
                 </th>
               )}
@@ -314,7 +326,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                   className="py-16 text-center"
                 >
                   <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                    <CalendarCheck size={24} strokeWidth={1.5} />
+                    <CalendarCheck size={24} strokeWidth={1.5} className="shrink-0" />
                   </div>
                   <p className="font-bold text-slate-800 text-sm">
                     Chưa có lượt điểm danh nào phù hợp

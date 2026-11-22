@@ -12,35 +12,43 @@ export interface WithdrawConsentResponse {
   readonly message: string
 }
 
-export type DataRequestType = 'ACCESS' | 'RECTIFICATION' | 'ERASURE' | 'EXPORT'
-export type DataRequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED'
+export type DataSubjectRequestType = 'ACCESS' | 'CORRECTION'
+export type DataRequestType = DataSubjectRequestType | 'RECTIFICATION' | 'ERASURE' | 'EXPORT'
+
+export type DataSubjectRequestStatus = 'RECEIVED' | 'IN_PROGRESS' | 'FULFILLED' | 'REJECTED'
+export type DataRequestStatus = DataSubjectRequestStatus | 'PENDING' | 'COMPLETED'
 
 export interface DataSubjectRequestItem {
   readonly id: number
   readonly employeeId?: number
   readonly employeeCode?: string
   readonly fullName?: string
-  readonly requestType: DataRequestType
+  readonly requestType: DataSubjectRequestType | DataRequestType
+  readonly detail?: string
   readonly details?: string
   readonly reason?: string
-  readonly status: DataRequestStatus
+  readonly status: DataSubjectRequestStatus | DataRequestStatus
   readonly submittedAt?: string
   readonly createdAt?: string
   readonly requestedAt?: string
   readonly handledAt?: string | null
   readonly completedAt?: string | null
   readonly handledBy?: string | null
+  readonly handledByName?: string | null
   readonly adminNote?: string | null
+  readonly response?: string | null
   readonly responseSummary?: string | null
 }
 
 export interface CreateDataSubjectRequest {
-  requestType: DataRequestType
-  details: string
+  requestType: DataSubjectRequestType | DataRequestType
+  detail?: string
+  details?: string
 }
 
 export interface UpdateDataSubjectRequest {
-  status: DataRequestStatus
+  status: DataSubjectRequestStatus | DataRequestStatus
+  response?: string
   adminNote?: string
 }
 

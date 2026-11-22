@@ -1,6 +1,6 @@
 import React from 'react'
 import { Lock } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type { PayrollPeriodResponse } from '@/types'
 
@@ -18,7 +18,7 @@ export const LockPayrollModal: React.FC<LockPayrollModalProps> = ({
   onCancel,
 }) => {
   return (
-    <Dialog open={Boolean(period)} onOpenChange={(open) => !open && onCancel()}>
+    <Dialog open={Boolean(period)} onOpenChange={(open) => !open && !isLocking && onCancel()}>
       <DialogContent
         data-testid="lock-payroll-modal"
         hideCloseButton
@@ -28,11 +28,11 @@ export const LockPayrollModal: React.FC<LockPayrollModalProps> = ({
         {period && (
           <>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-amber-100 text-amber-700">
-                <Lock className="w-6 h-6" />
+              <div className="p-3 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+                <Lock className="w-6 h-6 shrink-0" />
               </div>
-              <div>
-                <DialogTitle className="font-bold text-base text-slate-900">Xác Nhận Chốt Kỳ Công</DialogTitle>
+              <div className="min-w-0 flex-1">
+                <DialogTitle className="font-bold text-base text-slate-900 truncate">Xác Nhận Chốt Kỳ Công</DialogTitle>
                 <span className="text-xs text-slate-500">
                   Kỳ Tháng {String(period.periodMonth).padStart(2, '0')}/{period.periodYear}
                 </span>
@@ -54,6 +54,7 @@ export const LockPayrollModal: React.FC<LockPayrollModalProps> = ({
                 variant="secondary"
                 size="sm"
                 onClick={onCancel}
+                disabled={isLocking}
               >
                 Hủy bỏ
               </Button>
@@ -62,12 +63,13 @@ export const LockPayrollModal: React.FC<LockPayrollModalProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={onConfirm}
+                isLoading={isLocking}
                 disabled={isLocking}
                 data-testid="confirm-lock-period-btn"
-                leftIcon={<Lock className="w-3.5 h-3.5" />}
+                leftIcon={<Lock className="w-3.5 h-3.5 shrink-0" />}
                 className="bg-amber-600 hover:bg-amber-700 text-white"
               >
-                {isLocking ? 'Đang chốt...' : 'Xác Nhận Chốt Kỳ'}
+                Xác Nhận Chốt Kỳ
               </Button>
             </div>
           </>

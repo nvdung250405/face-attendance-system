@@ -32,7 +32,8 @@ import {
   ShiftAssignmentToolbar,
   ShiftAssignmentTable,
 } from '@/components/shift'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
+import { useDebounce } from '@/hooks/useDebounce'
 import { formatLocalDateISO } from '@/utils/date'
 import type {
   ShiftItem,
@@ -72,8 +73,9 @@ export const AdminShiftManagementView: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeeItem[]>([])
   const [isLoadingEmployees, setIsLoadingEmployees] = useState<boolean>(false)
 
-  // Bộ lọc lịch phân ca
+  // Bộ lọc lịch phân ca (STAB-004 useDebounce 350ms)
   const [searchEmployeeKeyword, setSearchEmployeeKeyword] = useState<string>('')
+  const debouncedEmployeeKeyword = useDebounce(searchEmployeeKeyword, 350)
   const [filterShiftId, setFilterShiftId] = useState<string>('')
 
   // Trạng thái Drawer Ca làm việc (Tạo mới / Chỉnh sửa)
@@ -540,7 +542,7 @@ export const AdminShiftManagementView: React.FC = () => {
   }
 
   const filteredAssignments = useMemo(() => {
-    const kw = searchEmployeeKeyword.trim().toLowerCase()
+    const kw = debouncedEmployeeKeyword.trim().toLowerCase()
     return assignments.filter((a) => {
       const matchKeyword =
         !kw ||
@@ -551,7 +553,7 @@ export const AdminShiftManagementView: React.FC = () => {
 
       return matchKeyword && matchShift
     })
-  }, [assignments, searchEmployeeKeyword, filterShiftId])
+  }, [assignments, debouncedEmployeeKeyword, filterShiftId])
 
   return (
     <div className="space-y-6" data-testid="admin-shift-management-view">

@@ -52,6 +52,35 @@ describe('errorNormalizer - Chuẩn hóa lỗi API (TASK-WEB-023)', () => {
     expect(normalized.fieldErrors.email).toBe('Email không hợp lệ')
   })
 
+  it('3b. Chuẩn hóa lỗi RFC 7807/9457 invalidParams (field/property -> reason/message)', () => {
+    const headers = new AxiosHeaders()
+    const error = new AxiosError(
+      'Request failed with status code 400',
+      'ERR_BAD_REQUEST',
+      undefined,
+      undefined,
+      {
+        status: 400,
+        statusText: 'Bad Request',
+        headers,
+        config: { headers },
+        data: {
+          code: 'INVALID_REQUEST_PARAMETERS',
+          message: 'Dữ liệu không hợp lệ theo chuẩn RFC 7807',
+          invalidParams: [
+            { field: 'employeeCode', reason: 'Mã nhân viên đã tồn tại' },
+            { property: 'email', message: 'Email không hợp lệ' },
+          ],
+        },
+      }
+    )
+
+    const normalized = normalizeApiError(error)
+    expect(normalized.statusCode).toBe(400)
+    expect(normalized.fieldErrors.employeeCode).toBe('Mã nhân viên đã tồn tại')
+    expect(normalized.fieldErrors.email).toBe('Email không hợp lệ')
+  })
+
   it('4. Chuẩn hóa lỗi HTTP 401 Unauthorized', () => {
     const headers = new AxiosHeaders()
     const error = new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', undefined, undefined, {

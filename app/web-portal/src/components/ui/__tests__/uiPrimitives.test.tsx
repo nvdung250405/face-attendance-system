@@ -1,20 +1,23 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
-import { Button, Badge, Input, Modal, Card, CardHeader, CardTitle, CardContent, CardFooter, cn } from '../index'
-import * as CommonPrimitives from '../index'
-import * as UiPrimitives from '@/components/ui'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import {
+  Button,
+  Badge,
+  Input,
+  Modal,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+  FilterToolbar,
+  PaginationBar,
+  ConfettiEffect,
+} from '@/components/ui'
+import { AttendanceStatusBadge } from '@/components/attendance'
+import { cn } from '@/utils/cn'
 
 describe('UI Primitives (Generic Subdomain UI Library)', () => {
-  describe('Đồng bộ kiến trúc Primitives (Single Source of Truth)', () => {
-    it('toàn bộ primitives từ @/components/common khớp 100% với @/components/ui', () => {
-      expect(CommonPrimitives.Button).toBe(UiPrimitives.Button)
-      expect(CommonPrimitives.Badge).toBe(UiPrimitives.Badge)
-      expect(CommonPrimitives.Input).toBe(UiPrimitives.Input)
-      expect(CommonPrimitives.Card).toBe(UiPrimitives.Card)
-      expect(CommonPrimitives.Modal).toBe(UiPrimitives.Modal)
-      expect(CommonPrimitives.TableSkeleton).toBe(UiPrimitives.TableSkeleton)
-    })
-  })
   describe('cn utility', () => {
     it('kết hợp class và merge xung đột tailwind chính xác', () => {
       const isHidden = false
@@ -33,8 +36,12 @@ describe('UI Primitives (Generic Subdomain UI Library)', () => {
     it('nút secondary và outline có đường viền border-slate-300 và shadow-xs rõ ràng', () => {
       render(
         <div>
-          <Button variant="secondary" data-testid="btn-sec">Nút Secondary</Button>
-          <Button variant="outline" data-testid="btn-out">Nút Outline</Button>
+          <Button variant="secondary" data-testid="btn-sec">
+            Nút Secondary
+          </Button>
+          <Button variant="outline" data-testid="btn-out">
+            Nút Outline
+          </Button>
         </div>
       )
       const sec = screen.getByTestId('btn-sec')
@@ -47,7 +54,11 @@ describe('UI Primitives (Generic Subdomain UI Library)', () => {
 
     it('1. Trạng thái Default: render nút bấm đúng variant và text, kích hoạt onClick', () => {
       const handleClick = vi.fn()
-      render(<Button variant="primary" onClick={handleClick}>Xác nhận</Button>)
+      render(
+        <Button variant="primary" onClick={handleClick}>
+          Xác nhận
+        </Button>
+      )
       const btn = screen.getByRole('button', { name: /Xác nhận/i })
       expect(btn).toBeDefined()
       expect(btn.className).toContain('bg-brand-primary')
@@ -82,7 +93,11 @@ describe('UI Primitives (Generic Subdomain UI Library)', () => {
 
     it('4. Trạng thái Disabled: vô hiệu hóa tương tác và có aria-disabled', () => {
       const handleClick = vi.fn()
-      render(<Button disabled onClick={handleClick}>Bị vô hiệu</Button>)
+      render(
+        <Button disabled onClick={handleClick}>
+          Bị vô hiệu
+        </Button>
+      )
       const btn = screen.getByRole('button', { name: /Bị vô hiệu/i }) as HTMLButtonElement
       expect(btn.disabled).toBe(true)
       expect(btn.getAttribute('aria-disabled')).toBe('true')
@@ -241,6 +256,151 @@ describe('UI Primitives (Generic Subdomain UI Library)', () => {
       expect(card.getAttribute('aria-disabled')).toBe('true')
       expect(card.className).toContain('opacity-60')
       expect(card.className).toContain('pointer-events-none')
+    })
+  })
+
+  describe('FilterToolbar Compound Primitive (ACT-04)', () => {
+    it('render đầy đủ subcomponents: Search, Select, DateRange, ActiveCount, Reset', () => {
+      const handleSearch = vi.fn()
+      const handleSelect = vi.fn()
+      const handleReset = vi.fn()
+
+      render(
+        <FilterToolbar>
+          <FilterToolbar.Search
+            value="Nguyễn"
+            onChange={handleSearch}
+            placeholder="Tìm theo tên..."
+            maxLength={100}
+          />
+          <FilterToolbar.Select
+            value="IT"
+            onChange={handleSelect}
+            options={[
+              { value: '', label: 'Tất cả' },
+              { value: 'IT', label: 'Công nghệ thông tin' },
+            ]}
+          />
+          <FilterToolbar.DateRange from="2026-11-01" to="2026-11-30" />
+          <FilterToolbar.ActiveCount count={2} />
+          <FilterToolbar.Reset onClick={handleReset} visible={true} />
+        </FilterToolbar>
+      )
+
+      expect(screen.getByRole('search')).toBeDefined()
+      expect(screen.getByPlaceholderText('Tìm theo tên...')).toBeDefined()
+      expect(screen.getByText('2')).toBeDefined()
+      expect(screen.getByText('bộ lọc đang áp dụng')).toBeDefined()
+
+      const resetBtn = screen.getByTestId('filter-reset-btn')
+      expect(resetBtn).toBeDefined()
+      fireEvent.click(resetBtn)
+      expect(handleReset).toHaveBeenCalledTimes(1)
+    })
+
+    it('Search hỗ trợ nút X để xóa từ khóa và giới hạn maxLength', () => {
+      const handleSearch = vi.fn()
+      render(
+        <FilterToolbar.Search
+          value="Từ khóa test"
+          onChange={handleSearch}
+          maxLength={100}
+        />
+      )
+
+      const clearBtn = screen.getByTestId('filter-toolbar-search-clear')
+      expect(clearBtn).toBeDefined()
+      fireEvent.click(clearBtn)
+      expect(handleSearch).toHaveBeenCalledWith('')
+    })
+
+    it('Search gọi onDebouncedChange sau debounceMs', async () => {
+      const handleDebounced = vi.fn()
+      render(
+        <FilterToolbar.Search
+          defaultValue=""
+          onDebouncedChange={handleDebounced}
+          debounceMs={50}
+        />
+      )
+
+      const input = screen.getByTestId('filter-toolbar-search')
+      fireEvent.change(input, { target: { value: 'test' } })
+
+      await waitFor(() => {
+        expect(handleDebounced).toHaveBeenCalledWith('test')
+      })
+    })
+
+    it('Reset button ẩn khi visible=false', () => {
+      render(<FilterToolbar.Reset onClick={() => {}} visible={false} />)
+      expect(screen.queryByTestId('filter-reset-btn')).toBeNull()
+    })
+  })
+
+  describe('PaginationBar Primitive (ACT-04)', () => {
+    it('render thông tin hiển thị và các nút điều hướng phân trang chính xác', () => {
+      const handlePageChange = vi.fn()
+      const handlePageSizeChange = vi.fn()
+
+      render(
+        <PaginationBar
+          page={0}
+          pageSize={20}
+          totalElements={55}
+          totalPages={3}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          itemLabel="lượt điểm danh"
+        />
+      )
+
+      expect(screen.getByText('1 - 20')).toBeDefined()
+      expect(screen.getByText('55')).toBeDefined()
+      expect(screen.getByText(/lượt điểm danh/i)).toBeDefined()
+      expect(screen.getByText('Trang 1 / 3')).toBeDefined()
+
+      const prevBtn = screen.getByTestId('prev-page-btn') as HTMLButtonElement
+      const nextBtn = screen.getByTestId('next-page-btn') as HTMLButtonElement
+
+      // Ở trang 0, nút trước bị vô hiệu hóa
+      expect(prevBtn.disabled).toBe(true)
+      expect(nextBtn.disabled).toBe(false)
+
+      fireEvent.click(nextBtn)
+      expect(handlePageChange).toHaveBeenCalledWith(1)
+
+      const select = screen.getByTestId('page-size-select') as HTMLSelectElement
+      fireEvent.change(select, { target: { value: '50' } })
+      expect(handlePageSizeChange).toHaveBeenCalledWith(50)
+    })
+
+    it('xử lý khi totalElements = 0', () => {
+      render(
+        <PaginationBar
+          page={0}
+          pageSize={10}
+          totalElements={0}
+          totalPages={0}
+          onPageChange={() => {}}
+        />
+      )
+
+      expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(1)
+      const nextBtn = screen.getByTestId('next-page-btn') as HTMLButtonElement
+      expect(nextBtn.disabled).toBe(true)
+    })
+  })
+
+  describe('AttendanceStatusBadge & ConfettiEffect', () => {
+    it('AttendanceStatusBadge render đúng trạng thái và nhãn tiếng Việt', () => {
+      render(<AttendanceStatusBadge status="ON_TIME" showIcon />)
+      expect(screen.getByText('Đúng giờ')).toBeDefined()
+    })
+
+    it('ConfettiEffect render đúng cấu trúc canvas/effect', () => {
+      render(<ConfettiEffect />)
+      expect(screen.getByTestId('confetti-effect')).toBeDefined()
     })
   })
 })

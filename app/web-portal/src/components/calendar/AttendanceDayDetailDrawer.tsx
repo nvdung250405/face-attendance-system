@@ -13,7 +13,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
-import { AttendanceStatusBadge } from '@/components/common'
+import { AttendanceStatusBadge } from '@/components/attendance'
 import { formatDate } from '@/utils/date'
 import type { PersonalAttendanceDayRecord } from '@/types'
 
@@ -63,12 +63,13 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
           <div className="px-6 py-5 border-b border-border-subtle bg-slate-50/70 flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-lg bg-brand-50 text-brand-600">
-                  <Calendar className="w-4 h-4" />
+                <span className="p-1.5 rounded-lg bg-brand-50 text-brand-600 shrink-0">
+                  <Calendar className="w-4 h-4 shrink-0" />
                 </span>
                 <h3
                   id="drawer-date-title"
-                  className="text-base font-bold text-text-primary tracking-tight"
+                  className="text-base font-bold text-text-primary tracking-tight truncate max-w-[280px]"
+                  title={record.dayOfWeek ? `${record.dayOfWeek}, ${formatDate(record.date)}` : formatDate(record.date)}
                 >
                   {record.dayOfWeek ? `${record.dayOfWeek}, ` : ''}
                   {formatDate(record.date)}
@@ -82,9 +83,9 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
               onClick={onClose}
               data-testid="close-drawer-btn"
               aria-label="Đóng chi tiết ngày"
-              className="p-2 rounded-xl text-text-tertiary hover:text-text-primary hover:bg-slate-200/60 transition-colors"
+              className="p-2 rounded-xl text-text-tertiary hover:text-text-primary hover:bg-slate-200/60 transition-colors shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 shrink-0" />
             </button>
           </div>
 
@@ -94,11 +95,14 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
             <div className="p-4 rounded-xl bg-slate-50 border border-border-subtle flex items-center justify-between">
               <div>
                 <span className="text-xs text-text-secondary block font-medium">Trạng thái công</span>
-                <span className="text-sm font-bold text-text-primary mt-0.5 block">
+                <span
+                  className="text-sm font-bold text-text-primary mt-0.5 block truncate max-w-[200px]"
+                  title={record.shiftCode || 'Ca Hành Chính'}
+                >
                   {record.shiftCode || 'Ca Hành Chính'}
                 </span>
               </div>
-              <div>
+              <div className="shrink-0">
                 <AttendanceStatusBadge
                   status={record.status}
                   lateMinutes={record.lateMinutes}
@@ -166,9 +170,9 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
               <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                 <span className="font-medium flex items-center gap-1.5">
                   {record.verificationMethod === 'VERIFICATION_PIN' ? (
-                    <KeyRound className="w-3.5 h-3.5 text-slate-500" />
+                    <KeyRound className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                   ) : (
-                    <ScanFace className="w-3.5 h-3.5 text-brand-600" />
+                    <ScanFace className="w-3.5 h-3.5 text-brand-600 shrink-0" />
                   )}
                   Phương thức xác thực:
                 </span>
@@ -180,10 +184,13 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
               {record.kioskId && (
                 <div className="flex items-center justify-between pt-1">
                   <span className="font-medium flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                    <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                     Trạm Kiosk ghi nhận:
                   </span>
-                  <span className="font-semibold text-text-primary font-mono">
+                  <span
+                    className="font-semibold text-text-primary font-mono truncate max-w-[200px] block"
+                    title={record.kioskId}
+                  >
                     {record.kioskId}
                   </span>
                 </div>

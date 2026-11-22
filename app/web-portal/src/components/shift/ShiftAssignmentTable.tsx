@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { Trash2 } from 'lucide-react'
+import { PaginationBar } from '@/components/ui/pagination-bar'
+import { TableSkeleton } from '@/components/ui/table-skeleton'
 import type { EmployeeShiftAssignment, ShiftItem } from '@/types'
 
 export interface ShiftAssignmentTableProps {
@@ -9,6 +11,10 @@ export interface ShiftAssignmentTableProps {
   isAdjustmentLocked: boolean
   deletingAssignmentId?: number | null
   onRemoveAssignment: (assignment: EmployeeShiftAssignment) => void
+  page?: number
+  pageSize?: number
+  onPageChange?: (newPage: number) => void
+  onPageSizeChange?: (newPageSize: number) => void
 }
 
 export const ShiftAssignmentTable: React.FC<ShiftAssignmentTableProps> = ({
@@ -18,33 +24,48 @@ export const ShiftAssignmentTable: React.FC<ShiftAssignmentTableProps> = ({
   isAdjustmentLocked,
   deletingAssignmentId,
   onRemoveAssignment,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
 }) => {
+  const [localPage, setLocalPage] = useState(0)
+  const [localPageSize, setLocalPageSize] = useState(10)
+
+  const currentPage = page !== undefined ? page : localPage
+  const currentPageSize = pageSize !== undefined ? pageSize : localPageSize
+  const handlePageChange = onPageChange || setLocalPage
+  const handlePageSizeChange = onPageSizeChange || setLocalPageSize
+
+  const totalElements = filteredAssignments.length
+  const totalPages = Math.max(1, Math.ceil(totalElements / currentPageSize))
+  const activePage = Math.min(Math.max(0, currentPage), totalPages - 1)
+
+  const displayedAssignments = useMemo(() => {
+    if (page !== undefined) return filteredAssignments
+    const start = activePage * currentPageSize
+    return filteredAssignments.slice(start, start + currentPageSize)
+  }, [filteredAssignments, page, activePage, currentPageSize])
+
   return (
     <div className="card-surface overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-sm">
           <thead>
             <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th className="py-3 px-4">Nhân Sự</th>
-              <th className="py-3 px-4">Ca Áp Dụng</th>
-              <th className="py-3 px-4">Khung Giờ</th>
-              <th className="py-3 px-4">Ngày Bắt Đầu</th>
-              <th className="py-3 px-4">Ngày Kết Thúc</th>
-              <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+              <th scope="col" className="py-3 px-4">Nhân Sự</th>
+              <th scope="col" className="py-3 px-4">Ca Áp Dụng</th>
+              <th scope="col" className="py-3 px-4">Khung Giờ</th>
+              <th scope="col" className="py-3 px-4">Ngày Bắt Đầu</th>
+              <th scope="col" className="py-3 px-4">Ngày Kết Thúc</th>
+              <th scope="col" className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                 Thao Tác
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">
             {isLoadingAssignments ? (
-              <tr>
-                <td colSpan={6} className="py-8 text-center text-text-secondary">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                    <span>Đang tải lịch phân ca...</span>
-                  </div>
-                </td>
-              </tr>
+              <TableSkeleton columns={6} rows={5} hasActionColumn ariaLabel="Đang tải lịch phân ca..." />
             ) : filteredAssignments.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-text-secondary">
@@ -52,7 +73,7 @@ export const ShiftAssignmentTable: React.FC<ShiftAssignmentTableProps> = ({
                 </td>
               </tr>
             ) : (
-              filteredAssignments.map((item) => {
+              displayedAssignments.map((item) => {
                 const matchedShift = shiftsMap.get(item.shiftId)
                 return (
                   <tr
@@ -62,15 +83,25 @@ export const ShiftAssignmentTable: React.FC<ShiftAssignmentTableProps> = ({
                   >
                     <td className="py-3.5 px-4">
                       <div>
-                        <span className="font-semibold text-text-primary block text-xs">{item.fullName}</span>
+                        <span
+                          className="font-semibold text-text-primary block text-xs truncate max-w-[200px]"
+                          title={item.fullName}
+                        >
+                          {item.fullName}
+                        </span>
                         <span className="text-2xs font-mono text-slate-400">
                           {item.employeeCode}
                         </span>
                       </div>
                     </td>
                     <td className="py-3.5 px-4 text-xs">
-                      <span className="font-semibold text-text-secondary">{item.shiftName}</span>
-                      <span className="ml-1 text-2xs font-mono text-indigo-600 font-bold">
+                      <span
+                        className="font-semibold text-text-secondary truncate max-w-[200px] inline-block align-middle"
+                        title={item.shiftName}
+                      >
+                        {item.shiftName}
+                      </span>
+                      <span className="ml-1 text-2xs font-mono text-indigo-600 font-bold shrink-0">
                         ({item.shiftCode})
                       </span>
                     </td>
@@ -90,9 +121,9 @@ export const ShiftAssignmentTable: React.FC<ShiftAssignmentTableProps> = ({
                         disabled={isAdjustmentLocked || deletingAssignmentId === item.id}
                         data-testid={`remove-assignment-btn-${item.id}`}
                         title="Hủy lịch phân ca"
-                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40 shrink-0"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
                       </button>
                     </td>
                   </tr>
@@ -102,6 +133,18 @@ export const ShiftAssignmentTable: React.FC<ShiftAssignmentTableProps> = ({
           </tbody>
         </table>
       </div>
+      {!isLoadingAssignments && totalElements > 0 && (
+        <PaginationBar
+          page={activePage}
+          pageSize={currentPageSize}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[10, 20, 50]}
+          itemLabel="lịch phân ca"
+        />
+      )}
     </div>
   )
 }

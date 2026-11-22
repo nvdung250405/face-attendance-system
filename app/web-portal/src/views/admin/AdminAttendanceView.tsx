@@ -24,7 +24,8 @@ import {
   SlidersHorizontal,
   Pause,
 } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
+import { PaginationBar } from '@/components/ui/pagination-bar'
 import { useDebounce } from '@/hooks'
 import { attendanceService } from '@/services/attendanceService'
 import { reportExportService } from '@/services/reportExportService'
@@ -33,7 +34,6 @@ import { ExportReportModal } from '@/components/report'
 import {
   AdjustAttendanceModal,
   AttendanceFilterToolbar,
-  AttendancePaginationBar,
   useLiveAttendanceBuffer,
 } from '@/components/attendance'
 import type { AttendanceRecord, AttendanceStatus, AttendanceStats, VerificationMethod } from '@/types'
@@ -331,9 +331,9 @@ export const AdminAttendanceView: React.FC = () => {
             size="sm"
             leftIcon={
               isLiveEnabled ? (
-                <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-600" />
+                <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-600 shrink-0" />
               ) : (
-                <Pause className="w-3.5 h-3.5 text-slate-500" />
+                <Pause className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               )
             }
           >
@@ -346,7 +346,7 @@ export const AdminAttendanceView: React.FC = () => {
               type="button"
               onClick={flushPendingRecords}
               data-testid="flush-pending-btn"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50/90 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50/90 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all shadow-2xs cursor-pointer shrink-0"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
@@ -363,21 +363,21 @@ export const AdminAttendanceView: React.FC = () => {
             data-testid="refresh-attendance-btn"
             variant="secondary"
             size="sm"
-            leftIcon={<RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
+            leftIcon={<RotateCw className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />}
           >
             Làm mới
           </Button>
 
           {/* Nút xuất báo cáo Excel & PDF (TASK-WEB-020) */}
-          <div className="flex items-center rounded-lg bg-indigo-600 shadow-xs overflow-hidden">
+          <div className="flex items-center rounded-lg bg-indigo-600 shadow-xs overflow-hidden shrink-0">
             <button
               type="button"
               onClick={() => handleExportReport()}
               disabled={isExporting}
               data-testid="export-attendance-report-btn"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 shrink-0"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 shrink-0" />
               <span>{isExporting ? 'Đang xuất...' : 'Xuất Báo Cáo'}</span>
             </button>
 
@@ -387,9 +387,9 @@ export const AdminAttendanceView: React.FC = () => {
               disabled={isExporting}
               data-testid="open-export-modal-btn"
               title="Tùy chọn xuất báo cáo Excel / PDF"
-              className="px-2 py-2 text-white hover:bg-indigo-700 transition-colors border-l border-white/20"
+              className="px-2 py-2 text-white hover:bg-indigo-700 transition-colors border-l border-white/20 shrink-0"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
             </button>
           </div>
         </div>
@@ -404,7 +404,7 @@ export const AdminAttendanceView: React.FC = () => {
               Lượt quẹt hôm nay
             </span>
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
-              <History className="w-4.5 h-4.5" />
+              <History className="w-4.5 h-4.5 shrink-0" />
             </div>
           </div>
           <div>
@@ -422,7 +422,7 @@ export const AdminAttendanceView: React.FC = () => {
               Đúng giờ
             </span>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
-              <CheckCircle2 className="w-4.5 h-4.5" />
+              <CheckCircle2 className="w-4.5 h-4.5 shrink-0" />
             </div>
           </div>
           <div>
@@ -440,7 +440,7 @@ export const AdminAttendanceView: React.FC = () => {
               Đi muộn
             </span>
             <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
-              <AlertTriangle className="w-4.5 h-4.5" />
+              <AlertTriangle className="w-4.5 h-4.5 shrink-0" />
             </div>
           </div>
           <div>
@@ -458,7 +458,7 @@ export const AdminAttendanceView: React.FC = () => {
               Xác thực khuôn mặt
             </span>
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-500/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
-              <ScanFace className="w-4.5 h-4.5" />
+              <ScanFace className="w-4.5 h-4.5 shrink-0" />
             </div>
           </div>
           <div>
@@ -528,18 +528,19 @@ export const AdminAttendanceView: React.FC = () => {
           onEditRecord={(record) => setRecordToAdjust(record)}
         />
 
-        {/* ── Thanh Phân Trang (ARCH-02: Modularized AttendancePaginationBar) ── */}
-        <AttendancePaginationBar
+        {/* ── Thanh Phân Trang Chuẩn Hóa (Global PaginationBar) ── */}
+        <PaginationBar
           page={page}
           pageSize={pageSize}
           totalElements={totalElements}
-          displayedCount={displayRecords.length}
           totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={(newSize) => {
             setPageSize(newSize)
             setPage(0)
           }}
+          pageSizeOptions={[20, 50, 100]}
+          itemLabel="lượt điểm danh"
         />
       </div>
 

@@ -19,7 +19,7 @@ import {
   RotateCw,
   Download,
 } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button, PaginationBar, TableSkeleton } from '@/components/ui'
 import { LockPayrollModal, UnlockPayrollModal } from '@/components/payroll'
 import { payrollPeriodService } from '@/services/payrollPeriodService'
 import { reportExportService } from '@/services/reportExportService'
@@ -52,6 +52,18 @@ export const AdminPayrollPeriodView: React.FC = () => {
   // Năm tra cứu
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [isLoading, setIsLoading] = useState<boolean>(true)
+
+  // Phân trang
+  const [page, setPage] = useState<number>(0)
+  const [pageSize, setPageSize] = useState<number>(10)
+
+  const totalElements = memoizedPeriods.length
+  const totalPages = Math.max(1, Math.ceil(totalElements / pageSize))
+  const safePage = Math.min(Math.max(0, page), totalPages - 1)
+  const paginatedPeriods = useMemo(() => {
+    const start = safePage * pageSize
+    return memoizedPeriods.slice(start, start + pageSize)
+  }, [memoizedPeriods, safePage, pageSize])
 
   // Thông báo phản hồi
   const [notification, setNotification] = useState<{
@@ -221,7 +233,10 @@ export const AdminPayrollPeriodView: React.FC = () => {
             <select
               id="year-select"
               value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              onChange={(e) => {
+                setSelectedYear(Number(e.target.value))
+                setPage(0)
+              }}
               data-testid="select-payroll-year"
               className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
             >
@@ -305,25 +320,18 @@ export const AdminPayrollPeriodView: React.FC = () => {
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4">Kỳ Công</th>
-                <th className="py-3 px-4">Trạng Thái</th>
-                <th className="py-3 px-4">Thông Tin Chốt Kỳ</th>
-                <th className="py-3 px-4">Thông Tin Mở Lại (Gần nhất)</th>
-                <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                <th scope="col" className="py-3 px-4">Kỳ Công</th>
+                <th scope="col" className="py-3 px-4">Trạng Thái</th>
+                <th scope="col" className="py-3 px-4">Thông Tin Chốt Kỳ</th>
+                <th scope="col" className="py-3 px-4">Thông Tin Mở Lại (Gần nhất)</th>
+                <th scope="col" className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                   Thao Tác Quản Trị
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-text-secondary">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                      <span>Đang tải danh sách kỳ công năm {selectedYear}...</span>
-                    </div>
-                  </td>
-                </tr>
+                <TableSkeleton columns={5} rows={5} hasActionColumn ariaLabel={`Đang tải danh sách kỳ công năm ${selectedYear}...`} />
               ) : memoizedPeriods.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-text-secondary">
@@ -331,7 +339,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                memoizedPeriods.map((period) => {
+                paginatedPeriods.map((period) => {
                   const { isPeriodLocked, isCurrentSelected } = period
 
                   return (
@@ -345,12 +353,12 @@ export const AdminPayrollPeriodView: React.FC = () => {
                       {/* Kỳ công tháng/năm */}
                       <td className="py-3.5 px-4 font-mono font-bold text-text-primary">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-brand-primary" />
+                          <Calendar className="w-4 h-4 text-brand-primary shrink-0" />
                           <span>
                             Tháng {String(period.periodMonth).padStart(2, '0')}/{period.periodYear}
                           </span>
                           {isCurrentSelected && (
-                            <span className="px-2 py-0.5 rounded-full text-2xs font-semibold bg-brand-primary text-white">
+                            <span className="px-2 py-0.5 rounded-full text-2xs font-semibold bg-brand-primary text-white shrink-0">
                               Đang chọn
                             </span>
                           )}
@@ -361,7 +369,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                       <td className="py-3.5 px-4">
                         <span
                           data-testid={`period-status-badge-${period.id}`}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-bold ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-bold shrink-0 ${
                             isPeriodLocked
                               ? 'bg-amber-100 text-amber-800 border border-amber-300'
                               : 'bg-emerald-100 text-status-success border border-emerald-300'
@@ -369,12 +377,12 @@ export const AdminPayrollPeriodView: React.FC = () => {
                         >
                           {isPeriodLocked ? (
                             <>
-                              <Lock className="w-3 h-3" />
+                              <Lock className="w-3 h-3 shrink-0" />
                               <span>ĐÃ CHỐT</span>
                             </>
                           ) : (
                             <>
-                              <Unlock className="w-3 h-3" />
+                              <Unlock className="w-3 h-3 shrink-0" />
                               <span>ĐANG MỞ</span>
                             </>
                           )}
@@ -385,7 +393,10 @@ export const AdminPayrollPeriodView: React.FC = () => {
                       <td className="py-3.5 px-4 text-text-secondary">
                         {isPeriodLocked ? (
                           <div className="space-y-0.5">
-                            <span className="font-semibold text-text-primary block">
+                            <span
+                              className="font-semibold text-text-primary block truncate max-w-[200px]"
+                              title={period.lockedByName || 'Quản trị viên'}
+                            >
                               {period.lockedByName || 'Quản trị viên'}
                             </span>
                             <span className="text-2xs font-mono text-text-muted">
@@ -403,10 +414,16 @@ export const AdminPayrollPeriodView: React.FC = () => {
                       <td className="py-3.5 px-4 text-text-secondary">
                         {period.unlockReason ? (
                           <div className="space-y-0.5">
-                            <span className="font-semibold text-text-primary block">
+                            <span
+                              className="font-semibold text-text-primary block truncate max-w-[200px]"
+                              title={period.unlockedByName || 'Quản trị viên'}
+                            >
                               {period.unlockedByName || 'Quản trị viên'}
                             </span>
-                            <span className="text-2xs text-text-secondary italic block">
+                            <span
+                              className="text-2xs text-text-secondary italic block truncate max-w-[200px]"
+                              title={period.unlockReason}
+                            >
                               "{period.unlockReason}"
                             </span>
                             <span className="text-2xs font-mono text-text-muted">
@@ -444,7 +461,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                               size="sm"
                               onClick={() => handleOpenLockModal(period)}
                               data-testid={`lock-period-btn-${period.id}`}
-                              leftIcon={<Lock className="w-3.5 h-3.5" />}
+                              leftIcon={<Lock className="w-3.5 h-3.5 shrink-0" />}
                               className="text-amber-800 bg-amber-50 hover:bg-amber-100 border-amber-300 font-bold"
                             >
                               Chốt Kỳ
@@ -463,7 +480,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                                   : 'Mở lại kỳ công (Bắt buộc nhập lý do)'
                               }
                               data-testid={`unlock-period-btn-${period.id}`}
-                              leftIcon={<Unlock className="w-3.5 h-3.5" />}
+                              leftIcon={<Unlock className="w-3.5 h-3.5 shrink-0" />}
                               className="text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 font-bold"
                             >
                               Mở Lại Kỳ
@@ -479,7 +496,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
                             disabled={exportingPeriodId === period.id}
                             title="Xuất bảng công kỳ này"
                             data-testid={`export-period-btn-${period.id}`}
-                            leftIcon={<Download className="w-3.5 h-3.5" />}
+                            leftIcon={<Download className="w-3.5 h-3.5 shrink-0" />}
                           >
                             {exportingPeriodId === period.id ? 'Đang xuất...' : 'Xuất File'}
                           </Button>
@@ -492,6 +509,18 @@ export const AdminPayrollPeriodView: React.FC = () => {
             </tbody>
           </table>
         </div>
+        {!isLoading && totalElements > 0 && (
+          <PaginationBar
+            page={safePage}
+            pageSize={pageSize}
+            totalElements={totalElements}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 20, 50]}
+            itemLabel="kỳ công"
+          />
+        )}
       </div>
 
       {/* ── Modal Xác Nhận Chốt Kỳ Công (Lock Modal) ── */}

@@ -24,6 +24,7 @@ interface BackendErrorPayload {
   message?: string
   details?: Record<string, string>
   errors?: Record<string, string> | Array<{ field?: string; message?: string }>
+  invalidParams?: Array<{ field?: string; property?: string; reason?: string; message?: string }>
   overlapInfo?: OverlapConflictInfo
   suggestedStartDate?: string
   suggestedEndDate?: string
@@ -59,20 +60,29 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
 
     // Trích xuất lỗi từng trường nếu có
     const fieldErrors: Record<string, string> = {}
+    if (Array.isArray(data.invalidParams)) {
+      data.invalidParams.forEach((param) => {
+        const key = param?.field || param?.property
+        const val = param?.reason || param?.message
+        if (key && val) {
+          fieldErrors[key] = val
+        }
+      })
+    }
     if (data.details && typeof data.details === 'object') {
       Object.entries(data.details).forEach(([key, val]) => {
-        if (typeof val === 'string') fieldErrors[key] = val
+        if (typeof val === 'string' && !fieldErrors[key]) fieldErrors[key] = val
       })
     } else if (data.errors) {
       if (Array.isArray(data.errors)) {
         data.errors.forEach((item) => {
-          if (item?.field && item?.message) {
+          if (item?.field && item?.message && !fieldErrors[item.field]) {
             fieldErrors[item.field] = item.message
           }
         })
       } else if (typeof data.errors === 'object') {
         Object.entries(data.errors).forEach(([key, val]) => {
-          if (typeof val === 'string') fieldErrors[key] = val
+          if (typeof val === 'string' && !fieldErrors[key]) fieldErrors[key] = val
         })
       }
     }

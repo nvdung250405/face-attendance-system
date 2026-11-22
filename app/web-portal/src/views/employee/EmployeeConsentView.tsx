@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, Shield, ScanFace, AlertTriangle, Plus, Lock } from 'lucide-react'
+import { Button } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal, ConsentWithdrawalModal } from '@/components/consent'
 import { PinManagementModal } from '@/components/account'
@@ -50,27 +51,29 @@ export const EmployeeConsentView: React.FC = () => {
             Quản lý cam kết bảo vệ dữ liệu cá nhân theo Nghị định 13/2023/NĐ-CP &amp; Nghị định 356/2025/NĐ-CP
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={refreshProfile}
           disabled={isRefreshing}
-          className="btn-secondary self-start sm:self-auto flex items-center gap-2"
+          className="self-start sm:self-auto flex items-center gap-2 shrink-0"
           title="Đồng bộ lại trạng thái sinh trắc từ CSDL hệ thống"
         >
-          <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={`shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
           <span>{isRefreshing ? 'Đang đồng bộ...' : 'Làm mới'}</span>
-        </button>
+        </Button>
       </div>
 
       {/* ── Khung Thông tin Pháp lý ── */}
       <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex flex-col md:flex-row items-start gap-3">
         <div className="p-1 rounded-lg bg-blue-100 text-blue-700 mt-0.5 shrink-0">
-          <Shield size={20} strokeWidth={2} />
+          <Shield size={20} strokeWidth={2} className="shrink-0" />
         </div>
         <div className="space-y-1">
           <h2 className="text-sm font-bold text-blue-950 flex items-center gap-2">
             <span>Nguyên tắc Bảo vệ Quyền Riêng tư &amp; Dữ liệu Sinh trắc</span>
-            <span className="badge-info text-2xs">
+            <span className="badge-info text-2xs shrink-0">
               Nghị định 13/2023/NĐ-CP
             </span>
           </h2>
@@ -88,8 +91,8 @@ export const EmployeeConsentView: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
-                  <ScanFace size={20} strokeWidth={1.75} />
+                <div className="w-9 h-9 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center shrink-0">
+                  <ScanFace size={20} strokeWidth={1.75} className="shrink-0" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary">Dữ liệu khuôn mặt Kiosk</h3>
@@ -98,11 +101,11 @@ export const EmployeeConsentView: React.FC = () => {
               </div>
 
               {user?.hasBiometric ? (
-                <span className="badge-success" data-testid="biometric-status-active">
+                <span className="badge-success shrink-0" data-testid="biometric-status-active">
                   ĐÃ KÍCH HOẠT
                 </span>
               ) : (
-                <span className="badge-warning" data-testid="biometric-status-inactive">
+                <span className="badge-warning shrink-0" data-testid="biometric-status-inactive">
                   CHƯA KÍCH HOẠT
                 </span>
               )}
@@ -117,25 +120,29 @@ export const EmployeeConsentView: React.FC = () => {
 
           <div className="pt-2 border-t border-border-subtle flex items-center justify-end">
             {user?.hasBiometric ? (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 data-testid="open-withdraw-modal-btn"
                 onClick={() => setIsWithdrawModalOpen(true)}
-                className="px-4 py-2 border border-rose-300 text-status-danger hover:bg-rose-50 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
+                className="border-rose-300 text-status-danger hover:bg-rose-50 gap-2 shrink-0"
               >
-                <AlertTriangle size={16} strokeWidth={2} />
+                <AlertTriangle size={16} strokeWidth={2} className="shrink-0" />
                 <span>Rút lại cam kết sinh trắc</span>
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 data-testid="open-consent-modal-btn"
                 onClick={() => setIsConsentModalOpen(true)}
-                className="btn-primary flex items-center gap-2 text-sm"
+                className="gap-2 shrink-0"
               >
-                <Plus size={16} strokeWidth={2} />
+                <Plus size={16} strokeWidth={2} className="shrink-0" />
                 <span>Ký cam kết ngay</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -145,8 +152,8 @@ export const EmployeeConsentView: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                  <Lock size={20} strokeWidth={1.75} />
+                <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <Lock size={20} strokeWidth={1.75} className="shrink-0" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary">Mã PIN dự phòng</h3>
@@ -155,9 +162,9 @@ export const EmployeeConsentView: React.FC = () => {
               </div>
 
               {user?.hasPin ? (
-                <span className="badge-success">ĐÃ THIẾT LẬP</span>
+                <span className="badge-success shrink-0">ĐÃ THIẾT LẬP</span>
               ) : (
-                <span className="badge-warning">CHƯA THIẾT LẬP</span>
+                <span className="badge-warning shrink-0">CHƯA THIẾT LẬP</span>
               )}
             </div>
 
@@ -168,14 +175,16 @@ export const EmployeeConsentView: React.FC = () => {
 
           <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-text-muted">
             <span>Dùng tại màn hình PIN Kiosk</span>
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               data-testid="open-pin-management-modal-btn"
               onClick={() => setIsPinModalOpen(true)}
-              className="btn-secondary text-xs font-semibold py-1 px-2.5"
+              className="shrink-0"
             >
               {user?.hasPin ? 'Đổi mã PIN' : 'Thiết lập mã PIN'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

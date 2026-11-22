@@ -224,6 +224,63 @@ describe('Bộ Client Dịch vụ Vòng đời (TASK-WEB-023, BLD-WEB-022, APD-W
       })
       expect(updated.status).toBe('COMPLETED')
     })
+
+    it('createEmployeeDataRequest gửi detail và map RECTIFICATION sang CORRECTION', async () => {
+      vi.spyOn(apiClient, 'post').mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            id: 6,
+            userId: 1042,
+            requestType: 'CORRECTION',
+            detail: 'Đính chính email',
+            status: 'RECEIVED',
+            createdAt: '2026-11-20T10:00:00Z',
+          },
+        },
+      })
+
+      const res = await dataSubjectService.createEmployeeDataRequest({
+        requestType: 'RECTIFICATION',
+        details: 'Đính chính email',
+      })
+
+      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/employee/data-requests', {
+        requestType: 'CORRECTION',
+        detail: 'Đính chính email',
+      })
+      expect(res.id).toBe(6)
+      expect(res.employeeId).toBe(1042)
+      expect(res.detail).toBe('Đính chính email')
+    })
+
+    it('updateDataRequestStatus gửi response và map COMPLETED sang FULFILLED', async () => {
+      vi.spyOn(apiClient, 'patch').mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            id: 6,
+            requestType: 'CORRECTION',
+            detail: 'Đính chính email',
+            status: 'FULFILLED',
+            response: 'Đã đính chính thành công',
+            respondedAt: '2026-11-20T11:00:00Z',
+          },
+        },
+      })
+
+      const res = await dataSubjectService.updateDataRequestStatus(6, {
+        status: 'COMPLETED',
+        adminNote: 'Đã đính chính thành công',
+      })
+
+      expect(apiClient.patch).toHaveBeenCalledWith('/api/v1/dpo/data-requests/6', {
+        status: 'FULFILLED',
+        response: 'Đã đính chính thành công',
+      })
+      expect(res.status).toBe('FULFILLED')
+      expect(res.response).toBe('Đã đính chính thành công')
+    })
   })
 
   // 6. LogoutService (APD-WEB-009, API-WEB-015, DD-WEB-004)
@@ -291,12 +348,89 @@ describe('Bộ Client Dịch vụ Vòng đời (TASK-WEB-023, BLD-WEB-022, APD-W
 
   // 8. ComplianceAdminService (APD-WEB-011, API-WEB-017, DD-WEB-019)
   describe('8. ComplianceAdminService', () => {
-    it('getAuditLogs tra cứu nhật ký kiểm toán chỉ đọc', async () => {
+    it('getAuditLogs tra cứu nhật ký kiểm toán chỉ đọc và adapt dữ liệu từ BE', async () => {
       vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
-        data: { success: true, data: { content: [{ id: 1, action: 'LOGIN', actorId: 1, actorEmail: 'a@c.com', targetResource: 'AUTH', createdAt: '2026-10-12' }], totalElements: 1 } },
+        data: {
+          success: true,
+          data: {
+            content: [
+              {
+                id: 1,
+                action: 'UPDATE',
+                actorId: 2,
+                actorEmail: 'admin@company.com',
+                entityType: 'KIOSK',
+                entityId: 'KSK-01',
+                beforeState: '{"name":"Old Kiosk"}',
+                afterState: '{"name":"New Kiosk"}',
+                ipAddress: '127.0.0.1',
+                createdAt: '2026-10-12T08:00:00Z',
+              },
+            ],
+            totalElements: 1,
+          },
+        },
       })
       const logs = await complianceAdminService.getAuditLogs({ page: 0, size: 10 })
       expect(logs.content.length).toBe(1)
+      expect(logs.content[0].targetResource).toBe('KIOSK:KSK-01')
+      expect(logs.content[0].oldValues).toEqual({ name: 'Old Kiosk' })
+      expect(logs.content[0].newValues).toEqual({ name: 'New Kiosk' })
+    })
+
+    it('getDpoConsents và getDpoRetentionSchedule adapt chính xác wire contract từ BE', async () => {
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: [
+            {
+              sessionId: 101,
+              userId: 202,
+              employeeCode: 'NV-002',
+              fullName: 'Trần B',
+              email: 'b@c.com',
+              consentVersion: 'v2.0',
+              consentSignedAt: '2026-10-12T09:00:00Z',
+              clientIp: '192.168.1.100',
+              isUsed: true,
+            },
+          ],
+        },
+      })
+      const consents = await complianceAdminService.getDpoConsents()
+      expect(consents.length).toBe(1)
+      expect(consents[0].id).toBe(101)
+      expect(consents[0].employeeId).toBe(202)
+      expect(consents[0].agreedAt).toBe('2026-10-12T09:00:00Z')
+      expect(consents[0].ipAddress).toBe('192.168.1.100')
+      expect(consents[0].status).toBe('ACTIVE')
+
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: [
+            {
+              sourceId: 505,
+              employeeCode: 'NV-003',
+              fullName: 'Lê C',
+              email: 'c@c.com',
+              triggerDate: '2026-10-01',
+              scheduledDisposalDate: '2026-10-21',
+              isDisposed: true,
+              processedAt: '2026-10-20T15:00:00Z',
+              retentionType: 'CONSENT_WITHDRAWAL',
+            },
+          ],
+        },
+      })
+      const retention = await complianceAdminService.getDpoRetentionSchedule()
+      expect(retention.length).toBe(1)
+      expect(retention[0].id).toBe(505)
+      expect(retention[0].employeeId).toBe(505)
+      expect(retention[0].resignedAt).toBe('2026-10-01')
+      expect(retention[0].scheduledDestructionDate).toBe('2026-10-21')
+      expect(retention[0].actualDestructionDate).toBe('2026-10-20T15:00:00Z')
+      expect(retention[0].status).toBe('COMPLETED')
     })
 
     it('registerKiosk nhận secretToken và không lưu vào storage', async () => {

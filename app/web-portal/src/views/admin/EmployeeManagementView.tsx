@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus, Search, ScanFace, Lock, Edit2, KeyRound, CheckCircle2, Ban, X, AlertCircle } from 'lucide-react'
-import { Button, Modal, TableSkeleton } from '@/components/common'
+import { Button, Modal, TableSkeleton, PaginationBar } from '@/components/ui'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { useDebounce } from '@/hooks'
 import { EmployeeDrawer, TemporaryPasswordModal } from '@/components/account'
@@ -220,15 +220,15 @@ export const EmployeeManagementView: React.FC = () => {
   const renderRoleBadge = (role: UserRole) => {
     switch (role) {
       case 'ADMIN':
-        return <span className="badge-danger">ADMIN</span>
+        return <span className="badge-danger shrink-0">ADMIN</span>
       case 'HR_MANAGER':
-        return <span className="badge-info">HR_MANAGER</span>
+        return <span className="badge-info shrink-0">HR_MANAGER</span>
       case 'DPO':
-        return <span className="badge-warning">DPO</span>
+        return <span className="badge-warning shrink-0">DPO</span>
       case 'EMPLOYEE':
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
             EMPLOYEE
           </span>
         )
@@ -239,15 +239,15 @@ export const EmployeeManagementView: React.FC = () => {
   const renderStatusBadge = (status: UserStatus | string) => {
     switch (status) {
       case 'ACTIVE':
-        return <span className="badge-success">Đang hoạt động</span>
+        return <span className="badge-success shrink-0">Đang hoạt động</span>
       case 'PENDING_CONSENT':
-        return <span className="badge-warning">Chờ cam kết</span>
+        return <span className="badge-warning shrink-0">Chờ cam kết</span>
       case 'SUSPENDED':
-        return <span className="badge-warning">Tạm đình chỉ</span>
+        return <span className="badge-warning shrink-0">Tạm đình chỉ</span>
       case 'TERMINATED':
       case 'INACTIVE':
       default:
-        return <span className="badge-danger">Đã vô hiệu hóa</span>
+        return <span className="badge-danger shrink-0">Đã vô hiệu hóa</span>
     }
   }
 
@@ -267,7 +267,8 @@ export const EmployeeManagementView: React.FC = () => {
           variant="primary"
           size="md"
           onClick={handleOpenCreate}
-          leftIcon={<Plus size={16} strokeWidth={2.2} />}
+          leftIcon={<Plus size={16} strokeWidth={2.2} className="shrink-0" />}
+          className="shrink-0"
         >
           Thêm nhân viên
         </Button>
@@ -283,7 +284,7 @@ export const EmployeeManagementView: React.FC = () => {
           <button
             type="button"
             onClick={fetchEmployees}
-            className="text-xs underline font-semibold hover:text-rose-900"
+            className="text-xs underline font-semibold hover:text-rose-900 cursor-pointer"
           >
             Thử lại
           </button>
@@ -295,7 +296,7 @@ export const EmployeeManagementView: React.FC = () => {
         {/* Tìm kiếm từ khóa */}
         <div className="flex-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-            <Search size={16} strokeWidth={2} />
+            <Search size={16} strokeWidth={2} className="shrink-0" />
           </div>
           <input
             id="search-input"
@@ -303,6 +304,7 @@ export const EmployeeManagementView: React.FC = () => {
             type="text"
             aria-label="Tìm kiếm nhân sự"
             value={keyword}
+            maxLength={100}
             onChange={(e) => {
               setKeyword(e.target.value)
               setPage(0)
@@ -318,10 +320,10 @@ export const EmployeeManagementView: React.FC = () => {
                 setKeyword('')
                 setPage(0)
               }}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               title="Xóa tìm kiếm"
             >
-              <X size={14} />
+              <X size={14} className="shrink-0" />
             </button>
           )}
         </div>
@@ -337,7 +339,7 @@ export const EmployeeManagementView: React.FC = () => {
               setDepartmentFilter(e.target.value)
               setPage(0)
             }}
-            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all cursor-pointer"
           >
             <option value="ALL">Mọi phòng ban</option>
             {availableDepartments.map((dept) => (
@@ -359,7 +361,7 @@ export const EmployeeManagementView: React.FC = () => {
               setStatusFilter(e.target.value)
               setPage(0)
             }}
-            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all cursor-pointer"
           >
             <option value="ALL">Mọi trạng thái</option>
             <option value="ACTIVE">Đang hoạt động</option>
@@ -379,7 +381,7 @@ export const EmployeeManagementView: React.FC = () => {
             onChange={(e) => {
               setRoleFilter(e.target.value)
             }}
-            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all"
+            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 w-full transition-all cursor-pointer"
           >
             <option value="ALL">Mọi vai trò</option>
             <option value="EMPLOYEE">EMPLOYEE</option>
@@ -415,14 +417,14 @@ export const EmployeeManagementView: React.FC = () => {
           >
             <thead>
               <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
-                <th className="py-3 px-4">Họ và tên</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Phòng ban</th>
-                <th className="py-3 px-4">Vai trò</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4 text-center">Sinh trắc / PIN</th>
-                <th className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
+                <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
+                <th scope="col" className="py-3 px-4">Họ và tên</th>
+                <th scope="col" className="py-3 px-4">Email</th>
+                <th scope="col" className="py-3 px-4">Phòng ban</th>
+                <th scope="col" className="py-3 px-4">Vai trò</th>
+                <th scope="col" className="py-3 px-4">Trạng thái</th>
+                <th scope="col" className="py-3 px-4 text-center">Sinh trắc / PIN</th>
+                <th scope="col" className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-20">
                   Hành động
                 </th>
               </tr>
@@ -459,17 +461,23 @@ export const EmployeeManagementView: React.FC = () => {
 
                       {/* Họ tên */}
                       <td className="py-3.5 px-4 font-medium text-text-primary">
-                        {emp.fullName}
+                        <span className="truncate max-w-[200px] block" title={emp.fullName}>
+                          {emp.fullName}
+                        </span>
                       </td>
 
                       {/* Email */}
                       <td className="py-3.5 px-4 text-text-secondary">
-                        {emp.email}
+                        <span className="truncate max-w-[200px] block" title={emp.email}>
+                          {emp.email}
+                        </span>
                       </td>
 
                       {/* Phòng ban */}
                       <td className="py-3.5 px-4 text-text-secondary">
-                        {emp.department || '—'}
+                        <span className="truncate max-w-[200px] block" title={emp.department || '—'}>
+                          {emp.department || '—'}
+                        </span>
                       </td>
 
                       {/* Vai trò */}
@@ -487,19 +495,19 @@ export const EmployeeManagementView: React.FC = () => {
                         <div className="inline-flex items-center gap-2">
                           <span
                             title={emp.hasBiometric ? 'Đã kích hoạt sinh trắc mặt' : 'Chưa kích hoạt'}
-                            className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${
+                            className={`w-6 h-6 rounded-md flex items-center justify-center text-xs shrink-0 ${
                               emp.hasBiometric ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
                             }`}
                           >
-                            <ScanFace size={14} strokeWidth={2} />
+                            <ScanFace size={14} strokeWidth={2} className="shrink-0" />
                           </span>
                           <span
                             title={emp.hasPin ? 'Đã cài đặt PIN dự phòng' : 'Chưa có PIN'}
-                            className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${
+                            className={`w-6 h-6 rounded-md flex items-center justify-center text-xs shrink-0 ${
                               emp.hasPin ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'
                             }`}
                           >
-                            <Lock size={14} strokeWidth={2} />
+                            <Lock size={14} strokeWidth={2} className="shrink-0" />
                           </span>
                         </div>
                       </td>
@@ -514,9 +522,9 @@ export const EmployeeManagementView: React.FC = () => {
                             aria-label={`Sửa hồ sơ ${emp.fullName}`}
                             onClick={() => handleOpenEdit(emp)}
                             disabled={isBusy}
-                            className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                            className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
                           >
-                            <Edit2 size={16} strokeWidth={2} />
+                            <Edit2 size={16} strokeWidth={2} className="shrink-0" />
                           </button>
 
                           {/* Nút cấp lại mật khẩu tạm */}
@@ -526,9 +534,9 @@ export const EmployeeManagementView: React.FC = () => {
                             aria-label={`Cấp lại mật khẩu cho ${emp.fullName}`}
                             onClick={() => handleResetCredentials(emp)}
                             disabled={isBusy}
-                            className="p-2 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                            className="p-2 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
                           >
-                            <KeyRound size={16} strokeWidth={2} />
+                            <KeyRound size={16} strokeWidth={2} className="shrink-0" />
                           </button>
 
                           {/* Nút đổi trạng thái */}
@@ -538,16 +546,16 @@ export const EmployeeManagementView: React.FC = () => {
                             aria-label={`${isDeactivated ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
                             onClick={() => handleToggleStatus(emp)}
                             disabled={isBusy}
-                            className={`p-2 rounded-lg transition-colors ${
+                            className={`p-2 rounded-lg transition-colors shrink-0 cursor-pointer disabled:opacity-50 ${
                               isDeactivated
                                 ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
                                 : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
                             }`}
                           >
                             {isDeactivated ? (
-                              <CheckCircle2 size={16} strokeWidth={2} />
+                              <CheckCircle2 size={16} strokeWidth={2} className="shrink-0" />
                             ) : (
-                              <Ban size={16} strokeWidth={2} />
+                              <Ban size={16} strokeWidth={2} className="shrink-0" />
                             )}
                           </button>
                         </div>
@@ -561,33 +569,14 @@ export const EmployeeManagementView: React.FC = () => {
         </div>
 
         {/* ── Thanh Phân trang ── */}
-        <div className="p-4 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <div>
-            Hiển thị <span className="font-semibold text-slate-900">{employees.length}</span> /{' '}
-            <span className="font-semibold text-slate-900">{totalElements}</span> nhân sự
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              disabled={page === 0 || isLoading}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              Trước
-            </Button>
-            <span className="px-2 font-semibold text-slate-700">Trang {page + 1}</span>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              disabled={employees.length < pageSize || (page + 1) * pageSize >= totalElements || isLoading}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Sau
-            </Button>
-          </div>
-        </div>
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          totalElements={totalElements}
+          totalPages={Math.ceil(totalElements / pageSize) || 1}
+          onPageChange={(newPage) => setPage(newPage)}
+          itemLabel="nhân sự"
+        />
       </div>
 
       {/* ── Drawer Tạo / Sửa hồ sơ nhân sự (UXD-WEB-006) ── */}
@@ -633,16 +622,16 @@ export const EmployeeManagementView: React.FC = () => {
           }
           icon={
             isPendingReset ? (
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
-                <KeyRound size={20} strokeWidth={2} />
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                <KeyRound size={20} strokeWidth={2} className="shrink-0" />
               </div>
             ) : isPendingDeactivated ? (
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <CheckCircle2 size={20} strokeWidth={2} />
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20} strokeWidth={2} className="shrink-0" />
               </div>
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
-                <Ban size={20} strokeWidth={2} />
+              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <Ban size={20} strokeWidth={2} className="shrink-0" />
               </div>
             )
           }

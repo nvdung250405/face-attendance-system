@@ -26,7 +26,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
 import { attendanceService } from '@/services/attendanceService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
 import type { AttendanceRecord, AttendanceStatus, AdjustAttendanceRequest } from '@/types'
