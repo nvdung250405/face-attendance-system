@@ -41,7 +41,7 @@ destinations:
       command: "SUBSCRIBE"
       ack_mode: "auto"
       security:
-        roles: ["ROLE_ADMIN", "ROLE_HR"]
+        roles: ["ROLE_ADMIN", "ROLE_HR_MANAGER"]
         description: "Authenticated administrative and HR monitoring sessions only."
       message_payload:
         $ref: "#/components/schemas/LiveAttendanceEvent"
@@ -89,76 +89,99 @@ components:
     LiveAttendanceEvent:
       type: "object"
       required:
-        - "punchId"
+        - "recordId"
         - "employeeId"
         - "employeeCode"
         - "fullName"
-        - "departmentName"
+        - "department"
+        - "punchTimestamp"
+        - "punchType"
+        - "verificationMethod"
+        - "status"
         - "kioskId"
-        - "punchTime"
-        - "evaluationStatus"
-        - "authMethod"
       properties:
-        punchId:
+        eventType:
           type: "string"
-          format: "uuid"
+          example: "ATTENDANCE_PUNCHED"
+        recordId:
+          type: "integer"
+          format: "int64"
+          example: 98232
         employeeId:
-          type: "string"
-          format: "uuid"
+          type: "integer"
+          format: "int64"
+          example: 1048
         employeeCode:
           type: "string"
           example: "EMP-00128"
         fullName:
           type: "string"
           example: "Nguyen Van A"
-        departmentName:
+        department:
           type: "string"
           example: "Ky thuat & R&D"
         kioskId:
           type: "string"
           example: "KSK-01"
-        punchTime:
+        punchTimestamp:
           type: "string"
           format: "date-time"
-        evaluationStatus:
+          example: "2026-10-13T08:47:00.000+07:00"
+        punchType:
           type: "string"
-          enum: ["ON_TIME", "LATE", "EARLY_LEAVE", "ANOMALOUS"]
-        authMethod:
+          enum: ["CHECK_IN", "CHECK_OUT"]
+          example: "CHECK_IN"
+        verificationMethod:
           type: "string"
-          enum: ["FACE", "PIN"]
-        confidenceScore:
-          type: "number"
-          minimum: 0.0
-          maximum: 1.0
-          example: 0.885
+          enum: ["VERIFICATION_FACE", "VERIFICATION_PIN", "MANUAL_HR", "FACE_MATCH", "FALLBACK_PIN", "HR_OVERRIDE"]
+          example: "VERIFICATION_FACE"
+        status:
+          type: "string"
+          enum: ["ON_TIME", "LATE", "EARLY_LEAVE", "OVERTIME", "ANOMALOUS"]
+          example: "ON_TIME"
+        lateMinutes:
+          type: "integer"
+          example: 0
 
     EnrollmentCompletedEvent:
       type: "object"
       required:
+        - "status"
         - "otp"
         - "employeeId"
-        - "templateCount"
-        - "poses"
-        - "completedAt"
+        - "activatedAt"
       properties:
+        status:
+          type: "string"
+          example: "ENROLLMENT_SUCCESS"
         otp:
           type: "string"
           example: "847291"
         employeeId:
+          type: "integer"
+          format: "int64"
+          example: 1048
+        employeeCode:
           type: "string"
-          format: "uuid"
+          example: "EMP-00128"
+        fullName:
+          type: "string"
+          example: "Nguyen Van A"
         templateCount:
           type: "integer"
-          enum: [3]
           example: 3
         poses:
           type: "array"
           items:
             type: "string"
             enum: ["FRONTAL", "LEFT_TILT", "RIGHT_TILT"]
-        completedAt:
+        message:
+          type: "string"
+          example: "Đăng ký khuôn mặt thành công"
+        activatedAt:
           type: "string"
           format: "date-time"
+          example: "2026-10-13T08:45:00.000+07:00"
 
     KioskGallerySyncEvent:
       type: "object"

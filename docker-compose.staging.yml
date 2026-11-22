@@ -19,7 +19,9 @@ services:
       POSTGRES_DB: ${DB_NAME:-fas_db}
       POSTGRES_USER: ${DB_USER:-fas_admin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required - set it in .env.staging}
-    # Chỉ mở cổng trong mạng fas-staging-net, KHÔNG publish cổng 5432 ra ngoài host
+    # Chỉ mở loopback 127.0.0.1 cho client quản trị DB (DBeaver, DataGrip, pgAdmin) trên host
+    ports:
+      - "127.0.0.1:${HOST_DB_PORT:-5432}:5432"
     expose:
       - "5432"
     volumes:
