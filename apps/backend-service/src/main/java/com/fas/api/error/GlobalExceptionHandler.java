@@ -1,6 +1,8 @@
 package com.fas.api.error;
 
 import com.fas.api.dto.ApiResponse;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

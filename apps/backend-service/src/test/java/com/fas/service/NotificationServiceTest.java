@@ -1,8 +1,8 @@
 package com.fas.service;
 
 import com.fas.api.dto.response.NotificationResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.entity.Notification;
 import com.fas.data.entity.User;
 import com.fas.data.enums.EmployeeStatus;

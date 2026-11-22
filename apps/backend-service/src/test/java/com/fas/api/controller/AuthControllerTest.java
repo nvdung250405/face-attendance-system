@@ -6,13 +6,13 @@ import com.fas.api.dto.request.RefreshTokenRequest;
 import com.fas.api.dto.response.AuthenticatedUser;
 import com.fas.api.dto.response.LoginResponse;
 import com.fas.api.dto.response.TokenResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
 import com.fas.data.enums.EmployeeStatus;
 import com.fas.data.enums.Role;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.AccountManagementService;
 import com.fas.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,7 +56,7 @@ class AuthControllerTest {
         private AccountManagementService accountManagementService;
 
         @Mock
-        private UserRepository userRepository;
+        private CurrentUserService currentUserService;
 
         @InjectMocks
         private AuthController authController;
@@ -214,7 +214,7 @@ class AuthControllerTest {
                         ChangePasswordRequest request = new ChangePasswordRequest("OldPassword@123", "NewPassword@123");
                         User user = User.builder().id(1042L).email("dung.nv@company.com").build();
 
-                        when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(user));
+                        when(currentUserService.getCurrentUserId(any())).thenReturn(user.getId());
                         doNothing().when(accountManagementService).changePassword(eq(1042L),
                                         any(ChangePasswordRequest.class));
 
@@ -237,7 +237,7 @@ class AuthControllerTest {
                                         "NewPassword@123");
                         User user = User.builder().id(1042L).email("dung.nv@company.com").build();
 
-                        when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(user));
+                        when(currentUserService.getCurrentUserId(any())).thenReturn(user.getId());
                         doThrow(new ApiException(ApiErrorCode.AUTH_INVALID_CREDENTIALS,
                                         "Mật khẩu hiện tại không chính xác"))
                                         .when(accountManagementService)
@@ -258,7 +258,7 @@ class AuthControllerTest {
                                         "CurrentPassword@123");
                         User user = User.builder().id(1042L).email("dung.nv@company.com").build();
 
-                        when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(user));
+                        when(currentUserService.getCurrentUserId(any())).thenReturn(user.getId());
                         doThrow(new ApiException(ApiErrorCode.VALIDATION_FAILED,
                                         "Mật khẩu mới phải khác mật khẩu hiện tại"))
                                         .when(accountManagementService)
@@ -290,6 +290,8 @@ class AuthControllerTest {
                 @Test
                 @DisplayName("Chưa đăng nhập (thiếu Principal) -> trả về 403 Forbidden")
                 void changePassword_Unauthenticated_Returns403() throws Exception {
+                        when(currentUserService.getCurrentUserId(any()))
+                                        .thenThrow(new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập"));
                         ChangePasswordRequest request = new ChangePasswordRequest("OldPassword@123", "NewPassword@123");
 
                         mockMvc.perform(post("/api/v1/auth/change-password")

@@ -6,18 +6,14 @@ import com.fas.api.dto.request.LoginRequest;
 import com.fas.api.dto.request.RefreshTokenRequest;
 import com.fas.api.dto.response.LoginResponse;
 import com.fas.api.dto.response.TokenResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
-import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
+import com.fas.security.CurrentUserService;
 import com.fas.service.AccountManagementService;
 import com.fas.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,16 +29,16 @@ public class AuthController {
 
     private final AuthService authService;
     private final AccountManagementService accountManagementService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public AuthController(
             AuthService authService,
             AccountManagementService accountManagementService,
-            UserRepository userRepository
+            CurrentUserService currentUserService
     ) {
         this.authService = authService;
         this.accountManagementService = accountManagementService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -81,7 +77,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<com.fas.api.dto.response.AuthenticatedUser> getCurrentUser(Principal principal) {
-        Long userId = resolveCurrentUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         com.fas.api.dto.response.AuthenticatedUser user = authService.getUserProfile(userId);
         return ApiResponse.ok("PROFILE_FETCHED", "Lấy thông tin tài khoản thành công", user);
     }
@@ -101,30 +97,9 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest request,
             Principal principal
     ) {
-        Long userId = resolveCurrentUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         accountManagementService.changePassword(userId, request);
         return ApiResponse.ok("PASSWORD_CHANGED", "Đổi mật khẩu thành công", null);
     }
 
-    private Long resolveCurrentUserId(Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(User::getId)
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản người dùng"));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập");
-    }
 }

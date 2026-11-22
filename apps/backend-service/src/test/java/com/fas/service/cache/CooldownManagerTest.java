@@ -1,4 +1,4 @@
-package com.fas.data.cache;
+package com.fas.service.cache;
 
 import com.fas.data.enums.PunchType;
 import org.junit.jupiter.api.BeforeEach;

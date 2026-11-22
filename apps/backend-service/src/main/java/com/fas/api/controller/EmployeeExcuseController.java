@@ -4,9 +4,9 @@ import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.SubmitExcuseRequest;
 import com.fas.api.dto.response.ExcuseRequestResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
-import com.fas.data.repository.UserRepository;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
+import com.fas.security.CurrentUserService;
 import com.fas.service.ExcuseRequestService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -15,9 +15,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.util.StringUtils;
@@ -36,11 +33,11 @@ import java.security.Principal;
 public class EmployeeExcuseController {
 
     private final ExcuseRequestService excuseRequestService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
-    public EmployeeExcuseController(ExcuseRequestService excuseRequestService, UserRepository userRepository) {
+    public EmployeeExcuseController(ExcuseRequestService excuseRequestService, CurrentUserService currentUserService) {
         this.excuseRequestService = excuseRequestService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -65,7 +62,7 @@ public class EmployeeExcuseController {
             @Valid @RequestBody SubmitExcuseRequest request,
             Principal principal) {
 
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         ExcuseRequestResponse response = excuseRequestService.submitExcuseRequest(userId, request);
         return ApiResponse.ok("EXCUSE_REQUEST_SUBMITTED", "Nộp đơn giải trình công thành công", response);
     }
@@ -85,31 +82,9 @@ public class EmployeeExcuseController {
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Principal principal) {
 
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         Page<ExcuseRequestResponse> page = excuseRequestService.getEmployeeExcuseRequests(userId, pageable);
         return ApiResponse.ok("EMPLOYEE_EXCUSES_FETCHED", "Lấy danh sách đơn giải trình thành công", PageResponse.from(page));
     }
 
-    private Long resolveUserId(Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(u -> u.getId())
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND,
-                            "Không tìm thấy nhân viên tương ứng với tài khoản: " + name));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Yêu cầu đăng nhập để thực hiện thao tác");
-    }
 }

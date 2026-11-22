@@ -42,6 +42,7 @@ from presentation.viewmodels.kiosk_view_model import (
     KioskViewModel,
     evaluate_face_oval_alignment,
 )
+from presentation.workers.inference_worker import InferenceWorker
 
 logger = get_logger("main")
 
@@ -385,6 +386,18 @@ def main() -> int:
         liveness_gate=liveness_gate,
         demo_mode=args.demo,
     )
+    # 6a. Khởi tạo InferenceWorker để tách tính toán AI và SQLite WAL khỏi Main GUI Thread
+    inference_worker = InferenceWorker(
+        detector=detector,
+        liveness_gate=liveness_gate,
+        extractor=extractor,
+        gallery_matcher=gallery_matcher,
+        cooldown_tracker=cooldown_tracker,
+        queue_manager=queue_manager,
+        stability_threshold=8,
+    )
+    inference_worker.start()
+
     kiosk_view_model = KioskViewModel(
         image_provider=image_provider,
         detector=detector,
@@ -397,6 +410,7 @@ def main() -> int:
         stability_threshold=8,
         enrollment_controller=enrollment_controller,
         is_dev_mode=is_dev_mode,
+        inference_worker=inference_worker,
     )
 
     # 6b. Nạp danh mục vector khuôn mặt từ Backend vào RAM Gallery khi khởi động
@@ -541,6 +555,8 @@ def main() -> int:
     # 10. Dọn dẹp tài nguyên khi thoát
     if camera_worker is not None and camera_worker.isRunning():
         camera_worker.stop()
+    if inference_worker.isRunning():
+        inference_worker.stop()
     if stomp_worker.isRunning():
         stomp_worker.stop()
     if sync_worker.isRunning():

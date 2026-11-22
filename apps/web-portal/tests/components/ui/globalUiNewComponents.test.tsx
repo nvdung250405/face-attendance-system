@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import {
   toast,
@@ -35,10 +35,12 @@ describe('Kiểm thử Toàn Diện Hệ Thống UI Toàn Cục Mới (Global UI
     it('hiển thị đầy đủ 4 trạng thái Toast: success, error, warning, info', async () => {
       render(<Toaster />)
 
-      toast.success('Thao tác thành công!')
-      toast.error('Có lỗi xảy ra!')
-      toast.warning('Cảnh báo hệ thống!')
-      toast.info('Thông tin mới nhất!')
+      act(() => {
+        toast.success('Thao tác thành công!')
+        toast.error('Có lỗi xảy ra!')
+        toast.warning('Cảnh báo hệ thống!')
+        toast.info('Thông tin mới nhất!')
+      })
 
       expect(await screen.findByText('Thao tác thành công!')).toBeDefined()
       expect(screen.getByText('Có lỗi xảy ra!')).toBeDefined()
@@ -48,11 +50,15 @@ describe('Kiểm thử Toàn Diện Hệ Thống UI Toàn Cục Mới (Global UI
 
     it('cho phép bấm nút đóng để gỡ bỏ Toast', async () => {
       render(<Toaster />)
-      toast.info('Thông báo sẽ được đóng')
+      act(() => {
+        toast.info('Thông báo sẽ được đóng')
+      })
 
       expect(await screen.findByText('Thông báo sẽ được đóng')).toBeDefined()
       const closeBtn = screen.getByRole('button', { name: 'Đóng thông báo' })
-      fireEvent.click(closeBtn)
+      act(() => {
+        fireEvent.click(closeBtn)
+      })
 
       await waitFor(() => {
         expect(screen.queryByText('Thông báo sẽ được đóng')).toBeNull()

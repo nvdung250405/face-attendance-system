@@ -1,4 +1,4 @@
-package com.fas.api.error;
+package com.fas.common.error;
 
 import org.springframework.http.HttpStatus;
 

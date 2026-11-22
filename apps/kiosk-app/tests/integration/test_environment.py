@@ -84,7 +84,7 @@ def test_qml_mvc_environment_readiness(qapp):
     assert enroll.currentStep == 1
 
     # Kiểm tra cấu trúc Views QML trong resources/qml
-    kiosk_root = Path(__file__).resolve().parent.parent
+    kiosk_root = next(p for p in Path(__file__).resolve().parents if (p / "resources").is_dir())
     expected_files = [
         "resources.qrc",
         "resources/qml/main.qml",

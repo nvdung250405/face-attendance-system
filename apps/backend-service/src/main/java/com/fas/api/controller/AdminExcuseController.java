@@ -6,10 +6,10 @@ import com.fas.api.dto.request.ApproveExcuseRequest;
 import com.fas.api.dto.request.DecideExcuseRequest;
 import com.fas.api.dto.request.RejectExcuseRequest;
 import com.fas.api.dto.response.ExcuseRequestResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.enums.ExcuseRequestStatus;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.ExcuseRequestService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -18,9 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,11 +33,11 @@ import org.springframework.web.bind.annotation.*;
 public class AdminExcuseController {
 
     private final ExcuseRequestService excuseRequestService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
-    public AdminExcuseController(ExcuseRequestService excuseRequestService, UserRepository userRepository) {
+    public AdminExcuseController(ExcuseRequestService excuseRequestService, CurrentUserService currentUserService) {
         this.excuseRequestService = excuseRequestService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -96,7 +93,7 @@ public class AdminExcuseController {
             @Valid @RequestBody DecideExcuseRequest request,
             java.security.Principal principal) {
 
-        Long decidedByUserId = resolveActorId(principal);
+        Long decidedByUserId = currentUserService.getCurrentUserId(principal);
 
         if (request.status() == ExcuseRequestStatus.APPROVED) {
             ApproveExcuseRequest approveRequest = new ApproveExcuseRequest(request.reviewNote());
@@ -131,7 +128,7 @@ public class AdminExcuseController {
             @Valid @RequestBody(required = false) ApproveExcuseRequest request,
             java.security.Principal principal) {
 
-        Long decidedByUserId = resolveActorId(principal);
+        Long decidedByUserId = currentUserService.getCurrentUserId(principal);
         ApproveExcuseRequest approveReq = request != null ? request : new ApproveExcuseRequest(null);
         ExcuseRequestResponse response = excuseRequestService.approveExcuseRequest(id, decidedByUserId, approveReq);
         return ApiResponse.ok("EXCUSE_REQUEST_APPROVED", "Phê duyệt đơn giải trình công thành công", response);
@@ -153,31 +150,9 @@ public class AdminExcuseController {
             @Valid @RequestBody RejectExcuseRequest request,
             java.security.Principal principal) {
 
-        Long decidedByUserId = resolveActorId(principal);
+        Long decidedByUserId = currentUserService.getCurrentUserId(principal);
         ExcuseRequestResponse response = excuseRequestService.rejectExcuseRequest(id, decidedByUserId, request);
         return ApiResponse.ok("EXCUSE_REQUEST_REJECTED", "Từ chối đơn giải trình công thành công", response);
     }
 
-    private Long resolveActorId(java.security.Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(u -> u.getId())
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND,
-                            "Không tìm thấy người duyệt tương ứng với tài khoản: " + name));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Yêu cầu đăng nhập để thực hiện thao tác");
-    }
 }

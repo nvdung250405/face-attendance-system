@@ -5,11 +5,10 @@ import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.CreateDataSubjectRequest;
 import com.fas.api.dto.request.UpdateDataSubjectRequest;
 import com.fas.api.dto.response.DataSubjectRequestResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
-import com.fas.data.entity.User;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.enums.DataSubjectRequestStatus;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.DataSubjectRequestService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -17,9 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -42,13 +38,13 @@ import java.security.Principal;
 public class DataSubjectRequestController {
 
     private final DataSubjectRequestService dataSubjectRequestService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public DataSubjectRequestController(
             DataSubjectRequestService dataSubjectRequestService,
-            UserRepository userRepository) {
+            CurrentUserService currentUserService) {
         this.dataSubjectRequestService = dataSubjectRequestService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -66,7 +62,7 @@ public class DataSubjectRequestController {
     public ApiResponse<DataSubjectRequestResponse> createRequest(
             @Valid @RequestBody CreateDataSubjectRequest request,
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         DataSubjectRequestResponse response = dataSubjectRequestService.createRequest(userId, request);
         return ApiResponse.ok("DATA_REQUEST_CREATED", "Gửi yêu cầu dữ liệu cá nhân thành công", response);
     }
@@ -86,7 +82,7 @@ public class DataSubjectRequestController {
     public ApiResponse<PageResponse<DataSubjectRequestResponse>> getMyRequests(
             @PageableDefault(size = 20) Pageable pageable,
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         Page<DataSubjectRequestResponse> requests = dataSubjectRequestService.getRequestsByUser(userId, pageable);
         return ApiResponse.ok("DATA_REQUESTS_FETCHED", "Tra cứu yêu cầu dữ liệu cá nhân thành công", PageResponse.from(requests));
     }
@@ -104,7 +100,7 @@ public class DataSubjectRequestController {
     public ApiResponse<DataSubjectRequestResponse> getMyRequestDetail(
             @PathVariable("id") Long id,
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         DataSubjectRequestResponse response = dataSubjectRequestService.getRequestByIdForUser(id, userId);
         return ApiResponse.ok("DATA_REQUEST_FETCHED", "Tra cứu chi tiết yêu cầu thành công", response);
     }
@@ -144,30 +140,9 @@ public class DataSubjectRequestController {
             @PathVariable("id") Long id,
             @Valid @RequestBody UpdateDataSubjectRequest request,
             Principal principal) {
-        Long dpoUserId = resolveUserId(principal);
+        Long dpoUserId = currentUserService.getCurrentUserId(principal);
         DataSubjectRequestResponse response = dataSubjectRequestService.updateRequestStatus(id, dpoUserId, request);
         return ApiResponse.ok("DATA_REQUEST_UPDATED", "Cập nhật yêu cầu dữ liệu cá nhân thành công", response);
     }
 
-    private Long resolveUserId(Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(User::getId)
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản người dùng"));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập");
-    }
 }

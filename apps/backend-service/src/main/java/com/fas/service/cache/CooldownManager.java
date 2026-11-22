@@ -1,4 +1,4 @@
-package com.fas.data.cache;
+package com.fas.service.cache;
 
 import com.fas.config.CacheConfig;
 import com.fas.data.enums.PunchType;

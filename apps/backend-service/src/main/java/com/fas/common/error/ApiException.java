@@ -1,11 +1,11 @@
-package com.fas.api.error;
+package com.fas.common.error;
 
 import lombok.Getter;
 
 /**
  * Ngoại lệ nghiệp vụ toàn cục của phân hệ Backend.
  *
- * <p>Mang theo {@link ApiErrorCode} và thông điệp lỗi cụ thể để {@link GlobalExceptionHandler}
+ * <p>Mang theo {@link ApiErrorCode} và thông điệp lỗi cụ thể để {@code GlobalExceptionHandler}
  * chuyển đổi thành cấu trúc RFC 7807 ProblemDetails với mã lỗi chuẩn hóa.
  */
 @Getter
