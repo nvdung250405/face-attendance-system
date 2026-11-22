@@ -185,6 +185,8 @@ Push / PR ──→ Validate ──→ Test ──→ Build ──→ Artifact �
 
 - Không dùng path/branch filter ở cấp workflow cho required check (tránh check kẹt "Pending").
 - Path filtering đặt ở **cấp job**.
+- Song song hóa & Thích ứng theo ngữ cảnh: Web Portal E2E và Web Portal Unit Test chạy song song độc lập. Trên Pull Request, E2E kích hoạt profile tinh gọn (`desktop-chrome`) để tối ưu tốc độ phản hồi (<1.5 phút); trên sự kiện Push nhánh chính (`develop`, `main`), toàn bộ ma trận đa nền tảng (`desktop-chrome` + `mobile-chrome`) được kích hoạt đầy đủ.
+- Thay đổi cấu hình CI (`.github/**`) kích hoạt kiểm định cú pháp `ci-syntax-check` độc lập, không ép buộc chạy chéo toàn bộ các phân hệ ứng dụng.
 - `ci-passed` là required check tổng hợp (`needs: [validate, test, build]`).
 
 ### 10.3. `docs-check` Validation Gate (§12.4)
