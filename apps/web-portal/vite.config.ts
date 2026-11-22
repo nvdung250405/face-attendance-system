@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const rootDir = fileURLToPath(new URL('../../', import.meta.url))
   // 1. Nạp Global .env từ Monorepo Root (làm giá trị mặc định chung)
   const globalEnv = loadEnv(mode, rootDir, '')
-  // 2. Nạp Local .env từ app/web-portal (ghi đè cấu hình riêng cho dev nếu có)
+  // 2. Nạp Local .env từ apps/web-portal (ghi đè cấu hình riêng cho dev nếu có)
   const localEnv = loadEnv(mode, process.cwd(), '')
   // 3. Hợp nhất cấu hình phân tầng: Local ghi đè Global (Hierarchical Cascading)
   const env = { ...globalEnv, ...localEnv }

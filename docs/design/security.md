@@ -12,7 +12,7 @@
 
 - **Hệ thống**: Enterprise Face Attendance System (FAS)
 - **Phương pháp luận**: STRIDE-A (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege, AI / Biometric-Specific)
-- **Phạm vi kiểm thử**: Edge Kiosk (`app/kiosk-app`), Central Backend (`app/backend-service`), Web Portal (`app/web-portal`), Database (`PostgreSQL 16`), CSDL đệm (`SQLite WAL`).
+- **Phạm vi kiểm thử**: Edge Kiosk (`apps/kiosk-app`), Central Backend (`apps/backend-service`), Web Portal (`apps/web-portal`), Database (`PostgreSQL 16`), CSDL đệm (`SQLite WAL`).
 
 ---
 

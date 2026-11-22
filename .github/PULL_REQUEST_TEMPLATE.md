@@ -18,9 +18,9 @@ Closes #
 
 ## 3. Phân hệ bị ảnh hưởng
 
-- [ ] `app/backend-service`
-- [ ] `app/kiosk-app`
-- [ ] `app/web-portal`
+- [ ] `apps/backend-service`
+- [ ] `apps/kiosk-app`
+- [ ] `apps/web-portal`
 - [ ] `infrastructure` / `docker`
 - [ ] `docs`
 

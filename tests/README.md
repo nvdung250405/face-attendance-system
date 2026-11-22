@@ -39,8 +39,8 @@ Hệ thống tuân thủ mô hình **Metadata 2 Cấp (Flat Two-Tier)** với c�
 | [**`config.py`**](desktop-kiosk/config.py) | Cấu hình trung tâm (đường dẫn `tests/reports/kiosk-app/`, DPI baselines, ngưỡng sai khác visual) | Python 3, Pathlib | N/A (Module cấu hình) |
 | [**`conftest.py`**](desktop-kiosk/conftest.py) | Pytest fixtures & hook dọn dẹp cache đảm bảo Zero Root Pollution | Pytest Hooks | N/A (Fixture tự động) |
 | [**`automation/run_flaui_e2e.py`**](desktop-kiosk/automation/run_flaui_e2e.py) | Tự động hóa giao diện Windows FlaUI UIA3 cho ứng dụng PySide6/QML | Python 3, FlaUI UIA3 | `python tests/desktop-kiosk/automation/run_flaui_e2e.py` |
-| [**`visual/test_scaling_matrix.py`**](desktop-kiosk/visual/test_scaling_matrix.py) | Kiểm thử ma trận tỷ lệ DPI (100%, 125%, 150%) cho layout HMI cảm ứng Kiosk | Pytest, OpenCV, PIL | `cd app/kiosk-app && pytest ../../tests/desktop-kiosk/visual/test_scaling_matrix.py -v` |
-| [**`visual/test_visual_regression.py`**](desktop-kiosk/visual/test_visual_regression.py) | Kiểm thử hồi quy giao diện (Face Oval 4 trạng thái, PIN pad 72px touch targets) | Pytest, Visual Snapshot Diff | `cd app/kiosk-app && pytest ../../tests/desktop-kiosk/visual/test_visual_regression.py -v` |
+| [**`visual/test_scaling_matrix.py`**](desktop-kiosk/visual/test_scaling_matrix.py) | Kiểm thử ma trận tỷ lệ DPI (100%, 125%, 150%) cho layout HMI cảm ứng Kiosk | Pytest, OpenCV, PIL | `cd apps/kiosk-app && pytest ../../tests/desktop-kiosk/visual/test_scaling_matrix.py -v` |
+| [**`visual/test_visual_regression.py`**](desktop-kiosk/visual/test_visual_regression.py) | Kiểm thử hồi quy giao diện (Face Oval 4 trạng thái, PIN pad 72px touch targets) | Pytest, Visual Snapshot Diff | `cd apps/kiosk-app && pytest ../../tests/desktop-kiosk/visual/test_visual_regression.py -v` |
 | [**`visual/run_snapshot_review.py`**](desktop-kiosk/visual/run_snapshot_review.py) | Trình xuất báo cáo so sánh ảnh chụp màn hình dạng HTML Visual Gallery | Python 3, HTML Template Generator | `python tests/desktop-kiosk/visual/run_snapshot_review.py` |
 
 ### 2.3. Tầng 3: Web Portal E2E & Visual Testing (`tests/web-portal/`)
@@ -97,13 +97,13 @@ node tests/system-api/test_rbac_matrix.mjs
 node tests/system-api/verify_operations.mjs
 ```
 
-### 4.2. Kiểm thử Trạm Kiosk Desktop (`app/kiosk-app`)
+### 4.2. Kiểm thử Trạm Kiosk Desktop (`apps/kiosk-app`)
 > [!IMPORTANT]
 > **Rào chắn Không Gian Thực Thi:** Tuân thủ nguyên tắc Subspace CWD Invariant để ngăn chặn ô nhiễm tệp rác `.pytest_cache` tại thư mục gốc.
 
 ```bash
-# Chạy kiểm thử ma trận tỷ lệ DPI và hồi quy Visual từ không gian app/kiosk-app
-cd app/kiosk-app && pytest ../../tests/desktop-kiosk/visual/ -v
+# Chạy kiểm thử ma trận tỷ lệ DPI và hồi quy Visual từ không gian apps/kiosk-app
+cd apps/kiosk-app && pytest ../../tests/desktop-kiosk/visual/ -v
 
 # Chạy kiểm thử tự động hóa giao diện FlaUI UIA3 (yêu cầu môi trường Windows desktop)
 python tests/desktop-kiosk/automation/run_flaui_e2e.py
@@ -112,7 +112,7 @@ python tests/desktop-kiosk/automation/run_flaui_e2e.py
 python tests/desktop-kiosk/visual/run_snapshot_review.py
 ```
 
-### 4.3. Kiểm thử Cổng Web Quản Trị (`app/web-portal`)
+### 4.3. Kiểm thử Cổng Web Quản Trị (`apps/web-portal`)
 
 ```bash
 # Liệt kê danh sách toàn bộ 50 kịch bản kiểm thử (Desktop & Mobile Chrome)

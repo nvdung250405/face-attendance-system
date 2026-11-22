@@ -70,7 +70,7 @@ erDiagram
 
 ## 2. Danh Mục Các Phiên Bản Migration (Flyway V1..V9)
 
-Toàn bộ script DDL gốc nằm tại [`app/backend-service/src/main/resources/db/migration/`](../app/backend-service/src/main/resources/db/migration/):
+Toàn bộ script DDL gốc nằm tại [`apps/backend-service/src/main/resources/db/migration/`](../apps/backend-service/src/main/resources/db/migration/):
 
 | Phiên Bản | Tệp Migration | Phạm Vi Thay Đổi Cốt Lõi |
 | :---: | :--- | :--- |

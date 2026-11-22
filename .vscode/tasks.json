@@ -17,7 +17,7 @@
       "label": "Backend: Run Maven Tests",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/app/backend-service"
+        "cwd": "${workspaceFolder}/apps/backend-service"
       },
       "command": "./mvnw test",
       "problemMatcher": []
@@ -26,16 +26,16 @@
       "label": "Kiosk: Run Pytest",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/app/kiosk-app"
+        "cwd": "${workspaceFolder}/apps/kiosk-app"
       },
-      "command": "${workspaceFolder}/app/kiosk-app/.venv/Scripts/python.exe -m pytest tests/ -v",
+      "command": "${workspaceFolder}/apps/kiosk-app/.venv/Scripts/python.exe -m pytest tests/ -v",
       "problemMatcher": []
     },
     {
       "label": "Web: Run Dev Server",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/app/web-portal"
+        "cwd": "${workspaceFolder}/apps/web-portal"
       },
       "command": "npm run dev",
       "problemMatcher": []

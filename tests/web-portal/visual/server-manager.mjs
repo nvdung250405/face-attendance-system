@@ -126,7 +126,7 @@ export async function startServer(port = DEFAULT_PORT) {
 
   console.log(`[01_server_manager] Khởi động Vite Dev Server ngầm tại ${url}...`);
 
-  const webPortalDir = path.resolve(REPO_ROOT, 'app/web-portal');
+  const webPortalDir = path.resolve(REPO_ROOT, 'apps/web-portal');
   const isWin = process.platform === 'win32';
   const npmCmd = isWin ? 'npm.cmd' : 'npm';
 

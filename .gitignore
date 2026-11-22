@@ -12,7 +12,7 @@
 !.env.example
 
 # ------------------------------------------------------------------------------
-# 2. Python & Phân hệ Kiosk Desktop (app/kiosk-app)
+# 2. Python & Phân hệ Kiosk Desktop (apps/kiosk-app)
 # ------------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
@@ -42,7 +42,7 @@ MANIFEST
 venv/
 ENV/
 env/
-app/kiosk-app/.venv/
+apps/kiosk-app/.venv/
 
 # Pytest & Coverage
 .pytest_cache/
@@ -59,16 +59,16 @@ kiosk_local.db
 
 # Trọng số mô hình AI ONNX tải về cục bộ (tải qua download_models.py)
 *.onnx
-app/kiosk-app/**/models/*.onnx
-!app/kiosk-app/**/models/.gitkeep
+apps/kiosk-app/**/models/*.onnx
+!apps/kiosk-app/**/models/.gitkeep
 
 # ------------------------------------------------------------------------------
-# 3. Node.js & Phân hệ Cổng Web (app/web-portal)
+# 3. Node.js & Phân hệ Cổng Web (apps/web-portal)
 # ------------------------------------------------------------------------------
 node_modules/
-app/web-portal/node_modules/
-app/web-portal/dist/
-app/web-portal/.vitest/
+apps/web-portal/node_modules/
+apps/web-portal/dist/
+apps/web-portal/.vitest/
 .vitest/
 dist/
 dist-ssr/
@@ -82,9 +82,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # ------------------------------------------------------------------------------
-# 4. Java & Phân hệ Máy chủ (app/backend-service)
+# 4. Java & Phân hệ Máy chủ (apps/backend-service)
 # ------------------------------------------------------------------------------
-app/backend-service/target/
+apps/backend-service/target/
 target/
 *.class
 *.jar
@@ -104,7 +104,7 @@ target/
 # ------------------------------------------------------------------------------
 logs/
 *.log
-app/kiosk-app/logs/
+apps/kiosk-app/logs/
 
 # ------------------------------------------------------------------------------
 # 6. IDEs & Hệ điều hành

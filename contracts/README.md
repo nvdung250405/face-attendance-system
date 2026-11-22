@@ -30,4 +30,4 @@
 ## 3. Cách Thức Đối Soát & Kiểm Tra Hợp Đồng
 
 * **Xem trực tiếp qua Swagger UI:** Khi Backend khởi chạy, truy cập [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) để đối soát với `contracts/openapi.yaml`.
-* **Kiểm tra tương thích kiểu dữ liệu:** Phân hệ Web Portal (`app/web-portal/src/types/`) và Backend (`app/backend-service/src/main/java/com/fas/api/dto/`) bắt buộc phải map 1:1 với các schemas trong thư mục này.
+* **Kiểm tra tương thích kiểu dữ liệu:** Phân hệ Web Portal (`apps/web-portal/src/types/`) và Backend (`apps/backend-service/src/main/java/com/fas/api/dto/`) bắt buộc phải map 1:1 với các schemas trong thư mục này.

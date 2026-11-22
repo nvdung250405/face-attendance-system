@@ -465,22 +465,22 @@ CREATE INDEX IF NOT EXISTS idx_biometric_user_pose_active
 
 Trước khi nghiệm thu tính năng, phải thực thi và vượt qua 4 chặng kiểm thử chất lượng theo AGENTS.md:
 
-1. **Edge Kiosk Quality Gates (`app/kiosk-app`)**:
+1. **Edge Kiosk Quality Gates (`apps/kiosk-app`)**:
    ```powershell
-   cd app/kiosk-app
+   cd apps/kiosk-app
    pytest tests/test_face_detector.py tests/test_quality_checker.py tests/test_gallery_matcher.py -v
    ruff check .
    ```
    *Kiểm tra: Ước lượng góc Euler từ 5 landmarks, kiểm định chất lượng theo PoseType (FRONTAL, LEFT_TILT, RIGHT_TILT), thuật toán so khớp 1:N Best Score $\le 350\text{ ms}$, linter 0 lỗi.*
-2. **Central Backend Quality Gates (`app/backend-service`)**:
+2. **Central Backend Quality Gates (`apps/backend-service`)**:
    ```powershell
-   cd app/backend-service
+   cd apps/backend-service
    ./mvnw test -Dtest=FlywayMigrationTest,BiometricCryptoServiceTest,EnrollmentServiceTest,KioskAttendanceControllerTest
    ```
    *Kiểm tra: Migration V8 bổ sung `pose_type`, mã hóa độc lập 3 vector AES-256-GCM, xử lý DTO đa mẫu, query `List<BiometricTemplate>` an toàn.*
-3. **Web Portal Quality Gates (`app/web-portal`)**:
+3. **Web Portal Quality Gates (`apps/web-portal`)**:
    ```powershell
-   cd app/web-portal
+   cd apps/web-portal
    npm test
    npm run lint
    npm run build
@@ -531,12 +531,12 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Chỉ mục `idx_biometric_user_pose_active` được tạo trên `(user_id, pose_type, is_active)`.
   - Enum `PoseType` được tạo tại `com.fas.data.enums.PoseType` với 3 giá trị: `FRONTAL`, `LEFT_TILT`, `RIGHT_TILT`.
   - `BiometricTemplate.java` có trường `poseType` ánh xạ JPA `@Enumerated(EnumType.STRING)` với giá trị mặc định `PoseType.FRONTAL`.
-- **Lệnh kiểm chứng**: `cd app/backend-service && ./mvnw test -Dtest=FlywayMigrationTest,EntityMappingAndConstraintTest`
+- **Lệnh kiểm chứng**: `cd apps/backend-service && ./mvnw test -Dtest=FlywayMigrationTest,EntityMappingAndConstraintTest`
 - **Phụ thuộc**: Không có
 - **Tập tin liên quan**:
-  - `app/backend-service/src/main/resources/db/migration/V8__add_pose_type_to_biometric_templates.sql`
-  - `app/backend-service/src/main/java/com/fas/data/enums/PoseType.java`
-  - `app/backend-service/src/main/java/com/fas/data/entity/BiometricTemplate.java`
+  - `apps/backend-service/src/main/resources/db/migration/V8__add_pose_type_to_biometric_templates.sql`
+  - `apps/backend-service/src/main/java/com/fas/data/enums/PoseType.java`
+  - `apps/backend-service/src/main/java/com/fas/data/entity/BiometricTemplate.java`
 
 ##### Task 2: Cập nhật Repository Invariant & An toàn Truy vấn Đa Mẫu
 - **Mô tả**: Sửa đổi `BiometricTemplateRepository` để phương thức tìm kiếm template đang hoạt động trả về `List<BiometricTemplate>` thay vì `Optional<BiometricTemplate>`, loại bỏ triệt để nguy cơ phát sinh ngoại lệ `IncorrectResultSizeDataAccessException` (`NonUniqueResultException`). Khai báo phương thức JPQL bulk update `@Modifying @Query("UPDATE BiometricTemplate bt SET bt.isActive = false WHERE bt.user.id = :userId AND bt.isActive = true")` để vô hiệu hóa an toàn, nguyên tử toàn bộ mẫu sinh trắc học cũ của nhân viên khi tái đăng ký. Cập nhật các service phụ thuộc (`AuthService`, `AccountManagementService`, `AuditQueryService`).
@@ -546,13 +546,13 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Bổ sung `findFirstByUserIdAndIsActiveTrue(Long userId)` cho các tác vụ lấy mẫu đại diện.
   - Bổ sung `@Modifying @Query("UPDATE BiometricTemplate bt SET bt.isActive = false WHERE bt.user.id = :userId AND bt.isActive = true") int deactivateAllByUserId(@Param("userId") Long userId);` thực thi vô hiệu hóa nguyên tử 1 câu lệnh duy nhất.
   - Các service gọi repo được cập nhật và vượt qua toàn bộ unit test.
-- **Lệnh kiểm chứng**: `cd app/backend-service && ./mvnw test -Dtest=RepositoryIntegrationTest,AuthServiceTest,AccountManagementServiceTest,AuditQueryServiceTest`
+- **Lệnh kiểm chứng**: `cd apps/backend-service && ./mvnw test -Dtest=RepositoryIntegrationTest,AuthServiceTest,AccountManagementServiceTest,AuditQueryServiceTest`
 - **Phụ thuộc**: Task 1
 - **Tập tin liên quan**:
-  - `app/backend-service/src/main/java/com/fas/data/repository/BiometricTemplateRepository.java`
-  - `app/backend-service/src/main/java/com/fas/service/AuthService.java`
-  - `app/backend-service/src/main/java/com/fas/service/AccountManagementService.java`
-  - `app/backend-service/src/main/java/com/fas/service/AuditQueryService.java`
+  - `apps/backend-service/src/main/java/com/fas/data/repository/BiometricTemplateRepository.java`
+  - `apps/backend-service/src/main/java/com/fas/service/AuthService.java`
+  - `apps/backend-service/src/main/java/com/fas/service/AccountManagementService.java`
+  - `apps/backend-service/src/main/java/com/fas/service/AuditQueryService.java`
 
 ##### Task 3: Backend REST DTOs & Multi-Template Enrollment Endpoint
 - **Mô tả**: Xây dựng `PoseTemplateDto` và cập nhật `KioskEnrollFaceRequest` tiếp nhận mảng 3 tư thế khuôn mặt, duy trì trường `vector512` đơn để tương thích ngược. Nâng cấp `EnrollmentService.enrollFace` thực hiện kiểm thực nghiêm ngặt bộ mẫu đa tư thế (trả về HTTP 400 `INVALID_TEMPLATE_SET` nếu không đủ 3 tư thế chuẩn hoặc trùng lặp), mã hóa AES-256-GCM độc lập 3 lần và gọi `deactivateAllByUserId` vô hiệu hóa nguyên tử mẫu cũ trước khi lưu 3 bản ghi mới vào CSDL.
@@ -562,13 +562,13 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Kiểm thực mảng `templates`: từ chối với `INVALID_TEMPLATE_SET` nếu `templates.size() != 3`, trùng lặp tư thế, hoặc thiếu bất kỳ tư thế nào trong bộ ba chuẩn (`FRONTAL`, `LEFT_TILT`, `RIGHT_TILT`).
   - Khi nhận đủ 3 templates hợp lệ, gọi `biometricTemplateRepository.deactivateAllByUserId(user.getId())` để vô hiệu hóa nguyên tử toàn bộ mẫu cũ, sau đó lưu 3 bản ghi mới với 3 IV ngẫu nhiên độc lập.
   - Khi nhận vector đơn lẻ (Kiosk cũ, `templates == null`), lưu 1 bản ghi với `poseType = 'FRONTAL'`.
-- **Lệnh kiểm chứng**: `cd app/backend-service && ./mvnw test -Dtest=EnrollmentServiceTest,KioskAttendanceControllerTest`
+- **Lệnh kiểm chứng**: `cd apps/backend-service && ./mvnw test -Dtest=EnrollmentServiceTest,KioskAttendanceControllerTest`
 - **Phụ thuộc**: Task 1, Task 2
 - **Tập tin liên quan**:
-  - `app/backend-service/src/main/java/com/fas/api/dto/request/PoseTemplateDto.java`
-  - `app/backend-service/src/main/java/com/fas/api/dto/request/KioskEnrollFaceRequest.java`
-  - `app/backend-service/src/main/java/com/fas/api/error/ApiErrorCode.java`
-  - `app/backend-service/src/main/java/com/fas/service/EnrollmentService.java`
+  - `apps/backend-service/src/main/java/com/fas/api/dto/request/PoseTemplateDto.java`
+  - `apps/backend-service/src/main/java/com/fas/api/dto/request/KioskEnrollFaceRequest.java`
+  - `apps/backend-service/src/main/java/com/fas/api/error/ApiErrorCode.java`
+  - `apps/backend-service/src/main/java/com/fas/service/EnrollmentService.java`
 
 ##### Task 4: Multi-Template Gallery REST & STOMP Distribution
 - **Mô tả**: Cập nhật DTO `GalleryItem` bổ sung `poseType`. Nâng cấp endpoint `GET /api/v1/kiosk/gallery` trả về toàn bộ template đang hoạt động kèm nhãn tư thế. Làm giàu sự kiện STOMP `/topic/enrollment/{otp}` (`templateCount: 3`, `poses`) và `/topic/kiosk-gallery`.
@@ -577,12 +577,12 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - `GET /api/v1/kiosk/gallery` kết xuất đầy đủ các template đa tư thế của nhân viên.
   - Sự kiện `/topic/enrollment/{otp}` phát `templateCount: 3` và danh sách tư thế.
   - Sự kiện `/topic/kiosk-gallery` phát gói đa mẫu xuống cụm Kiosk.
-- **Lệnh kiểm chứng**: `cd app/backend-service && ./mvnw test -Dtest=KioskAttendanceControllerTest,StompEventBroadcasterTest`
+- **Lệnh kiểm chứng**: `cd apps/backend-service && ./mvnw test -Dtest=KioskAttendanceControllerTest,StompEventBroadcasterTest`
 - **Phụ thuộc**: Task 3
 - **Tập tin liên quan**:
-  - `app/backend-service/src/main/java/com/fas/api/dto/response/GalleryItem.java`
-  - `app/backend-service/src/main/java/com/fas/api/dto/event/GalleryUpdateEvent.java`
-  - `app/backend-service/src/main/java/com/fas/api/websocket/StompEventBroadcaster.java`
+  - `apps/backend-service/src/main/java/com/fas/api/dto/response/GalleryItem.java`
+  - `apps/backend-service/src/main/java/com/fas/api/dto/event/GalleryUpdateEvent.java`
+  - `apps/backend-service/src/main/java/com/fas/api/websocket/StompEventBroadcaster.java`
 
 ##### Điểm kiểm soát 1 (Checkpoint 1: Backend Foundation Gate)
 - `./mvnw clean test` chạy thành công 100% không có lỗi.
@@ -600,11 +600,11 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Ước lượng Yaw chuẩn xác trên dữ liệu giả lập: nhìn thẳng ($0^\circ \pm 3^\circ$), nghiêng trái ($+18^\circ \pm 3^\circ$), nghiêng phải ($-18^\circ \pm 3^\circ$).
   - Thời gian xử lý trên CPU đạt chuẩn $< 0.1\text{ ms}$, không dùng thêm mô hình nặng.
   - Vượt qua unit test trong `test_face_detector.py`.
-- **Lệnh kiểm chứng**: `cd app/kiosk-app && pytest tests/test_face_detector.py -v`
+- **Lệnh kiểm chứng**: `cd apps/kiosk-app && pytest tests/test_face_detector.py -v`
 - **Phụ thuộc**: Không có
 - **Tập tin liên quan**:
-  - `app/kiosk-app/src/core/vision/face_detector.py`
-  - `app/kiosk-app/tests/test_face_detector.py`
+  - `apps/kiosk-app/src/core/vision/face_detector.py`
+  - `apps/kiosk-app/tests/test_face_detector.py`
 
 ##### Task 6: Pose-Aware Quality Checker & Tiêu Chuẩn Từng Tư Thế
 - **Mô tả**: Xây dựng enum `PoseType` (`FRONTAL`, `LEFT_TILT`, `RIGHT_TILT`) và tích hợp vào `EnrollmentQualityChecker`. Định nghĩa ngưỡng góc xoay riêng biệt cho từng tư thế kết hợp kiểm tra độ nét Laplacian $\ge 30.0$ và liveness $\ge 0.90$.
@@ -613,11 +613,11 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Phương thức `evaluate` kiểm tra đúng dải góc Yaw tương ứng của từng tư thế.
   - Thiết lập ngưỡng liveness mẫu gốc tối thiểu $0.90$.
   - Trả về thông điệp hướng dẫn tiếng Việt rõ ràng, thân thiện cho từng tình huống sai lệch góc hoặc mờ hình.
-- **Lệnh kiểm chứng**: `cd app/kiosk-app && pytest tests/test_quality_checker.py -v`
+- **Lệnh kiểm chứng**: `cd apps/kiosk-app && pytest tests/test_quality_checker.py -v`
 - **Phụ thuộc**: Task 5
 - **Tập tin liên quan**:
-  - `app/kiosk-app/src/core/vision/quality_checker.py`
-  - `app/kiosk-app/tests/test_quality_checker.py`
+  - `apps/kiosk-app/src/core/vision/quality_checker.py`
+  - `apps/kiosk-app/tests/test_quality_checker.py`
 
 ##### Task 7: Máy Trạng Thái Guided Multi-Pose trong EnrollmentController
 - **Mô tả**: Nâng cấp `EnrollmentController` quản lý luồng chụp 3 tư thế tuần tự (`FRONTAL` $\to$ `LEFT_TILT` $\to$ `RIGHT_TILT`). Thu nhận đúng 1 vector ArcFace 512D ($L_2 = 1.0$) cho mỗi tư thế và đóng gói payload gửi lên REST API `POST /api/v1/kiosk/enroll-face`.
@@ -626,11 +626,11 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Thu nhận đúng 3 vector đơn vị độc lập, không dùng trung bình cộng (centroid).
   - Hàm `_submit_enrollment` gửi JSON chứa mảng `templates` và trường tương thích ngược `vector512`.
   - Controller expose các thuộc tính QML phục vụ hiển thị tiến trình.
-- **Lệnh kiểm chứng**: `cd app/kiosk-app && pytest tests/test_enrollment_controller.py -v`
+- **Lệnh kiểm chứng**: `cd apps/kiosk-app && pytest tests/test_enrollment_controller.py -v`
 - **Phụ thuộc**: Task 6, Task 3
 - **Tập tin liên quan**:
-  - `app/kiosk-app/src/presentation/controllers/enrollment_controller.py`
-  - `app/kiosk-app/tests/test_enrollment_controller.py`
+  - `apps/kiosk-app/src/presentation/controllers/enrollment_controller.py`
+  - `apps/kiosk-app/tests/test_enrollment_controller.py`
 
 ##### Task 8: Giao Diện Hướng Dẫn Trực Quan QML
 - **Mô tả**: Nâng cấp giao diện Tab 2 trong `EnrollmentDialog.qml` với thanh chỉ báo tiến trình 3 bước, mũi tên đồ họa chỉ hướng quay mặt (trái/phải), và thanh đo góc Yaw trực quan.
@@ -639,14 +639,14 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Mũi tên định hướng xuất hiện sinh động hướng dẫn người dùng nghiêng đầu.
   - Thanh thước đo góc hiển thị vị trí xoay mặt thời gian thực với vùng hợp lệ màu xanh.
   - Hiển thị văn bản hướng dẫn tiếng Việt tương phản cao, dễ nhìn.
-- **Lệnh kiểm chứng**: `cd app/kiosk-app && ruff check .`
+- **Lệnh kiểm chứng**: `cd apps/kiosk-app && ruff check .`
 - **Phụ thuộc**: Task 7
 - **Tập tin liên quan**:
-  - `app/kiosk-app/resources/qml/dialogs/EnrollmentDialog.qml`
-  - `app/kiosk-app/resources/qml/components/PortraitCameraPanel.qml`
+  - `apps/kiosk-app/resources/qml/dialogs/EnrollmentDialog.qml`
+  - `apps/kiosk-app/resources/qml/components/PortraitCameraPanel.qml`
 
 ##### Điểm kiểm soát 2 (Checkpoint 2: Kiosk Guided Multi-Pose Capture Gate)
-- `cd app/kiosk-app && pytest tests/` vượt qua 100% kiểm thử.
+- `cd apps/kiosk-app && pytest tests/` vượt qua 100% kiểm thử.
 - `ruff check .` báo cáo 0 cảnh báo hoặc lỗi cú pháp.
 - Máy trạng thái 3 tư thế và giao diện QML hoạt động chuẩn xác với frame giả lập.
 
@@ -661,11 +661,11 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Hàm `add_or_update(employee_id, vector, pose_type)` cập nhật hoặc nối thêm mẫu tương ứng.
   - Hàm `remove(employee_id)` xóa toàn bộ tất cả template thuộc về nhân viên đó.
   - Hàm `load_gallery` nạp đầy đủ danh sách đa mẫu từ backend.
-- **Lệnh kiểm chứng**: `cd app/kiosk-app && pytest tests/test_gallery_matcher.py -v`
+- **Lệnh kiểm chứng**: `cd apps/kiosk-app && pytest tests/test_gallery_matcher.py -v`
 - **Phụ thuộc**: Task 4
 - **Tập tin liên quan**:
-  - `app/kiosk-app/src/core/vision/gallery_matcher.py`
-  - `app/kiosk-app/tests/test_gallery_matcher.py`
+  - `apps/kiosk-app/src/core/vision/gallery_matcher.py`
+  - `apps/kiosk-app/tests/test_gallery_matcher.py`
 
 ##### Task 10: So Khớp Điểm Danh 1:N Best Score & Đồng Bộ STOMP
 - **Mô tả**: Hiện thực thuật toán đánh giá $\text{Best Score} = \max(sim_{\text{front}}, sim_{\text{left}}, sim_{\text{right}})$ cho từng nhân viên qua một phép nhân ma trận vô hướng BLAS duy nhất. Cập nhật `stomp_worker.py` nạp nóng các sự kiện STOMP đa mẫu vào RAM. Duy trì tính tương thích ngược 100% cho chữ ký hàm `match()` và căn chỉnh cấu hình ngưỡng điểm danh trong `settings.py`.
@@ -674,15 +674,15 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Bổ sung phương thức `match_with_pose(query_vector, threshold=None) -> tuple[int | None, float, str | None]` và thuộc tính `last_matched_pose` phục vụ kiểm chuẩn chi tiết tư thế khớp trong unit tests.
   - Phép nhân ma trận BLAS `scores = np.dot(_embeddings_matrix, q)` tìm ra chỉ số có điểm cao nhất qua `best_idx = np.argmax(scores)`.
   - Nhận diện chính xác nhân viên khi đứng nghiêng góc trùng với template nghiêng đã nạp.
-  - Cập nhật giá trị cấu hình mặc định trong `app/kiosk-app/src/config/settings.py`: `cosine_similarity_threshold: float = float(os.getenv("COSINE_SIMILARITY_THRESHOLD", "0.65"))` đồng bộ với `AC-ENROLL-009` và khống chế FAR $< 0.001\%$ khi Gallery RAM mở rộng lên 3,000 vectors.
+  - Cập nhật giá trị cấu hình mặc định trong `apps/kiosk-app/src/config/settings.py`: `cosine_similarity_threshold: float = float(os.getenv("COSINE_SIMILARITY_THRESHOLD", "0.65"))` đồng bộ với `AC-ENROLL-009` và khống chế FAR $< 0.001\%$ khi Gallery RAM mở rộng lên 3,000 vectors.
   - `stomp_worker.py` xử lý mượt mà payload `ADD_VECTOR` và `DELETE_VECTOR` đa mẫu.
-- **Lệnh kiểm chứng**: `cd app/kiosk-app && pytest tests/test_gallery_matcher.py tests/test_stomp_worker.py -v`
+- **Lệnh kiểm chứng**: `cd apps/kiosk-app && pytest tests/test_gallery_matcher.py tests/test_stomp_worker.py -v`
 - **Phụ thuộc**: Task 9
 - **Tập tin liên quan**:
-  - `app/kiosk-app/src/core/vision/gallery_matcher.py`
-  - `app/kiosk-app/src/network/stomp_worker.py`
-  - `app/kiosk-app/src/config/settings.py`
-  - `app/kiosk-app/tests/test_gallery_matcher.py`
+  - `apps/kiosk-app/src/core/vision/gallery_matcher.py`
+  - `apps/kiosk-app/src/network/stomp_worker.py`
+  - `apps/kiosk-app/src/config/settings.py`
+  - `apps/kiosk-app/tests/test_gallery_matcher.py`
 
 ##### Task 11: Benchmark Độ Trễ So Khớp Dưới Tải 3,000 Vectors (<= 350ms SLA)
 - **Mô tả**: Xây dựng kịch bản kiểm thử hiệu năng trong `test_gallery_matcher.py` với 3,000 vector (mô phỏng 1,000 nhân viên $\times$ 3 tư thế). Đo đạc thời gian so khớp và chứng minh toàn bộ độ trễ chấm công $\le 350\text{ ms}$.
@@ -690,13 +690,13 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - Khởi tạo thành công 3,000 vector ArcFace ngẫu nhiên đạt chuẩn $L_2 = 1.0$.
   - Thực thi 1,000 truy vấn điểm danh mô phỏng: thời gian nhân ma trận BLAS trung bình $\le 1.0\text{ ms}$ (thực tế $< 0.35\text{ ms}$).
   - Tổng thời gian nhận diện toàn trình của Kiosk được chứng minh $\le 110\text{ ms}$ (thỏa mãn ngân sách $\le 350\text{ ms}$).
-- **Lệnh kiểm chứng**: `cd app/kiosk-app && pytest tests/test_gallery_matcher.py -k "benchmark" -v`
+- **Lệnh kiểm chứng**: `cd apps/kiosk-app && pytest tests/test_gallery_matcher.py -k "benchmark" -v`
 - **Phụ thuộc**: Task 10
 - **Tập tin liên quan**:
-  - `app/kiosk-app/tests/test_gallery_matcher.py`
+  - `apps/kiosk-app/tests/test_gallery_matcher.py`
 
 ##### Điểm kiểm soát 3 (Checkpoint 3: Kiosk Attendance & Latency Gate)
-- Bộ test `app/kiosk-app` vượt qua 100%.
+- Bộ test `apps/kiosk-app` vượt qua 100%.
 - Kết quả benchmark chứng minh 3,000 vector được xử lý dưới $1.0\text{ ms}$, thỏa mãn tiêu chuẩn $\le 350\text{ ms}$ của hệ thống.
 
 ---
@@ -710,23 +710,23 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
   - `ConsentModal.tsx` hiển thị chỉ dẫn 3 bước rõ ràng: Nhìn thẳng, Nghiêng trái, Nghiêng phải khi tới Kiosk.
   - Không gây hồi quy lên luồng ký cam kết và sinh OTP hiện tại.
 - **Lệnh kiểm chứng**:
-  - `cd app/web-portal && npm run lint`
-  - `cd app/web-portal && npm run build`
+  - `cd apps/web-portal && npm run lint`
+  - `cd apps/web-portal && npm run build`
 - **Phụ thuộc**: Task 4
 - **Tập tin liên quan**:
-  - `app/web-portal/src/types/consent.ts`
-  - `app/web-portal/src/components/consent/ConsentModal.tsx`
+  - `apps/web-portal/src/types/consent.ts`
+  - `apps/web-portal/src/components/consent/ConsentModal.tsx`
 
 ##### Task 13: Cập Nhật Dữ Liệu Kiểm Thử và Vitest Suite Web Portal
 - **Mô tả**: Cập nhật test fixtures trong `consentFixtures.ts` và kiểm tra toàn diện bộ test Vitest của `ConsentModal`.
 - **Tiêu chí nghiệm thu**:
   - `mockEnrollmentCompletedEvent` được bổ sung `templateCount: 3` và danh sách `poses`.
   - Toàn bộ các test cases trong `ConsentModal.test.tsx` vượt qua 100%.
-- **Lệnh kiểm chứng**: `cd app/web-portal && npm test`
+- **Lệnh kiểm chứng**: `cd apps/web-portal && npm test`
 - **Phụ thuộc**: Task 12
 - **Tập tin liên quan**:
-  - `app/web-portal/src/mocks/fixtures/consentFixtures.ts`
-  - `app/web-portal/src/components/consent/__tests__/ConsentModal.test.tsx`
+  - `apps/web-portal/src/mocks/fixtures/consentFixtures.ts`
+  - `apps/web-portal/src/components/consent/__tests__/ConsentModal.test.tsx`
 
 ##### Task 14: Quản Trị và Kiểm Định Tính Toàn Vẹn Tài Liệu SDLC
 - **Mô tả**: Chạy công cụ kiểm định hợp đồng và liên kết tài liệu để đảm bảo file đặc tả `spec.md` tuân thủ nghiêm ngặt các quy tắc bảng Markdown, tiêu đề front-matter, và liên kết truy vết.
@@ -741,12 +741,12 @@ Theo quy trình kỹ thuật `/using-sdlc-skills` và kế hoạch tổng thể 
 ##### Task 15: Thực Thi Toàn Bộ Quality Gates Xuyên Phân Hệ
 - **Mô tả**: Thực thi toàn bộ các lệnh kiểm tra chất lượng được quy định tại `AGENTS.md § 3.1` trên cả 3 phân hệ (Edge Kiosk, Central Backend, Web Portal) và công cụ Docs Governance.
 - **Tiêu chí nghiệm thu**:
-  - `cd app/kiosk-app && pytest tests/` đạt 100% passed.
-  - `cd app/kiosk-app && ruff check .` đạt 0 lỗi.
-  - `cd app/backend-service && ./mvnw test` đạt 100% passed.
-  - `cd app/web-portal && npm test` đạt 100% passed.
-  - `cd app/web-portal && npm run lint` đạt 0 lỗi.
-  - `cd app/web-portal && npm run build` tạo bundle production thành công.
+  - `cd apps/kiosk-app && pytest tests/` đạt 100% passed.
+  - `cd apps/kiosk-app && ruff check .` đạt 0 lỗi.
+  - `cd apps/backend-service && ./mvnw test` đạt 100% passed.
+  - `cd apps/web-portal && npm test` đạt 100% passed.
+  - `cd apps/web-portal && npm run lint` đạt 0 lỗi.
+  - `cd apps/web-portal && npm run build` tạo bundle production thành công.
   - `python scripts/verify_contracts.py --dir contracts` đạt 0 lỗi.
 - **Lệnh kiểm chứng**: Thực thi tuần tự toàn bộ 7 lệnh chất lượng trên terminal.
 - **Phụ thuộc**: Tasks 1 đến 14

@@ -41,7 +41,7 @@ Agent tra cứu trực tiếp file view giao diện mà không cần tìm kiếm
 
 ## 3. Lệnh Khởi Chạy & Kiểm Thử Chuẩn
 
-Thực hiện từ thư mục `app/web-portal/`:
+Thực hiện từ thư mục `apps/web-portal/`:
 
 ```bash
 # 1. Khởi chạy máy chủ phát triển (Vite Dev Server)
