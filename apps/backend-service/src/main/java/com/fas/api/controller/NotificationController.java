@@ -3,10 +3,9 @@ package com.fas.api.controller;
 import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.response.NotificationResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
-import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
+import com.fas.security.CurrentUserService;
 import com.fas.service.NotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,9 +13,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -38,13 +34,13 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public NotificationController(
             NotificationService notificationService,
-            UserRepository userRepository) {
+            CurrentUserService currentUserService) {
         this.notificationService = notificationService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -62,7 +58,7 @@ public class NotificationController {
     public ApiResponse<PageResponse<NotificationResponse>> getMyNotifications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         Page<NotificationResponse> notifications = notificationService.getUserNotifications(userId, pageable);
         return ApiResponse.ok("NOTIFICATIONS_FETCHED", "Lấy danh sách thông báo thành công", PageResponse.from(notifications));
     }
@@ -80,7 +76,7 @@ public class NotificationController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Map<String, Long>> getUnreadCount(
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         long unreadCount = notificationService.getUnreadCount(userId);
         return ApiResponse.ok("UNREAD_COUNT_FETCHED", "Lấy số lượng thông báo chưa đọc thành công", Map.of("unreadCount", unreadCount));
     }
@@ -100,7 +96,7 @@ public class NotificationController {
     public ApiResponse<NotificationResponse> markAsRead(
             @PathVariable("id") Long id,
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         NotificationResponse notification = notificationService.markAsRead(id, userId);
         return ApiResponse.ok("NOTIFICATION_READ", "Đánh dấu đã đọc thông báo thành công", notification);
     }
@@ -118,30 +114,9 @@ public class NotificationController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> markAllAsRead(
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         notificationService.markAllAsRead(userId);
         return ApiResponse.ok("NOTIFICATIONS_READ_ALL", "Đánh dấu đã đọc tất cả thông báo thành công", null);
     }
 
-    private Long resolveUserId(Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(User::getId)
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản người dùng"));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập");
-    }
 }

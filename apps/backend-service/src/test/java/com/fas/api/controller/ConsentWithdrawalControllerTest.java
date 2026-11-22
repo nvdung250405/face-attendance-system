@@ -3,7 +3,7 @@ package com.fas.api.controller;
 import com.fas.api.dto.response.ConsentWithdrawalResponse;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.ConsentWithdrawalService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +40,7 @@ class ConsentWithdrawalControllerTest {
     private ConsentWithdrawalService consentWithdrawalService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private ConsentWithdrawalController consentWithdrawalController;
@@ -71,8 +71,7 @@ class ConsentWithdrawalControllerTest {
     void withdrawConsent_Success() throws Exception {
         when(consentWithdrawalService.withdrawConsent(eq(1042L), any())).thenReturn(sampleResponse);
 
-        when(userRepository.findByEmail("dung@company.com"))
-                .thenReturn(Optional.of(employeeUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employeeUser().getId());
 
         mockMvc.perform(post("/api/v1/employee/consent/withdraw")
                         .principal(() -> "dung@company.com"))
@@ -89,8 +88,7 @@ class ConsentWithdrawalControllerTest {
     void getLatestWithdrawal_Success() throws Exception {
         when(consentWithdrawalService.getLatestWithdrawal(1042L)).thenReturn(Optional.of(sampleResponse));
 
-        when(userRepository.findByEmail("dung@company.com"))
-                .thenReturn(Optional.of(employeeUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employeeUser().getId());
 
         mockMvc.perform(get("/api/v1/employee/consent/withdrawal")
                         .principal(() -> "dung@company.com"))

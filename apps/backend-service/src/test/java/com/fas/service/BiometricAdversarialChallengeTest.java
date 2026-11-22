@@ -7,7 +7,7 @@ import com.fas.api.dto.request.PoseTemplateDto;
 import com.fas.api.dto.response.ConsentResult;
 import com.fas.api.dto.response.EnrollmentResult;
 import com.fas.api.dto.response.OtpVerificationResult;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiException;
 import com.fas.data.crypto.BiometricCryptoService;
 import com.fas.data.entity.BiometricTemplate;
 import com.fas.data.entity.Kiosk;

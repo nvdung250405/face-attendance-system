@@ -4,12 +4,12 @@ Tuân thủ mô hình MVC/MVVM:
 - Kế thừa QObject
 - Cung cấp @Property kèm Signal notify để QML tự động cập nhật viền oval, thông điệp
 - Điều phối pipeline nhận diện khuôn mặt AI: YuNet -> MiniFASNet -> ArcFace -> Gallery -> Cooldown -> SQLite WAL
+- Tách rời tính toán AI nặng và SQLite WAL sang InferenceWorker QThread ngầm
 - Cung cấp @Slot để QML gọi các hành động nghiệp vụ
 """
 
 import time
 from datetime import datetime
-from enum import StrEnum
 from typing import Any
 
 import numpy as np
@@ -25,79 +25,14 @@ from core.vision.feature_extractor import ArcFaceFeatureExtractor
 from core.vision.gallery_matcher import GalleryCacheManager
 from core.vision.liveness_gate import MiniFASNetLivenessGate
 from presentation.providers.video_image_provider import VideoImageProvider
+from presentation.viewmodels.oval_alignment import (
+    OvalState,
+    evaluate_face_oval_alignment,
+)
 
 logger = get_logger("kiosk_view_model")
 
-
-class OvalState(StrEnum):
-    """Máy trạng thái 4 màu viền Oval sinh trắc học."""
-
-    IDLE = "IDLE"  # Xám: Chờ người dùng
-    ALIGNING = "ALIGNING"  # Vàng: Đang phát hiện & căn chỉnh
-    SUCCESS = "SUCCESS"  # Xanh lá: Nhận diện thành công
-    ERROR = "ERROR"  # Đỏ: Spoofing hoặc lỗi
-
-
-def evaluate_face_oval_alignment(
-    frame_shape: tuple[int, ...],
-    bbox: tuple[int, int, int, int],
-) -> tuple[bool, str]:
-    """Kiểm tra khuôn mặt có nằm chuẩn xác trong khung Oval trên màn hình Kiosk dọc hay không.
-
-    Quy tắc hiển thị:
-    - Màn hình Kiosk hiển thị camera theo tỷ lệ dọc 968 / 1496 (PreserveAspectCrop).
-    - Tâm Oval nằm ở (chiều rộng / 2, chiều cao * 0.40).
-    - Kích thước Oval tương ứng 470 x 604 px trên màn hình 968 x 1496 px.
-
-    Trả về:
-        (is_aligned, message_feedback)
-    """
-    fh, fw = frame_shape[:2]
-    bx, by, bw, bh = bbox
-    cx = bx + bw / 2.0
-    cy = by + bh / 2.0
-
-    # 1. Tỷ lệ viewport dọc của Kiosk (968 / 1496)
-    aspect_vp = 968.0 / 1496.0
-    visible_w = fh * aspect_vp
-    if visible_w > fw:
-        visible_w = float(fw)
-
-    # 2. Tọa độ tâm và bán trục Oval trên khung hình camera gốc
-    oval_cx = fw / 2.0
-    oval_cy = fh * 0.40
-
-    rx = (visible_w * (470.0 / 968.0)) / 2.0  # Bán trục ngang
-    ry = (fh * (604.0 / 1496.0)) / 2.0  # Bán trục dọc
-
-    # 3. Kiểm tra kích thước khuôn mặt (khoảng cách chuẩn 0.5m – 1.2m)
-    # Khuôn mặt hợp lệ chiếm khoảng 35% đến 85% chiều cao Oval (2 * ry)
-    min_face_h = (2.0 * ry) * 0.35
-    max_face_h = (2.0 * ry) * 0.85
-
-    if bh < min_face_h or bw < min_face_h * 0.65:
-        return False, "Vui lòng đứng lại gần camera hơn"
-
-    if bh > max_face_h or bw > max_face_h * 0.90:
-        return False, "Vui lòng lùi ra xa camera một chút"
-
-    # 4. Kiểm tra tâm khuôn mặt có nằm bên trong hình Oval (dung sai 20% biên)
-    dx = (cx - oval_cx) / (rx * 1.20)
-    dy = (cy - oval_cy) / (ry * 1.20)
-    distance_sq = dx * dx + dy * dy
-
-    if distance_sq > 1.0:
-        if dx < -0.4:
-            return False, "Vui lòng di chuyển sang phải vào giữa khung Oval"
-        elif dx > 0.4:
-            return False, "Vui lòng di chuyển sang trái vào giữa khung Oval"
-        elif dy < -0.4:
-            return False, "Vui lòng hạ tầm mắt vào giữa khung Oval"
-        elif dy > 0.4:
-            return False, "Vui lòng nâng tầm mắt vào giữa khung Oval"
-        return False, "Vui lòng đưa khuôn mặt vào giữa khung Oval"
-
-    return True, "Khuôn mặt đã ở vị trí chuẩn xác"
+__all__ = ["KioskViewModel", "OvalState", "evaluate_face_oval_alignment"]
 
 
 class KioskViewModel(QObject):
@@ -127,6 +62,7 @@ class KioskViewModel(QObject):
         stability_threshold: int = 8,
         enrollment_controller: Any = None,
         is_dev_mode: bool | None = None,
+        inference_worker: Any = None,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo KioskViewModel."""
@@ -171,13 +107,23 @@ class KioskViewModel(QObject):
         self._standby_timeout: float = 8.0  # 8.0 giây vắng người -> Standby
         self._enrollment_cooldown_until: float = 0.0  # Grace period sau khi nạp mẫu khuôn mặt
 
+        # Gắn kết InferenceWorker nếu được truyền vào
+        self._inference_worker: Any = None
+        if inference_worker is not None:
+            self.set_inference_worker(inference_worker)
+
         if self.enrollment_controller is not None and hasattr(
             self.enrollment_controller, "dialogOpenChanged"
         ):
 
             def _on_enrollment_dialog_open_changed(is_open: bool) -> None:
+                if self._inference_worker is not None:
+                    self._inference_worker.set_enrollment_active(is_open)
                 if not is_open:
-                    self._enrollment_cooldown_until = time.time() + 5.0
+                    cooldown_until = time.time() + 5.0
+                    self._enrollment_cooldown_until = cooldown_until
+                    if self._inference_worker is not None:
+                        self._inference_worker.set_enrollment_cooldown(cooldown_until)
                     logger.info(
                         "Đã đóng hộp thoại đăng ký -> Kích hoạt Grace Period 5.0s không nhận diện điểm danh"
                     )
@@ -190,6 +136,59 @@ class KioskViewModel(QObject):
 
         if self.queue_manager:
             self._update_pending_sync_count()
+
+    def set_inference_worker(self, worker: Any) -> None:
+        """Gắn kết InferenceWorker chạy nền và kết nối các tín hiệu sang Main Thread."""
+        if self._inference_worker is not None:
+            try:
+                self._inference_worker.status_updated.disconnect(self._on_worker_status_updated)
+                self._inference_worker.punch_recorded.disconnect(self._on_worker_punch_recorded)
+                self._inference_worker.standby_wake_requested.disconnect(
+                    self._on_worker_standby_wake
+                )
+                self._inference_worker.face_detected.disconnect(self._on_worker_face_detected)
+            except Exception:
+                pass
+
+        self._inference_worker = worker
+        if self._inference_worker is not None:
+            self._inference_worker.status_updated.connect(self._on_worker_status_updated)
+            self._inference_worker.punch_recorded.connect(self._on_worker_punch_recorded)
+            self._inference_worker.standby_wake_requested.connect(self._on_worker_standby_wake)
+            self._inference_worker.face_detected.connect(self._on_worker_face_detected)
+            self._inference_worker.set_standby(self._is_standby)
+
+    @property
+    def inference_worker(self) -> Any:
+        """Lấy đối tượng InferenceWorker đang gắn kết."""
+        return self._inference_worker
+
+    @Slot(str, str)
+    def _on_worker_status_updated(self, state: str, message: str) -> None:
+        """Xử lý tín hiệu cập nhật trạng thái viền oval và thông báo từ InferenceWorker."""
+        self.set_state(state, message)
+
+    @Slot(int, str, float, str)
+    def _on_worker_punch_recorded(
+        self, emp_id: int, punch_time: str, score: float, punch_type: str
+    ) -> None:
+        """Xử lý tín hiệu điểm danh thành công từ InferenceWorker."""
+        self._last_emp_id = emp_id
+        self._last_punch_time = punch_time
+        self._last_score = score
+        self.lastResultChanged.emit()
+        self._update_pending_sync_count()
+
+    @Slot()
+    def _on_worker_standby_wake(self) -> None:
+        """Đánh thức Kiosk từ Chế độ Chờ khi Worker phát hiện khuôn mặt."""
+        self.setStandby(False)
+
+    @Slot(object)
+    def _on_worker_face_detected(self, detection: Any) -> None:
+        """Cập nhật thời gian phát hiện khuôn mặt gần nhất."""
+        if detection is not None:
+            self._last_face_time = time.time()
 
     def _on_network_status_changed(self, is_online: bool, message: str) -> None:
         """Xử lý tín hiệu cập nhật trạng thái mạng từ OfflineSyncWorker."""
@@ -231,6 +230,8 @@ class KioskViewModel(QObject):
             self._is_standby = standby
             self._last_face_time = time.time()
             self.isStandbyChanged.emit(standby)
+            if self._inference_worker is not None:
+                self._inference_worker.set_standby(standby)
             if standby:
                 self.set_state(OvalState.IDLE, "Trạm đang ở chế độ chờ chào mừng")
             else:
@@ -350,13 +351,27 @@ class KioskViewModel(QObject):
         if frame is None or frame.size == 0:
             return
 
-        # 1. Cập nhật khung hình cho VideoImageProvider QML
+        # 1. Cập nhật khung hình cho VideoImageProvider QML (chạy trên Main Thread, cực nhanh 60 FPS)
         if self.image_provider:
             self.image_provider.update_frame(frame)
             self._frame_tick += 1
             self.frameReady.emit()
 
-        # NẾU ĐANG Ở STANDBY: Quét ngầm để phát hiện người dùng bước tới (Smart Standby & Instant Wake-up)
+        # 2. Asynchronous Path: nếu có InferenceWorker đang chạy, gửi sang worker và return ngay lập tức
+        if self._inference_worker is not None and self._inference_worker.isRunning():
+            current_time = time.time()
+            if not self._is_standby and (
+                current_time - self._last_face_time >= self._standby_timeout
+            ):
+                logger.info(
+                    "Không phát hiện người dùng trong %.1fs -> Tự động chuyển sang Standby",
+                    self._standby_timeout,
+                )
+                self.setStandby(True)
+            self._inference_worker.enqueue_frame(frame)
+            return
+
+        # 3. Synchronous Fallback Path: chạy trực tiếp (hỗ trợ kiểm thử đơn vị đồng bộ)
         detection = None
         if self._is_standby:
             if self.detector is not None:
@@ -373,7 +388,7 @@ class KioskViewModel(QObject):
 
         current_time = time.time()
 
-        # Nếu đang ở chế độ Đăng ký mẫu khuôn mặt mới (Bước 1, 2, 3) hoặc đang trong Grace Period: Tạm dừng nhận diện điểm danh
+        # Nếu đang ở chế độ Đăng ký mẫu khuôn mặt mới hoặc đang trong Grace Period: Tạm dừng nhận diện điểm danh
         is_dialog_open = False
         if self.enrollment_controller is not None:
             is_dialog_open = getattr(self.enrollment_controller, "isDialogOpen", False) or getattr(
@@ -384,7 +399,7 @@ class KioskViewModel(QObject):
             self._last_face_time = current_time
             return
 
-        # 2. Nếu đang giữ màn hình kết quả Success / Error thì tạm dừng phân tích AI
+        # Nếu đang giữ màn hình kết quả Success / Error thì tạm dừng phân tích AI
         if self._holding_result:
             self._last_face_time = current_time
             if current_time < self._hold_end_time:
@@ -392,7 +407,7 @@ class KioskViewModel(QObject):
             self._holding_result = False
             self.set_state(OvalState.IDLE, "Vui lòng nhìn vào khung hình để điểm danh")
 
-        # 3. Pipeline Bước 1: Phát hiện khuôn mặt bằng YuNet
+        # Pipeline Bước 1: Phát hiện khuôn mặt bằng YuNet
         if self.detector is None:
             return
 
@@ -423,7 +438,7 @@ class KioskViewModel(QObject):
             )
             return
 
-        # Kiểm tra khuôn mặt nằm chuẩn trong khung Oval & khoảng cách camera (quá gần/quá xa/lệch)
+        # Kiểm tra khuôn mặt nằm chuẩn trong khung Oval & khoảng cách camera
         is_aligned, align_msg = evaluate_face_oval_alignment(frame.shape, detection.bbox)
         if not is_aligned:
             self._stable_frames = 0
@@ -442,7 +457,7 @@ class KioskViewModel(QObject):
 
         self._stable_frames = 0
 
-        # 4. Pipeline Bước 2: Kiểm tra thực thể sống Liveness chống giả mạo (MiniFASNet)
+        # Pipeline Bước 2: Kiểm tra thực thể sống Liveness chống giả mạo (MiniFASNet)
         if self.liveness_gate is not None:
             liveness_score = float(self.liveness_gate.predict(frame, detection.bbox))
             gate_threshold = getattr(self.liveness_gate, "threshold", None)
@@ -459,14 +474,14 @@ class KioskViewModel(QObject):
         else:
             liveness_score = 1.0
 
-        # 5. Pipeline Bước 3: Căn chỉnh và trích xuất vector 512D ArcFace
+        # Pipeline Bước 3: Căn chỉnh và trích xuất vector 512D ArcFace
         if self.extractor is None or self.gallery_matcher is None:
             return
 
         aligned_face = self.extractor.align_face(frame, detection.landmarks)
         vector = self.extractor.extract_vector(aligned_face)
 
-        # 6. Pipeline Bước 4: So khớp 1:N với ma trận RAM Gallery
+        # Pipeline Bước 4: So khớp 1:N với ma trận RAM Gallery
         emp_id, score = self.gallery_matcher.match(vector)
         if emp_id is None:
             self.set_state(
@@ -477,7 +492,7 @@ class KioskViewModel(QObject):
             logger.info("Không tìm thấy nhân viên khớp ngưỡng (score tối đa=%.3f)", score)
             return
 
-        # 7. Pipeline Bước 5: Kiểm tra Cooldown chống quẹt trùng lặp trong 120s
+        # Pipeline Bước 5: Kiểm tra Cooldown chống quẹt trùng lặp trong 120s
         if self.cooldown_tracker:
             status = self.cooldown_tracker.check_cooldown(emp_id)
             if status.is_in_cooldown:
@@ -488,7 +503,7 @@ class KioskViewModel(QObject):
                 self._trigger_hold(duration_sec=2.5)
                 return
 
-        # 8. Điểm danh thành công! Lưu vào SQLite WAL ngoại tuyến
+        # Điểm danh thành công! Lưu vào SQLite WAL ngoại tuyến
         punch_time = datetime.now().strftime("%H:%M:%S")
         last_punch = self.queue_manager.get_last_punch_type(emp_id) if self.queue_manager else None
         punch_type = "CHECK_OUT" if last_punch == "CHECK_IN" else "CHECK_IN"
@@ -540,11 +555,7 @@ class KioskViewModel(QObject):
 
     @Slot(int)
     def recordVerifiedPinPunch(self, employee_id: int) -> None:
-        """Ghi nhận điểm danh PIN cho nhân viên ĐÃ được backend xác thực thành công.
-
-        Chỉ được gọi sau khi `verify_pin` trả về 200 OK. Không tự ý coi mã PIN
-        là mã nhân viên (không parse PIN thành employee_id).
-        """
+        """Ghi nhận điểm danh PIN cho nhân viên ĐÃ được backend xác thực thành công."""
         emp_id = int(employee_id)
 
         if self.cooldown_tracker:

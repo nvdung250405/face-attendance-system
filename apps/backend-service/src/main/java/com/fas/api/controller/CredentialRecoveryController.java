@@ -4,17 +4,13 @@ import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.request.PinResetRequest;
 import com.fas.api.dto.response.PinOperationResult;
 import com.fas.api.dto.response.ResetCredentialsResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
-import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
+import com.fas.security.CurrentUserService;
 import com.fas.service.CredentialRecoveryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,13 +30,13 @@ import java.security.Principal;
 public class CredentialRecoveryController {
 
     private final CredentialRecoveryService credentialRecoveryService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public CredentialRecoveryController(
             CredentialRecoveryService credentialRecoveryService,
-            UserRepository userRepository) {
+            CurrentUserService currentUserService) {
         this.credentialRecoveryService = credentialRecoveryService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -73,30 +69,9 @@ public class CredentialRecoveryController {
     public ApiResponse<PinOperationResult> resetPin(
             @Valid @RequestBody PinResetRequest request,
             Principal principal) {
-        Long userId = resolveUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         PinOperationResult result = credentialRecoveryService.resetPin(userId, request);
         return ApiResponse.ok("PIN_RESET", result.message(), result);
     }
 
-    private Long resolveUserId(Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(User::getId)
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản người dùng"));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập");
-    }
 }

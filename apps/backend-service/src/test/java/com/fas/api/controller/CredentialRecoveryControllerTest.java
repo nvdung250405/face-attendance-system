@@ -5,7 +5,7 @@ import com.fas.api.dto.response.PinOperationResult;
 import com.fas.api.dto.response.ResetCredentialsResponse;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.CredentialRecoveryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,7 @@ class CredentialRecoveryControllerTest {
     private CredentialRecoveryService credentialRecoveryService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private CredentialRecoveryController credentialRecoveryController;
@@ -78,8 +78,7 @@ class CredentialRecoveryControllerTest {
 
         when(credentialRecoveryService.resetPin(eq(1042L), any(PinResetRequest.class))).thenReturn(result);
 
-        when(userRepository.findByEmail("dung@company.com"))
-                .thenReturn(java.util.Optional.of(employeeUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employeeUser().getId());
 
         mockMvc.perform(post("/api/v1/employee/pin/reset")
                         .principal(() -> "dung@company.com")

@@ -2,7 +2,7 @@ package com.fas.service;
 
 import com.fas.api.dto.request.KioskPunchRequest;
 import com.fas.api.websocket.StompEventBroadcaster;
-import com.fas.data.cache.CooldownManager;
+import com.fas.service.cache.CooldownManager;
 import com.fas.data.entity.AttendanceLog;
 import com.fas.data.entity.EmployeeShift;
 import com.fas.data.entity.Kiosk;

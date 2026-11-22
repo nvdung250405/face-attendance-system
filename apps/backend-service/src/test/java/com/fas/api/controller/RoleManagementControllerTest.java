@@ -2,12 +2,12 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.request.UpdateUserRoleRequest;
 import com.fas.api.dto.response.UserRoleResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
 import com.fas.data.enums.Role;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.RoleManagementService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -37,7 +38,7 @@ class RoleManagementControllerTest {
     private RoleManagementService roleManagementService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private RoleManagementController roleManagementController;
@@ -66,8 +67,7 @@ class RoleManagementControllerTest {
         when(roleManagementService.updateUserRole(100L, Role.HR_MANAGER, 1L))
                 .thenReturn(response);
 
-        when(userRepository.findByEmail("admin@company.com"))
-                .thenReturn(java.util.Optional.of(adminUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(adminUser().getId());
 
         mockMvc.perform(patch("/api/v1/admin/users/100/role")
                         .principal(() -> "admin@company.com")
@@ -89,8 +89,7 @@ class RoleManagementControllerTest {
         when(roleManagementService.updateUserRole(1L, Role.EMPLOYEE, 1L))
                 .thenThrow(new ApiException(ApiErrorCode.LAST_ADMIN_CANNOT_BE_DEMOTED, "Không thể hạ cấp ADMIN cuối cùng"));
 
-        when(userRepository.findByEmail("admin@company.com"))
-                .thenReturn(java.util.Optional.of(adminUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(adminUser().getId());
 
         mockMvc.perform(patch("/api/v1/admin/users/1/role")
                         .principal(() -> "admin@company.com")

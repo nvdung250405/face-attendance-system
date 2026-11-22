@@ -7,7 +7,7 @@ import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
 import com.fas.data.enums.DataSubjectRequestStatus;
 import com.fas.data.enums.DataSubjectRequestType;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.DataSubjectRequestService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +47,7 @@ class DataSubjectRequestControllerTest {
     private DataSubjectRequestService dataSubjectRequestService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private DataSubjectRequestController dataSubjectRequestController;
@@ -87,8 +87,7 @@ class DataSubjectRequestControllerTest {
         );
         when(dataSubjectRequestService.createRequest(eq(1042L), any())).thenReturn(sampleResponse);
 
-        when(userRepository.findByEmail("dung@company.com"))
-                .thenReturn(java.util.Optional.of(employeeUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employeeUser().getId());
 
         mockMvc.perform(post("/api/v1/employee/data-requests")
                         .principal(() -> "dung@company.com")
@@ -108,8 +107,7 @@ class DataSubjectRequestControllerTest {
         when(dataSubjectRequestService.getRequestsByUser(eq(1042L), any()))
                 .thenReturn(new PageImpl<>(List.of(sampleResponse), PageRequest.of(0, 20), 1));
 
-        when(userRepository.findByEmail("dung@company.com"))
-                .thenReturn(java.util.Optional.of(employeeUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employeeUser().getId());
 
         mockMvc.perform(get("/api/v1/employee/data-requests")
                         .principal(() -> "dung@company.com"))
@@ -125,8 +123,7 @@ class DataSubjectRequestControllerTest {
     void getMyRequestDetail_Success() throws Exception {
         when(dataSubjectRequestService.getRequestByIdForUser(1L, 1042L)).thenReturn(sampleResponse);
 
-        when(userRepository.findByEmail("dung@company.com"))
-                .thenReturn(java.util.Optional.of(employeeUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employeeUser().getId());
 
         mockMvc.perform(get("/api/v1/employee/data-requests/1")
                         .principal(() -> "dung@company.com"))
@@ -142,11 +139,10 @@ class DataSubjectRequestControllerTest {
     @DisplayName("Nhân viên tra cứu yêu cầu của người khác -> trả về 404 RESOURCE_NOT_FOUND")
     void getMyRequestDetail_OtherUsersRequest_Returns404() throws Exception {
         when(dataSubjectRequestService.getRequestByIdForUser(1L, 1042L))
-                .thenThrow(new com.fas.api.error.ApiException(com.fas.api.error.ApiErrorCode.RESOURCE_NOT_FOUND,
+                .thenThrow(new com.fas.common.error.ApiException(com.fas.common.error.ApiErrorCode.RESOURCE_NOT_FOUND,
                         "Không tìm thấy yêu cầu ID=1"));
 
-        when(userRepository.findByEmail("dung@company.com"))
-                .thenReturn(java.util.Optional.of(employeeUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employeeUser().getId());
 
         mockMvc.perform(get("/api/v1/employee/data-requests/1")
                         .principal(() -> "dung@company.com"))
@@ -184,8 +180,7 @@ class DataSubjectRequestControllerTest {
         when(dataSubjectRequestService.updateRequestStatus(eq(1L), eq(200L), any()))
                 .thenReturn(updatedResponse);
 
-        when(userRepository.findByEmail("dpo@company.com"))
-                .thenReturn(java.util.Optional.of(dpoUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(dpoUser().getId());
 
         mockMvc.perform(patch("/api/v1/dpo/data-requests/1")
                         .principal(() -> "dpo@company.com")

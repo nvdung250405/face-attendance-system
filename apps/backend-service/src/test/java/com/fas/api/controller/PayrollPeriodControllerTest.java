@@ -5,7 +5,7 @@ import com.fas.api.dto.response.PayrollPeriodResponse;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
 import com.fas.data.enums.PayrollPeriodStatus;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.PayrollPeriodService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,7 @@ class PayrollPeriodControllerTest {
     private PayrollPeriodService payrollPeriodService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private PayrollPeriodController payrollPeriodController;
@@ -104,8 +104,7 @@ class PayrollPeriodControllerTest {
     void lockPeriod_Success() throws Exception {
         when(payrollPeriodService.lockPeriod(2026, 10, 100L)).thenReturn(sampleResponse);
 
-        when(userRepository.findByEmail("admin@company.com"))
-                .thenReturn(java.util.Optional.of(adminUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(adminUser().getId());
 
         mockMvc.perform(post("/api/v1/admin/payroll-periods/2026-10/lock")
                         .principal(() -> "admin@company.com"))
@@ -129,8 +128,7 @@ class PayrollPeriodControllerTest {
         when(payrollPeriodService.unlockPeriod(2026, 10, 100L, "Điều chỉnh lỗi kỹ thuật"))
                 .thenReturn(openResponse);
 
-        when(userRepository.findByEmail("admin@company.com"))
-                .thenReturn(java.util.Optional.of(adminUser()));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(adminUser().getId());
 
         mockMvc.perform(post("/api/v1/admin/payroll-periods/2026-10/unlock")
                         .principal(() -> "admin@company.com")

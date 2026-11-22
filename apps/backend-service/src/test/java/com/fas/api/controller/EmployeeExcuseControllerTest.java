@@ -2,12 +2,12 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.request.SubmitExcuseRequest;
 import com.fas.api.dto.response.ExcuseRequestResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
 import com.fas.data.enums.ExcuseRequestStatus;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.ExcuseRequestService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +56,7 @@ class EmployeeExcuseControllerTest {
     private ExcuseRequestService excuseRequestService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private EmployeeExcuseController employeeExcuseController;
@@ -111,7 +111,7 @@ class EmployeeExcuseControllerTest {
                     .thenReturn(response);
 
             User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
                             .principal(() -> "dung@company.com")
@@ -161,7 +161,7 @@ class EmployeeExcuseControllerTest {
                     .thenThrow(new ApiException(ApiErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy bản ghi điểm danh thuộc nhân viên ID=1042"));
 
             User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
                             .principal(() -> "dung@company.com")
@@ -185,7 +185,7 @@ class EmployeeExcuseControllerTest {
                     .thenThrow(new ApiException(ApiErrorCode.EXCUSE_WINDOW_EXPIRED, "Bản ghi điểm danh đã vượt quá thời hạn 30 ngày"));
 
             User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
                             .principal(() -> "dung@company.com")
@@ -208,7 +208,7 @@ class EmployeeExcuseControllerTest {
                     .thenThrow(new ApiException(ApiErrorCode.EXCUSE_ALREADY_PENDING, "Lượt điểm danh đã có đơn giải trình đang chờ xử lý"));
 
             User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
             mockMvc.perform(post("/api/v1/employee/excuse-requests")
                             .principal(() -> "dung@company.com")
@@ -224,7 +224,7 @@ class EmployeeExcuseControllerTest {
             SubmitExcuseRequest request = new SubmitExcuseRequest(101L, "Lý do hợp lệ", null);
 
             User user = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(user));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(user.getId());
 
             ExcuseRequestResponse response = createMockResponse(1L, 1042L, "NV-1042", "Ngô Văn Dũng", 101L, ExcuseRequestStatus.PENDING);
             when(excuseRequestService.submitExcuseRequest(eq(1042L), any(SubmitExcuseRequest.class)))
@@ -254,7 +254,7 @@ class EmployeeExcuseControllerTest {
                     .thenReturn(new PageImpl<>(List.of(item), PageRequest.of(0, 20), 1));
 
             User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-            when(userRepository.findByEmail("dung@company.com")).thenReturn(Optional.of(employee));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
             mockMvc.perform(get("/api/v1/employee/excuse-requests")
                             .principal(() -> "dung@company.com")
@@ -271,6 +271,8 @@ class EmployeeExcuseControllerTest {
         @Test
         @DisplayName("Chưa xác thực người dùng -> ném 403 ACCESS_DENIED")
         void getMyExcuseRequests_Unauthenticated_Returns403() throws Exception {
+            when(currentUserService.getCurrentUserId(any()))
+                    .thenThrow(new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập"));
             mockMvc.perform(get("/api/v1/employee/excuse-requests"))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));

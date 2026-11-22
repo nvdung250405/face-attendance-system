@@ -1,7 +1,7 @@
 package com.fas.security.kiosk;
 
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.entity.Kiosk;
 import com.fas.data.repository.KioskRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;

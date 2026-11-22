@@ -4,7 +4,7 @@ import com.fas.api.dto.response.NotificationResponse;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
 import com.fas.data.enums.NotificationEventType;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,7 +41,7 @@ class NotificationControllerTest {
     private NotificationService notificationService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private NotificationController notificationController;
@@ -70,7 +70,7 @@ class NotificationControllerTest {
                 .thenReturn(new PageImpl<>(List.of(sampleNotification), PageRequest.of(0, 20), 1));
 
         User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
         mockMvc.perform(get("/api/v1/notifications")
                         .principal(() -> "dung@company.com"))
@@ -88,7 +88,7 @@ class NotificationControllerTest {
         when(notificationService.getUnreadCount(1042L)).thenReturn(5L);
 
         User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
         mockMvc.perform(get("/api/v1/notifications/unread-count")
                         .principal(() -> "dung@company.com"))
@@ -111,7 +111,7 @@ class NotificationControllerTest {
         when(notificationService.markAsRead(1L, 1042L)).thenReturn(readNotification);
 
         User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
         mockMvc.perform(patch("/api/v1/notifications/1/read")
                         .principal(() -> "dung@company.com"))
@@ -127,7 +127,7 @@ class NotificationControllerTest {
     @DisplayName("Đánh dấu tất cả thông báo đã đọc -> trả về 200 OK")
     void markAllAsRead_Success() throws Exception {
         User employee = User.builder().id(1042L).email("dung@company.com").employeeCode("NV-1042").build();
-        when(userRepository.findByEmail("dung@company.com")).thenReturn(java.util.Optional.of(employee));
+        when(currentUserService.getCurrentUserId(any())).thenReturn(employee.getId());
 
         mockMvc.perform(post("/api/v1/notifications/read-all")
                         .principal(() -> "dung@company.com"))

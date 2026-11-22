@@ -3,17 +3,13 @@ package com.fas.api.controller;
 import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.request.UpdateUserRoleRequest;
 import com.fas.api.dto.response.UserRoleResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
-import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
+import com.fas.security.CurrentUserService;
 import com.fas.service.RoleManagementService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,13 +29,13 @@ import java.security.Principal;
 public class RoleManagementController {
 
     private final RoleManagementService roleManagementService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public RoleManagementController(
             RoleManagementService roleManagementService,
-            UserRepository userRepository) {
+            CurrentUserService currentUserService) {
         this.roleManagementService = roleManagementService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -59,30 +55,9 @@ public class RoleManagementController {
             @PathVariable("id") Long id,
             @Valid @RequestBody UpdateUserRoleRequest request,
             Principal principal) {
-        Long actorUserId = resolveUserId(principal);
+        Long actorUserId = currentUserService.getCurrentUserId(principal);
         UserRoleResponse response = roleManagementService.updateUserRole(id, request.role(), actorUserId);
         return ApiResponse.ok("ROLE_UPDATED", "Cập nhật vai trò người dùng thành công", response);
     }
 
-    private Long resolveUserId(Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(User::getId)
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản người dùng"));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập");
-    }
 }

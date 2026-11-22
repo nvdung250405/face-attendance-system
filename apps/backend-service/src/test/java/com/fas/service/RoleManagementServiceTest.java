@@ -1,8 +1,8 @@
 package com.fas.service;
 
 import com.fas.api.dto.response.UserRoleResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.entity.User;
 import com.fas.data.enums.EmployeeStatus;
 import com.fas.data.enums.Role;

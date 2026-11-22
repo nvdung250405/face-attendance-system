@@ -2,16 +2,12 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.response.PinOperationResult;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
-import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
+import com.fas.security.CurrentUserService;
 import com.fas.service.PinService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import com.fas.api.dto.request.PinManagementRequest;
 import jakarta.validation.Valid;
 import org.springframework.util.StringUtils;
@@ -28,11 +24,11 @@ import java.security.Principal;
 public class EmployeePinController {
 
     private final PinService pinService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
-    public EmployeePinController(PinService pinService, UserRepository userRepository) {
+    public EmployeePinController(PinService pinService, CurrentUserService currentUserService) {
         this.pinService = pinService;
-        this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -45,7 +41,7 @@ public class EmployeePinController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PinOperationResult> getPinStatus(Principal principal) {
-        Long userId = resolveCurrentUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
         boolean hasPin = pinService.hasPin(userId);
         String message = hasPin ? "Tài khoản đã thiết lập mã PIN dự phòng" : "Tài khoản chưa thiết lập mã PIN dự phòng";
         return ApiResponse.ok("PIN_STATUS", message, new PinOperationResult(hasPin, message));
@@ -69,7 +65,7 @@ public class EmployeePinController {
             @Valid @RequestBody PinManagementRequest request,
             Principal principal
     ) {
-        Long userId = resolveCurrentUserId(principal);
+        Long userId = currentUserService.getCurrentUserId(principal);
 
         String currentPin = request != null ? request.currentPin() : null;
         String pin = request != null ? request.pin() : null;
@@ -90,25 +86,4 @@ public class EmployeePinController {
         return ApiResponse.ok("PIN_SUCCESS", result.message(), result);
     }
 
-    private Long resolveCurrentUserId(Principal principal) {
-        String principalName = null;
-        if (principal != null && StringUtils.hasText(principal.getName())) {
-            principalName = principal.getName();
-        } else {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-                principalName = auth.getName();
-            }
-        }
-
-        if (StringUtils.hasText(principalName)) {
-            final String name = principalName;
-            return userRepository.findByEmail(name)
-                    .or(() -> userRepository.findByEmployeeCode(name))
-                    .map(User::getId)
-                    .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND, "Không tìm thấy thông tin tài khoản người dùng"));
-        }
-
-        throw new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập");
-    }
 }

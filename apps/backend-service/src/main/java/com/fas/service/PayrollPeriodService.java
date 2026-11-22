@@ -2,8 +2,8 @@ package com.fas.service;
 
 import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.response.PayrollPeriodResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.entity.AuditLog;
 import com.fas.data.entity.PayrollPeriod;
 import com.fas.data.entity.User;

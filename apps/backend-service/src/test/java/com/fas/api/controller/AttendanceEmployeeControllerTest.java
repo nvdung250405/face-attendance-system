@@ -4,11 +4,13 @@ import com.fas.api.dto.response.AttendanceLogItem;
 import com.fas.api.dto.response.DailyAttendanceItem;
 import com.fas.api.dto.response.PersonalAttendanceResponse;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.entity.User;
 import com.fas.data.enums.AttendanceStatus;
 import com.fas.data.enums.PunchType;
 import com.fas.data.enums.VerificationMethod;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.EmployeeAttendanceQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,7 +55,7 @@ class AttendanceEmployeeControllerTest {
     private EmployeeAttendanceQueryService employeeAttendanceQueryService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private AttendanceEmployeeController attendanceEmployeeController;
@@ -84,7 +86,7 @@ class AttendanceEmployeeControllerTest {
         @DisplayName("Tra cứu thành công với thông tin Principal")
         void getMonthlyAttendance_WithPrincipal_Success() throws Exception {
             Principal mockPrincipal = () -> "dung.nv@company.com";
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
 
             DailyAttendanceItem daily = new DailyAttendanceItem(
                     LocalDate.of(2026, 10, 8),
@@ -139,8 +141,7 @@ class AttendanceEmployeeControllerTest {
                     .thenReturn(response);
 
             Principal mockPrincipal = () -> "NV-1042";
-            when(userRepository.findByEmail("NV-1042")).thenReturn(Optional.empty());
-            when(userRepository.findByEmployeeCode("NV-1042")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
 
             mockMvc.perform(get("/api/v1/employee/attendance")
                             .principal(mockPrincipal)
@@ -155,6 +156,9 @@ class AttendanceEmployeeControllerTest {
         @Test
         @DisplayName("Không có thông tin xác thực -> trả về 403 Forbidden ACCESS_DENIED")
         void getMonthlyAttendance_Unauthenticated_Returns403() throws Exception {
+            when(currentUserService.getCurrentUserId(any()))
+                    .thenThrow(new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập"));
+
             mockMvc.perform(get("/api/v1/employee/attendance"))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
@@ -181,7 +185,7 @@ class AttendanceEmployeeControllerTest {
                     .thenReturn(page);
 
             Principal mockPrincipal = () -> "dung.nv@company.com";
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
 
             mockMvc.perform(get("/api/v1/employee/attendance/logs")
                             .principal(mockPrincipal)

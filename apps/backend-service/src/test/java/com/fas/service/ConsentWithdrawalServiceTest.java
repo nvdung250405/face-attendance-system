@@ -1,8 +1,8 @@
 package com.fas.service;
 
 import com.fas.api.dto.response.ConsentWithdrawalResponse;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.entity.BiometricTemplate;
 import com.fas.data.entity.ConsentWithdrawal;
 import com.fas.data.entity.User;

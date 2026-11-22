@@ -2,8 +2,8 @@ package com.fas.api.controller;
 
 import com.fas.api.dto.request.KioskVerifyPinRequest;
 import com.fas.api.dto.response.PinVerificationResult;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.Kiosk;
 import com.fas.security.kiosk.KioskAuthService;

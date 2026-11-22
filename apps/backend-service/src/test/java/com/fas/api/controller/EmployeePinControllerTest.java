@@ -1,11 +1,11 @@
 package com.fas.api.controller;
 
 import com.fas.api.dto.response.PinOperationResult;
-import com.fas.api.error.ApiErrorCode;
-import com.fas.api.error.ApiException;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.api.error.GlobalExceptionHandler;
 import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.PinService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +46,7 @@ class EmployeePinControllerTest {
     private PinService pinService;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private EmployeePinController employeePinController;
@@ -75,7 +75,7 @@ class EmployeePinControllerTest {
         @Test
         @DisplayName("Lấy trạng thái thành công khi tài khoản đã có PIN -> hasPin: true")
         void getPinStatus_HasPin_Returns200() throws Exception {
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
             when(pinService.hasPin(1042L)).thenReturn(true);
 
             mockMvc.perform(get("/api/v1/employee/pin")
@@ -91,7 +91,7 @@ class EmployeePinControllerTest {
         @Test
         @DisplayName("Lấy trạng thái thành công khi tài khoản chưa có PIN -> hasPin: false")
         void getPinStatus_NoPin_Returns200() throws Exception {
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
             when(pinService.hasPin(1042L)).thenReturn(false);
 
             mockMvc.perform(get("/api/v1/employee/pin")
@@ -107,6 +107,8 @@ class EmployeePinControllerTest {
         @Test
         @DisplayName("Chưa đăng nhập -> trả về 403 Forbidden")
         void getPinStatus_Unauthenticated_Returns403() throws Exception {
+            when(currentUserService.getCurrentUserId(any()))
+                    .thenThrow(new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập"));
             mockMvc.perform(get("/api/v1/employee/pin"))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
@@ -125,7 +127,7 @@ class EmployeePinControllerTest {
                     "confirmPin", "123456"
             );
 
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
             when(pinService.setupPin(eq(1042L), eq("123456"), eq("123456")))
                     .thenReturn(new PinOperationResult(true, "Thiết lập mã PIN dự phòng thành công"));
 
@@ -150,7 +152,7 @@ class EmployeePinControllerTest {
                     "confirmPin", "654321"
             );
 
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
             when(pinService.changePin(eq(1042L), eq("123456"), eq("654321"), eq("654321")))
                     .thenReturn(new PinOperationResult(true, "Đổi mã PIN dự phòng thành công"));
 
@@ -175,7 +177,7 @@ class EmployeePinControllerTest {
                     "confirmPin", "654321"
             );
 
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
             when(pinService.changePin(eq(1042L), eq("000000"), eq("654321"), eq("654321")))
                     .thenThrow(new ApiException(ApiErrorCode.PIN_INVALID, "Mã PIN hiện tại không chính xác."));
 
@@ -195,7 +197,7 @@ class EmployeePinControllerTest {
                     "confirmPin", "123456"
             );
 
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
             when(pinService.setupPin(eq(1042L), eq("123456"), eq("123456")))
                     .thenThrow(new ApiException(ApiErrorCode.DATA_INTEGRITY_VIOLATION, "Nhân viên đã thiết lập mã PIN."));
 
@@ -215,7 +217,7 @@ class EmployeePinControllerTest {
                     "confirmPin", "654321"
             );
 
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
             when(pinService.setupPin(eq(1042L), eq("123456"), eq("654321")))
                     .thenThrow(new ApiException(ApiErrorCode.VALIDATION_FAILED, "Mã PIN xác nhận không khớp."));
 
@@ -230,6 +232,8 @@ class EmployeePinControllerTest {
         @Test
         @DisplayName("Chưa đăng nhập -> trả về 403 Forbidden")
         void managePin_Unauthenticated_Returns403() throws Exception {
+            when(currentUserService.getCurrentUserId(any()))
+                    .thenThrow(new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập"));
             Map<String, String> body = Map.of("pin", "123456", "confirmPin", "123456");
 
             mockMvc.perform(post("/api/v1/employee/pin")

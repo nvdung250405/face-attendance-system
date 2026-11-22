@@ -3,8 +3,10 @@ package com.fas.api.controller;
 import com.fas.api.dto.request.ConsentRequest;
 import com.fas.api.dto.response.ConsentResult;
 import com.fas.api.error.GlobalExceptionHandler;
+import com.fas.common.error.ApiErrorCode;
+import com.fas.common.error.ApiException;
 import com.fas.data.entity.User;
-import com.fas.data.repository.UserRepository;
+import com.fas.security.CurrentUserService;
 import com.fas.service.EnrollmentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +49,7 @@ class ConsentControllerTest {
 
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private ConsentController consentController;
@@ -79,7 +81,7 @@ class ConsentControllerTest {
             ConsentRequest request = new ConsentRequest(true, "v1.0");
 
             Principal mockPrincipal = () -> "dung.nv@company.com";
-            when(userRepository.findByEmail("dung.nv@company.com")).thenReturn(Optional.of(sampleUser));
+            when(currentUserService.getCurrentUserId(any())).thenReturn(sampleUser.getId());
 
             ConsentResult result = new ConsentResult(
                     "839201",
@@ -134,6 +136,8 @@ class ConsentControllerTest {
         @Test
         @DisplayName("Chưa đăng nhập -> trả về 403 Forbidden ACCESS_DENIED")
         void signConsent_Unauthenticated_Returns403() throws Exception {
+            when(currentUserService.getCurrentUserId(any()))
+                    .thenThrow(new ApiException(ApiErrorCode.ACCESS_DENIED, "Người dùng chưa đăng nhập"));
             ConsentRequest request = new ConsentRequest(true, "v1.0");
 
             mockMvc.perform(post("/api/v1/employee/consent")

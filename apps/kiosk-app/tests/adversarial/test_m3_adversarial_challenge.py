@@ -17,8 +17,8 @@ import pytest
 from PySide6.QtCore import QEventLoop, QMetaObject, QTimer, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
-# Root of kiosk-app (parent of tests/)
-_KIOSK_ROOT = Path(__file__).resolve().parent.parent
+# Root of kiosk-app (ancestor containing resources/ directory)
+_KIOSK_ROOT = next(p for p in Path(__file__).resolve().parents if (p / "resources").is_dir())
 
 from core.vision.face_detector import FaceDetectionResult
 from core.vision.quality_checker import EnrollmentQualityChecker, PoseType
