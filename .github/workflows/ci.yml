@@ -422,7 +422,7 @@ jobs:
             --exclude ".venv" \
             --exclude "target" \
             --exclude "dist" \
-            app
+            apps
 
       - name: Upload Semgrep SARIF to GitHub Security Tab
         uses: github/codeql-action/upload-sarif@v3
@@ -434,7 +434,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
-          scan-ref: 'app'
+          scan-ref: 'apps'
           scanners: 'vuln,secret'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
