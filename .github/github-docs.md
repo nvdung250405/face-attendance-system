@@ -2,7 +2,7 @@
 
 ## 1. Mục đích và Phạm vi
 
-Implementation profile của [docs/sdlc-docs.md](../docs/sdlc-docs.md) trên nền tảng GitHub: từ issue đến deploy và tự động hóa CI/CD. Đổi nền tảng (GitLab, Azure DevOps...) thì thay tài liệu này, không sửa `sdlc-docs.md`.
+Implementation profile của [docs/README.md](../docs/README.md) trên nền tảng GitHub: từ issue đến deploy và tự động hóa CI/CD. Đổi nền tảng (GitLab, Azure DevOps...) thì thay tài liệu này, không sửa tài liệu hệ thống.
 
 | Lớp       | Thành phần                 | Trách nhiệm                             |
 | --------- | -------------------------- | --------------------------------------- |
@@ -39,7 +39,7 @@ Implementation profile của [docs/sdlc-docs.md](../docs/sdlc-docs.md) trên n�
 ```
 
 - Workflow `docs-*` thuộc quản trị tài liệu. `ci.yml` và `deploy.yml` thuộc sản phẩm.
-- Logic kiểm tra nằm trong script (`tools/docs-check/`); YAML chỉ gọi thực thi.
+- Logic kiểm tra nằm trong script (`scripts/check_sdlc_docs.py`); YAML chỉ gọi thực thi.
 
 ---
 
@@ -298,7 +298,7 @@ Trợ lý AI tuân thủ:
 | Hạng mục                 | Thành phần                                             | Done when                                                                          |
 | ------------------------ | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | **1. Phân quyền**        | `CODEOWNERS`, Branch Ruleset                           | Chặn direct push; bắt buộc Code Owner review; chỉ squash merge.                    |
-| **2. Kiểm tra tài liệu** | `tools/docs-check/`, `docs-check.yml`                  | `docs-check` chạy trên mọi PR; xác thực front matter, ID, reference, orphan, tree. |
+| **2. Kiểm tra tài liệu** | `scripts/check_sdlc_docs.py`, `docs-check.yml`         | `docs-check` chạy trên mọi PR; xác thực front matter, ID, reference, orphan, tree. |
 | **3. CI sản phẩm**       | `ci.yml`, `pr-title`                                   | Stage validate/test/build tự động; `ci-passed` xanh.                               |
 | **4. Templates**         | PR & Issue templates                                   | Ép buộc điền template và gắn ID truy vết.                                          |
 | **5. Release & Deploy**  | `deploy.yml`, Environments, `docs-baseline.yml`        | Phê duyệt môi trường; OIDC cấu hình; bảo vệ tag release & baseline.                |

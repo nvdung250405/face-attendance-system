@@ -1,20 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright Functional E2E Configuration for Web Portal
+ * Playwright E2E Configuration for FAS Web Portal
+ * Dual-Mode: Mock API for fast CI / Local, Live Staging (http://localhost:3000) for staging verification.
  * Encapsulates all output artifacts inside tests/reports/web-portal/ (Local-Only)
  */
+const isCI = !!process.env.CI;
+const baseURL = process.env.BASE_URL || (isCI ? 'http://localhost:5173' : 'http://localhost:3000');
+
 export default defineConfig({
   testDir: './e2e',
   testMatch: /.*\.spec\.ts/,
-  testIgnore: /.*\.staging\.spec\.ts/,
   timeout: 30 * 1000,
   expect: {
     timeout: 5000,
   },
   fullyParallel: false,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
   workers: 1,
   reporter: [
     ['list'],
@@ -22,9 +25,11 @@ export default defineConfig({
   ],
   outputDir: '../reports/web-portal/test-results',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    timezoneId: 'Asia/Ho_Chi_Minh',
+    locale: 'vi-VN',
   },
   projects: [
     {
@@ -34,14 +39,14 @@ export default defineConfig({
         viewport: { width: 1920, height: 1080 },
       },
     },
+    {
+      name: 'mobile-chrome',
+      use: {
+        ...devices['Pixel 7'],
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
   ],
-  /*
-  webServer: {
-    command: 'cmd.exe /c "npm.cmd run dev -- --port 5173"',
-    cwd: '../../app/web-portal',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 60 * 1000,
-  },
-  */
 });

@@ -1,7 +1,7 @@
 ﻿"""
 Kịch bản Kiểm thử Tích hợp Cấp Hệ thống Toàn diện (System-Level E2E Verification)
 Face Attendance System (FAS)
-Bao phủ toàn diện: TST-SYS-001 đến TST-SYS-034 theo docs/system-docs/plans/test-plan.md
+Bao phủ toàn diện: TST-SYS-001 đến TST-SYS-034 theo docs/analysis/rtm.md
 """
 
 import sys
@@ -29,6 +29,16 @@ def record(test_id, name, passed, detail=""):
 def reset_test_state():
     """Khởi tạo trạng thái sạch cho CSDL trước khi chạy kiểm thử E2E"""
     try:
+        check_proc = subprocess.run(
+            ["docker", "ps", "--filter", "name=fas-postgres", "--filter", "status=running", "--format", "{{.Names}}"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if "fas-postgres" not in check_proc.stdout:
+            print("Lưu ý: Container fas-postgres không đang chạy, bỏ qua bước reset CSDL.")
+            return
+
         cmd = "DELETE FROM attendance_logs; UPDATE users SET pin_locked_until = NULL; INSERT INTO employee_shifts (user_id, shift_id, effective_from, effective_to) SELECT 2, 1, '2026-01-01', '2027-12-31' WHERE NOT EXISTS (SELECT 1 FROM employee_shifts WHERE user_id = 2);"
         subprocess.run(
             ["docker", "exec", "-e", "PGPASSWORD=SecurePassword_FAS_2026!", "fas-postgres", "psql", "-U", "fas_admin", "-d", "fas_db", "-c", cmd],

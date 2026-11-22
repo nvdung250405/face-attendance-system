@@ -194,6 +194,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!collapsed && (
           <button
             type="button"
+            id="sidebar-close-mobile"
+            data-testid="sidebar-close-mobile"
             aria-label="Đóng sidebar"
             onClick={onToggleCollapse}
             className="md:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"

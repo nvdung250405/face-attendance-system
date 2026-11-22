@@ -35,8 +35,8 @@ body:
     id: plan_reference
     attributes:
       label: "Đường dẫn tới tệp Plan sở hữu"
-      description: "Đường dẫn tới leaf Plan chứa work item này (ví dụ: docs/subsystem-docs/backend-service/plans/build-plan.md)."
-      placeholder: "docs/subsystem-docs/backend-service/plans/build-plan.md"
+      description: "Đường dẫn tới leaf Plan chứa work item này (ví dụ: docs/features/FEAT-001-attend/spec.md)."
+      placeholder: "docs/features/FEAT-001-attend/spec.md"
     validations:
       required: true
 

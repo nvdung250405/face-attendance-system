@@ -23,7 +23,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
   detect-changes:
@@ -63,6 +62,5 @@ jobs:
       - name: Install dependencies
         run: pip install pyyaml
 
-      - name: Validate Machine-Executable Contracts
-        run: |
-          python -c "import yaml, json, glob; [yaml.safe_load(open(f, encoding='utf-8')) for f in glob.glob('contracts/*.yaml')]; [json.load(open(f, encoding='utf-8')) for f in glob.glob('contracts/*.json')]; print('All contracts syntax valid')"
+      - name: Validate SDLC Documentation and Machine Contracts
+        run: python scripts/check_sdlc_docs.py
