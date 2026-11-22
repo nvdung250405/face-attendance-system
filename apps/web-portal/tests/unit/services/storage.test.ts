@@ -12,7 +12,7 @@ import {
   STORAGE_KEYS,
   onStorageKeyChange,
   setupMultiTabAuthSyncListener,
-} from '../storage'
+} from '@/services/storage'
 import type { AuthSession } from '@/types'
 
 describe('Safe Storage Adapters (TASK-WEB-006)', () => {

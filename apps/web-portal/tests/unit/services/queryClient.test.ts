@@ -14,7 +14,7 @@ import {
   payrollKeys,
   kioskKeys,
   handleLiveAttendanceEvent,
-} from '../queryClient'
+} from '@/services/queryClient'
 import type { AttendanceRecord, AttendanceStats } from '@/types'
 
 describe('TanStack Query & Cache Factory (TASK-WEB-007)', () => {

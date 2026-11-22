@@ -8,7 +8,7 @@ import {
   LAYOUT_TOKENS,
   BREAKPOINT_TOKENS,
   TRANSITION_TOKENS,
-} from '../tokens'
+} from '@/theme/tokens'
 import tailwindConfig from '../../../tailwind.config'
 
 describe('Tailwind Tokens & Theme (TASK-WEB-008)', () => {

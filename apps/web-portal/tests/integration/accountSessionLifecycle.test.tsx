@@ -34,7 +34,7 @@ import {
   mockPaginatedEmployees,
   mockCreateEmployeeSuccess,
   mockResetCredentialsSuccess,
-} from '@/mocks/fixtures'
+} from '@tests/mocks/fixtures'
 import type { UserProfile, EmployeeItem } from '@/types'
 
 // Mock STOMP Connection store cho TopHeader

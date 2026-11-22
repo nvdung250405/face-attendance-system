@@ -7,7 +7,7 @@ import {
   useAuthStore,
   getDefaultPathForRole,
   setupMultiTabAuthSync,
-} from '../authStore'
+} from '@/store/authStore'
 import { AUTH_STORAGE_KEY } from '@/services/apiClient'
 import type { AuthSession } from '@/types'
 

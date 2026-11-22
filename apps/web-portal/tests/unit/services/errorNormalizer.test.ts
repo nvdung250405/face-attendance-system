@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AxiosError, AxiosHeaders } from 'axios'
-import { normalizeApiError } from '../errorNormalizer'
+import { normalizeApiError } from '@/services/errorNormalizer'
 
 describe('errorNormalizer - Chuẩn hóa lỗi API (TASK-WEB-023)', () => {
   it('1. Chuẩn hóa lỗi mạng (Network Error / No response)', () => {

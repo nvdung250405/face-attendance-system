@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useNotificationStore } from '../notificationStore'
+import { useNotificationStore } from '@/store/notificationStore'
 import { safeLocalStorage, safeSessionStorage } from '@/services/storage'
 import type { NotificationItem } from '@/types'
 

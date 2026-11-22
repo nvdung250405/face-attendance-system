@@ -10,6 +10,8 @@
 
 | Thư mục / Tệp | Loại tài nguyên | Trách nhiệm chi tiết |
 | :--- | :--- | :--- |
+| [`src/`](src/) | Production Source | Toàn bộ mã nguồn ứng dụng (100% production code, không lẫn tests hay mocks) |
+| [`tests/`](tests/) | Test Suite & Mocks | Cô lập 100% Unit, Component, Integration Tests và Test Fixtures/Mocks |
 | [`src/views/`](src/views/) | Application Views | Toàn bộ màn hình giao diện chính (Admin Views, Auth Views, Employee Views) |
 | [`src/components/`](src/components/) | UI Components | Components dùng chung (`ui/`), theo nghiệp vụ (`attendance/`, `account/`, `excuse/`, `kiosk/`) |
 | [`src/store/`](src/store/) | State Management | Zustand global stores (`authStore.ts`, `toastStore.ts`) |
