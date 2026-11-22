@@ -38,6 +38,7 @@ jobs:
       web: ${{ steps.filter.outputs.web }}
       kiosk: ${{ steps.filter.outputs.kiosk }}
       security: ${{ steps.filter.outputs.security }}
+      ci_config: ${{ steps.filter.outputs.ci_config }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -56,21 +57,54 @@ jobs:
               - 'app/backend-service/**'
               - 'database/**'
               - 'contracts/**'
-              - '.github/workflows/ci.yml'
             web:
               - 'app/web-portal/**'
               - 'tests/web-portal/**'
               - 'contracts/**'
-              - '.github/workflows/ci.yml'
             kiosk:
               - 'app/kiosk-app/**'
               - 'tests/desktop-kiosk/**'
               - 'contracts/**'
-              - '.github/workflows/ci.yml'
             security:
               - 'app/**'
               - 'database/**'
-              - '.github/workflows/ci.yml'
+            ci_config:
+              - '.github/**'
+
+  # ----------------------------------------------------------------------------
+  # 0.1 Kiểm Định Cú Pháp CI & YAML (CI Workflow Syntax Validation)
+  # ----------------------------------------------------------------------------
+  ci-syntax-check:
+    name: CI Workflow Syntax Validation
+    needs: changes
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.ci_config == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python for YAML validation
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate GitHub Actions YAML syntax
+        run: |
+          python -c "
+          import glob, yaml, sys
+          files = glob.glob('.github/**/*.yml', recursive=True) + glob.glob('.github/**/*.yaml', recursive=True)
+          errors = 0
+          for f in files:
+              try:
+                  with open(f, 'r', encoding='utf-8') as fp:
+                      yaml.safe_load(fp)
+              except Exception as e:
+                  print(f'ERROR: {f} syntax invalid: {e}')
+                  errors += 1
+          if errors > 0:
+              sys.exit(1)
+          print(f'Validated {len(files)} GitHub workflow/config files successfully.')
+          "
 
   # ----------------------------------------------------------------------------
   # 1. Kiểm Định Hợp Đồng Tập Trung (Contract Linting & Drift Check)
@@ -287,7 +321,7 @@ jobs:
   # ----------------------------------------------------------------------------
   web-e2e-ci:
     name: Web Portal E2E (Playwright)
-    needs: [changes, web-portal-ci]
+    needs: changes
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     env:
@@ -327,8 +361,15 @@ jobs:
           npx vite preview --port 5173 &
           npx wait-on http://localhost:5173 --timeout 30000
 
-      - name: Run Playwright E2E Tests
-        run: node tests/web-portal/runner-e2e.mjs --config tests/web-portal/playwright.config.ts
+      - name: Run Playwright E2E Tests (Adaptive Scope)
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Executing Fast PR E2E Suite (Profile: desktop-chrome)..."
+            node tests/web-portal/runner-e2e.mjs --config tests/web-portal/playwright.config.ts --project=desktop-chrome
+          else
+            echo "Executing Full Dual-Platform E2E Suite (Profiles: desktop-chrome + mobile-chrome)..."
+            node tests/web-portal/runner-e2e.mjs --config tests/web-portal/playwright.config.ts
+          fi
 
       - name: Upload E2E Test Report on Failure
         uses: actions/upload-artifact@v4
@@ -427,6 +468,7 @@ jobs:
       [
         changes,
         pr-title-ci,
+        ci-syntax-check,
         contract-ci,
         db-parity-ci,
         backend-ci,
@@ -443,6 +485,7 @@ jobs:
           echo "BÁO CÁO CỔNG KIỂM ĐỊNH TOÀN DIỆN MONOREPO CI (CI-PASSED)"
           echo "============================================================"
           echo "PR Title CI:      ${{ needs.pr-title-ci.result }}"
+          echo "CI Syntax Check:  ${{ needs.ci-syntax-check.result }}"
           echo "Contract CI:      ${{ needs.contract-ci.result }}"
           echo "Database Parity:  ${{ needs.db-parity-ci.result }}"
           echo "Backend CI:       ${{ needs.backend-ci.result }}"
@@ -454,6 +497,7 @@ jobs:
 
           RESULTS=(
             "${{ needs.pr-title-ci.result }}"
+            "${{ needs.ci-syntax-check.result }}"
             "${{ needs.contract-ci.result }}"
             "${{ needs.db-parity-ci.result }}"
             "${{ needs.backend-ci.result }}"
@@ -465,28 +509,29 @@ jobs:
 
           for res in "${RESULTS[@]}"; do
             if [ "$res" = "failure" ] || [ "$res" = "cancelled" ]; then
-              echo "❌ CỔNG CI THẤT BẠI: Phát hiện có công đoạn kiểm định bị gãy hoặc bị hủy bỏ!"
+              echo "[FAIL] CỔNG CI THẤT BẠI: Phát hiện có công đoạn kiểm định bị gãy hoặc bị hủy bỏ!"
               exit 1
             fi
           done
 
-          echo "✅ CỔNG CI THÀNH CÔNG: Toàn bộ kiểm thử, bảo mật và hợp đồng đạt tiêu chuẩn tuyệt đối!"
+          echo "[PASS] CỔNG CI THÀNH CÔNG: Toàn bộ kiểm thử, bảo mật và hợp đồng đạt tiêu chuẩn tuyệt đối!"
 
       - name: Generate Rich Step Summary Table
         run: |
           cat << 'EOF' >> $GITHUB_STEP_SUMMARY
-          # 🚀 Báo Cáo Chất Lượng Bản Dựng FAS Monorepo CI
+          # Báo Cáo Chất Lượng Bản Dựng FAS Monorepo CI
 
           | Phân Hệ / Chốt Kiểm Định | Kết Quả Thực Thi | Ghi Chú Kỹ Thuật |
           | :--- | :---: | :--- |
-          | **PR Title Convention** | ${{ needs.pr-title-ci.result == 'success' && '✅ PASSED' || (needs.pr-title-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Conventional Commits Pattern |
-          | **Contract Integrity** | ${{ needs.contract-ci.result == 'success' && '✅ PASSED' || (needs.contract-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Spectral OAS 3.0 & JSON Schema |
-          | **Database Parity** | ${{ needs.db-parity-ci.result == 'success' && '✅ PASSED' || (needs.db-parity-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | PostgreSQL 16 Flyway & Seeds Ingestion |
-          | **Backend Service** | ${{ needs.backend-ci.result == 'success' && '✅ PASSED' || (needs.backend-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Java 21, Checkstyle & JaCoCo >=80% |
-          | **Web Portal** | ${{ needs.web-portal-ci.result == 'success' && '✅ PASSED' || (needs.web-portal-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | React 19, Strict ESLint & Vitest Coverage |
-          | **Kiosk Desktop** | ${{ needs.kiosk-app-ci.result == 'success' && '✅ PASSED' || (needs.kiosk-app-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Python 3.11, Ruff & Pytest Coverage |
-          | **Web E2E Journeys** | ${{ needs.web-e2e-ci.result == 'success' && '✅ PASSED' || (needs.web-e2e-ci.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Playwright Headless Chromium |
-          | **Security & SAST** | ${{ needs.security-scan.result == 'success' && '✅ PASSED' || (needs.security-scan.result == 'skipped' && '⚪ SKIPPED' || '❌ FAILED') }} | Semgrep SARIF & Trivy Vulnerability Scan |
+          | **PR Title Convention** | ${{ needs.pr-title-ci.result == 'success' && '[PASS]' || (needs.pr-title-ci.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | Conventional Commits Pattern |
+          | **CI Syntax Validation** | ${{ needs.ci-syntax-check.result == 'success' && '[PASS]' || (needs.ci-syntax-check.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | GitHub Actions YAML Integrity |
+          | **Contract Integrity** | ${{ needs.contract-ci.result == 'success' && '[PASS]' || (needs.contract-ci.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | Spectral OAS 3.0 & JSON Schema |
+          | **Database Parity** | ${{ needs.db-parity-ci.result == 'success' && '[PASS]' || (needs.db-parity-ci.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | PostgreSQL 16 Flyway & Seeds Ingestion |
+          | **Backend Service** | ${{ needs.backend-ci.result == 'success' && '[PASS]' || (needs.backend-ci.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | Java 21, Checkstyle & JaCoCo >=80% |
+          | **Web Portal** | ${{ needs.web-portal-ci.result == 'success' && '[PASS]' || (needs.web-portal-ci.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | React 19, Strict ESLint & Vitest Coverage |
+          | **Kiosk Desktop** | ${{ needs.kiosk-app-ci.result == 'success' && '[PASS]' || (needs.kiosk-app-ci.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | Python 3.11, Ruff & Pytest Coverage |
+          | **Web E2E Journeys** | ${{ needs.web-e2e-ci.result == 'success' && '[PASS]' || (needs.web-e2e-ci.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | Playwright (PR: Desktop, Push: Dual-Platform) |
+          | **Security & SAST** | ${{ needs.security-scan.result == 'success' && '[PASS]' || (needs.security-scan.result == 'skipped' && '[SKIPPED]' || '[FAIL]') }} | Semgrep SARIF & Trivy Vulnerability Scan |
 
           > **Trạng thái cổng tích hợp:** `ci-passed` sẵn sàng phục vụ quy tắc Branch Protection (`main`, `develop`).
           EOF
