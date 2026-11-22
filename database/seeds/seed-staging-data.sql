@@ -6,8 +6,8 @@
 -- Đặc điểm dữ liệu Staging:
 -- 1. Mô phỏng cơ cấu tổ chức doanh nghiệp thực tế (5 Khối/Phòng ban chuẩn).
 -- 2. Đầy đủ các vai trò RBAC: ADMIN, HR, LEAD, EMPLOYEE.
--- 3. Phủ kín các trạng thái nhân sự: ACTIVE (3 tư thế ArcFace), PENDING_CONSENT,
---    CONSENT_WITHDRAWN, và TERMINATED.
+-- 3. Phủ kín các trạng thái nhân sự: ACTIVE (3 tư thế ArcFace, bao gồm nhân sự rút consent chuyển sang dùng PIN),
+--    PENDING_CONSENT, và TERMINATED.
 -- 4. 4 Trạm Kiosk phân bổ theo địa bàn thực tế (Hà Nội, TP.HCM, Bắc Ninh).
 -- 5. Lịch sử chấm công đa dạng (Đúng giờ, Đi muộn, Về sớm, Offline sync, PIN fallback).
 -- 6. Dữ liệu giải trình công (PENDING, APPROVED, REJECTED) để test quy trình duyệt.
@@ -279,7 +279,7 @@ VALUES
         'worker.thao@fas.company.com',
         crypt('Staging@FAS2026!', gen_salt('bf', 10)),
         'EMPLOYEE',
-        'CONSENT_WITHDRAWN',
+        'ACTIVE',
         'Khối Sản Xuất & Vận Hành',
         crypt('123456', gen_salt('bf', 10)),
         0,
@@ -420,7 +420,7 @@ SELECT
     u.id,
     (CURRENT_DATE - (d || ' days')::INTERVAL + '08:45:00'::TIME)::TIMESTAMP WITH TIME ZONE,
     'CHECK_IN',
-    'FACE',
+    'FACE_MATCH',
     0.9425,
     'KIOSK-HN-HQ-02',
     'ON_TIME',
@@ -438,7 +438,7 @@ SELECT
     u.id,
     (CURRENT_DATE - (d || ' days')::INTERVAL + '18:15:00'::TIME)::TIMESTAMP WITH TIME ZONE,
     'CHECK_OUT',
-    'FACE',
+    'FACE_MATCH',
     0.9310,
     'KIOSK-HN-HQ-01',
     'ON_TIME',
@@ -457,7 +457,7 @@ SELECT
     u.id,
     (CURRENT_DATE - INTERVAL '1 day' + '09:40:00'::TIME)::TIMESTAMP WITH TIME ZONE,
     'CHECK_IN',
-    'FACE',
+    'FACE_MATCH',
     0.9150,
     'KIOSK-HN-HQ-02',
     'LATE',
@@ -473,7 +473,7 @@ SELECT
     u.id,
     (CURRENT_DATE - INTERVAL '2 days' + '17:15:00'::TIME)::TIMESTAMP WITH TIME ZONE,
     'CHECK_OUT',
-    'FACE',
+    'FACE_MATCH',
     0.8980,
     'KIOSK-HN-HQ-01',
     'EARLY_LEAVE',
@@ -489,7 +489,7 @@ SELECT
     u.id,
     (CURRENT_DATE - INTERVAL '1 day' + '05:55:00'::TIME)::TIMESTAMP WITH TIME ZONE,
     'CHECK_IN',
-    'PIN',
+    'FALLBACK_PIN',
     NULL,
     'KIOSK-FACTORY-BN',
     'ON_TIME',
@@ -505,7 +505,7 @@ SELECT
     u.id,
     (CURRENT_DATE - INTERVAL '3 days' + '05:58:00'::TIME)::TIMESTAMP WITH TIME ZONE,
     'CHECK_IN',
-    'FACE',
+    'FACE_MATCH',
     0.9120,
     'KIOSK-FACTORY-BN',
     'ON_TIME',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Unlock, AlertTriangle, ShieldCheck } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type { PayrollPeriodResponse } from '@/types'
 
@@ -53,11 +53,11 @@ const UnlockPayrollModalContent: React.FC<UnlockPayrollModalContentProps> = ({
       className="w-full max-w-md p-6 space-y-4 max-h-[85vh] overflow-y-auto"
     >
       <div className="flex items-center gap-3">
-        <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700">
-          <Unlock className="w-6 h-6" />
+        <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+          <Unlock className="w-6 h-6 shrink-0" />
         </div>
-        <div>
-          <DialogTitle className="font-bold text-base text-slate-900">Mở Lại Kỳ Công Đã Chốt</DialogTitle>
+        <div className="min-w-0 flex-1">
+          <DialogTitle className="font-bold text-base text-slate-900 truncate">Mở Lại Kỳ Công Đã Chốt</DialogTitle>
           <span className="text-xs text-slate-500">
             Kỳ Tháng {String(period.periodMonth).padStart(2, '0')}/{period.periodYear}
           </span>
@@ -87,6 +87,7 @@ const UnlockPayrollModalContent: React.FC<UnlockPayrollModalContentProps> = ({
         <textarea
           id="unlock-reason"
           rows={3}
+          maxLength={500}
           value={unlockReason}
           onChange={(e) => setUnlockReason(e.target.value)}
           data-testid="input-unlock-reason"
@@ -97,7 +98,7 @@ const UnlockPayrollModalContent: React.FC<UnlockPayrollModalContentProps> = ({
 
       <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-2xs space-y-1">
         <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           <span>Quy định kiểm toán tuân thủ (DPO / Audit Log)</span>
         </div>
         <p>
@@ -111,6 +112,7 @@ const UnlockPayrollModalContent: React.FC<UnlockPayrollModalContentProps> = ({
           variant="secondary"
           size="sm"
           onClick={onCancel}
+          disabled={isUnlocking}
         >
           Hủy bỏ
         </Button>
@@ -119,12 +121,13 @@ const UnlockPayrollModalContent: React.FC<UnlockPayrollModalContentProps> = ({
           variant="primary"
           size="sm"
           onClick={handleConfirm}
+          isLoading={isUnlocking}
           disabled={isUnlocking}
           data-testid="confirm-unlock-period-btn"
-          leftIcon={<Unlock className="w-3.5 h-3.5" />}
+          leftIcon={<Unlock className="w-3.5 h-3.5 shrink-0" />}
           className="bg-emerald-600 hover:bg-emerald-700 text-white"
         >
-          {isUnlocking ? 'Đang mở lại...' : 'Xác Nhận Mở Lại'}
+          Xác Nhận Mở Lại
         </Button>
       </div>
     </DialogContent>
@@ -138,7 +141,7 @@ export const UnlockPayrollModal: React.FC<UnlockPayrollModalProps> = ({
   onCancel,
 }) => {
   return (
-    <Dialog open={Boolean(period)} onOpenChange={(open) => !open && onCancel()}>
+    <Dialog open={Boolean(period)} onOpenChange={(open) => !open && !isUnlocking && onCancel()}>
       {period && (
         <UnlockPayrollModalContent
           key={period.id}

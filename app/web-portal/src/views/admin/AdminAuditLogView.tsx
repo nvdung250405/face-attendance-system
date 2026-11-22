@@ -20,7 +20,7 @@ import {
   X,
   History,
 } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button, TableSkeleton, PaginationBar } from '@/components/ui'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import { formatDateTime } from '@/utils/date'
@@ -40,6 +40,9 @@ export const AdminAuditLogView: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([])
   const [isAuditLoading, setIsAuditLoading] = useState(true)
   const [auditTotal, setAuditTotal] = useState(0)
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(1)
   const [filterAction, setFilterAction] = useState('')
   const [filterEmail, setFilterEmail] = useState('')
   const [filterStartDate, setFilterStartDate] = useState('')
@@ -57,20 +60,45 @@ export const AdminAuditLogView: React.FC = () => {
   const [selectedLogDetail, setSelectedLogDetail] = useState<AuditLogItem | null>(null)
 
   // 1. Tải Audit Logs
-  const loadAuditLogs = useCallback(async (criteria?: AuditLogQueryCriteria) => {
-    try {
-      setIsAuditLoading(true)
-      setErrorMessage(null)
-      const data = await complianceAdminService.getAuditLogs(criteria)
-      setAuditLogs(data.content)
-      setAuditTotal(data.totalElements)
-    } catch (err) {
-      const error = err as { message?: string }
-      setErrorMessage(error.message || 'Không thể tải nhật ký kiểm toán.')
-    } finally {
-      setIsAuditLoading(false)
-    }
-  }, [])
+  const loadAuditLogs = useCallback(
+    async (
+      targetPage = 0,
+      targetPageSize = 20,
+      criteriaOverrides?: Partial<AuditLogQueryCriteria>
+    ) => {
+      try {
+        setIsAuditLoading(true)
+        setErrorMessage(null)
+        const criteria: AuditLogQueryCriteria = {
+          page: targetPage,
+          size: targetPageSize,
+          action:
+            (criteriaOverrides?.action !== undefined ? criteriaOverrides.action : filterAction).trim() ||
+            undefined,
+          actorEmail:
+            (criteriaOverrides?.actorEmail !== undefined ? criteriaOverrides.actorEmail : filterEmail).trim() ||
+            undefined,
+          startDate:
+            criteriaOverrides?.startDate !== undefined ? criteriaOverrides.startDate : (filterStartDate || undefined),
+          endDate:
+            criteriaOverrides?.endDate !== undefined ? criteriaOverrides.endDate : (filterEndDate || undefined),
+          ...criteriaOverrides,
+        }
+        const data = await complianceAdminService.getAuditLogs(criteria)
+        setAuditLogs(data.content)
+        setAuditTotal(data.totalElements)
+        setTotalPages(data.totalPages || 1)
+        setPage(targetPage)
+        setPageSize(targetPageSize)
+      } catch (err) {
+        const error = err as { message?: string }
+        setErrorMessage(error.message || 'Không thể tải nhật ký kiểm toán.')
+      } finally {
+        setIsAuditLoading(false)
+      }
+    },
+    [filterAction, filterEmail, filterStartDate, filterEndDate]
+  )
 
   // 2. Tải DPO Consents
   const loadDpoConsents = useCallback(async () => {
@@ -105,13 +133,13 @@ export const AdminAuditLogView: React.FC = () => {
   // Tải dữ liệu ban đầu
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadAuditLogs()
+    void loadAuditLogs(0, 20)
   }, [loadAuditLogs])
 
   const handleTabChange = (tab: ComplianceTab) => {
     setActiveTab(tab)
     if (tab === 'AUDIT_LOGS' && auditLogs.length === 0) {
-      loadAuditLogs()
+      loadAuditLogs(page, pageSize)
     } else if (tab === 'DPO_CONSENTS' && dpoConsents.length === 0) {
       loadDpoConsents()
     } else if (tab === 'RETENTION_SCHEDULE' && retentionItems.length === 0) {
@@ -121,7 +149,7 @@ export const AdminAuditLogView: React.FC = () => {
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    loadAuditLogs({
+    loadAuditLogs(0, pageSize, {
       action: filterAction.trim() || undefined,
       actorEmail: filterEmail.trim() || undefined,
       startDate: filterStartDate || undefined,
@@ -134,7 +162,12 @@ export const AdminAuditLogView: React.FC = () => {
     setFilterEmail('')
     setFilterStartDate('')
     setFilterEndDate('')
-    loadAuditLogs()
+    loadAuditLogs(0, pageSize, {
+      action: '',
+      actorEmail: '',
+      startDate: '',
+      endDate: '',
+    })
   }
 
   return (
@@ -181,7 +214,7 @@ export const AdminAuditLogView: React.FC = () => {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <History className="w-4 h-4" />
+          <History className="w-4 h-4 shrink-0" />
           <span>Nhật ký Kiểm toán</span>
           <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
             activeTab === 'AUDIT_LOGS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
@@ -200,7 +233,7 @@ export const AdminAuditLogView: React.FC = () => {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <FileText className="w-4 h-4" />
+          <FileText className="w-4 h-4 shrink-0" />
           <span>Hồ sơ Cam kết DPO</span>
           <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
             activeTab === 'DPO_CONSENTS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
@@ -219,7 +252,7 @@ export const AdminAuditLogView: React.FC = () => {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-4 h-4 shrink-0" />
           <span>Lịch Tiêu hủy 7 Ngày</span>
           <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
             activeTab === 'RETENTION_SCHEDULE' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
@@ -254,6 +287,7 @@ export const AdminAuditLogView: React.FC = () => {
                 data-testid="filter-action-input"
                 placeholder="VD: KIOSK_REGISTERED..."
                 value={filterAction}
+                maxLength={100}
                 onChange={(e) => setFilterAction(e.target.value)}
                 className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
@@ -269,6 +303,7 @@ export const AdminAuditLogView: React.FC = () => {
                 data-testid="filter-email-input"
                 placeholder="VD: admin@company.com"
                 value={filterEmail}
+                maxLength={100}
                 onChange={(e) => setFilterEmail(e.target.value)}
                 className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
@@ -308,7 +343,7 @@ export const AdminAuditLogView: React.FC = () => {
                 variant="primary"
                 size="sm"
                 data-testid="audit-search-btn"
-                leftIcon={<Search className="w-3.5 h-3.5" />}
+                leftIcon={<Search className="w-3.5 h-3.5 shrink-0" />}
                 className="flex-1"
               >
                 Tìm kiếm
@@ -319,7 +354,7 @@ export const AdminAuditLogView: React.FC = () => {
                 size="sm"
                 data-testid="audit-reset-btn"
                 onClick={handleResetFilter}
-                leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+                leftIcon={<RotateCcw className="w-3.5 h-3.5 shrink-0" />}
               >
                 Đặt lại
               </Button>
@@ -332,25 +367,18 @@ export const AdminAuditLogView: React.FC = () => {
               <table className="w-full text-left text-sm" data-testid="audit-logs-table">
                 <thead>
                   <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã #</th>
-                    <th className="py-3 px-4">Thời Điểm</th>
-                    <th className="py-3 px-4">Hành Động</th>
-                    <th className="py-3 px-4">Người Thực Hiện</th>
-                    <th className="py-3 px-4">Tài Nguyên Tác Động</th>
-                    <th className="py-3 px-4">Địa Chỉ IP</th>
-                    <th className="py-3 px-4 text-right">Chi Tiết</th>
+                    <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã #</th>
+                    <th scope="col" className="py-3 px-4">Thời Điểm</th>
+                    <th scope="col" className="py-3 px-4">Hành Động</th>
+                    <th scope="col" className="py-3 px-4">Người Thực Hiện</th>
+                    <th scope="col" className="py-3 px-4">Tài Nguyên Tác Động</th>
+                    <th scope="col" className="py-3 px-4">Địa Chỉ IP</th>
+                    <th scope="col" className="py-3 px-4 text-right">Chi Tiết</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
                   {isAuditLoading ? (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-text-secondary">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                          <span>Đang nạp dữ liệu kiểm toán...</span>
-                        </div>
-                      </td>
-                    </tr>
+                    <TableSkeleton columns={7} rows={8} ariaLabel="Đang nạp dữ liệu kiểm toán..." />
                   ) : auditLogs.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-text-secondary">
@@ -376,10 +404,20 @@ export const AdminAuditLogView: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-xs text-text-primary font-medium">
-                          {log.actorEmail || log.actor || log.actorUsername || '—'}
+                          <span
+                            className="truncate max-w-[200px] block"
+                            title={log.actorEmail || log.actor || log.actorUsername || '—'}
+                          >
+                            {log.actorEmail || log.actor || log.actorUsername || '—'}
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-xs font-mono text-text-secondary">
-                          {log.targetResource || log.target || log.resource || '—'}
+                          <span
+                            className="truncate max-w-[200px] block"
+                            title={log.targetResource || log.target || log.resource || '—'}
+                          >
+                            {log.targetResource || log.target || log.resource || '—'}
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-xs font-mono text-text-muted">
                           {log.ipAddress || '—'}
@@ -391,7 +429,7 @@ export const AdminAuditLogView: React.FC = () => {
                               onClick={() => setSelectedLogDetail(log)}
                               className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
                             >
-                              <Eye className="w-3.5 h-3.5" />
+                              <Eye className="w-3.5 h-3.5 shrink-0" />
                               <span>Xem diff</span>
                             </button>
                           ) : (
@@ -404,6 +442,21 @@ export const AdminAuditLogView: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Phân trang Audit Logs */}
+            <PaginationBar
+              page={page}
+              pageSize={pageSize}
+              totalElements={auditTotal}
+              totalPages={totalPages}
+              onPageChange={(newPage) => loadAuditLogs(newPage, pageSize)}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize)
+                loadAuditLogs(0, newSize)
+              }}
+              pageSizeOptions={[10, 20, 50, 100]}
+              itemLabel="sự kiện"
+            />
           </div>
         </div>
       )}
@@ -423,24 +476,17 @@ export const AdminAuditLogView: React.FC = () => {
             <table className="w-full text-left text-sm" data-testid="dpo-consents-table">
               <thead>
                 <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
-                  <th className="py-3 px-4">Họ và Tên</th>
-                  <th className="py-3 px-4">Phiên Bản Consent</th>
-                  <th className="py-3 px-4">Thời Điểm Ký Điện Tử</th>
-                  <th className="py-3 px-4">Địa Chỉ IP Ký</th>
-                  <th className="py-3 px-4">Trạng Thái</th>
+                  <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
+                  <th scope="col" className="py-3 px-4">Họ và Tên</th>
+                  <th scope="col" className="py-3 px-4">Phiên Bản Consent</th>
+                  <th scope="col" className="py-3 px-4">Thời Điểm Ký Điện Tử</th>
+                  <th scope="col" className="py-3 px-4">Địa Chỉ IP Ký</th>
+                  <th scope="col" className="py-3 px-4">Trạng Thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
                 {isConsentsLoading ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-text-secondary">
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                        <span>Đang nạp hồ sơ cam kết...</span>
-                      </div>
-                    </td>
-                  </tr>
+                  <TableSkeleton columns={6} rows={5} ariaLabel="Đang nạp hồ sơ cam kết..." />
                 ) : dpoConsents.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-text-secondary">
@@ -458,7 +504,9 @@ export const AdminAuditLogView: React.FC = () => {
                         {item.employeeCode}
                       </td>
                       <td className="py-3 px-4 font-semibold text-xs text-text-primary">
-                        {item.fullName}
+                        <span className="truncate max-w-[200px] block" title={item.fullName}>
+                          {item.fullName}
+                        </span>
                       </td>
                       <td className="py-3 px-4 font-mono text-xs text-text-secondary">
                         {item.consentVersion}
@@ -510,24 +558,17 @@ export const AdminAuditLogView: React.FC = () => {
               <table className="w-full text-left text-sm" data-testid="retention-schedule-table">
                 <thead>
                   <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
-                    <th className="py-3 px-4">Họ và Tên</th>
-                    <th className="py-3 px-4">Thời Điểm Rút / Nghỉ Việc</th>
-                    <th className="py-3 px-4">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
-                    <th className="py-3 px-4">Thời Điểm Tiêu Hủy Thực Tế</th>
-                    <th className="py-3 px-4">Trạng Thái</th>
+                    <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
+                    <th scope="col" className="py-3 px-4">Họ và Tên</th>
+                    <th scope="col" className="py-3 px-4">Thời Điểm Rút / Nghỉ Việc</th>
+                    <th scope="col" className="py-3 px-4">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
+                    <th scope="col" className="py-3 px-4">Thời Điểm Tiêu Hủy Thực Tế</th>
+                    <th scope="col" className="py-3 px-4">Trạng Thái</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
                   {isRetentionLoading ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-text-secondary">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="w-5 h-5 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-                          <span>Đang nạp lịch trình tiêu hủy...</span>
-                        </div>
-                      </td>
-                    </tr>
+                    <TableSkeleton columns={6} rows={5} ariaLabel="Đang nạp lịch trình tiêu hủy..." />
                   ) : retentionItems.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-text-secondary">
@@ -545,7 +586,9 @@ export const AdminAuditLogView: React.FC = () => {
                           {item.employeeCode}
                         </td>
                         <td className="py-3 px-4 font-semibold text-xs text-text-primary">
-                          {item.fullName}
+                          <span className="truncate max-w-[200px] block" title={item.fullName}>
+                            {item.fullName}
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap font-mono">
                           {formatDateTime(item.resignedAt)}
@@ -604,7 +647,7 @@ export const AdminAuditLogView: React.FC = () => {
                   onClick={() => setSelectedLogDetail(null)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4 shrink-0" />
                 </button>
               </div>
 

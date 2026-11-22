@@ -51,6 +51,11 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.python"
   },
+  "ruff.configuration": "${workspaceFolder}/app/kiosk-app/pyproject.toml",
+  "ruff.lint.args": [
+    "--cache-dir",
+    "${workspaceFolder}/app/kiosk-app/.ruff_cache"
+  ],
   "tailwindCSS.includeLanguages": {
     "typescript": "javascript",
     "typescriptreact": "html"

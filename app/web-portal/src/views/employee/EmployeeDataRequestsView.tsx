@@ -8,16 +8,21 @@
  * - Bảng theo dõi tiến độ xử lý và phản hồi chính thức từ DPO.
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { RefreshCw, MessageSquare, Check, AlertCircle, Send } from 'lucide-react'
+import { Button, TableSkeleton, FilterToolbar } from '@/components/ui'
 import { dataSubjectService } from '@/services/dataSubjectService'
 import { formatDateTime } from '@/utils/date'
-import type { DataRequestType, DataSubjectRequestItem, DataRequestStatus } from '@/types'
+import type { DataRequestType, DataSubjectRequestItem } from '@/types'
 
-const REQUEST_TYPE_LABELS: Record<DataRequestType, { label: string; desc: string }> = {
+const REQUEST_TYPE_LABELS: Record<string, { label: string; desc: string }> = {
   ACCESS: {
     label: 'Tiếp cận dữ liệu (Access)',
     desc: 'Yêu cầu trích xuất hồ sơ cá nhân và lịch sử điểm danh đang lưu trữ.',
+  },
+  CORRECTION: {
+    label: 'Đính chính thông tin (Correction)',
+    desc: 'Yêu cầu sửa đổi các trường thông tin cá nhân bị sai lệch hoặc chưa cập nhật.',
   },
   RECTIFICATION: {
     label: 'Đính chính thông tin (Rectification)',
@@ -33,7 +38,11 @@ const REQUEST_TYPE_LABELS: Record<DataRequestType, { label: string; desc: string
   },
 }
 
-const STATUS_CONFIG: Record<DataRequestStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  RECEIVED: {
+    label: 'Chờ tiếp nhận',
+    className: 'badge-warning',
+  },
   PENDING: {
     label: 'Chờ tiếp nhận',
     className: 'badge-warning',
@@ -41,6 +50,10 @@ const STATUS_CONFIG: Record<DataRequestStatus, { label: string; className: strin
   IN_PROGRESS: {
     label: 'Đang xử lý',
     className: 'badge-info',
+  },
+  FULFILLED: {
+    label: 'Đã hoàn tất',
+    className: 'badge-success',
   },
   COMPLETED: {
     label: 'Đã hoàn tất',
@@ -58,6 +71,10 @@ export const EmployeeDataRequestsView: React.FC = () => {
   const [requests, setRequests] = useState<DataSubjectRequestItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Bộ lọc lịch sử yêu cầu
+  const [keyword, setKeyword] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
 
   // Form State
   const [selectedType, setSelectedType] = useState<DataRequestType>('ACCESS')
@@ -84,6 +101,24 @@ export const EmployeeDataRequestsView: React.FC = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadRequests()
   }, [loadRequests])
+
+  const filteredRequests = useMemo(() => {
+    return requests.filter((item) => {
+      const matchesStatus =
+        statusFilter === 'ALL' ||
+        item.status === statusFilter ||
+        (statusFilter === 'RECEIVED' && item.status === 'PENDING') ||
+        (statusFilter === 'FULFILLED' && item.status === 'COMPLETED')
+      const kw = keyword.toLowerCase().trim()
+      const matchesKeyword =
+        !kw ||
+        item.details?.toLowerCase().includes(kw) ||
+        (REQUEST_TYPE_LABELS[item.requestType]?.label || item.requestType).toLowerCase().includes(kw) ||
+        (item.adminNote || '').toLowerCase().includes(kw) ||
+        String(item.id).includes(kw)
+      return matchesStatus && matchesKeyword
+    })
+  }, [requests, statusFilter, keyword])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -124,23 +159,25 @@ export const EmployeeDataRequestsView: React.FC = () => {
             Thực thi các quyền của chủ thể dữ liệu đối với thông tin cá nhân và dữ liệu sinh trắc học theo Nghị định 13/2023/NĐ-CP
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={loadRequests}
           disabled={isLoading}
-          className="btn-secondary self-start sm:self-auto flex items-center gap-2"
+          className="self-start sm:self-auto flex items-center gap-2 shrink-0"
           title="Làm mới danh sách"
         >
-          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={`shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Làm mới</span>
-        </button>
+        </Button>
       </div>
 
       {/* ── Khung Gửi Yêu Cầu Mới ── */}
       <div className="card-surface p-6 space-y-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center">
-            <MessageSquare size={18} strokeWidth={2} />
+          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-brand-primary flex items-center justify-center shrink-0">
+            <MessageSquare size={18} strokeWidth={2} className="shrink-0" />
           </div>
           <div>
             <h2 className="text-base font-bold text-text-primary">Gửi Yêu Cầu Mới tới DPO</h2>
@@ -153,7 +190,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
             role="status"
             className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-status-success text-sm flex items-center gap-2"
           >
-            <Check size={18} strokeWidth={2} />
+            <Check size={18} strokeWidth={2} className="shrink-0" />
             <span>{formSuccessMessage}</span>
           </div>
         )}
@@ -163,7 +200,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
             role="alert"
             className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2"
           >
-            <AlertCircle size={18} strokeWidth={2} />
+            <AlertCircle size={18} strokeWidth={2} className="shrink-0" />
             <span>{formErrorMessage}</span>
           </div>
         )}
@@ -182,6 +219,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                 className="input-base text-sm"
               >
                 <option value="ACCESS">{REQUEST_TYPE_LABELS.ACCESS.label}</option>
+                <option value="CORRECTION">{REQUEST_TYPE_LABELS.CORRECTION.label}</option>
                 <option value="RECTIFICATION">{REQUEST_TYPE_LABELS.RECTIFICATION.label}</option>
                 <option value="ERASURE">{REQUEST_TYPE_LABELS.ERASURE.label}</option>
                 <option value="EXPORT">{REQUEST_TYPE_LABELS.EXPORT.label}</option>
@@ -200,6 +238,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                 data-testid="request-details-input"
                 rows={3}
                 value={details}
+                maxLength={500}
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="Mô tả cụ thể thông tin bạn muốn tiếp cận, đính chính hoặc yêu cầu xử lý..."
                 className="input-base text-sm resize-none"
@@ -208,30 +247,51 @@ export const EmployeeDataRequestsView: React.FC = () => {
           </div>
 
           <div className="flex justify-end pt-2">
-            <button
+            <Button
               type="submit"
+              variant="primary"
               data-testid="submit-data-request-btn"
               disabled={isSubmitting || !details.trim()}
-              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              isLoading={isSubmitting}
+              leftIcon={<Send size={16} strokeWidth={2} className="shrink-0" />}
+              className="shrink-0"
             >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Đang gửi yêu cầu...</span>
-                </>
-              ) : (
-                <>
-                  <Send size={16} strokeWidth={2} />
-                  <span>Gửi yêu cầu đến DPO</span>
-                </>
-              )}
-            </button>
+              Gửi yêu cầu đến DPO
+            </Button>
           </div>
         </form>
       </div>
+
+      {/* ── Bộ lọc tìm kiếm & trạng thái yêu cầu ── */}
+      <FilterToolbar>
+        <FilterToolbar.Search
+          value={keyword}
+          onChange={setKeyword}
+          placeholder="Tìm theo nội dung, loại yêu cầu, phản hồi..."
+          maxLength={100}
+        />
+        <FilterToolbar.Select
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: 'ALL', label: 'Tất cả trạng thái' },
+            { value: 'RECEIVED', label: 'Yêu cầu chờ tiếp nhận' },
+            { value: 'IN_PROGRESS', label: 'Yêu cầu đang xử lý' },
+            { value: 'FULFILLED', label: 'Yêu cầu đã hoàn tất' },
+            { value: 'REJECTED', label: 'Yêu cầu bị từ chối' },
+          ]}
+        />
+        <FilterToolbar.ActiveCount
+          count={(keyword.trim() ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0)}
+        />
+        <FilterToolbar.Reset
+          onClick={() => {
+            setKeyword('')
+            setStatusFilter('ALL')
+          }}
+          visible={Boolean(keyword.trim() || statusFilter !== 'ALL')}
+        />
+      </FilterToolbar>
 
       {/* ── Bảng Lịch Sử Yêu Cầu ── */}
       <div className="card-surface overflow-hidden">
@@ -245,27 +305,17 @@ export const EmployeeDataRequestsView: React.FC = () => {
           <table className="w-full text-left border-collapse text-sm" data-testid="data-requests-table">
             <thead>
               <tr className="table-sticky-header">
-                <th className="py-3 px-4 font-semibold">Mã YC</th>
-                <th className="py-3 px-4 font-semibold">Loại Yêu Cầu</th>
-                <th className="py-3 px-4 font-semibold">Nội Dung Chi Tiết</th>
-                <th className="py-3 px-4 font-semibold">Thời Điểm Gửi</th>
-                <th className="py-3 px-4 font-semibold">Trạng Thái</th>
-                <th className="py-3 px-4 font-semibold">Phản Hồi DPO</th>
+                <th scope="col" className="py-3 px-4 font-semibold">Mã YC</th>
+                <th scope="col" className="py-3 px-4 font-semibold">Loại Yêu Cầu</th>
+                <th scope="col" className="py-3 px-4 font-semibold">Nội Dung Chi Tiết</th>
+                <th scope="col" className="py-3 px-4 font-semibold">Thời Điểm Gửi</th>
+                <th scope="col" className="py-3 px-4 font-semibold">Trạng Thái</th>
+                <th scope="col" className="py-3 px-4 font-semibold">Phản Hồi DPO</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-text-secondary">
-                    <div className="inline-flex items-center gap-2">
-                      <svg className="animate-spin w-5 h-5 text-brand-primary" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Đang nạp dữ liệu yêu cầu...</span>
-                    </div>
-                  </td>
-                </tr>
+                <TableSkeleton columns={6} rows={5} ariaLabel="Đang nạp dữ liệu yêu cầu..." />
               ) : requests.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-text-secondary">
@@ -273,22 +323,30 @@ export const EmployeeDataRequestsView: React.FC = () => {
                     <p className="text-xs mt-1">Các yêu cầu tiếp cận, chỉnh sửa, xóa hoặc xuất dữ liệu sẽ hiển thị tại đây.</p>
                   </td>
                 </tr>
+              ) : filteredRequests.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-text-secondary">
+                    <p className="font-semibold text-text-secondary">Không tìm thấy yêu cầu dữ liệu cá nhân nào phù hợp</p>
+                    <p className="text-xs mt-1">Thử thay đổi bộ lọc tìm kiếm hoặc trạng thái.</p>
+                  </td>
+                </tr>
               ) : (
-                requests.map((item) => {
+                filteredRequests.map((item) => {
                   const statusInfo = STATUS_CONFIG[item.status] || {
                     label: item.status,
                     className: 'badge-info',
                   }
+                  const adminNoteText = item.adminNote || item.responseSummary
                   return (
                     <tr
                       key={item.id}
                       data-testid={`data-request-row-${item.id}`}
                       className="table-row-hover transition-colors"
                     >
-                      <td className="py-3 px-4 font-mono font-semibold text-xs text-text-secondary">
+                      <td className="py-3 px-4 font-mono font-semibold text-xs text-text-secondary whitespace-nowrap">
                         #{item.id}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <span className="font-semibold text-text-primary text-xs">
                           {REQUEST_TYPE_LABELS[item.requestType]?.label || item.requestType}
                         </span>
@@ -300,16 +358,16 @@ export const EmployeeDataRequestsView: React.FC = () => {
                         {formatDate(item.submittedAt || item.createdAt || item.requestedAt)}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className={statusInfo.className}>{statusInfo.label}</span>
+                        <span className={`${statusInfo.className} shrink-0`}>{statusInfo.label}</span>
                       </td>
                       <td className="py-3 px-4 text-xs max-w-sm">
-                        {item.adminNote || item.responseSummary ? (
+                        {adminNoteText ? (
                           <div className="space-y-0.5">
-                            <p className="text-text-primary font-medium">
-                              {item.adminNote || item.responseSummary}
+                            <p className="text-text-primary font-medium truncate max-w-sm" title={adminNoteText}>
+                              {adminNoteText}
                             </p>
                             {(item.handledAt || item.completedAt) && (
-                              <p className="text-[11px] text-text-secondary">
+                              <p className="text-[11px] text-text-secondary whitespace-nowrap">
                                 Xử lý ngày: {formatDate(item.handledAt || item.completedAt)} {item.handledBy ? `bởi ${item.handledBy}` : ''}
                               </p>
                             )}

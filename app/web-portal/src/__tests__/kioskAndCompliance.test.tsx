@@ -504,7 +504,9 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       expect(screen.getByTestId('audit-search-btn')).toBeTruthy()
 
       // Kiểm tra dữ liệu bảng
-      expect(screen.getByText('admin@company.com')).toBeTruthy()
+      await waitFor(() => {
+        expect(screen.getByText('admin@company.com')).toBeTruthy()
+      })
       expect(screen.getByText('KIOSK:KSK-HQ-LOBBY-01')).toBeTruthy()
       expect(screen.getByText('emp1042@company.com')).toBeTruthy()
 

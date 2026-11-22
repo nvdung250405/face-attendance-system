@@ -34,6 +34,143 @@ export interface UpdateKioskRequest {
   resetSecretToken?: boolean
 }
 
+export function adaptAuditLog(raw: unknown, index = 0): AuditLogItem {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: index + 1,
+      action: 'UNKNOWN',
+    }
+  }
+
+  const item = raw as Record<string, unknown>
+  const id = Number(item.id ?? index + 1)
+  const action = String(item.action ?? '')
+  const actorId = item.actorId !== undefined && item.actorId !== null ? Number(item.actorId) : undefined
+  const actorEmail = item.actorEmail ? String(item.actorEmail) : undefined
+
+  let targetResource = item.targetResource ? String(item.targetResource) : undefined
+  if (!targetResource && (item.entityType || item.entityId)) {
+    targetResource = item.entityType && item.entityId
+      ? `${item.entityType}:${item.entityId}`
+      : String(item.entityType || item.entityId)
+  }
+
+  let oldValues: Record<string, unknown> | null = null
+  if (item.oldValues && typeof item.oldValues === 'object') {
+    oldValues = item.oldValues as Record<string, unknown>
+  } else if (typeof item.beforeState === 'string' && item.beforeState.trim()) {
+    try {
+      oldValues = JSON.parse(item.beforeState) as Record<string, unknown>
+    } catch {
+      oldValues = { raw: item.beforeState }
+    }
+  }
+
+  let newValues: Record<string, unknown> | null = null
+  if (item.newValues && typeof item.newValues === 'object') {
+    newValues = item.newValues as Record<string, unknown>
+  } else if (typeof item.afterState === 'string' && item.afterState.trim()) {
+    try {
+      newValues = JSON.parse(item.afterState) as Record<string, unknown>
+    } catch {
+      newValues = { raw: item.afterState }
+    }
+  }
+
+  return {
+    id,
+    action,
+    actorId,
+    actorEmail,
+    actor: item.actor ? String(item.actor) : actorEmail,
+    actorUsername: item.actorUsername ? String(item.actorUsername) : undefined,
+    targetResource,
+    target: item.target ? String(item.target) : targetResource,
+    resource: item.resource ? String(item.resource) : targetResource,
+    oldValues,
+    newValues,
+    ipAddress: item.ipAddress ? String(item.ipAddress) : undefined,
+    createdAt: item.createdAt ? String(item.createdAt) : undefined,
+    timestamp: item.timestamp ? String(item.timestamp) : (item.createdAt ? String(item.createdAt) : undefined),
+  }
+}
+
+export function adaptDpoConsent(raw: unknown, index = 0): DpoConsentAuditItem {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: index + 1,
+      employeeId: 0,
+      employeeCode: '',
+      fullName: '',
+      agreedAt: '',
+      ipAddress: '',
+      consentVersion: 'v1.0',
+      status: 'ACTIVE',
+    }
+  }
+
+  const item = raw as Record<string, unknown>
+  const id = Number(item.id ?? item.sessionId ?? index + 1)
+  const employeeId = Number(item.employeeId ?? item.userId ?? 0)
+  const employeeCode = String(item.employeeCode ?? '')
+  const fullName = String(item.fullName ?? '')
+  const consentVersion = String(item.consentVersion ?? 'v1.0')
+  const agreedAt = String(item.agreedAt ?? item.consentSignedAt ?? '')
+  const ipAddress = String(item.ipAddress ?? item.clientIp ?? '')
+  const status = String(item.status ?? (item.isUsed !== false ? 'ACTIVE' : 'WITHDRAWN'))
+
+  return {
+    id,
+    employeeId,
+    employeeCode,
+    fullName,
+    consentVersion,
+    agreedAt,
+    ipAddress,
+    status,
+  }
+}
+
+export function adaptRetentionSchedule(raw: unknown, index = 0): RetentionScheduleItem {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: index + 1,
+      employeeId: 0,
+      employeeCode: '',
+      fullName: '',
+      scheduledDestructionDate: '',
+      status: 'SCHEDULED',
+    }
+  }
+
+  const item = raw as Record<string, unknown>
+  const id = Number(item.id ?? item.sourceId ?? index + 1)
+  const employeeId = Number(item.employeeId ?? item.sourceId ?? 0)
+  const employeeCode = String(item.employeeCode ?? '')
+  const fullName = String(item.fullName ?? '')
+  const resignedAt = item.resignedAt ? String(item.resignedAt) : (item.triggerDate ? String(item.triggerDate) : null)
+  const scheduledDestructionDate = String(item.scheduledDestructionDate ?? item.scheduledDisposalDate ?? '')
+  const actualDestructionDate = item.actualDestructionDate ? String(item.actualDestructionDate) : (item.processedAt ? String(item.processedAt) : null)
+
+  let status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' = 'SCHEDULED'
+  if (item.status && ['SCHEDULED', 'COMPLETED', 'CANCELLED'].includes(String(item.status))) {
+    status = item.status as 'SCHEDULED' | 'COMPLETED' | 'CANCELLED'
+  } else if (item.isDisposed) {
+    status = 'COMPLETED'
+  }
+
+  return {
+    id,
+    employeeId,
+    employeeCode,
+    fullName,
+    resignedAt,
+    scheduledDestructionDate,
+    actualDestructionDate,
+    status,
+  }
+}
+
 export function adaptKioskItem(raw: unknown, index = 0): KioskItemResponse {
   if (!raw || typeof raw !== 'object') {
     return {
@@ -114,7 +251,14 @@ export class ComplianceAdminService {
         '/api/v1/admin/audit-logs',
         { params: criteria }
       )
-      return response.data.data
+      const data = response.data.data
+      const content = Array.isArray(data?.content)
+        ? data.content.map((item, idx) => adaptAuditLog(item, idx))
+        : []
+      return {
+        ...data,
+        content,
+      }
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -147,8 +291,9 @@ export class ComplianceAdminService {
    */
   async registerKiosk(data: RegisterKioskRequest): Promise<RegisterKioskResponse> {
     try {
+      const locationName = data.locationName || (data.name && data.location ? `${data.name} - ${data.location}` : (data.location || data.name))
       const payload: { id?: string; locationName: string } = {
-        locationName: data.name && data.location ? `${data.name} - ${data.location}` : (data.location || data.name),
+        locationName,
       }
       const kioskIdentifier = data.id || data.kioskId
       if (kioskIdentifier && kioskIdentifier.trim()) {
@@ -229,11 +374,13 @@ export class ComplianceAdminService {
         '/api/v1/dpo/consents'
       )
       const data = response.data.data
-      if (Array.isArray(data)) return data
-      if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<DpoConsentAuditItem>).content)) {
-        return (data as PaginatedResult<DpoConsentAuditItem>).content
+      let list: unknown[] = []
+      if (Array.isArray(data)) {
+        list = data
+      } else if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<DpoConsentAuditItem>).content)) {
+        list = (data as PaginatedResult<DpoConsentAuditItem>).content
       }
-      return []
+      return list.map((item, idx) => adaptDpoConsent(item, idx))
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -248,11 +395,13 @@ export class ComplianceAdminService {
         '/api/v1/dpo/retention-schedule'
       )
       const data = response.data.data
-      if (Array.isArray(data)) return data
-      if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<RetentionScheduleItem>).content)) {
-        return (data as PaginatedResult<RetentionScheduleItem>).content
+      let list: unknown[] = []
+      if (Array.isArray(data)) {
+        list = data
+      } else if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<RetentionScheduleItem>).content)) {
+        list = (data as PaginatedResult<RetentionScheduleItem>).content
       }
-      return []
+      return list.map((item, idx) => adaptRetentionSchedule(item, idx))
     } catch (error) {
       throw normalizeApiError(error)
     }

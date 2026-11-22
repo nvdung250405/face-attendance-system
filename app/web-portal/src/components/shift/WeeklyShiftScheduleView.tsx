@@ -20,6 +20,7 @@ import {
   Trash2,
   Search,
 } from 'lucide-react'
+import { useDebounce } from '@/hooks/useDebounce'
 import type { ShiftItem, EmployeeShiftAssignment, EmployeeItem } from '@/types'
 import { formatLocalDateISO as formatDateISO } from '@/utils/date'
 
@@ -69,6 +70,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
   // Mốc ngày Thứ Hai của tuần đang xem
   const [currentMonday, setCurrentMonday] = useState<Date>(() => getMonday(new Date()))
   const [searchKeyword, setSearchKeyword] = useState<string>('')
+  const debouncedSearch = useDebounce(searchKeyword, 350)
 
   // 7 ngày trong tuần hiện tại
   const weekDays = useMemo(() => {
@@ -102,17 +104,17 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
     setCurrentMonday(getMonday(new Date()))
   }
 
-  // Lọc nhân sự theo từ khóa
+  // Lọc nhân sự theo từ khóa (STAB-004 useDebounce 350ms)
   const filteredEmployees = useMemo(() => {
-    if (!searchKeyword.trim()) return employees
-    const kw = searchKeyword.toLowerCase()
+    if (!debouncedSearch.trim()) return employees
+    const kw = debouncedSearch.toLowerCase()
     return employees.filter(
       (emp) =>
         (emp.fullName || '').toLowerCase().includes(kw) ||
         (emp.employeeCode || '').toLowerCase().includes(kw) ||
         ((emp.department || '').toLowerCase().includes(kw))
     )
-  }, [employees, searchKeyword])
+  }, [employees, debouncedSearch])
 
   // Map ca làm việc theo ID để tra cứu nhanh
   const shiftMap = useMemo(() => {
@@ -139,16 +141,16 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             onClick={handlePrevWeek}
             data-testid="prev-week-btn"
             title="Tuần trước"
-            className="p-2 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-semibold transition-colors shadow-xs cursor-pointer"
+            className="p-2 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-semibold transition-colors shadow-xs cursor-pointer shrink-0"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 shrink-0" />
           </button>
 
           <button
             type="button"
             onClick={handleCurrentWeek}
             data-testid="current-week-btn"
-            className="px-3 py-1.5 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors shadow-xs cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors shadow-xs cursor-pointer shrink-0"
           >
             Tuần này
           </button>
@@ -158,13 +160,13 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             onClick={handleNextWeek}
             data-testid="next-week-btn"
             title="Tuần sau"
-            className="p-2 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-semibold transition-colors shadow-xs cursor-pointer"
+            className="p-2 rounded-xl border border-slate-300 bg-slate-50/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-semibold transition-colors shadow-xs cursor-pointer shrink-0"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 shrink-0" />
           </button>
 
           <div className="flex items-center gap-2 ml-2">
-            <CalendarIcon className="w-4 h-4 text-brand-primary" />
+            <CalendarIcon className="w-4 h-4 text-brand-primary shrink-0" />
             <span
               data-testid="week-range-label"
               className="text-xs font-bold text-text-primary font-mono"
@@ -176,9 +178,10 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
 
         {/* Tìm kiếm nhân viên */}
         <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-2.5 shrink-0" />
           <input
             type="text"
+            maxLength={100}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             data-testid="search-weekly-employee-input"
@@ -199,7 +202,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
             <thead>
               <tr className="border-b border-border-subtle bg-slate-50/80">
                 {/* Cột cố định thông tin nhân sự */}
-                <th className="py-3 px-4 text-left font-bold text-text-tertiary uppercase tracking-wider text-2xs w-60 min-w-55 sticky left-0 bg-slate-50/95 z-20 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
+                <th scope="col" className="py-3 px-4 text-left font-bold text-text-tertiary uppercase tracking-wider text-2xs w-60 min-w-55 sticky left-0 bg-slate-50/95 z-20 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
                   Nhân Sự
                 </th>
 
@@ -207,6 +210,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                 {weekDays.map((d) => (
                   <th
                     key={d.dateStr}
+                    scope="col"
                     data-testid={`week-col-${d.dateStr}`}
                     className={`py-3 px-3 text-center font-bold min-w-36 ${
                       d.isToday
@@ -219,7 +223,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                         {d.dayName}
                       </span>
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-mono font-bold shrink-0 ${
                           d.isToday ? 'bg-brand-primary text-white' : 'text-text-primary'
                         }`}
                       >
@@ -248,14 +252,20 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                       {/* Thông tin nhân viên (Sticky trái) */}
                       <td className="py-3 px-4 sticky left-0 bg-white group-hover:bg-slate-50/95 z-10 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
                         <div className="space-y-0.5">
-                          <span className="font-semibold text-text-primary block truncate max-w-48">
+                          <span
+                            className="font-semibold text-text-primary block truncate max-w-[200px]"
+                            title={emp.fullName}
+                          >
                             {emp.fullName}
                           </span>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-2xs font-mono font-bold text-brand-primary">
+                            <span className="text-2xs font-mono font-bold text-brand-primary shrink-0">
                               {emp.employeeCode}
                             </span>
-                            <span className="text-2xs text-text-muted truncate max-w-32">
+                            <span
+                              className="text-2xs text-text-muted truncate max-w-32"
+                              title={emp.department || undefined}
+                            >
                               {emp.department || '—'}
                             </span>
                           </div>
@@ -291,7 +301,10 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                                 className="group/card relative p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-left space-y-1 shadow-2xs hover:shadow-xs transition-all"
                               >
                                 <div className="flex items-center justify-between gap-1">
-                                  <span className="font-bold text-xs text-emerald-900 truncate">
+                                  <span
+                                    className="font-bold text-xs text-emerald-900 truncate max-w-[120px] block"
+                                    title={activeAssignment.shiftName}
+                                  >
                                     {activeAssignment.shiftName}
                                   </span>
                                   {!isAdjustmentLocked && (
@@ -302,7 +315,7 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                                       data-testid={`remove-weekly-shift-${activeAssignment.id}`}
                                       className="opacity-0 group-hover/card:opacity-100 p-1 rounded-md text-emerald-700 hover:text-rose-600 hover:bg-rose-50 transition-all shrink-0 cursor-pointer"
                                     >
-                                      <Trash2 className="w-3 h-3" />
+                                      <Trash2 className="w-3 h-3 shrink-0" />
                                     </button>
                                   )}
                                 </div>

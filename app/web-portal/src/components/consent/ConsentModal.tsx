@@ -33,7 +33,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { ConfettiEffect } from '@/components/common'
+import { ConfettiEffect } from '@/components/ui'
 import { consentService } from '@/services/consentService'
 import { useEnrollmentStatus } from '@/services/hooks/useEnrollmentStatus'
 import { useAuthStore } from '@/store/authStore'

@@ -4,7 +4,7 @@
 
 import React from 'react'
 import { Search, X } from 'lucide-react'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
 import { DEPARTMENTS } from '@/constants/departments'
 import type { AttendanceStatus, VerificationMethod } from '@/types'
 
@@ -49,7 +49,7 @@ export const AttendanceFilterToolbar: React.FC<AttendanceFilterToolbarProps> = R
           {/* Ô tìm kiếm từ khóa */}
           <div className="flex-1 min-w-56 relative">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <Search className="w-4 h-4" />
+              <Search className="w-4 h-4 shrink-0" />
             </div>
             <input
               type="text"
@@ -58,6 +58,7 @@ export const AttendanceFilterToolbar: React.FC<AttendanceFilterToolbarProps> = R
               data-testid="filter-keyword-input"
               aria-label="Tìm kiếm lượt điểm danh"
               placeholder="Tìm theo Mã NV, Họ tên..."
+              maxLength={100}
               className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
             />
           </div>
@@ -146,7 +147,7 @@ export const AttendanceFilterToolbar: React.FC<AttendanceFilterToolbarProps> = R
                 variant="secondary"
                 onClick={onResetFilters}
                 data-testid="reset-filters-btn"
-                leftIcon={<X className="w-3.5 h-3.5" />}
+                leftIcon={<X className="w-3.5 h-3.5 shrink-0" />}
                 className="h-9 px-3 text-xs font-semibold text-rose-700 bg-rose-50/80 border-rose-200 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800 shadow-2xs shrink-0 cursor-pointer"
               >
                 Xóa tất cả lọc

@@ -40,7 +40,7 @@ export const ShiftAssignmentToolbar: React.FC<ShiftAssignmentToolbarProps> = ({
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            <List className="w-3.5 h-3.5" />
+            <List className="w-3.5 h-3.5 shrink-0" />
             <span>Dạng Bảng</span>
           </button>
           <button
@@ -53,7 +53,7 @@ export const ShiftAssignmentToolbar: React.FC<ShiftAssignmentToolbarProps> = ({
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            <CalendarDays className="w-3.5 h-3.5" />
+            <CalendarDays className="w-3.5 h-3.5 shrink-0" />
             <span>Lịch Tuần</span>
           </button>
         </div>
@@ -62,10 +62,11 @@ export const ShiftAssignmentToolbar: React.FC<ShiftAssignmentToolbarProps> = ({
         {assignmentViewMode === 'table' && (
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Search className="w-4 h-4" />
+              <Search className="w-4 h-4 shrink-0" />
             </div>
             <input
               type="text"
+              maxLength={100}
               value={searchEmployeeKeyword}
               onChange={(e) => onChangeSearchKeyword(e.target.value)}
               data-testid="search-assigned-employee-input"

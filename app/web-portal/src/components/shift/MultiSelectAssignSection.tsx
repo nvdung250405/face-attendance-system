@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
+import { useDebounce } from '@/hooks/useDebounce'
 import type { EmployeeItem } from '@/types'
 
 export interface MultiSelectAssignSectionProps {
@@ -20,14 +21,15 @@ export const MultiSelectAssignSection: React.FC<MultiSelectAssignSectionProps> =
   onDeselectAll,
 }) => {
   const [searchKeyword, setSearchKeyword] = useState<string>('')
+  const debouncedSearch = useDebounce(searchKeyword, 350)
   const [deptFilter, setDeptFilter] = useState<string>('')
 
   const filteredMultiEmployees = useMemo(() => {
     return employees.filter((emp) => {
       if (emp.status === 'TERMINATED') return false
       if (deptFilter && emp.department?.trim() !== deptFilter) return false
-      if (searchKeyword.trim()) {
-        const kw = searchKeyword.trim().toLowerCase()
+      if (debouncedSearch.trim()) {
+        const kw = debouncedSearch.trim().toLowerCase()
         const matchName = emp.fullName?.toLowerCase().includes(kw)
         const matchCode = emp.employeeCode?.toLowerCase().includes(kw)
         const matchEmail = emp.email?.toLowerCase().includes(kw)
@@ -35,7 +37,7 @@ export const MultiSelectAssignSection: React.FC<MultiSelectAssignSectionProps> =
       }
       return true
     })
-  }, [employees, deptFilter, searchKeyword])
+  }, [employees, deptFilter, debouncedSearch])
 
   const handleSelectAllFiltered = () => {
     onSelectAll(filteredMultiEmployees.map((e) => e.id))
@@ -49,7 +51,7 @@ export const MultiSelectAssignSection: React.FC<MultiSelectAssignSectionProps> =
         </label>
         <span
           data-testid="multi-selected-count"
-          className="text-2xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200"
+          className="text-2xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 shrink-0"
         >
           Đã chọn {selectedEmployeeIds.length} / {filteredMultiEmployees.length} nhân sự
         </span>
@@ -57,9 +59,10 @@ export const MultiSelectAssignSection: React.FC<MultiSelectAssignSectionProps> =
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none shrink-0" />
           <input
             type="text"
+            maxLength={100}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="Tìm theo tên, mã NV..."
@@ -127,7 +130,12 @@ export const MultiSelectAssignSection: React.FC<MultiSelectAssignSectionProps> =
                   className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
                 <div className="flex-1 min-w-0">
-                  <span className="font-semibold">{emp.fullName}</span>{' '}
+                  <span
+                    className="font-semibold truncate max-w-[200px] inline-block align-middle"
+                    title={emp.fullName}
+                  >
+                    {emp.fullName}
+                  </span>{' '}
                   <span className="text-slate-500 font-mono text-2xs">({emp.employeeCode})</span>
                 </div>
                 <span className="text-2xs text-slate-500 shrink-0">

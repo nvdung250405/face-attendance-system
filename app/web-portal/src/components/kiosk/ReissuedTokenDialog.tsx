@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/common'
+import { Button } from '@/components/ui'
 import { Check, Copy } from 'lucide-react'
 
 export interface ReissuedTokenDialogProps {
