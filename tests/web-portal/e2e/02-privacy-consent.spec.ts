@@ -125,22 +125,29 @@ test.describe('FAS — Privacy & Informed Consent Compliance', () => {
     });
 
     test('TC-PRIV-03: Trạm Kiosk — Xác thực mã PIN dự phòng cho nhân viên đã rút đồng thuận (worker.thao)', async ({ page }) => {
+      await page.goto('/login');
       // Verify worker.thao CAN authenticate via Fallback PIN at Kiosk endpoint
-      const pinRes = await page.request.post('/api/v1/kiosk/verify-pin', {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Kiosk-Id': 'KIOSK-HN-HQ-01',
-          'X-Kiosk-Secret': 'staging-kiosk-token-hn01',
-        },
-        data: {
-          employeeCode: 'STG-OPS-004',
-          pin: '123456',
-        },
+      const result = await page.evaluate(async () => {
+        const res = await fetch('/api/v1/kiosk/verify-pin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Kiosk-Id': 'KIOSK-HN-HQ-01',
+            'X-Kiosk-Secret': 'staging-kiosk-token-hn01',
+          },
+          body: JSON.stringify({
+            employeeCode: 'STG-OPS-004',
+            pin: '123456',
+          }),
+        });
+        return {
+          status: res.status,
+          body: await res.json(),
+        };
       });
-      expect(pinRes.status()).toBe(200);
-      const pinData = await pinRes.json();
-      expect(pinData.code).toBe('PIN_VERIFIED');
-      expect(pinData.data.employeeCode).toBe('STG-OPS-004');
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe('PIN_VERIFIED');
+      expect(result.body.data.employeeCode).toBe('STG-OPS-004');
     });
   });
 

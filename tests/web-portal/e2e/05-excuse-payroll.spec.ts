@@ -58,18 +58,28 @@ test.describe('FAS — Quản Lý Đơn Giải Trình & Chốt Kỳ Công (Excus
   });
 
   test('TC-EXCUSE-03: Chống nộp trùng lặp đơn giải trình (Anti-Replay 409 Conflict Protection)', async ({ page }) => {
+    await page.goto('/login');
     // Gọi API nộp đơn trùng lặp với lý do duplicate để kiểm tra phản hồi 409 chống replay
-    const response = await page.request.post('/api/v1/employee/excuse-requests', {
-      data: {
-        attendanceLogId: 999,
-        reason: 'Sự cố giao thông duplicate replay test',
-      },
+    const result = await page.evaluate(async () => {
+      const res = await fetch('/api/v1/employee/excuse-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          attendanceLogId: 999,
+          reason: 'Sự cố giao thông duplicate replay test',
+        }),
+      });
+      return {
+        status: res.status,
+        body: await res.json(),
+      };
     });
 
     // Hệ thống phải trả về mã lỗi 409 Conflict từ chối ghi nhận trùng
-    expect(response.status()).toBe(409);
-    const body = await response.json();
-    expect(body.code).toBe('EXCUSE_ALREADY_EXISTS');
+    expect(result.status).toBe(409);
+    expect(result.body.code).toBe('EXCUSE_ALREADY_EXISTS');
   });
 
   // ============================================================================

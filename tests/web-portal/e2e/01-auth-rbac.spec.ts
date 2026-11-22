@@ -47,12 +47,15 @@ async function loginAs(page: Page, user: { email: string; password: string; defa
 }
 
 async function ensureSidebarOpen(page: Page) {
-  const mobileMenuBtn = page.locator('#header-mobile-menu');
-  if (await mobileMenuBtn.isVisible()) {
-    const closeBtn = page.locator('#sidebar-close-mobile');
-    if (!(await closeBtn.isVisible())) {
+  const sidebar = page.locator('[data-testid="sidebar"]');
+  await sidebar.waitFor({ state: 'attached', timeout: 5000 });
+  const isCollapsed = await sidebar.getAttribute('data-collapsed');
+  if (isCollapsed === 'true') {
+    const mobileMenuBtn = page.locator('#header-mobile-menu');
+    if (await mobileMenuBtn.isVisible()) {
       await mobileMenuBtn.click();
-      await page.waitForTimeout(300);
+      await expect(sidebar).toHaveAttribute('data-collapsed', 'false');
+      await page.waitForTimeout(250);
     }
   }
 }
