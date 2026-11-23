@@ -116,6 +116,7 @@ class KioskViewModel(QObject):
 
         if self.enrollment_controller is not None:
             if hasattr(self.enrollment_controller, "dialogOpenChanged"):
+
                 def _on_enrollment_dialog_open_changed(is_open: bool) -> None:
                     self._last_face_time = time.time()
                     if is_open:
@@ -131,10 +132,14 @@ class KioskViewModel(QObject):
                             "Đã đóng hộp thoại đăng ký -> Kích hoạt Grace Period 5.0s không nhận diện điểm danh"
                         )
 
-                self.enrollment_controller.dialogOpenChanged.connect(_on_enrollment_dialog_open_changed)
+                self.enrollment_controller.dialogOpenChanged.connect(
+                    _on_enrollment_dialog_open_changed
+                )
 
             if hasattr(self.enrollment_controller, "currentStepChanged"):
-                self.enrollment_controller.currentStepChanged.connect(lambda _step: self.reset_activity())
+                self.enrollment_controller.currentStepChanged.connect(
+                    lambda _step: self.reset_activity()
+                )
             if hasattr(self.enrollment_controller, "yawChanged"):
                 self.enrollment_controller.yawChanged.connect(lambda _yaw: self.reset_activity())
 
@@ -374,9 +379,8 @@ class KioskViewModel(QObject):
             ):
                 return True
         if self.pin_controller is not None:
-            if (
-                getattr(self.pin_controller, "isDialogOpen", False)
-                or bool(getattr(self.pin_controller, "currentPin", ""))
+            if getattr(self.pin_controller, "isDialogOpen", False) or bool(
+                getattr(self.pin_controller, "currentPin", "")
             ):
                 return True
         if self._oval_state != OvalState.IDLE or self._holding_result:
@@ -434,9 +438,9 @@ class KioskViewModel(QObject):
             self._last_face_time = current_time
             is_enroll_active = False
             if self.enrollment_controller is not None:
-                is_enroll_active = getattr(self.enrollment_controller, "isDialogOpen", False) or getattr(
-                    self.enrollment_controller, "isEnrolling", False
-                )
+                is_enroll_active = getattr(
+                    self.enrollment_controller, "isDialogOpen", False
+                ) or getattr(self.enrollment_controller, "isEnrolling", False)
             if is_enroll_active or (current_time < self._enrollment_cooldown_until):
                 return
 

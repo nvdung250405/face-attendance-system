@@ -124,7 +124,9 @@ class KioskHttpClient:
                 raise KioskUnauthorizedError(
                     f"Trạm {self.kiosk_id} không có quyền gửi nhịp tim (sai mã bí mật)."
                 ) from exc
-            raise KioskNetworkError(f"Lỗi phản hồi khi ping: HTTP {exc.response.status_code}") from exc
+            raise KioskNetworkError(
+                f"Lỗi phản hồi khi ping: HTTP {exc.response.status_code}"
+            ) from exc
         except httpx.RequestError as exc:
             raise KioskNetworkError(f"Không thể kết nối đến máy chủ khi ping: {exc}") from exc
 

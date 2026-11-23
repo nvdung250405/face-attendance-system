@@ -336,6 +336,7 @@ def test_verify_pin_api():
 
 def test_kiosk_ping_success():
     """Kiểm tra gọi nhịp tim ping thành công và trả về trạng thái ONLINE."""
+
     def mock_handler(request: httpx.Request):
         if request.url.path.endswith("/kiosk/ping"):
             assert request.headers.get("X-Kiosk-Id") == "KIOSK-HN-01"
