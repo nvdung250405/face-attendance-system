@@ -141,28 +141,47 @@ class MiniFASNetLivenessGate:
 
         frame_h, frame_w = frame.shape[:2]
 
-        scale = min(
-            (frame_h - 1) / max(1, h),
-            (frame_w - 1) / max(1, w),
-            self.scale_factor,
-        )
-        new_w = w * scale
-        new_h = h * scale
+        # AI-02: Tính kích thước bao mở rộng theo scale_factor
+        raw_side = max(w, h) * self.scale_factor
+        side = max(1, int(round(raw_side)))
 
         center_x = x + w / 2.0
         center_y = y + h / 2.0
 
-        x1 = max(0, int(round(center_x - new_w / 2.0)))
-        y1 = max(0, int(round(center_y - new_h / 2.0)))
-        x2 = min(frame_w - 1, int(round(center_x + new_w / 2.0)))
-        y2 = min(frame_h - 1, int(round(center_y + new_h / 2.0)))
+        x1_ideal = int(round(center_x - side / 2.0))
+        y1_ideal = int(round(center_y - side / 2.0))
+        x2_ideal = x1_ideal + side
+        y2_ideal = y1_ideal + side
 
-        crop = frame[y1 : y2 + 1, x1 : x2 + 1]
+        # Vùng giao thực tế với frame ảnh
+        src_x1 = max(0, x1_ideal)
+        src_y1 = max(0, y1_ideal)
+        src_x2 = min(frame_w, x2_ideal)
+        src_y2 = min(frame_h, y2_ideal)
 
-        if crop.size == 0 or crop.shape[0] == 0 or crop.shape[1] == 0:
+        if src_x2 <= src_x1 or src_y2 <= src_y1:
             return np.zeros((self.target_size[1], self.target_size[0], 3), dtype=np.uint8)
 
-        # Resize về kích thước chuẩn 80x80 của MiniFASNet
+        crop = frame[src_y1:src_y2, src_x1:src_x2]
+
+        # Padding đối xứng / bù đắp phần tràn viền để đảm bảo tỷ lệ vuông chuẩn 1:1 (AI-02)
+        pad_top = max(0, src_y1 - y1_ideal)
+        pad_bottom = max(0, y2_ideal - src_y2)
+        pad_left = max(0, src_x1 - x1_ideal)
+        pad_right = max(0, x2_ideal - src_x2)
+
+        if pad_top > 0 or pad_bottom > 0 or pad_left > 0 or pad_right > 0:
+            crop = cv2.copyMakeBorder(
+                crop,
+                pad_top,
+                pad_bottom,
+                pad_left,
+                pad_right,
+                cv2.BORDER_CONSTANT,
+                value=[0, 0, 0],
+            )
+
+        # Resize về kích thước chuẩn 80x80 của MiniFASNet (isotropic hoàn toàn, không méo tỷ lệ)
         resized = cv2.resize(crop, self.target_size, interpolation=cv2.INTER_LINEAR)
         return resized
 

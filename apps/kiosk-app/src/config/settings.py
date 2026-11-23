@@ -60,6 +60,7 @@ class KioskConfig:
 
     # 3. Ngưỡng AI & Nghiệp vụ điểm danh
     liveness_threshold: float = float(os.getenv("LIVENESS_THRESHOLD", "0.85"))
+    enrollment_liveness_threshold: float = float(os.getenv("ENROLLMENT_LIVENESS_THRESHOLD", "0.85"))
     cosine_similarity_threshold: float = float(os.getenv("COSINE_SIMILARITY_THRESHOLD", "0.65"))
     stability_seconds: float = float(os.getenv("STABILITY_SECONDS", "0.60"))
     cooldown_seconds: int = int(os.getenv("COOLDOWN_SECONDS", "120"))
@@ -107,8 +108,13 @@ class KioskConfig:
     offline_icon_path: Path = KIOSK_DIR / "resources" / "assets" / "icons" / "offline.png"
 
     def __post_init__(self) -> None:
-        """Kiểm tra và cảnh báo bảo mật nếu KIOSK_SECRET_TOKEN chưa được thiết lập an toàn (FIND-SEC-004)."""
+        """Kiểm tra và cảnh báo bảo mật nếu KIOSK_SECRET_TOKEN chưa được thiết lập an toàn (FIND-SEC-004, SEC-04)."""
         if not self.kiosk_secret_token or self.is_default_secret:
+            if self.is_production:
+                raise ValueError(
+                    "CRITICAL SECURITY ERROR (SEC-04): KIOSK_SECRET_TOKEN cannot use DEFAULT_SECRET_TOKEN "
+                    "or empty token in production mode!"
+                )
             logger.warning(
                 "CẢNH BÁO BẢO MẬT (FIND-SEC-004): KIOSK_SECRET_TOKEN chưa được thiết lập hoặc đang sử dụng "
                 "DEFAULT_SECRET_TOKEN mặc định! Yêu cầu cấu hình KIOSK_SECRET_TOKEN an toàn cho môi trường Production."

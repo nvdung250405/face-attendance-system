@@ -86,9 +86,18 @@ class SQLiteQueueManager:
                         kiosk_id TEXT NOT NULL,
                         is_synced INTEGER NOT NULL DEFAULT 0,
                         retry_count INTEGER NOT NULL DEFAULT 0,
-                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        clock_drift_offset REAL NOT NULL DEFAULT 0.0
                     );
                 """)
+
+                # Bổ sung cột clock_drift_offset nếu bảng cũ đã tồn tại (SYNC-03)
+                cursor.execute("PRAGMA table_info(offline_punches);")
+                cols = [row[1] for row in cursor.fetchall()]
+                if cols and "clock_drift_offset" not in cols:
+                    cursor.execute(
+                        "ALTER TABLE offline_punches ADD COLUMN clock_drift_offset REAL NOT NULL DEFAULT 0.0;"
+                    )
 
                 # Chỉ mục tối ưu hóa cho truy vấn quét các bản ghi chưa đồng bộ
                 cursor.execute("""
@@ -160,6 +169,7 @@ class SQLiteQueueManager:
         confidence_score: float | None = None,
         kiosk_id: str | None = None,
         punch_timestamp: str | None = None,
+        clock_drift_offset: float = 0.0,
         # Tương thích ngược với các caller cũ:
         similarity_score: float | None = None,
         punch_time: str | None = None,
@@ -200,8 +210,8 @@ class SQLiteQueueManager:
             INSERT INTO offline_punches (
                 employee_id, punch_timestamp, punch_type,
                 verification_method, confidence_score, kiosk_id,
-                is_synced, retry_count
-            ) VALUES (?, ?, ?, ?, ?, ?, 0, 0)
+                is_synced, retry_count, clock_drift_offset
+            ) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)
         """
 
         with self._lock:
@@ -210,7 +220,15 @@ class SQLiteQueueManager:
                 cursor = conn.cursor()
                 cursor.execute(
                     sql,
-                    (employee_id, p_time, punch_type, verification_method, score, k_id),
+                    (
+                        employee_id,
+                        p_time,
+                        punch_type,
+                        verification_method,
+                        score,
+                        k_id,
+                        float(clock_drift_offset),
+                    ),
                 )
                 conn.commit()
                 local_id = cursor.lastrowid
@@ -241,7 +259,7 @@ class SQLiteQueueManager:
         sql = """
             SELECT id, employee_id, punch_timestamp, punch_type,
                    verification_method, confidence_score, kiosk_id,
-                   is_synced, retry_count, created_at
+                   is_synced, retry_count, created_at, clock_drift_offset
             FROM offline_punches
             WHERE is_synced = 0
             ORDER BY id ASC

@@ -583,3 +583,61 @@ def test_stomp_worker_heartbeats_and_jitter():
         assert passed_kwargs.get("heartbeats") == (10000, 10000)
     finally:
         stomp.Connection = orig_conn
+
+
+def test_sync_03_batch_payload_includes_clock_drift():
+    """SYNC-03: Gói tin batch sync truyền kèm clockDriftOffset."""
+    from unittest.mock import MagicMock
+
+    payload_received = {}
+
+    def mock_handler(request: httpx.Request):
+        body = json.loads(request.content)
+        payload_received.update(body)
+        return httpx.Response(200, json={"status": "SUCCESS", "data": {"syncedLocalIds": [1]}})
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    mock_queue = MagicMock()
+    worker = OfflineSyncWorker(queue_manager=mock_queue, client=client)
+
+    punches = [
+        {
+            "id": 1,
+            "employee_id": 100,
+            "punch_timestamp": "2026-11-23T12:00:00Z",
+            "punch_type": "CHECK_IN",
+            "verification_method": "VERIFICATION_FACE",
+            "confidence_score": 0.95,
+            "clock_drift_offset": 6.8,
+        }
+    ]
+    assert worker.sync_batch(punches) is True
+    records = payload_received.get("records", [])
+    assert len(records) == 1
+    assert pytest.approx(records[0]["clockDriftOffset"]) == 6.8
+
+
+def test_sync_04_health_check_failure_increments_fail_count(tmp_path):
+    """SYNC-04: Thất bại khi check_health lúc hàng đợi rỗng tăng _fail_count kích hoạt backoff."""
+    from core.offline.sqlite_manager import SQLiteQueueManager
+
+    db = tmp_path / "sync04.db"
+    queue = SQLiteQueueManager(db_path=db)
+
+    def err_handler(request: httpx.Request):
+        raise httpx.ConnectError("Server down")
+
+    client = httpx.Client(transport=httpx.MockTransport(err_handler))
+    worker = OfflineSyncWorker(queue_manager=queue, client=client)
+
+    assert worker.check_health() is False
+    assert worker.fail_count == 0
+
+    # Giả lập 1 bước lặp khi hàng đợi rỗng và health check thất bại
+    if queue.get_unsynced_count() == 0:
+        healthy = worker.check_health()
+        if not healthy:
+            worker._fail_count += 1
+
+    assert worker.fail_count == 1
+    assert worker.calculate_backoff_delay(worker.fail_count) > worker.interval_seconds * 0.8

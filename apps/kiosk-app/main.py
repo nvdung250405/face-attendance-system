@@ -10,6 +10,7 @@ Tuân thủ kiến trúc MVC:
 import argparse
 import platform
 import sys
+import threading
 from pathlib import Path
 
 # Thêm thư mục src vào sys.path để hỗ trợ src-layout
@@ -19,7 +20,7 @@ if str(src_dir) not in sys.path:
 
 import cv2
 import numpy as np
-from PySide6.QtCore import QObject, QSize, Slot
+from PySide6.QtCore import QObject, QSize, QTimer, Slot
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -94,25 +95,52 @@ def _handle_pin_submission(
     employee_code: str,
     pin: str,
 ) -> None:
-    """Xử lý xác thực PIN dự phòng qua Backend; chỉ ghi nhận điểm danh khi backend xác nhận PIN đúng."""
-    try:
-        raw = http_client.verify_pin(employee_code, pin)
-        data = raw.get("data", raw) if isinstance(raw, dict) else {}
-        emp_id = int(data.get("employeeId") or 0)
-        if emp_id <= 0:
-            pin_controller.set_status_message("Không xác định được nhân viên từ phản hồi máy chủ.")
-            return
-        pin_controller.on_verification_success()
-        kiosk_view_model.recordVerifiedPinPunch(emp_id)
-    except KioskPinError as exc:
-        pin_controller.on_verification_failure()
-        if exc.locked_until:
-            pin_controller.set_status_message(f"Mã PIN đang bị khóa đến {exc.locked_until}")
-    except KioskNetworkError as exc:
-        pin_controller.set_status_message(f"Không thể kết nối máy chủ xác thực PIN: {exc}")
-    except Exception as exc:
-        logger.warning("Lỗi xử lý xác thực PIN: %s", exc)
-        pin_controller.set_status_message("Đã xảy ra lỗi khi xác thực PIN. Vui lòng thử lại.")
+    """Xử lý xác thực PIN dự phòng qua Backend trong luồng ngầm (PERF-04).
+
+    Không chặn vòng lặp sự kiện Qt Main GUI Thread khi mạng chậm hoặc ngắt quãng.
+    """
+    pin_controller.set_status_message("Đang xác thực mã PIN qua máy chủ...")
+
+    def _worker() -> None:
+        try:
+            raw = http_client.verify_pin(employee_code, pin)
+            data = raw.get("data", raw) if isinstance(raw, dict) else {}
+            emp_id = int(data.get("employeeId") or 0)
+            if emp_id <= 0:
+                QTimer.singleShot(
+                    0,
+                    lambda: pin_controller.set_status_message(
+                        "Không xác định được nhân viên từ phản hồi máy chủ."
+                    ),
+                )
+                return
+
+            def _on_success():
+                pin_controller.on_verification_success()
+                kiosk_view_model.recordVerifiedPinPunch(emp_id)
+
+            QTimer.singleShot(0, _on_success)
+        except KioskPinError as exc:
+
+            def _on_pin_err(locked=exc.locked_until):
+                pin_controller.on_verification_failure()
+                if locked:
+                    pin_controller.set_status_message(f"Mã PIN đang bị khóa đến {locked}")
+
+            QTimer.singleShot(0, _on_pin_err)
+        except KioskNetworkError as exc:
+            msg = f"Không thể kết nối máy chủ xác thực PIN: {exc}"
+            QTimer.singleShot(0, lambda m=msg: pin_controller.set_status_message(m))
+        except Exception as exc:
+            logger.warning("Lỗi xử lý xác thực PIN: %s", exc)
+            QTimer.singleShot(
+                0,
+                lambda: pin_controller.set_status_message(
+                    "Đã xảy ra lỗi khi xác thực PIN. Vui lòng thử lại."
+                ),
+            )
+
+    threading.Thread(target=_worker, daemon=True).start()
 
 
 class DemoEnrollHandler(QObject):
@@ -385,6 +413,7 @@ def main() -> int:
         extractor=extractor,
         liveness_gate=liveness_gate,
         demo_mode=(is_dev_mode or args.demo),
+        async_mode=True,
     )
     # 6a. Khởi tạo InferenceWorker để tách tính toán AI và SQLite WAL khỏi Main GUI Thread
     inference_worker = InferenceWorker(
@@ -432,6 +461,16 @@ def main() -> int:
             http_client, pin_controller, kiosk_view_model, employee_code, pin
         )
     )
+
+    # 6e. Đối soát và cập nhật lại Gallery khi mạng khôi phục (SEC-03, SYNC-06)
+    def _reconcile_gallery() -> None:
+        threading.Thread(
+            target=_load_gallery_from_backend,
+            args=(http_client, gallery_matcher),
+            daemon=True,
+        ).start()
+
+    kiosk_view_model.galleryReconcileRequested.connect(_reconcile_gallery)
 
     # 7. Khởi động luồng nền đồng bộ offline SAU khi view model đã kết nối signal
     sync_worker.start()
