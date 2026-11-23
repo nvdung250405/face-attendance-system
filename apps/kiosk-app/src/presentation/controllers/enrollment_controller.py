@@ -284,7 +284,7 @@ class EnrollmentController(QObject):
             return False
 
         # Trong chế độ phát triển / demo: Tự động chấp nhận mã mẫu thử nghiệm '482619'
-        if self._otp == "482619" and (self._demo_mode or settings.is_development):
+        if self._otp == "482619" and self._demo_mode:
             logger.info("Xác thực thành công với mã OTP mẫu thử nghiệm: %s (Dev Mode)", self._otp)
             self._session_token = "demo-session-token"
             self._employee_id = 1001
@@ -653,11 +653,7 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
                 self.enrollmentCompleted.emit(event_payload)
             else:
-                if (
-                    self._demo_mode
-                    or self._otp == "482619"
-                    or getattr(self, "_session_token", "") == "demo-session-token"
-                ):
+                if self._demo_mode:
                     self._current_step = 3
                     self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
                     self.currentStepChanged.emit(self._current_step)
@@ -680,11 +676,7 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
         except Exception as exc:
             logger.warning("Lỗi gửi dữ liệu đăng ký lên Backend: %s", exc)
-            if (
-                self._demo_mode
-                or self._otp == "482619"
-                or getattr(self, "_session_token", "") == "demo-session-token"
-            ):
+            if self._demo_mode:
                 self._current_step = 3
                 self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
                 self.currentStepChanged.emit(self._current_step)
@@ -705,7 +697,7 @@ class EnrollmentController(QObject):
     @Slot()
     def completeCaptureStep(self) -> None:
         """Cho phép hoàn tất thủ công bước chụp ảnh (CHỈ hoạt động ở chế độ demo)."""
-        if not (self._demo_mode or settings.is_development):
+        if not self._demo_mode:
             self._status_message = "Vui lòng hoàn tất các bước đăng ký theo hướng dẫn."
             self.statusMessageChanged.emit(self._status_message)
             return
