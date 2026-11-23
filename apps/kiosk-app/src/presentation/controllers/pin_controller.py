@@ -1,6 +1,7 @@
 """PinController: Điều phối logic nhập mã PIN và cơ chế chống brute-force cho QML."""
 
 import time
+from typing import Any
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
@@ -25,11 +26,14 @@ class PinController(QObject):
     def __init__(
         self,
         security_manager: PinSecurityManager | None = None,
+        sqlite_manager: Any | None = None,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo PinController."""
         super().__init__(parent)
-        self.security_manager = security_manager or PinSecurityManager()
+        self.security_manager = security_manager or PinSecurityManager(
+            sqlite_manager=sqlite_manager
+        )
         self._employee_code: str = ""
         self._pin: str = ""
         self._is_locked: bool = False

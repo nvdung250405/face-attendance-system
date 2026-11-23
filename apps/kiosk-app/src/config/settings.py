@@ -5,11 +5,14 @@ Tài liệu tham chiếu:
 - DDS.md (Mục 2.1 & Quyết định DEC-02, DEC-04)
 """
 
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger("config.settings")
 
 # Xác định đường dẫn thư mục gốc của kiosk-app và monorepo
 KIOSK_DIR = Path(__file__).resolve().parent.parent.parent
@@ -102,6 +105,14 @@ class KioskConfig:
     logo_path: Path = KIOSK_DIR / "resources" / "assets" / "icons" / "logo.png"
     online_icon_path: Path = KIOSK_DIR / "resources" / "assets" / "icons" / "online.png"
     offline_icon_path: Path = KIOSK_DIR / "resources" / "assets" / "icons" / "offline.png"
+
+    def __post_init__(self) -> None:
+        """Kiểm tra và cảnh báo bảo mật nếu KIOSK_SECRET_TOKEN chưa được thiết lập an toàn (FIND-SEC-004)."""
+        if not self.kiosk_secret_token or self.is_default_secret:
+            logger.warning(
+                "CẢNH BÁO BẢO MẬT (FIND-SEC-004): KIOSK_SECRET_TOKEN chưa được thiết lập hoặc đang sử dụng "
+                "DEFAULT_SECRET_TOKEN mặc định! Yêu cầu cấu hình KIOSK_SECRET_TOKEN an toàn cho môi trường Production."
+            )
 
     @property
     def is_default_secret(self) -> bool:
