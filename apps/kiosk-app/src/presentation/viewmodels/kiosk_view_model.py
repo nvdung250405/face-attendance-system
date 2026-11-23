@@ -61,6 +61,7 @@ class KioskViewModel(QObject):
         sync_worker: OfflineSyncWorker | None = None,
         stability_threshold: int = 8,
         enrollment_controller: Any = None,
+        pin_controller: Any = None,
         is_dev_mode: bool | None = None,
         inference_worker: Any = None,
         parent: QObject | None = None,
@@ -79,6 +80,7 @@ class KioskViewModel(QObject):
         self.queue_manager = queue_manager
         self.sync_worker = sync_worker
         self.enrollment_controller = enrollment_controller
+        self.pin_controller = pin_controller
         self._stability_threshold: int = max(1, stability_threshold)
         self._stable_frames: int = 0
         self._frame_tick: int = 0
@@ -112,23 +114,35 @@ class KioskViewModel(QObject):
         if inference_worker is not None:
             self.set_inference_worker(inference_worker)
 
-        if self.enrollment_controller is not None and hasattr(
-            self.enrollment_controller, "dialogOpenChanged"
-        ):
-
-            def _on_enrollment_dialog_open_changed(is_open: bool) -> None:
-                if self._inference_worker is not None:
-                    self._inference_worker.set_enrollment_active(is_open)
-                if not is_open:
-                    cooldown_until = time.time() + 5.0
-                    self._enrollment_cooldown_until = cooldown_until
+        if self.enrollment_controller is not None:
+            if hasattr(self.enrollment_controller, "dialogOpenChanged"):
+                def _on_enrollment_dialog_open_changed(is_open: bool) -> None:
+                    self._last_face_time = time.time()
+                    if is_open:
+                        self.setStandby(False)
                     if self._inference_worker is not None:
-                        self._inference_worker.set_enrollment_cooldown(cooldown_until)
-                    logger.info(
-                        "Đã đóng hộp thoại đăng ký -> Kích hoạt Grace Period 5.0s không nhận diện điểm danh"
-                    )
+                        self._inference_worker.set_enrollment_active(is_open)
+                    if not is_open:
+                        cooldown_until = time.time() + 5.0
+                        self._enrollment_cooldown_until = cooldown_until
+                        if self._inference_worker is not None:
+                            self._inference_worker.set_enrollment_cooldown(cooldown_until)
+                        logger.info(
+                            "Đã đóng hộp thoại đăng ký -> Kích hoạt Grace Period 5.0s không nhận diện điểm danh"
+                        )
 
-            self.enrollment_controller.dialogOpenChanged.connect(_on_enrollment_dialog_open_changed)
+                self.enrollment_controller.dialogOpenChanged.connect(_on_enrollment_dialog_open_changed)
+
+            if hasattr(self.enrollment_controller, "currentStepChanged"):
+                self.enrollment_controller.currentStepChanged.connect(lambda _step: self.reset_activity())
+            if hasattr(self.enrollment_controller, "yawChanged"):
+                self.enrollment_controller.yawChanged.connect(lambda _yaw: self.reset_activity())
+
+        if self.pin_controller is not None:
+            if hasattr(self.pin_controller, "pinChanged"):
+                self.pin_controller.pinChanged.connect(lambda _p: self.reset_activity())
+            if hasattr(self.pin_controller, "employeeCodeChanged"):
+                self.pin_controller.employeeCodeChanged.connect(lambda _c: self.reset_activity())
 
         if self.sync_worker:
             self.sync_worker.network_status_changed.connect(self._on_network_status_changed)
@@ -345,6 +359,32 @@ class KioskViewModel(QObject):
         self._holding_result = True
         self._hold_end_time = time.time() + duration_sec
 
+    @Slot()
+    def reset_activity(self) -> None:
+        """Làm mới mốc thời gian hoạt động để tránh nhảy về Standby khi người dùng đang thao tác."""
+        self._last_face_time = time.time()
+
+    def _is_user_interacting(self, current_time: float) -> bool:
+        """Kiểm tra người dùng có đang thao tác chủ động (Đăng ký, PIN, hoặc căn chỉnh khuôn mặt)."""
+        if self.enrollment_controller is not None:
+            if (
+                getattr(self.enrollment_controller, "isDialogOpen", False)
+                or getattr(self.enrollment_controller, "isEnrolling", False)
+                or getattr(self.enrollment_controller, "currentStep", 0) > 0
+            ):
+                return True
+        if self.pin_controller is not None:
+            if (
+                getattr(self.pin_controller, "isDialogOpen", False)
+                or bool(getattr(self.pin_controller, "currentPin", ""))
+            ):
+                return True
+        if self._oval_state != OvalState.IDLE or self._holding_result:
+            return True
+        if current_time < self._enrollment_cooldown_until:
+            return True
+        return False
+
     @Slot(object)
     def process_camera_frame(self, frame: np.ndarray | None) -> None:
         """Nhận khung hình từ CameraWorker, cấp cho VideoImageProvider và kích hoạt pipeline AI."""
@@ -357,10 +397,13 @@ class KioskViewModel(QObject):
             self._frame_tick += 1
             self.frameReady.emit()
 
+        current_time = time.time()
+
         # 2. Asynchronous Path: nếu có InferenceWorker đang chạy, gửi sang worker và return ngay lập tức
         if self._inference_worker is not None and self._inference_worker.isRunning():
-            current_time = time.time()
-            if not self._is_standby and (
+            if self._is_user_interacting(current_time):
+                self._last_face_time = current_time
+            elif not self._is_standby and (
                 current_time - self._last_face_time >= self._standby_timeout
             ):
                 logger.info(
@@ -386,18 +429,16 @@ class KioskViewModel(QObject):
             else:
                 return
 
-        current_time = time.time()
-
-        # Nếu đang ở chế độ Đăng ký mẫu khuôn mặt mới hoặc đang trong Grace Period: Tạm dừng nhận diện điểm danh
-        is_dialog_open = False
-        if self.enrollment_controller is not None:
-            is_dialog_open = getattr(self.enrollment_controller, "isDialogOpen", False) or getattr(
-                self.enrollment_controller, "isEnrolling", False
-            )
-
-        if is_dialog_open or (current_time < self._enrollment_cooldown_until):
+        # Nếu đang thao tác chủ động hoặc đang trong Grace Period: Tạm dừng nhận diện điểm danh tự động
+        if self._is_user_interacting(current_time):
             self._last_face_time = current_time
-            return
+            is_enroll_active = False
+            if self.enrollment_controller is not None:
+                is_enroll_active = getattr(self.enrollment_controller, "isDialogOpen", False) or getattr(
+                    self.enrollment_controller, "isEnrolling", False
+                )
+            if is_enroll_active or (current_time < self._enrollment_cooldown_until):
+                return
 
         # Nếu đang giữ màn hình kết quả Success / Error thì tạm dừng phân tích AI
         if self._holding_result:

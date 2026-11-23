@@ -409,6 +409,7 @@ def main() -> int:
         sync_worker=sync_worker,
         stability_threshold=8,
         enrollment_controller=enrollment_controller,
+        pin_controller=pin_controller,
         is_dev_mode=is_dev_mode,
         inference_worker=inference_worker,
     )

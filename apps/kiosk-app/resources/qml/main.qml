@@ -147,6 +147,19 @@ Window {
         target: (typeof kioskViewModel !== "undefined" && kioskViewModel) ? kioskViewModel : null
 
         function onIsStandbyChanged(standby) {
+            if (standby) {
+                var isEnrollActive = (typeof enrollmentDialog !== "undefined" && enrollmentDialog && enrollmentDialog.isOpen) ||
+                                     (typeof enrollmentController !== "undefined" && enrollmentController && (enrollmentController.isEnrolling || enrollmentController.currentStep > 0));
+                var isPinActive = (typeof pinDialog !== "undefined" && pinDialog && pinDialog.isOpen);
+                var isHelpActive = (typeof helpDialog !== "undefined" && helpDialog && helpDialog.isOpen);
+
+                if (isEnrollActive || isPinActive || isHelpActive) {
+                    if (typeof kioskViewModel !== "undefined" && kioskViewModel) {
+                        kioskViewModel.setStandby(false)
+                    }
+                    return;
+                }
+            }
             window.viewState = standby ? "STANDBY" : "ACTIVE"
         }
 
