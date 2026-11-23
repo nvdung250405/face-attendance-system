@@ -166,8 +166,8 @@ class KioskViewModel(QObject):
                     self._on_worker_standby_wake
                 )
                 self._inference_worker.face_detected.disconnect(self._on_worker_face_detected)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Không thể ngắt kết nối tín hiệu inference_worker cũ: %s", exc)
 
         self._inference_worker = worker
         if self._inference_worker is not None:
@@ -357,7 +357,7 @@ class KioskViewModel(QObject):
             self.messageChanged.emit(message)
             changed = True
         if changed:
-            pass
+            logger.debug("Trạng thái oval cập nhật: state=%s, message=%s", self._oval_state, self._message)
 
     def _trigger_hold(self, duration_sec: float = 2.5) -> None:
         """Kích hoạt khoảng thời gian giữ kết quả trước khi tiếp tục quét."""
