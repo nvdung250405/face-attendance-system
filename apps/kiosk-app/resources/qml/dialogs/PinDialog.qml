@@ -8,11 +8,17 @@ Item {
     id: root
     anchors.fill: parent
     z: 1000
-    visible: opacity > 0
+    visible: root.isOpen || opacity > 0
     opacity: 0.0
 
     property bool isOpen: false
     property string activeField: "pin" // "empId" or "pin"
+
+    onIsOpenChanged: {
+        if (isOpen) {
+            cardItem.forceActiveFocus()
+        }
+    }
 
     // Mã nhân viên được lưu trong PinController để gửi kèm mã PIN khi xác thực.
     function employeeCodeText() {
@@ -86,14 +92,17 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            // Chặn click xuyên backdrop
+            onClicked: cardItem.forceActiveFocus()
+            // Chặn click xuyên backdrop và khôi phục active focus cho card
         }
 
         // Hỗ trợ gõ trực tiếp bàn phím máy tính
         focus: true
         Keys.onPressed: function(event) {
-            if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
-                var digit = String(event.key - Qt.Key_0)
+            var isDigitKey = (event.key >= Qt.Key_0 && event.key <= Qt.Key_9);
+            var isDigitText = (event.text && event.text.length === 1 && event.text >= "0" && event.text <= "9");
+            if (isDigitKey || isDigitText) {
+                var digit = isDigitText ? event.text : String(event.key - Qt.Key_0)
                 if (root.activeField === "empId") {
                     root.setEmployeeCodeText(root.employeeCodeText() + digit)
                 } else if (typeof pinController !== "undefined" && pinController) {

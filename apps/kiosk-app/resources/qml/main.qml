@@ -197,6 +197,23 @@ Window {
         Component.onCompleted: forceActiveFocus()
 
         Keys.onPressed: function(event) {
+            // Khi có bất kỳ modal dialog nào đang mở, không xử lý phím tắt ở root
+            var isDialogOpen = (typeof enrollmentDialog !== "undefined" && enrollmentDialog && enrollmentDialog.isOpen) ||
+                               (typeof pinDialog !== "undefined" && pinDialog && pinDialog.isOpen) ||
+                               (typeof helpDialog !== "undefined" && helpDialog && helpDialog.isOpen);
+            if (isDialogOpen) {
+                if (event.key === Qt.Key_Escape) {
+                    if (typeof enrollmentController !== "undefined" && enrollmentController && enrollmentController.isEnrolling) {
+                        enrollmentController.reset()
+                    }
+                    if (pinDialog) pinDialog.close()
+                    if (enrollmentDialog) enrollmentDialog.close()
+                    if (helpDialog) helpDialog.close()
+                    event.accepted = true
+                }
+                return;
+            }
+
             const isDev = (typeof kioskViewModel !== "undefined" && kioskViewModel && kioskViewModel.isDevMode)
 
             if (event.key === Qt.Key_Space) {

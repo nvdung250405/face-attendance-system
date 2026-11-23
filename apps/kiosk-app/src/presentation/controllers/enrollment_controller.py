@@ -283,6 +283,32 @@ class EnrollmentController(QObject):
             self.statusMessageChanged.emit(self._status_message)
             return False
 
+        # Trong chế độ phát triển / demo: Tự động chấp nhận mã mẫu thử nghiệm '482619'
+        if self._otp == "482619" and self._demo_mode:
+            logger.info("Xác thực thành công với mã OTP mẫu thử nghiệm: %s (Dev Mode)", self._otp)
+            self._session_token = "demo-session-token"
+            self._employee_id = 1001
+            self._employee_code = "NV-DEMO"
+            self._employee_name = "Nhân viên Demo (Thử nghiệm)"
+            self._current_step = 2
+            self._current_pose_index = 0
+            self._captured_templates = []
+            self._captured_embeddings = []
+            self._progress_percent = 0.0
+            self._pose_hold_start = None
+            self._last_capture_time = time.time()
+            self._status_message = (
+                f"Xác thực thành công (Dev/Demo): {self._employee_name}. "
+                f"{POSE_CONFIGS[PoseType.FRONTAL]['instruction']}"
+            )
+
+            self.currentStepChanged.emit(self._current_step)
+            self.poseIndexChanged.emit(0)
+            self.currentPoseChanged.emit("FRONTAL")
+            self.progressPercentChanged.emit(0.0)
+            self.statusMessageChanged.emit(self._status_message)
+            return True
+
         base_url = settings.backend_url.rstrip("/")
         url = f"{base_url}/kiosk/verify-otp"
         headers = {
@@ -627,6 +653,14 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
                 self.enrollmentCompleted.emit(event_payload)
             else:
+                if self._demo_mode:
+                    self._current_step = 3
+                    self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
+                    self.currentStepChanged.emit(self._current_step)
+                    self.statusMessageChanged.emit(self._status_message)
+                    self.enrollmentCompleted.emit(event_payload)
+                    return
+
                 err_body = resp.json() if resp.text else {}
                 err_msg = err_body.get("message") or f"Lỗi phản hồi HTTP {resp.status_code}"
                 logger.warning("Backend từ chối nạp khuôn mặt: %s", err_msg)
