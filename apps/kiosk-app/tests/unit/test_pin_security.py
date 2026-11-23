@@ -111,4 +111,3 @@ def test_pin_security_sqlite_persistence_across_restarts(tmp_path):
     mgr5 = PinSecurityManager(max_attempts=5, lockout_minutes=15, sqlite_manager=queue_mgr)
     assert mgr5.failed_attempts == 0
     assert mgr5.get_status(current_time=t0 + 901.0).is_locked is False
-
