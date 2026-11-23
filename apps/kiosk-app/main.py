@@ -379,7 +379,7 @@ def main() -> int:
 
     # 6. Khởi tạo VideoImageProvider & Controllers
     image_provider = VideoImageProvider()
-    pin_controller = PinController()
+    pin_controller = PinController(sqlite_manager=queue_manager)
     enrollment_controller = EnrollmentController(
         detector=detector,
         extractor=extractor,

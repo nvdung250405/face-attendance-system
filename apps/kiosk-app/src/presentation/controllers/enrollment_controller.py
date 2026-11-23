@@ -1,10 +1,8 @@
 """EnrollmentController: Điều phối quy trình tự đăng ký nhân viên mới qua OTP cho QML (FEAT-ENROLL-001, Task 7)."""
 
-import base64
 import time
 from typing import Any
 
-import cv2
 import httpx
 import numpy as np
 from PySide6.QtCore import Property, QObject, Signal, Slot
@@ -563,20 +561,6 @@ class EnrollmentController(QObject):
         self._status_message = "Đang gửi dữ liệu đăng ký lên máy chủ..."
         self.statusMessageChanged.emit(self._status_message)
 
-        # Cắt avatarBase64
-        fh, fw = final_frame.shape[:2]
-        x, y, w, h = detection.bbox
-        x1 = max(0, x)
-        y1 = max(0, y)
-        x2 = min(fw, max(0, x + w))
-        y2 = min(fh, max(0, y + h))
-        crop = final_frame[y1:y2, x1:x2]
-        if crop.size > 0:
-            _, buf = cv2.imencode(".jpg", crop, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
-            avatar_b64 = base64.b64encode(buf).decode("utf-8")
-        else:
-            avatar_b64 = ""
-
         base_url = settings.backend_url.rstrip("/")
         url = f"{base_url}/kiosk/enroll-face"
         headers = {
@@ -633,6 +617,7 @@ class EnrollmentController(QObject):
             "vector512": frontal_vec,
         }
 
+        # Zero-Photo-Upload theo Nghị định 13/2023/NĐ-CP (FIND-SEC-001)
         event_payload = {
             "employeeId": self._employee_id or 1001,
             "employeeCode": getattr(self, "_employee_code", ""),
@@ -641,7 +626,7 @@ class EnrollmentController(QObject):
             "vector512": frontal_vec,
             "templates": self._captured_templates,
             "faceEmbeddings": self._captured_embeddings,
-            "avatarBase64": avatar_b64,
+            "avatarBase64": "",
         }
 
         try:

@@ -107,3 +107,30 @@ def test_qml_mvc_environment_readiness(qapp):
         target = kiosk_root / rel_path
         assert target.exists(), f"Thiếu file: {target}"
         assert target.stat().st_size > 0, f"File rỗng: {target}"
+
+
+def test_kiosk_secret_token_security_warning(caplog):
+    """FIND-SEC-004: Ghi log cảnh báo bảo mật nếu KIOSK_SECRET_TOKEN chưa được thiết lập hoặc dùng mặc định."""
+    import logging
+
+    from config.settings import KioskConfig
+
+    caplog.set_level(logging.WARNING, logger="config.settings")
+
+    # 1. Khi dùng secret mặc định -> phải ghi log warning
+    caplog.clear()
+    cfg_default = KioskConfig(kiosk_secret_token="Kiosk_Internal_Secret_Token_2026")
+    assert cfg_default.is_default_secret is True
+    assert any("FIND-SEC-004" in record.message for record in caplog.records)
+
+    # 2. Khi token rỗng -> phải ghi log warning
+    caplog.clear()
+    _ = KioskConfig(kiosk_secret_token="")
+    assert any("FIND-SEC-004" in record.message for record in caplog.records)
+
+    # 3. Khi token an toàn tùy biến -> không ghi log warning FIND-SEC-004
+    caplog.clear()
+    cfg_secure = KioskConfig(kiosk_secret_token="SuperSecureProductionSecret_999!")
+    assert cfg_secure.is_default_secret is False
+    assert not any("FIND-SEC-004" in record.message for record in caplog.records)
+
