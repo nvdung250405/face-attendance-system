@@ -237,7 +237,6 @@ class TestSQLiteQueueManager:
         assert lockout_ts is None
 
 
-
 class TestOfflineSyncWorker:
     """Kiểm thử hoạt động của OfflineSyncWorker."""
 

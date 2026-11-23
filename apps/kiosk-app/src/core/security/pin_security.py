@@ -64,9 +64,7 @@ class PinSecurityManager:
         try:
             attempts, lockout_ts = self.sqlite_manager.get_pin_lockout_state()
             self.failed_attempts = int(attempts)
-            self.lockout_until_timestamp = (
-                float(lockout_ts) if lockout_ts is not None else None
-            )
+            self.lockout_until_timestamp = float(lockout_ts) if lockout_ts is not None else None
         except Exception as exc:
             logger.warning("Không thể nạp trạng thái PIN lockout từ SQLite: %s", exc)
 

@@ -326,4 +326,3 @@ def test_enrollment_zero_photo_upload_decree_13(qapp):
     assert event["avatarBase64"] == ""
     assert "templates" in event
     assert len(event["templates"]) == 3
-

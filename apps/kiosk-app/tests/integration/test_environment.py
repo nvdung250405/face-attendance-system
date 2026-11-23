@@ -133,4 +133,3 @@ def test_kiosk_secret_token_security_warning(caplog):
     cfg_secure = KioskConfig(kiosk_secret_token="SuperSecureProductionSecret_999!")
     assert cfg_secure.is_default_secret is False
     assert not any("FIND-SEC-004" in record.message for record in caplog.records)
-
