@@ -107,6 +107,22 @@ class KioskAttendanceControllerTest {
                     .andExpect(jsonPath("$.code").value("HEALTHY"))
                     .andExpect(jsonPath("$.data.status").value("UP"));
         }
+
+        @Test
+        @DisplayName("Nhịp tim Kiosk thành công (POST /api/v1/kiosk/ping) -> trả về 200 OK PONG status ONLINE")
+        void ping_Success_Returns200() throws Exception {
+            when(kioskAuthService.authenticate(eq("KIOSK-HN-01"), eq("valid-secret")))
+                    .thenReturn(activeKiosk);
+
+            mockMvc.perform(post("/api/v1/kiosk/ping")
+                            .header("X-Kiosk-Id", "KIOSK-HN-01")
+                            .header("X-Kiosk-Secret", "valid-secret"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.code").value("PONG"))
+                    .andExpect(jsonPath("$.data.status").value("ONLINE"))
+                    .andExpect(jsonPath("$.data.kioskId").value("KIOSK-HN-01"));
+        }
     }
 
     @Nested

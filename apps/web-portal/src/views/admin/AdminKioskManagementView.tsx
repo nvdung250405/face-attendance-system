@@ -70,25 +70,32 @@ export const AdminKioskManagementView: React.FC = () => {
 
   const isReadOnly = user?.role === 'DPO'
 
-  const loadKiosks = useCallback(async () => {
+  const loadKiosks = useCallback(async (isSilent: boolean | unknown = false) => {
+    const silent = typeof isSilent === 'boolean' ? isSilent : false
     try {
-      setIsLoading(true)
+      if (!silent) setIsLoading(true)
       setErrorMessage(null)
       const data = await complianceAdminService.getKiosks()
       setKiosks(data)
     } catch (err) {
       const error = err as { message?: string }
-      setErrorMessage(error.message || 'Không thể tải danh sách trạm Kiosk.')
+      if (!silent) setErrorMessage(error.message || 'Không thể tải danh sách trạm Kiosk.')
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }, [setKiosks])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadKiosks()
+    void loadKiosks(false)
+
+    // Tự động làm mới định kỳ mỗi 15 giây để cập nhật trạng thái kết nối & nhịp tim trạm Kiosk
+    const intervalId = window.setInterval(() => {
+      void loadKiosks(true)
+    }, 15000)
 
     return () => {
+      window.clearInterval(intervalId)
       // Tiêu hủy RAM khi unmount theo DD-WEB-019
       clearStore()
     }

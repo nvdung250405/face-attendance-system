@@ -334,6 +334,32 @@ def test_verify_pin_api():
     assert exc_locked.value.locked_until == "2026-10-18T14:30:00Z"
 
 
+def test_kiosk_ping_success():
+    """Kiểm tra gọi nhịp tim ping thành công và trả về trạng thái ONLINE."""
+
+    def mock_handler(request: httpx.Request):
+        if request.url.path.endswith("/kiosk/ping"):
+            assert request.headers.get("X-Kiosk-Id") == "KIOSK-HN-01"
+            assert request.headers.get("X-Kiosk-Secret") == "ksk_secret_123"
+            return httpx.Response(
+                200,
+                json={"success": True, "code": "PONG", "data": {"status": "ONLINE"}},
+            )
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    http_client = KioskHttpClient(
+        base_url="http://mock-server:8080/api/v1",
+        kiosk_id="KIOSK-HN-01",
+        secret_token="ksk_secret_123",
+        client=client,
+    )
+    res = http_client.ping()
+    assert res["success"] is True
+    assert res["data"]["status"] == "ONLINE"
+    assert http_client.check_health() is True
+
+
 def test_enroll_face_multi_template_and_validation():
     """Kiểm tra enroll_face với multi-template 3 tư thế, fallback vector512, và các điều kiện ValueError."""
     captured_requests = []

@@ -4,8 +4,11 @@ import com.fas.common.error.ApiErrorCode;
 import com.fas.common.error.ApiException;
 import com.fas.data.entity.Kiosk;
 import com.fas.data.repository.KioskRepository;
+import java.time.Clock;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
@@ -20,20 +23,29 @@ public class KioskAuthService {
 
     private final KioskRepository kioskRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
 
+    @Autowired
     public KioskAuthService(KioskRepository kioskRepository, PasswordEncoder passwordEncoder) {
+        this(kioskRepository, passwordEncoder, Clock.systemDefaultZone());
+    }
+
+    public KioskAuthService(KioskRepository kioskRepository, PasswordEncoder passwordEncoder, Clock clock) {
         this.kioskRepository = kioskRepository;
         this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
     }
 
     /**
      * Xác thực trạm Kiosk và trả về thực thể trạm đang hoạt động.
+     * Cập nhật mốc thời gian last_ping_at để ghi nhận trạm Kiosk đang trực tuyến (ONLINE).
      *
      * @param kioskId mã định danh trạm gửi trong header {@code X-Kiosk-Id}
      * @param secret  mã bí mật plaintext gửi trong header {@code X-Kiosk-Secret}
      * @return trạm Kiosk hợp lệ và còn hoạt động
      * @throws ApiException {@code KIOSK_UNAUTHORIZED} khi trạm không tồn tại/vô hiệu hóa, chưa cấp mã bí mật hoặc sai mã bí mật
      */
+    @Transactional
     public Kiosk authenticate(String kioskId, String secret) {
         Kiosk kiosk = kioskRepository.findByIdAndIsActiveTrue(kioskId)
                 .orElseThrow(() -> new ApiException(ApiErrorCode.KIOSK_UNAUTHORIZED,
@@ -49,6 +61,7 @@ public class KioskAuthService {
                     "Mã bí mật của trạm Kiosk không chính xác: " + kioskId);
         }
 
-        return kiosk;
+        kiosk.setLastPingAt(clock.instant());
+        return kioskRepository.save(kiosk);
     }
 }

@@ -265,6 +265,34 @@ def test_kiosk_view_model_auto_standby_timeout(qapp):
     assert vm.isStandby is True
 
 
+def test_kiosk_view_model_standby_suppressed_during_enrollment_or_interaction(qapp):
+    """Kiểm tra ngăn chặn tự động nhảy về Standby khi đang đăng ký hoặc người dùng thao tác."""
+    detector = MagicMock()
+    detector.detect_face.return_value = None
+
+    enrollment_ctrl = MagicMock()
+    enrollment_ctrl.isDialogOpen = True
+    enrollment_ctrl.isEnrolling = True
+    enrollment_ctrl.currentStep = 2
+
+    vm = KioskViewModel(detector=detector, enrollment_controller=enrollment_ctrl)
+    vm.setStandby(False)
+    assert vm.isStandby is False
+
+    # Giả lập mốc thời gian quá khứ > 8s
+    vm._last_face_time = 0.0
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    vm.process_camera_frame(dummy_frame)
+
+    # Do đang trong quy trình đăng ký, Standby KHÔNG được phép kích hoạt
+    assert vm.isStandby is False
+
+    # Test reset_activity
+    past_time = vm._last_face_time
+    vm.reset_activity()
+    assert vm._last_face_time >= past_time
+
+
 def test_evaluate_face_oval_alignment_centered():
     """Kiểm tra khuôn mặt căn chuẩn tâm Oval."""
     frame_shape = (480, 640, 3)

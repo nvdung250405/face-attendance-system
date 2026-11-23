@@ -10,6 +10,7 @@ import com.fas.api.dto.response.EnrollmentResult;
 import com.fas.api.dto.response.GalleryResponse;
 import com.fas.api.dto.response.OtpVerificationResult;
 import com.fas.api.dto.response.PunchResult;
+import com.fas.data.entity.Kiosk;
 import com.fas.security.kiosk.KioskAuthService;
 import com.fas.service.AttendanceService;
 import com.fas.service.EnrollmentService;
@@ -17,6 +18,7 @@ import com.fas.service.OfflineBatchSyncService;
 import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -66,12 +68,44 @@ public class KioskAttendanceController {
      * Kiểm tra trạng thái hoạt động của Backend cho trạm Kiosk
      * (GET /api/v1/kiosk/health - APD-BE-001, API-BE-045, TASK-BE-044).
      *
+     * @param kioskId mã định danh trạm Kiosk tùy chọn trong header {@code X-Kiosk-Id}
+     * @param kioskSecret mã bí mật trạm Kiosk tùy chọn trong header {@code X-Kiosk-Secret}
      * @return trạng thái hoạt động với mã HTTP 200 OK
      */
     @GetMapping("/health")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<Map<String, String>> checkHealth() {
+    public ApiResponse<Map<String, String>> checkHealth(
+            @RequestHeader(value = "X-Kiosk-Id", required = false) String kioskId,
+            @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret) {
+        if (StringUtils.hasText(kioskId) && StringUtils.hasText(kioskSecret)) {
+            try {
+                validateKiosk(kioskId, kioskSecret);
+            } catch (Exception ignored) {
+                // Giữ endpoint health luôn mở phục vụ kiểm tra kết nối mạng
+            }
+        }
         return ApiResponse.ok("HEALTHY", "Kiosk attendance service is operational", Map.of("status", "UP"));
+    }
+
+    /**
+     * Nhịp tim Kiosk gửi định kỳ để duy trì trạng thái trực tuyến
+     * (POST /api/v1/kiosk/ping - FR-BE-017, DATA-BE-019).
+     *
+     * @param kioskId mã định danh trạm Kiosk trong header {@code X-Kiosk-Id}
+     * @param kioskSecret mã bí mật trạm Kiosk trong header {@code X-Kiosk-Secret}
+     * @return trạng thái kết nối trạm với mã HTTP 200 OK
+     */
+    @PostMapping("/ping")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<Map<String, Object>> ping(
+            @RequestHeader("X-Kiosk-Id") String kioskId,
+            @RequestHeader(value = "X-Kiosk-Secret", required = false) String kioskSecret) {
+        Kiosk kiosk = validateKiosk(kioskId, kioskSecret);
+        return ApiResponse.ok("PONG", "Nhịp tim Kiosk đã được ghi nhận", Map.of(
+                "kioskId", kiosk.getId(),
+                "status", "ONLINE",
+                "lastPingAt", kiosk.getLastPingAt() != null ? kiosk.getLastPingAt().toString() : ""
+        ));
     }
 
     /**
@@ -175,7 +209,7 @@ public class KioskAttendanceController {
     /**
      * Thẩm định cặp header {@code X-Kiosk-Id} + {@code X-Kiosk-Secret} qua {@link KioskAuthService}.
      */
-    private void validateKiosk(String headerKioskId, String kioskSecret) {
-        kioskAuthService.authenticate(headerKioskId, kioskSecret);
+    private Kiosk validateKiosk(String headerKioskId, String kioskSecret) {
+        return kioskAuthService.authenticate(headerKioskId, kioskSecret);
     }
 }
