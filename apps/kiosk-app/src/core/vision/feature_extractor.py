@@ -11,6 +11,15 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
+if not hasattr(ort, "OrtException"):
+    try:
+        from onnxruntime.capi.onnxruntime_pybind11_state import (
+            RuntimeException as _OrtException,
+        )
+    except ImportError:
+        _OrtException = Exception
+    ort.OrtException = _OrtException
+
 from config.logger import get_logger
 from config.settings import settings
 
@@ -52,16 +61,25 @@ class ArcFaceFeatureExtractor:
                 "Vui lòng chạy 'python scripts/download_models.py' để nạp mô hình."
             )
 
-        # Cấu hình ONNX Runtime Session tối ưu CPU
+        # Cấu hình ONNX Runtime Session tối ưu CPU / GPU / NPU
         sess_options = ort.SessionOptions()
         sess_options.intra_op_num_threads = self.num_threads
         sess_options.inter_op_num_threads = 1
         sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
+        available_providers = ort.get_available_providers()
+        providers = [
+            p
+            for p in ["DmlExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+            if p in available_providers
+        ]
+        if not providers:
+            providers = ["CPUExecutionProvider"]
+
         self._session = ort.InferenceSession(
             str(self.model_path),
             sess_options=sess_options,
-            providers=["CPUExecutionProvider"],
+            providers=providers,
         )
 
         self._input_name: str = self._session.get_inputs()[0].name
@@ -148,8 +166,12 @@ class ArcFaceFeatureExtractor:
         blob = np.expand_dims(blob, axis=0)
 
         # Suy luận qua ONNX Runtime
-        outputs = self._session.run([self._output_name], {self._input_name: blob})
-        raw_embedding = outputs[0].flatten().astype(np.float32)
+        try:
+            outputs = self._session.run([self._output_name], {self._input_name: blob})
+            raw_embedding = outputs[0].flatten().astype(np.float32)
+        except ort.OrtException as exc:
+            logger.warning("Lỗi suy luận ArcFace ONNX Runtime: %s", exc)
+            return np.zeros(512, dtype=np.float32)
 
         # Chuẩn hóa L2 Norm: ||v|| = 1.0 phục vụ tính tích vô hướng Cosine trực tiếp
         norm = float(np.linalg.norm(raw_embedding))

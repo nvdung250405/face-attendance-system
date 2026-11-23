@@ -274,16 +274,37 @@ class YuNetFaceDetector:
         return results
 
     def detect_face(self, frame: np.ndarray) -> FaceDetectionResult | None:
-        """Phát hiện và trả về khuôn mặt nổi bật nhất (diện tích lớn nhất) trong khung hình.
+        """Phát hiện và trả về khuôn mặt nổi bật nhất trong khung hình.
+
+        Lọc khuôn mặt đạt kích thước tối thiểu (is_valid_size == True) và xếp hạng
+        ứng viên theo điểm số kết hợp giữa diện tích bounding box và khoảng cách Euclidean
+        tới tâm Oval (tâm khung hình) để ưu tiên người dùng đứng giữa thay vì người qua đường.
 
         Args:
             frame: Khung hình đầu vào (BGR numpy array).
 
         Returns:
-            FaceDetectionResult | None: Khuôn mặt lớn nhất trong khung hình hoặc None nếu không phát hiện.
+            FaceDetectionResult | None: Khuôn mặt phù hợp nhất hoặc None nếu không phát hiện.
         """
         results = self.detect(frame)
         if not results:
             return None
-        # Ưu tiên khuôn mặt có diện tích lớn nhất (gần camera nhất)
-        return max(results, key=lambda r: r.bbox[2] * r.bbox[3])
+
+        # Lọc các khuôn mặt đạt kích thước tối thiểu (is_valid_size == True)
+        valid_faces = [r for r in results if r.is_valid_size]
+        if not valid_faces:
+            return None
+
+        h, w = frame.shape[:2]
+        oval_cx = w / 2.0
+        oval_cy = h * 0.40  # Tọa độ tâm khung Oval trên Kiosk
+
+        def _candidate_rank(r: FaceDetectionResult) -> float:
+            bx, by, bw, bh = r.bbox
+            face_cx = bx + bw / 2.0
+            face_cy = by + bh / 2.0
+            dist = math.hypot(face_cx - oval_cx, face_cy - oval_cy)
+            area = float(bw * bh)
+            return area / (1.0 + dist)
+
+        return max(valid_faces, key=_candidate_rank)

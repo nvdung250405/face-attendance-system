@@ -5,7 +5,10 @@ Tài liệu tham chiếu:
 - DDS.md (Mục 3.2 - Bước 4)
 """
 
+from unittest.mock import MagicMock
+
 import numpy as np
+import onnxruntime as ort
 import pytest
 
 from config.settings import settings
@@ -66,3 +69,45 @@ def test_extract_vector_dimension_and_l2_norm():
     # Kiểm tra độ dài chuẩn L2 Norm: ||v|| = 1.0 (sai số < 1e-4)
     norm = float(np.linalg.norm(embedding))
     assert pytest.approx(norm, rel=1e-4) == 1.0
+
+
+def test_feature_extractor_exception_handling():
+    """Kiểm tra xử lý ngoại lệ ort.OrtException trả về vector zeros an toàn (FIND-AI-003)."""
+    extractor = ArcFaceFeatureExtractor.__new__(ArcFaceFeatureExtractor)
+    extractor._input_name = "input"
+    extractor._output_name = "output"
+    mock_session = MagicMock()
+    mock_session.run.side_effect = ort.OrtException("Inference failure")
+    extractor._session = mock_session
+
+    dummy_face = np.zeros((112, 112, 3), dtype=np.uint8)
+    embedding = extractor.extract(dummy_face)
+    assert isinstance(embedding, np.ndarray)
+    assert embedding.shape == (512,)
+    assert np.all(embedding == 0.0)
+
+
+def test_feature_extractor_dynamic_providers(monkeypatch, tmp_path):
+    """Kiểm tra phát hiện providers tăng tốc phần cứng khả dụng linh hoạt (FIND-AI-003)."""
+    model_file = tmp_path / "model.onnx"
+    model_file.write_text("dummy")
+
+    captured_providers = []
+
+    def mock_session_init(path, sess_options=None, providers=None):
+        captured_providers.extend(providers)
+        mock = MagicMock()
+        mock.get_inputs.return_value = [MagicMock(name="input")]
+        mock.get_outputs.return_value = [MagicMock(name="output")]
+        return mock
+
+    monkeypatch.setattr(ort, "InferenceSession", mock_session_init)
+    monkeypatch.setattr(
+        ort,
+        "get_available_providers",
+        lambda: ["CPUExecutionProvider", "CUDAExecutionProvider"],
+    )
+
+    ArcFaceFeatureExtractor(model_path=model_file)
+    assert "CUDAExecutionProvider" in captured_providers
+    assert "CPUExecutionProvider" in captured_providers

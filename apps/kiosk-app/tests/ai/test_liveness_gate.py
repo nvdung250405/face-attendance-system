@@ -5,7 +5,10 @@ Tài liệu tham chiếu:
 - TP-KIOSK-01 (Mục 6.2 & TC-KIOSK-05, TC-KIOSK-06, TC-KIOSK-07)
 """
 
+from unittest.mock import MagicMock
+
 import numpy as np
+import onnxruntime as ort
 import pytest
 
 from config.settings import settings
@@ -130,3 +133,48 @@ def test_check_liveness_convenience_method():
     result = gate.check_liveness(dummy_frame, bbox)
     assert isinstance(result, LivenessResult)
     assert result.label in ("LIVE", "SPOOF")
+
+
+def test_liveness_gate_exception_handling():
+    """Kiểm tra xử lý ngoại lệ ort.OrtException trả về SPOOF an toàn theo fail-closed (FIND-AI-003)."""
+    gate = MiniFASNetLivenessGate.__new__(MiniFASNetLivenessGate)
+    gate.target_size = (80, 80)
+    gate._input_name = "input"
+    gate._output_name = "output"
+    gate.threshold = 0.85
+    mock_session = MagicMock()
+    mock_session.run.side_effect = ort.OrtException("Inference failure")
+    gate._session = mock_session
+
+    dummy_crop = np.zeros((80, 80, 3), dtype=np.uint8)
+    res = gate.predict(dummy_crop)
+    assert isinstance(res, LivenessResult)
+    assert res.is_live is False
+    assert res.score == 0.0
+    assert res.label == "SPOOF"
+
+
+def test_liveness_gate_dynamic_providers(monkeypatch, tmp_path):
+    """Kiểm tra phát hiện providers tăng tốc phần cứng khả dụng linh hoạt (FIND-AI-003)."""
+    model_file = tmp_path / "model.onnx"
+    model_file.write_text("dummy")
+
+    captured_providers = []
+
+    def mock_session_init(path, sess_options=None, providers=None):
+        captured_providers.extend(providers)
+        mock = MagicMock()
+        mock.get_inputs.return_value = [MagicMock(name="input")]
+        mock.get_outputs.return_value = [MagicMock(name="output")]
+        return mock
+
+    monkeypatch.setattr(ort, "InferenceSession", mock_session_init)
+    monkeypatch.setattr(
+        ort,
+        "get_available_providers",
+        lambda: ["CPUExecutionProvider", "DmlExecutionProvider"],
+    )
+
+    MiniFASNetLivenessGate(model_path=model_file, threshold=0.85)
+    assert "DmlExecutionProvider" in captured_providers
+    assert "CPUExecutionProvider" in captured_providers
