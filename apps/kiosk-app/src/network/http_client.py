@@ -49,6 +49,12 @@ class KioskCooldownConflict(Exception):
     pass
 
 
+class KioskUnauthorizedError(Exception):
+    """Lỗi xác thực trạm Kiosk (401 Unauthorized - sai kiosk_id hoặc secret_token)."""
+
+    pass
+
+
 class KioskHttpClient:
     """Đóng gói httpx.Client thực hiện gọi REST API với tự động tiêm Header và xử lý lỗi chuẩn."""
 
@@ -105,9 +111,38 @@ class KioskHttpClient:
                 pass
             self._internal_client = None
 
-    def check_health(self) -> bool:
-        """Kiểm tra độ sẵn sàng của máy chủ backend."""
+    def ping(self) -> dict[str, Any]:
+        """Gửi tín hiệu nhịp tim Kiosk lên backend (POST /api/v1/kiosk/ping)."""
         client = self._get_client()
+        url = f"{self.base_url}/kiosk/ping"
+        try:
+            resp = client.post(url, headers=self._get_headers(), timeout=self.timeout)
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 401:
+                raise KioskUnauthorizedError(
+                    f"Trạm {self.kiosk_id} không có quyền gửi nhịp tim (sai mã bí mật)."
+                ) from exc
+            raise KioskNetworkError(f"Lỗi phản hồi khi ping: HTTP {exc.response.status_code}") from exc
+        except httpx.RequestError as exc:
+            raise KioskNetworkError(f"Không thể kết nối đến máy chủ khi ping: {exc}") from exc
+
+    def check_health(self) -> bool:
+        """Kiểm tra độ sẵn sàng và duy trì nhịp tim kết nối của máy chủ backend."""
+        client = self._get_client()
+        # Ưu tiên gửi ping kèm header định danh để cập nhật trạng thái trực tuyến
+        try:
+            resp = client.post(
+                f"{self.base_url}/kiosk/ping",
+                headers=self._get_headers(),
+                timeout=self.timeout,
+            )
+            if resp.status_code in (200, 204):
+                return True
+        except (httpx.RequestError, httpx.HTTPStatusError):
+            pass
+
         candidates = [
             f"{self.base_url}/kiosk/health",
             f"{self.base_url}",

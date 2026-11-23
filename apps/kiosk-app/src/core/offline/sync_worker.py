@@ -99,6 +99,16 @@ class OfflineSyncWorker(QThread):
             bool: True nếu máy chủ phản hồi sẵn sàng, ngược lại False.
         """
         client = self._get_client()
+        # Ưu tiên gửi nhịp tim ping kèm header định danh để cập nhật trạng thái trực tuyến
+        ping_url = f"{self.backend_url}/kiosk/ping"
+        try:
+            response = client.post(ping_url, timeout=3.0)
+            if response.status_code in (200, 204):
+                self._update_network_status(True, f"Máy chủ hoạt động bình thường ({ping_url})")
+                return True
+        except httpx.RequestError:
+            pass
+
         # Thử kiểm tra endpoint actuator/health hoặc kiosk/health
         candidates = [
             f"{self.backend_url}/kiosk/health",
