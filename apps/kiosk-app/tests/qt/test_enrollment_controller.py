@@ -278,3 +278,51 @@ def test_is_enrolling_property_notify_signal_binding(qapp):
     assert controller.isEnrolling is False
     assert controller.isDialogOpen is False
     assert controller.currentStep == 1
+
+
+def test_enrollment_zero_photo_upload_decree_13(qapp):
+    """FIND-SEC-001: Đảm bảo tuân thủ Nghị định 13/2023/NĐ-CP (Zero-Photo-Upload).
+
+    avatarBase64 phải luôn rỗng ('') trong event_payload và không upload ảnh khuôn mặt thô.
+    """
+    mock_client = MagicMock(spec=httpx.Client)
+    detector = MagicMock()
+    extractor = MagicMock()
+    extractor.align_face.return_value = np.zeros((112, 112, 3), dtype=np.uint8)
+    extractor.extract_vector.return_value = np.ones(512, dtype=np.float32)
+
+    liveness_gate = MagicMock()
+    liveness_gate.predict.return_value = 0.95
+
+    controller = EnrollmentController(
+        detector=detector,
+        extractor=extractor,
+        liveness_gate=liveness_gate,
+        client=mock_client,
+        capture_interval=0.0,
+        pose_hold_duration=0.0,
+    )
+    controller._current_step = 2
+    controller._employee_id = 123
+    controller._otp = "654321"
+
+    completed_events = []
+    controller.enrollmentCompleted.connect(lambda p: completed_events.append(p))
+
+    mock_client.post.return_value = httpx.Response(200, json={"status": "ACTIVATED"})
+    rng = np.random.default_rng(42)
+    dummy_frame = rng.integers(0, 256, (480, 640, 3), dtype=np.uint8)
+
+    # Chụp 3 tư thế
+    for yaw in (0.0, 16.0, -16.0):
+        detector.detect_face.return_value = _create_mock_detection(yaw=yaw)
+        controller.process_capture_frame(dummy_frame)
+
+    assert controller.currentStep == 3
+    assert len(completed_events) == 1
+    event = completed_events[0]
+
+    # Kiểm tra không upload ảnh thô, avatarBase64 rỗng
+    assert event["avatarBase64"] == ""
+    assert "templates" in event
+    assert len(event["templates"]) == 3

@@ -63,6 +63,8 @@ class KioskViewModel(QObject):
         enrollment_controller: Any = None,
         pin_controller: Any = None,
         is_dev_mode: bool | None = None,
+        allow_no_liveness: bool = False,
+        demo_mode: bool = False,
         inference_worker: Any = None,
         parent: QObject | None = None,
     ) -> None:
@@ -71,6 +73,7 @@ class KioskViewModel(QObject):
         self._is_dev_mode: bool = (
             is_dev_mode if is_dev_mode is not None else settings.is_development
         )
+        self.allow_no_liveness: bool = allow_no_liveness or demo_mode
         self.image_provider = image_provider
         self.detector = detector
         self.liveness_gate = liveness_gate
@@ -166,8 +169,8 @@ class KioskViewModel(QObject):
                     self._on_worker_standby_wake
                 )
                 self._inference_worker.face_detected.disconnect(self._on_worker_face_detected)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Không thể ngắt kết nối tín hiệu inference_worker cũ: %s", exc)
 
         self._inference_worker = worker
         if self._inference_worker is not None:
@@ -357,7 +360,9 @@ class KioskViewModel(QObject):
             self.messageChanged.emit(message)
             changed = True
         if changed:
-            pass
+            logger.debug(
+                "Trạng thái oval cập nhật: state=%s, message=%s", self._oval_state, self._message
+            )
 
     def _trigger_hold(self, duration_sec: float = 2.5) -> None:
         """Kích hoạt khoảng thời gian giữ kết quả trước khi tiếp tục quét."""
@@ -516,8 +521,21 @@ class KioskViewModel(QObject):
                 self._trigger_hold(duration_sec=2.5)
                 logger.warning("Từ chối điểm danh: Liveness không đạt (score=%.3f)", liveness_score)
                 return
-        else:
+        elif self.allow_no_liveness:
             liveness_score = 1.0
+            logger.warning(
+                "KioskViewModel: Đang chạy chế độ dev/demo no-liveness (bỏ qua kiểm tra thực thể sống)."
+            )
+        else:
+            self.set_state(
+                OvalState.ERROR,
+                "LỖI HỆ THỐNG: CHƯA KÍCH HOẠT KIỂM TRA THỰC THỂ SỐNG!",
+            )
+            self._trigger_hold(duration_sec=2.5)
+            logger.warning(
+                "KioskViewModel: liveness_gate is None. Hủy suy luận theo nguyên tắc an toàn fail-closed."
+            )
+            return
 
         # Pipeline Bước 3: Căn chỉnh và trích xuất vector 512D ArcFace
         if self.extractor is None or self.gallery_matcher is None:

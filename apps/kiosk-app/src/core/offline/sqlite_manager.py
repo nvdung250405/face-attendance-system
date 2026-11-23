@@ -102,6 +102,16 @@ class SQLiteQueueManager:
                     ON offline_punches(punch_timestamp DESC);
                 """)
 
+                # Bảng lưu trạng thái khóa PIN chống brute-force (FIND-SEC-003)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS pin_lockout_state (
+                        id INTEGER PRIMARY KEY CHECK (id = 1),
+                        failed_attempts INTEGER NOT NULL DEFAULT 0,
+                        lockout_until_timestamp REAL,
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                """)
+
                 conn.commit()
                 logger.info(
                     "SQLiteQueueManager sẵn sàng tại %s [journal_mode=%s, timeout=%.1fs]",
@@ -320,13 +330,13 @@ class SQLiteQueueManager:
             finally:
                 conn.close()
 
-    def cleanup_synced_punches(self, retention_days: int = 30) -> int:
+    def cleanup_synced_punches(self, retention_days: int = 20) -> int:
         """Xóa vĩnh viễn các bản ghi đã đồng bộ quá hạn lưu trữ quy định.
 
-        Tuân thủ DATA-KSK-001 & data-specs.md: Lưu trữ tối đa 30 ngày phục vụ đối soát.
+        Tuân thủ DATA-KSK-001 & Nghị định 356/2025/NĐ-CP: Lưu trữ tối đa 20 ngày phục vụ đối soát.
 
         Args:
-            retention_days: Thời hạn lưu trữ tối đa (mặc định 30 ngày).
+            retention_days: Thời hạn lưu trữ tối đa (mặc định 20 ngày theo Nghị định 356/2025/NĐ-CP).
 
         Returns:
             int: Số lượng bản ghi đã được dọn dẹp.
@@ -349,3 +359,66 @@ class SQLiteQueueManager:
                 return deleted_count
             finally:
                 conn.close()
+
+    def get_pin_lockout_state(self) -> tuple[int, float | None]:
+        """Lấy trạng thái khóa PIN từ SQLite (failed_attempts, lockout_until_timestamp).
+
+        Returns:
+            tuple[int, float | None]: (failed_attempts, lockout_until_timestamp).
+        """
+        sql = "SELECT failed_attempts, lockout_until_timestamp FROM pin_lockout_state WHERE id = 1;"
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(sql)
+                row = cursor.fetchone()
+                if row:
+                    failed = int(row["failed_attempts"])
+                    lockout = (
+                        float(row["lockout_until_timestamp"])
+                        if row["lockout_until_timestamp"] is not None
+                        else None
+                    )
+                    return failed, lockout
+                return 0, None
+            finally:
+                conn.close()
+
+    def save_pin_lockout_state(
+        self, failed_attempts: int, lockout_until_timestamp: float | None = None
+    ) -> None:
+        """Lưu trạng thái khóa PIN vào SQLite (FIND-SEC-003).
+
+        Args:
+            failed_attempts: Số lần nhập sai liên tiếp.
+            lockout_until_timestamp: Mốc thời gian Unix hết hạn khóa (None nếu chưa bị khóa).
+        """
+        sql = """
+            INSERT INTO pin_lockout_state (id, failed_attempts, lockout_until_timestamp, updated_at)
+            VALUES (1, ?, ?, datetime('now'))
+            ON CONFLICT(id) DO UPDATE SET
+                failed_attempts = excluded.failed_attempts,
+                lockout_until_timestamp = excluded.lockout_until_timestamp,
+                updated_at = excluded.updated_at;
+        """
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(sql, (failed_attempts, lockout_until_timestamp))
+                conn.commit()
+            except Exception as exc:
+                conn.rollback()
+                logger.error("Lỗi khi lưu pin_lockout_state: %s", exc)
+                raise
+            finally:
+                conn.close()
+
+    def clear_pin_lockout_state(self) -> None:
+        """Reset trạng thái khóa PIN về mặc định (0 lần sai, không khóa)."""
+        self.save_pin_lockout_state(0, None)
+
+    # Bí danh tiện ích
+    set_pin_lockout_state = save_pin_lockout_state
+    reset_pin_lockout_state = clear_pin_lockout_state

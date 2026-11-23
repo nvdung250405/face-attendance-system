@@ -8,6 +8,7 @@ Tài liệu tham chiếu:
 """
 
 import json
+import random
 from typing import Any
 from urllib.parse import urlparse
 
@@ -144,7 +145,7 @@ class KioskStompWorker(QThread):
             host = parsed.hostname or "localhost"
             port = parsed.port or 8080
 
-            conn = stomp.Connection([(host, port)])
+            conn = stomp.Connection([(host, port)], heartbeats=(10000, 10000))
 
             class StompMsgListener(stomp.ConnectionListener):
                 def __init__(self, worker_ref: Any) -> None:
@@ -185,6 +186,11 @@ class KioskStompWorker(QThread):
             self.connection_status_changed.emit(is_connected, message)
             logger.info("Trạng thái STOMP: connected=%s (%s)", is_connected, message)
 
+    def calculate_reconnect_delay(self, attempt: int) -> float:
+        """Tính toán thời gian chờ kết nối lại STOMP theo hàm mũ kèm jitter ngẫu nhiên."""
+        base = min(2 ** min(attempt, 5), 30.0)
+        return float(base * random.uniform(0.8, 1.2))
+
     def run(self) -> None:
         """Vòng lặp thực thi của QThread duy trì kết nối với Exponential Backoff."""
         self._is_running = True
@@ -198,8 +204,8 @@ class KioskStompWorker(QThread):
                     attempt = 0
                 else:
                     attempt += 1
-                    # Exponential Backoff: delay = min(2^attempt, 30s)
-                    delay = min(2 ** min(attempt, 5), 30.0)
+                    # Exponential Backoff kèm randomized jitter
+                    delay = self.calculate_reconnect_delay(attempt)
                     logger.debug("Thử kết nối lại STOMP sau %.1fs (lần thứ %d)...", delay, attempt)
                     # Ngủ ngắt quãng để phản hồi stop() tức thì
                     for _ in range(int(delay * 10)):
@@ -217,8 +223,8 @@ class KioskStompWorker(QThread):
         if self._conn is not None:
             try:
                 self._conn.disconnect()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Lỗi khi ngắt kết nối STOMP: %s", exc)
             self._conn = None
         self._is_connected = False
 

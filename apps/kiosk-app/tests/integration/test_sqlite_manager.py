@@ -81,7 +81,9 @@ class TestSQLiteQueueManager:
         )
         latency_ms = (time.perf_counter() - start_time) * 1000.0
         assert local_id_1 > 0
-        assert latency_ms < 50.0  # Đảm bảo ghi nhanh
+        assert (
+            latency_ms < 250.0
+        )  # Đảm bảo ghi nhanh (ngưỡng an toàn chống flaky trên CI runner ảo hóa)
 
         local_id_2 = queue_mgr.enqueue_punch(
             employee_id=102,
@@ -172,6 +174,69 @@ class TestSQLiteQueueManager:
         # p2 chưa đồng bộ nên vẫn còn nguyên vẹn
         assert queue_mgr.get_unsynced_count() == 1
         assert queue_mgr.get_unsynced_punches()[0]["id"] == p2
+
+    def test_cleanup_synced_punches_default_20_days_retention(self, temp_db, queue_mgr):
+        """FIND-SEC-002: Kiểm tra thời hạn lưu trữ mặc định là 20 ngày theo Nghị định 356/2025/NĐ-CP."""
+        p_old_synced = queue_mgr.enqueue_punch(employee_id=401)
+        p_recent_synced = queue_mgr.enqueue_punch(employee_id=402)
+        p_old_unsynced = queue_mgr.enqueue_punch(employee_id=403)
+
+        # Đánh dấu 2 bản ghi đã đồng bộ
+        queue_mgr.mark_as_synced([p_old_synced, p_recent_synced])
+
+        conn = sqlite3.connect(str(temp_db))
+        # p_old_synced: 25 ngày trước (> 20 ngày -> phải bị xóa)
+        conn.execute(
+            "UPDATE offline_punches SET created_at = datetime('now', '-25 days') WHERE id = ?",
+            (p_old_synced,),
+        )
+        # p_recent_synced: 15 ngày trước (<= 20 ngày -> phải được giữ lại)
+        conn.execute(
+            "UPDATE offline_punches SET created_at = datetime('now', '-15 days') WHERE id = ?",
+            (p_recent_synced,),
+        )
+        # p_old_unsynced: 25 ngày trước nhưng chưa đồng bộ -> không được xóa
+        conn.execute(
+            "UPDATE offline_punches SET created_at = datetime('now', '-25 days') WHERE id = ?",
+            (p_old_unsynced,),
+        )
+        conn.commit()
+        conn.close()
+
+        # Dọn dẹp không truyền tham số -> dùng mặc định retention_days=20
+        deleted = queue_mgr.cleanup_synced_punches()
+        assert deleted == 1
+
+        # p_recent_synced và p_old_unsynced vẫn còn
+        remaining = queue_mgr.get_unsynced_punches()
+        assert len(remaining) == 1
+        assert remaining[0]["id"] == p_old_unsynced
+
+    def test_sqlite_pin_lockout_state_persistence(self, queue_mgr):
+        """FIND-SEC-003: Kiểm tra lưu trữ và truy xuất trạng thái khóa PIN vào SQLite."""
+        # Trạng thái ban đầu
+        failed, lockout_ts = queue_mgr.get_pin_lockout_state()
+        assert failed == 0
+        assert lockout_ts is None
+
+        # Lưu trạng thái nhập sai 3 lần, chưa khóa
+        queue_mgr.save_pin_lockout_state(failed_attempts=3, lockout_until_timestamp=None)
+        failed, lockout_ts = queue_mgr.get_pin_lockout_state()
+        assert failed == 3
+        assert lockout_ts is None
+
+        # Lưu trạng thái bị khóa
+        target_ts = 1750000000.0
+        queue_mgr.save_pin_lockout_state(failed_attempts=5, lockout_until_timestamp=target_ts)
+        failed, lockout_ts = queue_mgr.get_pin_lockout_state()
+        assert failed == 5
+        assert lockout_ts == target_ts
+
+        # Clear / reset
+        queue_mgr.clear_pin_lockout_state()
+        failed, lockout_ts = queue_mgr.get_pin_lockout_state()
+        assert failed == 0
+        assert lockout_ts is None
 
 
 class TestOfflineSyncWorker:

@@ -6,6 +6,7 @@ Tài liệu tham chiếu:
 - API BUILD PLAN: ABL-KSK-001 (docs/service-docs/kiosk-app/api/api-build-plan.md)
 """
 
+import email.utils
 from datetime import UTC, datetime
 from typing import Any
 
@@ -79,6 +80,7 @@ class KioskHttpClient:
         self.kiosk_id: str = kiosk_id or settings.kiosk_id
         self.secret_token: str = secret_token or settings.kiosk_secret_token
         self.timeout: float = timeout
+        self.clock_drift_offset: float = 0.0
 
         self._custom_client = client
         self._internal_client: httpx.Client | None = None
@@ -102,13 +104,35 @@ class KioskHttpClient:
             )
         return self._internal_client
 
+    def _check_clock_drift(self, response: httpx.Response) -> None:
+        """Phân tích HTTP Date header từ phản hồi backend và kiểm tra lệch đồng hồ."""
+        date_header = response.headers.get("Date") if hasattr(response, "headers") else None
+        if not date_header:
+            return
+        try:
+            server_time = email.utils.parsedate_to_datetime(date_header)
+            if server_time.tzinfo is None:
+                server_time = server_time.replace(tzinfo=UTC)
+            local_time = datetime.now(UTC)
+            drift = (local_time - server_time).total_seconds()
+            self.clock_drift_offset = drift
+            if abs(drift) > 5.0:
+                logger.warning(
+                    "CẢNH BÁO: Lệch đồng hồ Kiosk và Server vượt ngưỡng 5.0s (độ lệch: %.2fs). Kiosk UTC: %s, Server UTC: %s",
+                    drift,
+                    local_time.isoformat(),
+                    server_time.isoformat(),
+                )
+        except Exception as exc:
+            logger.debug("Lỗi phân tích cú pháp HTTP Date header: %s", exc)
+
     def close(self) -> None:
         """Đóng kết nối client nội bộ an toàn."""
         if self._internal_client is not None and not self._internal_client.is_closed:
             try:
                 self._internal_client.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Lỗi khi đóng client HTTP nội bộ: %s", exc)
             self._internal_client = None
 
     def ping(self) -> dict[str, Any]:
@@ -117,6 +141,7 @@ class KioskHttpClient:
         url = f"{self.base_url}/kiosk/ping"
         try:
             resp = client.post(url, headers=self._get_headers(), timeout=self.timeout)
+            self._check_clock_drift(resp)
             resp.raise_for_status()
             return resp.json()
         except httpx.HTTPStatusError as exc:
@@ -140,10 +165,11 @@ class KioskHttpClient:
                 headers=self._get_headers(),
                 timeout=self.timeout,
             )
+            self._check_clock_drift(resp)
             if resp.status_code in (200, 204):
                 return True
-        except (httpx.RequestError, httpx.HTTPStatusError):
-            pass
+        except (httpx.RequestError, httpx.HTTPStatusError) as exc:
+            logger.debug("Kiểm tra ping check_health không thành công: %s", exc)
 
         candidates = [
             f"{self.base_url}/kiosk/health",
@@ -152,9 +178,11 @@ class KioskHttpClient:
         for url in candidates:
             try:
                 resp = client.get(url, timeout=self.timeout)
+                self._check_clock_drift(resp)
                 if resp.status_code in (200, 204):
                     return True
-            except (httpx.RequestError, httpx.HTTPStatusError):
+            except (httpx.RequestError, httpx.HTTPStatusError) as exc:
+                logger.debug("Kiểm tra candidate health không thành công (%s): %s", url, exc)
                 continue
         return False
 
@@ -192,6 +220,7 @@ class KioskHttpClient:
         client = self._get_client()
         try:
             resp = client.post(url, json=payload, headers=self._get_headers(), timeout=self.timeout)
+            self._check_clock_drift(resp)
             if resp.status_code == 200:
                 data = resp.json()
                 logger.info(
@@ -246,6 +275,7 @@ class KioskHttpClient:
         client = self._get_client()
         try:
             resp = client.post(url, json=payload, headers=self._get_headers(), timeout=10.0)
+            self._check_clock_drift(resp)
             if resp.status_code == 200:
                 data = resp.json()
                 logger.info("sync_batch thành công: gửi %d bản ghi", len(formatted_records))
@@ -265,6 +295,7 @@ class KioskHttpClient:
         client = self._get_client()
         try:
             resp = client.get(url, headers=self._get_headers(), timeout=self.timeout)
+            self._check_clock_drift(resp)
             if resp.status_code == 200:
                 data = resp.json()
                 logger.info("fetch_gallery thành công: %s", data.get("code", "GALLERY_FETCHED"))
@@ -294,6 +325,7 @@ class KioskHttpClient:
         client = self._get_client()
         try:
             resp = client.post(url, json=payload, headers=self._get_headers(), timeout=self.timeout)
+            self._check_clock_drift(resp)
             if resp.status_code == 200:
                 data = resp.json()
                 logger.info("verify_otp thành công: otp=%s", otp)
@@ -357,6 +389,7 @@ class KioskHttpClient:
         client = self._get_client()
         try:
             resp = client.post(url, json=payload, headers=self._get_headers(), timeout=self.timeout)
+            self._check_clock_drift(resp)
             if resp.status_code in (200, 201):
                 data = resp.json()
                 logger.info("enroll_face thành công: session=%s", session_token[:8])
@@ -388,6 +421,7 @@ class KioskHttpClient:
         client = self._get_client()
         try:
             resp = client.post(url, json=payload, headers=self._get_headers(), timeout=self.timeout)
+            self._check_clock_drift(resp)
             if resp.status_code == 200:
                 data = resp.json()
                 logger.info("verify_pin thành công cho mã NV: %s", employee_code)

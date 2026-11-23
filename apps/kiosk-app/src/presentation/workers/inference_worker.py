@@ -61,6 +61,8 @@ class InferenceWorker(QThread):
         queue_manager: SQLiteQueueManager | None = None,
         stability_threshold: int = 8,
         kiosk_id: str | None = None,
+        allow_no_liveness: bool = False,
+        demo_mode: bool = False,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo InferenceWorker."""
@@ -73,6 +75,7 @@ class InferenceWorker(QThread):
         self.queue_manager = queue_manager
         self.stability_threshold = max(1, stability_threshold)
         self.kiosk_id = kiosk_id or settings.kiosk_id
+        self.allow_no_liveness: bool = allow_no_liveness or demo_mode
 
         # Hàng đợi xoay vòng với kích thước tối đa 2 (Circular Queue maxsize=2)
         self._queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=2)
@@ -273,8 +276,21 @@ class InferenceWorker(QThread):
                     gate_threshold,
                 )
                 return
-        else:
+        elif self.allow_no_liveness:
             liveness_score = 1.0
+            logger.warning(
+                "InferenceWorker: Đang chạy chế độ dev/demo no-liveness (bỏ qua kiểm tra thực thể sống)."
+            )
+        else:
+            self.status_updated.emit(
+                OvalState.ERROR,
+                "LỖI HỆ THỐNG: CHƯA KÍCH HOẠT KIỂM TRA THỰC THỂ SỐNG!",
+            )
+            self.trigger_hold(duration_sec=2.5)
+            logger.warning(
+                "InferenceWorker: liveness_gate is None. Hủy suy luận theo nguyên tắc an toàn fail-closed."
+            )
+            return
 
         # 9. Trích xuất vector ArcFace và so khớp Gallery RAM
         if self.extractor is None or self.gallery_matcher is None:
