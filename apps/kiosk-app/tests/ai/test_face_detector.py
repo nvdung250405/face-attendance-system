@@ -176,3 +176,47 @@ def test_euler_angle_estimation_degenerate_clamping():
     yaw, pitch, roll = estimate_euler_angles(extreme_landmarks)
     assert -90.0 <= yaw <= 90.0
     assert -90.0 <= pitch <= 90.0
+
+
+def test_detect_face_filters_invalid_size(monkeypatch):
+    """Kiểm tra detect_face lọc bỏ các khuôn mặt có is_valid_size == False (FIND-AI-002)."""
+    detector = YuNetFaceDetector.__new__(YuNetFaceDetector)
+    invalid_face = FaceDetectionResult(
+        bbox=(200, 150, 40, 40),
+        landmarks=np.zeros((5, 2), dtype=np.float32),
+        score=0.99,
+        euler_angles=(0.0, 0.0, 0.0),
+        is_valid_size=False,
+        is_tilted=False,
+    )
+    monkeypatch.setattr(detector, "detect", lambda frame: [invalid_face])
+    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    assert detector.detect_face(frame) is None
+
+
+def test_detect_face_prioritizes_centered_user_over_passerby(monkeypatch):
+    """Kiểm tra detect_face ưu tiên người đứng giữa Oval hơn người qua đường to ở mép (FIND-AI-002)."""
+    detector = YuNetFaceDetector.__new__(YuNetFaceDetector)
+    # Người dùng đứng chuẩn giữa Oval (tâm 320, 192), diện tích 130x130 = 16900
+    centered_user = FaceDetectionResult(
+        bbox=(255, 127, 130, 130),
+        landmarks=np.zeros((5, 2), dtype=np.float32),
+        score=0.95,
+        euler_angles=(0.0, 0.0, 0.0),
+        is_valid_size=True,
+        is_tilted=False,
+    )
+    # Người qua đường ở rìa khung hình (tâm 80, 192), diện tích lớn hơn 160x160 = 25600
+    passerby = FaceDetectionResult(
+        bbox=(0, 112, 160, 160),
+        landmarks=np.zeros((5, 2), dtype=np.float32),
+        score=0.99,
+        euler_angles=(0.0, 0.0, 0.0),
+        is_valid_size=True,
+        is_tilted=False,
+    )
+    monkeypatch.setattr(detector, "detect", lambda frame: [passerby, centered_user])
+    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    chosen = detector.detect_face(frame)
+    assert chosen is not None
+    assert chosen == centered_user

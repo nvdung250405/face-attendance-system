@@ -210,3 +210,65 @@ def test_kiosk_view_model_async_delegation_to_worker(qapp):
 
     # Khung hình được chuyển sang worker thông qua enqueue_frame mà không tính toán trên Main Thread
     mock_worker.enqueue_frame.assert_called_once_with(dummy_frame)
+
+
+def test_inference_worker_fail_closed_without_liveness(qapp):
+    """Kiểm tra nguyên tắc fail-closed: Từ chối suy luận và báo ERROR khi liveness_gate là None (FIND-AI-001)."""
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection()
+
+    worker = InferenceWorker(
+        detector=detector,
+        liveness_gate=None,
+        stability_threshold=1,
+        allow_no_liveness=False,
+    )
+    worker.set_standby(False)
+
+    status_events = []
+    worker.status_updated.connect(lambda state, msg: status_events.append((state, msg)))
+
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    worker._process_frame(dummy_frame)
+
+    assert len(status_events) == 1
+    assert status_events[0][0] == OvalState.ERROR
+    assert "THỰC THỂ SỐNG" in status_events[0][1]
+
+
+def test_inference_worker_dev_mode_no_liveness_bypass(qapp, tmp_path):
+    """Kiểm tra cho phép chạy không cần liveness khi bật cờ allow_no_liveness cho dev/demo (FIND-AI-001)."""
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection()
+
+    extractor = MagicMock()
+    extractor.align_face.return_value = np.zeros((112, 112, 3), dtype=np.uint8)
+    extractor.extract_vector.return_value = np.random.randn(512).astype(np.float32)
+
+    gallery_matcher = MagicMock(spec=GalleryCacheManager)
+    gallery_matcher.match.return_value = (3003, 0.92)
+
+    db_file = tmp_path / "test_worker_demo.db"
+    queue_manager = SQLiteQueueManager(db_path=db_file)
+    cooldown_tracker = CooldownTracker(120)
+
+    worker = InferenceWorker(
+        detector=detector,
+        liveness_gate=None,
+        extractor=extractor,
+        gallery_matcher=gallery_matcher,
+        cooldown_tracker=cooldown_tracker,
+        queue_manager=queue_manager,
+        stability_threshold=1,
+        allow_no_liveness=True,
+    )
+    worker.set_standby(False)
+
+    status_events = []
+    worker.status_updated.connect(lambda state, msg: status_events.append((state, msg)))
+
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    worker._process_frame(dummy_frame)
+
+    assert len(status_events) == 1
+    assert status_events[0][0] == OvalState.SUCCESS

@@ -26,6 +26,7 @@ from presentation.viewmodels.kiosk_view_model import (
     OvalState,
     evaluate_face_oval_alignment,
 )
+from presentation.viewmodels.oval_alignment import MAX_OVAL_FACE_RATIO, MIN_OVAL_FACE_RATIO
 
 
 def _create_mock_detection(
@@ -448,3 +449,55 @@ def test_nfr_ksk_001_full_pipeline_cycle_time(qapp):
 
     assert vm.ovalState == OvalState.SUCCESS
     assert latency_ms < 350.0
+
+
+def test_kiosk_view_model_fail_closed_without_liveness(qapp):
+    """Kiểm tra KioskViewModel từ chối và báo lỗi khi liveness_gate là None theo fail-closed (FIND-AI-001)."""
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection()
+
+    vm = KioskViewModel(
+        detector=detector,
+        liveness_gate=None,
+        stability_threshold=1,
+        allow_no_liveness=False,
+    )
+    vm.setStandby(False)
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    vm.process_camera_frame(dummy_frame)
+
+    assert vm.ovalState == OvalState.ERROR
+    assert "THỰC THỂ SỐNG" in vm.message
+
+
+def test_kiosk_view_model_dev_mode_no_liveness_bypass(qapp):
+    """Kiểm tra KioskViewModel cho phép bypass liveness khi bật allow_no_liveness cho dev/demo (FIND-AI-001)."""
+    detector = MagicMock()
+    detector.detect_face.return_value = _create_mock_detection()
+
+    extractor = MagicMock()
+    extractor.align_face.return_value = np.zeros((112, 112, 3), dtype=np.uint8)
+    extractor.extract_vector.return_value = np.random.randn(512).astype(np.float32)
+
+    matcher = MagicMock()
+    matcher.match.return_value = (1001, 0.95)
+
+    vm = KioskViewModel(
+        detector=detector,
+        liveness_gate=None,
+        extractor=extractor,
+        gallery_matcher=matcher,
+        stability_threshold=1,
+        allow_no_liveness=True,
+    )
+    vm.setStandby(False)
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    vm.process_camera_frame(dummy_frame)
+
+    assert vm.ovalState == OvalState.SUCCESS
+
+
+def test_oval_alignment_face_ratio_constants():
+    """Kiểm tra các hằng số tỷ lệ kích thước khuôn mặt trong khung Oval (FIND-ARCH-003)."""
+    assert MAX_OVAL_FACE_RATIO == 0.85
+    assert MIN_OVAL_FACE_RATIO == 0.65

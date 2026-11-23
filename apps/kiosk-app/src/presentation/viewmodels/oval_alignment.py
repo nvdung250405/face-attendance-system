@@ -2,6 +2,9 @@
 
 from enum import StrEnum
 
+MAX_OVAL_FACE_RATIO: float = 0.85
+MIN_OVAL_FACE_RATIO: float = 0.65
+
 
 class OvalState(StrEnum):
     """Máy trạng thái 4 màu viền Oval sinh trắc học."""
@@ -47,9 +50,9 @@ def evaluate_face_oval_alignment(
     # 3. Kiểm tra kích thước khuôn mặt (khoảng cách chuẩn 0.5m – 1.2m)
     # Khuôn mặt hợp lệ chiếm khoảng 35% đến 85% chiều cao Oval (2 * ry)
     min_face_h = (2.0 * ry) * 0.35
-    max_face_h = (2.0 * ry) * 0.85
+    max_face_h = (2.0 * ry) * MAX_OVAL_FACE_RATIO
 
-    if bh < min_face_h or bw < min_face_h * 0.65:
+    if bh < min_face_h or bw < min_face_h * MIN_OVAL_FACE_RATIO:
         return False, "Vui lòng đứng lại gần camera hơn"
 
     if bh > max_face_h or bw > max_face_h * 0.90:
