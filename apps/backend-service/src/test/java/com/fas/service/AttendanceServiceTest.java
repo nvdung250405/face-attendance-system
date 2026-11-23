@@ -31,6 +31,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -72,6 +75,9 @@ class AttendanceServiceTest {
 
         @Mock
         private StompEventBroadcaster stompEventBroadcaster;
+
+        @Mock
+        private com.fas.data.repository.AttendanceModificationHistoryRepository attendanceModificationHistoryRepository;
 
         @InjectMocks
         private AttendanceService attendanceService;
@@ -683,6 +689,321 @@ class AttendanceServiceTest {
                         assertThat(response.onTimeCount()).isEqualTo(38L);
                         assertThat(response.lateCount()).isEqualTo(2L);
                         assertThat(response.absentCount()).isEqualTo(10L);
+                }
+        }
+
+        @Nested
+        @DisplayName("6. Tăng ca, ca đêm và nhật ký kiểm toán điều chỉnh (FINDING-BE-DOM-001, DOM-003, DOM-005)")
+        class OvertimeAndOvernightAttendanceTests {
+
+                @Test
+                @DisplayName("Tính toán tăng ca floor quantize 15m khi checkout muộn hơn giờ kết thúc ca (40m -> 30m OT)")
+                void recordPunch_CheckOutOvertime_FloorQuantizedTo15Minutes() {
+                        Shift dayShift = Shift.builder()
+                                        .id(1L)
+                                        .shiftCode("CA-HC")
+                                        .startTime(LocalTime.of(8, 0))
+                                        .endTime(LocalTime.of(17, 0))
+                                        .isOvernight(false)
+                                        .build();
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId()))
+                                        .thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(AttendanceLog.builder()
+                                                        .punchType(PunchType.CHECK_IN)
+                                                        .build()));
+                        when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
+                                        .thenReturn(Optional.of(dayShift));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(i -> {
+                                AttendanceLog log = i.getArgument(0);
+                                log.setId(777L);
+                                return log;
+                        });
+
+                        // Quẹt về lúc 17:40 (vượt ca 40 phút -> 30 phút tăng ca)
+                        OffsetDateTime punchTime = OffsetDateTime.of(
+                                        LocalDate.of(2026, 10, 11),
+                                        LocalTime.of(17, 40),
+                                        ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = new KioskPunchRequest(
+                                        sampleEmployee.getId(),
+                                        punchTime,
+                                        "VERIFICATION_FACE",
+                                        BigDecimal.valueOf(0.95));
+
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
+
+                        assertThat(result).isNotNull();
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.OVERTIME);
+                        assertThat(result.overtimeMinutes()).isEqualTo(30);
+                }
+
+                @Test
+                @DisplayName("Tăng ca dưới 15 phút được tính đúng giờ ON_TIME và 0 phút tăng ca")
+                void recordPunch_CheckOutOvertimeLessThan15Min_OnTime() {
+                        Shift dayShift = Shift.builder()
+                                        .id(1L)
+                                        .shiftCode("CA-HC")
+                                        .startTime(LocalTime.of(8, 0))
+                                        .endTime(LocalTime.of(17, 0))
+                                        .isOvernight(false)
+                                        .build();
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId()))
+                                        .thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(AttendanceLog.builder()
+                                                        .punchType(PunchType.CHECK_IN)
+                                                        .build()));
+                        when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
+                                        .thenReturn(Optional.of(dayShift));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(i -> {
+                                AttendanceLog log = i.getArgument(0);
+                                log.setId(778L);
+                                return log;
+                        });
+
+                        // Quẹt về lúc 17:10 (vượt ca 10 phút -> 0 phút tăng ca)
+                        OffsetDateTime punchTime = OffsetDateTime.of(
+                                        LocalDate.of(2026, 10, 11),
+                                        LocalTime.of(17, 10),
+                                        ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = new KioskPunchRequest(
+                                        sampleEmployee.getId(),
+                                        punchTime,
+                                        "VERIFICATION_FACE",
+                                        BigDecimal.valueOf(0.95));
+
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
+
+                        assertThat(result).isNotNull();
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.ON_TIME);
+                        assertThat(result.overtimeMinutes()).isEqualTo(0);
+                }
+
+                @Test
+                @DisplayName("Xác định punchType cho ca đêm vượt nửa đêm: Có CHECK_IN hôm trước -> Trả về CHECK_OUT")
+                void determinePunchType_OvernightShift_ReturnsCheckOut() {
+                        LocalDate today = LocalDate.of(2026, 10, 12);
+                        Shift nightShift = Shift.builder()
+                                        .id(2L)
+                                        .shiftCode("CA-DEM")
+                                        .startTime(LocalTime.of(22, 0))
+                                        .endTime(LocalTime.of(6, 0))
+                                        .isOvernight(true)
+                                        .build();
+
+                        // Hôm nay chưa có lượt quẹt
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        eq(sampleEmployee.getId()),
+                                        eq(today.atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant()),
+                                        any(Instant.class)))
+                                        .thenReturn(Optional.empty());
+
+                        // Hôm qua có CHECK_IN lúc 22:00
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        eq(sampleEmployee.getId()),
+                                        eq(today.minusDays(1).atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant()),
+                                        eq(today.atStartOfDay(com.fas.api.dto.ApiResponse.VIETNAM_ZONE).toInstant())))
+                                        .thenReturn(Optional.of(AttendanceLog.builder()
+                                                        .punchType(PunchType.CHECK_IN)
+                                                        .build()));
+
+                        when(shiftManagementService.findActiveShiftForUser(sampleEmployee.getId(), today.minusDays(1)))
+                                        .thenReturn(Optional.of(nightShift));
+
+                        PunchType type = attendanceService.determinePunchType(
+                                        sampleEmployee.getId(), today, com.fas.api.dto.ApiResponse.VIETNAM_ZONE);
+
+                        assertThat(type).isEqualTo(PunchType.CHECK_OUT);
+                }
+
+                @Test
+                @DisplayName("Điều chỉnh giờ công lưu vết append-only vào attendance_modification_history")
+                void adjustAttendanceLog_RecordsAttendanceModificationHistory() {
+                        Long logId = 555L;
+                        AttendanceLog existingLog = AttendanceLog.builder()
+                                        .id(logId)
+                                        .user(sampleEmployee)
+                                        .kiosk(sampleKiosk)
+                                        .punchTimestamp(Instant.parse("2026-10-11T01:00:00Z"))
+                                        .punchType(PunchType.CHECK_IN)
+                                        .status(AttendanceStatus.LATE)
+                                        .lateMinutes(30)
+                                        .build();
+
+                        when(attendanceLogRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(i -> i.getArgument(0));
+
+                        AdjustAttendanceRequest req = new AdjustAttendanceRequest(
+                                        null,
+                                        AttendanceStatus.ON_TIME,
+                                        "Giải trình được phê duyệt bởi HR Manager");
+
+                        AttendanceLogItem item = attendanceService.adjustAttendanceLog(logId, req);
+
+                        assertThat(item).isNotNull();
+                        assertThat(item.status()).isEqualTo(AttendanceStatus.ON_TIME);
+
+                        verify(attendanceModificationHistoryRepository).save(argThat(h ->
+                                        h.getAttendanceLogId().equals(logId)
+                                                        && "LATE".equals(h.getOriginalStatus())
+                                                        && "ON_TIME".equals(h.getUpdatedStatus())
+                                                        && "Giải trình được phê duyệt bởi HR Manager".equals(h.getReason())
+                        ));
+                }
+
+                @Test
+                @DisplayName("Tính toán tăng ca floor quantize 15m/30m: 35 phút trễ -> 30 phút tăng ca")
+                void recordPunch_CheckOutOvertime35Min_FloorQuantizedTo30Minutes() {
+                        Shift dayShift = Shift.builder()
+                                        .id(1L)
+                                        .shiftCode("CA-HC")
+                                        .startTime(LocalTime.of(8, 0))
+                                        .endTime(LocalTime.of(17, 0))
+                                        .isOvernight(false)
+                                        .build();
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId()))
+                                        .thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(AttendanceLog.builder()
+                                                        .punchType(PunchType.CHECK_IN)
+                                                        .build()));
+                        when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
+                                        .thenReturn(Optional.of(dayShift));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(i -> {
+                                AttendanceLog log = i.getArgument(0);
+                                log.setId(779L);
+                                return log;
+                        });
+
+                        // Quẹt về lúc 17:35 (vượt ca 35 phút -> floor quantize thành 30 phút tăng ca)
+                        OffsetDateTime punchTime = OffsetDateTime.of(
+                                        LocalDate.of(2026, 10, 11),
+                                        LocalTime.of(17, 35),
+                                        ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = new KioskPunchRequest(
+                                        sampleEmployee.getId(),
+                                        punchTime,
+                                        "VERIFICATION_FACE",
+                                        BigDecimal.valueOf(0.95));
+
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
+
+                        assertThat(result).isNotNull();
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.OVERTIME);
+                        assertThat(result.overtimeMinutes()).isEqualTo(30);
+                }
+
+                @Test
+                @DisplayName("Tính toán tăng ca floor quantize 15m/30m: 60 phút trễ -> 60 phút tăng ca")
+                void recordPunch_CheckOutOvertime60Min_FloorQuantizedTo60Minutes() {
+                        Shift dayShift = Shift.builder()
+                                        .id(1L)
+                                        .shiftCode("CA-HC")
+                                        .startTime(LocalTime.of(8, 0))
+                                        .endTime(LocalTime.of(17, 0))
+                                        .isOvernight(false)
+                                        .build();
+
+                        when(kioskRepository.findByIdAndIsActiveTrue(sampleKiosk.getId()))
+                                        .thenReturn(Optional.of(sampleKiosk));
+                        when(userRepository.findById(sampleEmployee.getId()))
+                                        .thenReturn(Optional.of(sampleEmployee));
+                        when(cooldownManager.tryAcquire(any(), any(), any(), any(), any())).thenReturn(true);
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        any(), any(), any()))
+                                        .thenReturn(Optional.of(AttendanceLog.builder()
+                                                        .punchType(PunchType.CHECK_IN)
+                                                        .build()));
+                        when(shiftManagementService.findActiveShiftForUser(eq(sampleEmployee.getId()), any(LocalDate.class)))
+                                        .thenReturn(Optional.of(dayShift));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(i -> {
+                                AttendanceLog log = i.getArgument(0);
+                                log.setId(780L);
+                                return log;
+                        });
+
+                        // Quẹt về lúc 18:00 (vượt ca 60 phút -> 60 phút tăng ca)
+                        OffsetDateTime punchTime = OffsetDateTime.of(
+                                        LocalDate.of(2026, 10, 11),
+                                        LocalTime.of(18, 0),
+                                        ZoneOffset.ofHours(7));
+                        KioskPunchRequest req = new KioskPunchRequest(
+                                        sampleEmployee.getId(),
+                                        punchTime,
+                                        "VERIFICATION_FACE",
+                                        BigDecimal.valueOf(0.95));
+
+                        PunchResult result = attendanceService.recordPunch(sampleKiosk.getId(), req);
+
+                        assertThat(result).isNotNull();
+                        assertThat(result.punchType()).isEqualTo(PunchType.CHECK_OUT);
+                        assertThat(result.status()).isEqualTo(AttendanceStatus.OVERTIME);
+                        assertThat(result.overtimeMinutes()).isEqualTo(60);
+                }
+
+                @Test
+                @DisplayName("Điều chỉnh giờ công lưu vết supervisor ID từ SecurityContextHolder vào AttendanceModificationHistory")
+                void adjustAttendanceLog_WithAuthenticatedSupervisor_RecordsSupervisorNameInHistory() {
+                        Long logId = 556L;
+                        AttendanceLog existingLog = AttendanceLog.builder()
+                                        .id(logId)
+                                        .user(sampleEmployee)
+                                        .kiosk(sampleKiosk)
+                                        .punchTimestamp(Instant.parse("2026-10-11T01:00:00Z"))
+                                        .punchType(PunchType.CHECK_IN)
+                                        .status(AttendanceStatus.LATE)
+                                        .lateMinutes(30)
+                                        .build();
+
+                        when(attendanceLogRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(i -> i.getArgument(0));
+
+                        try {
+                                SecurityContextHolder.getContext().setAuthentication(
+                                                new UsernamePasswordAuthenticationToken(
+                                                                "supervisor_dung_nv",
+                                                                "credentials",
+                                                                List.of(new SimpleGrantedAuthority("ROLE_HR_MANAGER"))
+                                                )
+                                );
+
+                                AdjustAttendanceRequest req = new AdjustAttendanceRequest(
+                                                null,
+                                                AttendanceStatus.ON_TIME,
+                                                "Phê duyệt đơn khiếu nại công ngày 11/10");
+
+                                AttendanceLogItem item = attendanceService.adjustAttendanceLog(logId, req);
+
+                                assertThat(item).isNotNull();
+                                verify(attendanceModificationHistoryRepository).save(argThat(h ->
+                                                h.getAttendanceLogId().equals(logId)
+                                                                && "supervisor_dung_nv".equals(h.getModifiedBy())
+                                                                && "LATE".equals(h.getOriginalStatus())
+                                                                && "ON_TIME".equals(h.getUpdatedStatus())
+                                                                && "Phê duyệt đơn khiếu nại công ngày 11/10".equals(h.getReason())
+                                ));
+                        } finally {
+                                SecurityContextHolder.clearContext();
+                        }
                 }
         }
 }

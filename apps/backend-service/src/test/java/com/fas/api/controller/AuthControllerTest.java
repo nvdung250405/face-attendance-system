@@ -58,6 +58,9 @@ class AuthControllerTest {
         @Mock
         private CurrentUserService currentUserService;
 
+        @Mock
+        private com.fas.service.SessionService sessionService;
+
         @InjectMocks
         private AuthController authController;
 
@@ -299,6 +302,33 @@ class AuthControllerTest {
                                         .content(objectMapper.writeValueAsString(request)))
                                         .andExpect(status().isForbidden())
                                         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+                }
+        }
+
+        @Nested
+        @DisplayName("5. Đăng xuất hệ thống (POST /api/v1/auth/logout)")
+        class LogoutTests {
+
+                @Test
+                @DisplayName("Đăng xuất thành công trả về 204 No Content và thu hồi token")
+                void logout_Success_Returns204() throws Exception {
+                        com.fas.api.dto.request.LogoutRequest request = new com.fas.api.dto.request.LogoutRequest("sample-refresh-token");
+
+                        mockMvc.perform(post("/api/v1/auth/logout")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                                        .andExpect(status().isNoContent());
+
+                        verify(sessionService).logout("sample-refresh-token");
+                }
+
+                @Test
+                @DisplayName("Đăng xuất với body rỗng trả về 204 No Content không gọi sessionService")
+                void logout_EmptyBody_Returns204() throws Exception {
+                        mockMvc.perform(post("/api/v1/auth/logout"))
+                                        .andExpect(status().isNoContent());
+
+                        verify(sessionService, never()).logout(any());
                 }
         }
 }

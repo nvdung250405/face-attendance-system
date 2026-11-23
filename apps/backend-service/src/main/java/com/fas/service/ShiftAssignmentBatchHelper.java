@@ -3,6 +3,7 @@ package com.fas.service;
 import com.fas.data.entity.EmployeeShift;
 import com.fas.data.repository.EmployeeShiftRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +20,9 @@ public class ShiftAssignmentBatchHelper {
         this.employeeShiftRepository = employeeShiftRepository;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW,
+            rollbackFor = Exception.class,
+            isolation = Isolation.READ_COMMITTED)
     public EmployeeShift saveAssignment(EmployeeShift employeeShift) {
         return employeeShiftRepository.save(employeeShift);
     }

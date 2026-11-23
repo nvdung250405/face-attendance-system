@@ -395,6 +395,127 @@ class OfflineBatchSyncServiceTest {
                 }
         }
 
+        @Nested
+        @DisplayName("4. Cooldown 120s, tăng ca và xử lý DataIntegrityViolationException (FINDING-BE-DOM-003, DOM-004)")
+        class OfflineCooldownAndOvertimeTests {
+
+                @Test
+                @DisplayName("Từ chối bản ghi thứ 2 của cùng nhân viên nếu cách nhau dưới 120 giây (vi phạm Cooldown)")
+                void processOfflineBatch_DuplicateWithin120sCooldown_Rejected() {
+                        batchSyncService.clearCooldownBuffer();
+
+                        when(kioskRepository.findById("KIOSK-01")).thenReturn(Optional.of(sampleKiosk));
+
+                        User user = User.builder()
+                                        .id(100L)
+                                        .employeeCode("NV-100")
+                                        .status(EmployeeStatus.ACTIVE)
+                                        .build();
+                        when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+
+                        when(shiftManagementService.evaluatePunch(eq(100L), any(LocalDate.class), any(LocalTime.class)))
+                                        .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HC", LocalTime.of(8, 0), 15));
+
+                        // 2 bản ghi chỉ cách nhau 30 giây (08:00:00 và 08:00:30)
+                        OfflinePunchRecord punch1 = createRecord(1L, 100L, 8, 0);
+                        OffsetDateTime punch2Time = OffsetDateTime.of(
+                                        LocalDate.of(2026, 10, 11),
+                                        LocalTime.of(8, 0, 30),
+                                        ZoneOffset.ofHours(7));
+                        OfflinePunchRecord punch2 = new OfflinePunchRecord(
+                                        2L,
+                                        100L,
+                                        punch2Time,
+                                        "VERIFICATION_FACE",
+                                        BigDecimal.valueOf(0.95));
+
+                        KioskSyncBatchRequest request = new KioskSyncBatchRequest(List.of(punch1, punch2));
+
+                        BatchSyncResult result = batchSyncService.processOfflineBatch("KIOSK-01", request);
+
+                        assertThat(result.syncedCount()).isEqualTo(1);
+                        assertThat(result.syncedLocalIds()).containsExactly(1L);
+                        assertThat(result.failedLocalIds()).containsExactly(2L);
+                }
+
+                @Test
+                @DisplayName("Tính toán tăng ca floor quantize 15 phút khi checkout ngoại tuyến muộn 40 phút")
+                void processOfflineBatch_OvertimeQuantization_Success() {
+                        batchSyncService.clearCooldownBuffer();
+
+                        when(kioskRepository.findById("KIOSK-01")).thenReturn(Optional.of(sampleKiosk));
+
+                        User user = User.builder()
+                                        .id(100L)
+                                        .employeeCode("NV-100")
+                                        .status(EmployeeStatus.ACTIVE)
+                                        .build();
+                        when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+
+                        Shift shift = Shift.builder()
+                                        .id(1L)
+                                        .shiftCode("CA-HC")
+                                        .startTime(LocalTime.of(8, 0))
+                                        .endTime(LocalTime.of(17, 0))
+                                        .build();
+                        when(shiftManagementService.findActiveShiftForUser(eq(100L), any(LocalDate.class)))
+                                        .thenReturn(Optional.of(shift));
+
+                        when(attendanceLogRepository.findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                                        eq(100L), any(), any()))
+                                        .thenReturn(Optional.of(AttendanceLog.builder()
+                                                        .punchType(PunchType.CHECK_IN)
+                                                        .build()));
+
+                        // Checkout lúc 17:40 (vượt 40 phút -> quantize 15m thành 30m OT)
+                        OfflinePunchRecord checkout = createRecord(10L, 100L, 17, 40);
+                        KioskSyncBatchRequest request = new KioskSyncBatchRequest(List.of(checkout));
+
+                        BatchSyncResult result = batchSyncService.processOfflineBatch("KIOSK-01", request);
+
+                        assertThat(result.syncedCount()).isEqualTo(1);
+
+                        @SuppressWarnings("unchecked")
+                        ArgumentCaptor<List<AttendanceLog>> captor = ArgumentCaptor.forClass(List.class);
+                        verify(attendanceLogRepository).batchInsertOfflineLogs(captor.capture());
+
+                        AttendanceLog saved = captor.getValue().get(0);
+                        assertThat(saved.getStatus()).isEqualTo(AttendanceStatus.OVERTIME);
+                        assertThat(saved.getOvertimeMinutes()).isEqualTo(30);
+                }
+
+                @Test
+                @DisplayName("Bắt DataIntegrityViolationException khi batch insert và chuyển sang lưu từng bản ghi")
+                void processOfflineBatch_DataIntegrityViolationFallback_Handled() {
+                        batchSyncService.clearCooldownBuffer();
+
+                        when(kioskRepository.findById("KIOSK-01")).thenReturn(Optional.of(sampleKiosk));
+
+                        User user = User.builder()
+                                        .id(100L)
+                                        .employeeCode("NV-100")
+                                        .status(EmployeeStatus.ACTIVE)
+                                        .build();
+                        when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+
+                        when(shiftManagementService.evaluatePunch(eq(100L), any(), any()))
+                                        .thenReturn(ShiftEvaluationResult.onTime(1L, "CA-HC", LocalTime.of(8, 0), 15));
+
+                        OfflinePunchRecord record = createRecord(5L, 100L, 8, 0);
+                        KioskSyncBatchRequest request = new KioskSyncBatchRequest(List.of(record));
+
+                        doThrow(new org.springframework.dao.DataIntegrityViolationException("Unique constraint violation"))
+                                        .when(attendanceLogRepository).batchInsertOfflineLogs(any());
+                        when(attendanceLogRepository.save(any(AttendanceLog.class))).thenAnswer(i -> i.getArgument(0));
+
+                        BatchSyncResult result = batchSyncService.processOfflineBatch("KIOSK-01", request);
+
+                        assertThat(result.syncedCount()).isEqualTo(1);
+                        assertThat(result.syncedLocalIds()).contains(5L);
+                        verify(attendanceLogRepository).save(any(AttendanceLog.class));
+                }
+        }
+
         private OfflinePunchRecord createRecord(Long localQueueId, Long employeeId, int hour, int minute) {
                 OffsetDateTime timestamp = OffsetDateTime.of(
                                 LocalDate.of(2026, 10, 11),

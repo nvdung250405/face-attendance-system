@@ -34,5 +34,16 @@ public record UpdateShiftRequest(
         @Max(value = 60, message = "Thời gian ân hạn tối đa là 60 phút")
         Integer gracePeriodMinutes,
 
-        Boolean isActive) {
+        Boolean isActive,
+
+        Boolean isOvernight) {
+
+    public UpdateShiftRequest(
+            String shiftName,
+            LocalTime startTime,
+            LocalTime endTime,
+            Integer gracePeriodMinutes,
+            Boolean isActive) {
+        this(shiftName, startTime, endTime, gracePeriodMinutes, isActive, false);
+    }
 }

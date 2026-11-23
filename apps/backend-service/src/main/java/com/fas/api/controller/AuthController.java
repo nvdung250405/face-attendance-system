@@ -3,25 +3,32 @@ package com.fas.api.controller;
 import com.fas.api.dto.ApiResponse;
 import com.fas.api.dto.request.ChangePasswordRequest;
 import com.fas.api.dto.request.LoginRequest;
+import com.fas.api.dto.request.LogoutRequest;
 import com.fas.api.dto.request.RefreshTokenRequest;
+import com.fas.api.dto.response.AuthenticatedUser;
 import com.fas.api.dto.response.LoginResponse;
 import com.fas.api.dto.response.TokenResponse;
-import com.fas.common.error.ApiErrorCode;
-import com.fas.common.error.ApiException;
 import com.fas.security.CurrentUserService;
 import com.fas.service.AccountManagementService;
 import com.fas.service.AuthService;
+import com.fas.service.SessionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
 
 /**
  * REST Controller Xác thực & Quản lý Phiên làm việc Cổng Web Portal
- * (APD-BE-002, APD-BE-010, API-BE-001, API-BE-002, API-BE-020, FR-BE-001, FR-BE-011, BLD-BE-007, BLD-BE-022, TASK-BE-020, TASK-BE-027).
+ * (APD-BE-002, APD-BE-010, API-BE-001, API-BE-002, API-BE-020, API-BE-038,
+ *  FR-BE-001, FR-BE-011, BLD-BE-007, BLD-BE-022, TASK-BE-020, TASK-BE-027).
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -30,15 +37,18 @@ public class AuthController {
     private final AuthService authService;
     private final AccountManagementService accountManagementService;
     private final CurrentUserService currentUserService;
+    private final SessionService sessionService;
 
     public AuthController(
             AuthService authService,
             AccountManagementService accountManagementService,
-            CurrentUserService currentUserService
+            CurrentUserService currentUserService,
+            SessionService sessionService
     ) {
         this.authService = authService;
         this.accountManagementService = accountManagementService;
         this.currentUserService = currentUserService;
+        this.sessionService = sessionService;
     }
 
     /**
@@ -76,9 +86,9 @@ public class AuthController {
     @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<com.fas.api.dto.response.AuthenticatedUser> getCurrentUser(Principal principal) {
+    public ApiResponse<AuthenticatedUser> getCurrentUser(Principal principal) {
         Long userId = currentUserService.getCurrentUserId(principal);
-        com.fas.api.dto.response.AuthenticatedUser user = authService.getUserProfile(userId);
+        AuthenticatedUser user = authService.getUserProfile(userId);
         return ApiResponse.ok("PROFILE_FETCHED", "Lấy thông tin tài khoản thành công", user);
     }
 
@@ -102,4 +112,18 @@ public class AuthController {
         return ApiResponse.ok("PASSWORD_CHANGED", "Đổi mật khẩu thành công", null);
     }
 
+    /**
+     * Đăng xuất tài khoản và thu hồi Refresh Token hiện tại
+     * (POST /api/v1/auth/logout - API-BE-038, SEC-005).
+     *
+     * @param request dữ liệu yêu cầu chứa chuỗi refresh token
+     */
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("isAuthenticated()")
+    public void logout(@Valid @RequestBody(required = false) LogoutRequest request) {
+        if (request != null && StringUtils.hasText(request.refreshToken())) {
+            sessionService.logout(request.refreshToken());
+        }
+    }
 }

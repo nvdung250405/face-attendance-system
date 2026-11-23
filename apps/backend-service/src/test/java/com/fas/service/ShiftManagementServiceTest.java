@@ -595,4 +595,124 @@ class ShiftManagementServiceTest {
                     .hasMessageContaining("Không thể phân ca đã bị vô hiệu hóa");
         }
     }
+
+    @Nested
+    @DisplayName("6. Ca làm việc qua đêm & Bao bọc mốc nửa đêm (FINDING-BE-DOM-001 & BIZ-001, BIZ-002)")
+    class OvernightShiftTests {
+
+        @Test
+        @DisplayName("Khởi tạo ca qua đêm thành công khi startTime >= endTime và isOvernight là true")
+        void createShift_OvernightShift_Success() {
+            CreateShiftRequest request = new CreateShiftRequest(
+                    "CA-DEM",
+                    "Ca Đêm 22h-06h",
+                    LocalTime.of(22, 0),
+                    LocalTime.of(6, 0),
+                    15,
+                    true
+            );
+
+            when(shiftRepository.existsByShiftCode("CA-DEM")).thenReturn(false);
+            when(shiftRepository.save(any(Shift.class))).thenAnswer(invocation -> {
+                Shift s = invocation.getArgument(0);
+                s.setId(99L);
+                return s;
+            });
+
+            ShiftResponse response = shiftService.createShift(request);
+
+            assertThat(response).isNotNull();
+            assertThat(response.id()).isEqualTo(99L);
+            assertThat(response.shiftCode()).isEqualTo("CA-DEM");
+            assertThat(response.isOvernight()).isTrue();
+            assertThat(response.startTime()).isEqualTo(LocalTime.of(22, 0));
+            assertThat(response.endTime()).isEqualTo(LocalTime.of(6, 0));
+        }
+
+        @Test
+        @DisplayName("Từ chối ca làm việc khi startTime >= endTime nếu isOvernight là false")
+        void createShift_EndTimeBeforeStartTimeWithoutOvernight_ThrowsException() {
+            CreateShiftRequest request = new CreateShiftRequest(
+                    "CA-SAI",
+                    "Ca Không Hợp Lệ",
+                    LocalTime.of(22, 0),
+                    LocalTime.of(6, 0),
+                    15,
+                    false
+            );
+
+            assertThatThrownBy(() -> shiftService.createShift(request))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Giờ bắt đầu ca (22:00) phải nhỏ hơn giờ kết thúc ca (06:00)");
+        }
+
+        @Test
+        @DisplayName("Đánh giá điểm danh ca 23:50 + ân hạn 15m (vắt qua nửa đêm 00:05) -> 23:55 đúng giờ")
+        void evaluatePunch_GracePeriodMidnightWrap_OnTimeBeforeMidnight() {
+            LocalDate today = LocalDate.of(2026, 10, 8);
+            Shift nightShift = Shift.builder()
+                    .id(50L)
+                    .shiftCode("CA-DEM-MUON")
+                    .startTime(LocalTime.of(23, 50))
+                    .endTime(LocalTime.of(6, 0))
+                    .gracePeriodMinutes(15)
+                    .isOvernight(true)
+                    .build();
+
+            EmployeeShift activeAssignment = EmployeeShift.builder().shift(nightShift).build();
+            when(employeeShiftRepository.findActiveShiftForUser(1042L, today))
+                    .thenReturn(Optional.of(activeAssignment));
+
+            ShiftEvaluationResult result = shiftService.evaluatePunch(1042L, today, LocalTime.of(23, 55));
+
+            assertThat(result.status()).isEqualTo(AttendanceStatus.ON_TIME);
+            assertThat(result.lateMinutes()).isEqualTo(0L);
+        }
+
+        @Test
+        @DisplayName("Đánh giá điểm danh ca 23:50 + ân hạn 15m (vắt qua nửa đêm 00:05) -> 00:02 hôm sau đúng giờ")
+        void evaluatePunch_GracePeriodMidnightWrap_OnTimeAfterMidnight() {
+            LocalDate today = LocalDate.of(2026, 10, 8);
+            Shift nightShift = Shift.builder()
+                    .id(50L)
+                    .shiftCode("CA-DEM-MUON")
+                    .startTime(LocalTime.of(23, 50))
+                    .endTime(LocalTime.of(6, 0))
+                    .gracePeriodMinutes(15)
+                    .isOvernight(true)
+                    .build();
+
+            EmployeeShift activeAssignment = EmployeeShift.builder().shift(nightShift).build();
+            when(employeeShiftRepository.findActiveShiftForUser(1042L, today))
+                    .thenReturn(Optional.of(activeAssignment));
+
+            ShiftEvaluationResult result = shiftService.evaluatePunch(1042L, today, LocalTime.of(0, 2));
+
+            assertThat(result.status()).isEqualTo(AttendanceStatus.ON_TIME);
+            assertThat(result.lateMinutes()).isEqualTo(0L);
+        }
+
+        @Test
+        @DisplayName("Đánh giá điểm danh ca 23:50 + ân hạn 15m -> 00:10 vượt ân hạn tính muộn 20 phút")
+        void evaluatePunch_GracePeriodMidnightWrap_LateAfterMidnight() {
+            LocalDate today = LocalDate.of(2026, 10, 8);
+            Shift nightShift = Shift.builder()
+                    .id(50L)
+                    .shiftCode("CA-DEM-MUON")
+                    .startTime(LocalTime.of(23, 50))
+                    .endTime(LocalTime.of(6, 0))
+                    .gracePeriodMinutes(15)
+                    .isOvernight(true)
+                    .build();
+
+            EmployeeShift activeAssignment = EmployeeShift.builder().shift(nightShift).build();
+            when(employeeShiftRepository.findActiveShiftForUser(1042L, today))
+                    .thenReturn(Optional.of(activeAssignment));
+
+            ShiftEvaluationResult result = shiftService.evaluatePunch(1042L, today, LocalTime.of(0, 10));
+
+            assertThat(result.status()).isEqualTo(AttendanceStatus.LATE);
+            assertThat(result.lateMinutes()).isEqualTo(20L);
+        }
+    }
 }

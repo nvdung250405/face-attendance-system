@@ -28,5 +28,20 @@ public record PunchResult(
         OffsetDateTime punchTime,
         AttendanceStatus status,
         int lateMinutes,
-        String department) {
+        String department,
+        int overtimeMinutes) {
+
+    public PunchResult(
+            Long recordId,
+            Long employeeId,
+            String employeeCode,
+            String fullName,
+            PunchType punchType,
+            OffsetDateTime punchTime,
+            AttendanceStatus status,
+            int lateMinutes,
+            String department) {
+        this(recordId, employeeId, employeeCode, fullName, punchType,
+                punchTime, status, lateMinutes, department, 0);
+    }
 }

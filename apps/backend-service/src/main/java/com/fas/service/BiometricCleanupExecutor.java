@@ -13,6 +13,12 @@ import com.fas.data.repository.ConsentWithdrawalRepository;
 import com.fas.data.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Bộ thực thi tiêu hủy dữ liệu sinh trắc học (SOL-BE-008, BLD-BE-017, TASK-BE-018).
+ * Bộ thực thi tiêu hủy dữ liệu sinh trắc học (SOL-BE-008, BLD-BE-017, TASK-BE-018, SEC-009).
  *
  * <p>Được tách khỏi {@link BiometricCleanupService} để các phương thức {@code @Transactional}
  * được Spring AOP proxy áp dụng đúng (tránh lỗi self-invocation khiến bulk delete
@@ -33,71 +39,90 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class BiometricCleanupExecutor {
 
+    private static final int PAGE_SIZE = 100;
+
     private final UserRepository userRepository;
     private final BiometricTemplateRepository biometricTemplateRepository;
     private final ConsentWithdrawalRepository consentWithdrawalRepository;
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
 
+    @Lazy
+    @Autowired(required = false)
+    private BiometricCleanupExecutor self;
+
+    private BiometricCleanupExecutor getSelf() {
+        return self != null ? self : this;
+    }
+
     /**
-     * Tiêu hủy vĩnh viễn vector mẫu của nhân sự thôi việc quá thời hạn lưu trữ quy định.
+     * Tiêu hủy vĩnh viễn vector mẫu của nhân sự thôi việc quá thời hạn lưu trữ quy định
+     * theo từng trang 100 bản ghi để tối ưu bộ nhớ heap (SEC-009).
      *
-     * @param asOfDate     mốc ngày tính toán
+     * @param asOfDate      mốc ngày tính toán
      * @param retentionDays số ngày lưu trữ tối đa
      * @return số lượng nhân sự đã được xóa sạch dữ liệu mẫu sinh trắc
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int cleanupTerminatedEmployees(LocalDate asOfDate, int retentionDays) {
         LocalDate thresholdDate = asOfDate.minusDays(retentionDays);
         log.info("Quét danh sách nhân viên thôi việc có terminated_date <= {} (hạn lưu trữ {} ngày)...",
                 thresholdDate, retentionDays);
 
-        List<User> terminatedUsers = userRepository.findByStatusAndTerminatedDateLessThanEqual(
-                EmployeeStatus.TERMINATED, thresholdDate);
-
-        if (terminatedUsers.isEmpty()) {
-            log.debug("Không tìm thấy nhân viên thôi việc quá {} ngày cần tiêu hủy dữ liệu.", retentionDays);
-            return 0;
-        }
-
         int cleanedUserCount = 0;
-        for (User user : terminatedUsers) {
-            List<BiometricTemplate> templates = biometricTemplateRepository.findByUserId(user.getId());
-            if (templates.isEmpty()) {
-                continue;
+        int pageNumber = 0;
+        Page<User> userPage;
+
+        do {
+            Pageable pageable = PageRequest.of(pageNumber, PAGE_SIZE, Sort.by(Sort.Direction.ASC, "id"));
+            userPage = userRepository.findByStatusAndTerminatedDateLessThanEqual(
+                    EmployeeStatus.TERMINATED, thresholdDate, pageable);
+
+            if (userPage.isEmpty()) {
+                break;
             }
 
-            List<Long> templateIds = templates.stream().map(BiometricTemplate::getId).toList();
-            biometricTemplateRepository.deleteByUserId(user.getId());
+            for (User user : userPage.getContent()) {
+                List<BiometricTemplate> templates = biometricTemplateRepository.findByUserId(user.getId());
+                if (templates.isEmpty()) {
+                    continue;
+                }
 
-            Map<String, Object> beforeState = Map.of(
-                    "userId", user.getId(),
-                    "employeeCode", user.getEmployeeCode(),
-                    "fullName", user.getFullName(),
-                    "status", user.getStatus().name(),
-                    "terminatedDate", user.getTerminatedDate() != null ? user.getTerminatedDate().toString() : "UNKNOWN",
-                    "retentionDays", retentionDays,
-                    "deletedTemplatesCount", templates.size(),
-                    "deletedTemplateIds", templateIds,
-                    "reason", "TERMINATED_OVER_20_DAYS"
-            );
+                List<Long> templateIds = templates.stream().map(BiometricTemplate::getId).toList();
+                biometricTemplateRepository.deleteByUserId(user.getId());
 
-            recordAuditLog(user.getId(), beforeState);
-            cleanedUserCount++;
-            log.info("Đã xóa vĩnh viễn {} mẫu sinh trắc của nhân viên ID={} ({}) thôi việc ngày {}.",
-                    templates.size(), user.getId(), user.getEmployeeCode(), user.getTerminatedDate());
-        }
+                Map<String, Object> beforeState = Map.of(
+                        "userId", user.getId(),
+                        "employeeCode", user.getEmployeeCode(),
+                        "fullName", user.getFullName(),
+                        "status", user.getStatus().name(),
+                        "terminatedDate", user.getTerminatedDate() != null
+                                ? user.getTerminatedDate().toString() : "UNKNOWN",
+                        "retentionDays", retentionDays,
+                        "deletedTemplatesCount", templates.size(),
+                        "deletedTemplateIds", templateIds,
+                        "reason", "TERMINATED_OVER_20_DAYS"
+                );
+
+                recordAuditLog(user.getId(), beforeState);
+                cleanedUserCount++;
+                log.info("Đã xóa vĩnh viễn {} mẫu sinh trắc của nhân viên ID={} ({}) thôi việc ngày {}.",
+                        templates.size(), user.getId(), user.getEmployeeCode(), user.getTerminatedDate());
+            }
+
+            pageNumber++;
+        } while (userPage.hasNext());
 
         return cleanedUserCount;
     }
 
     /**
-     * Tiêu hủy vĩnh viễn vector mẫu của các nhân sự đã rút Informed Consent và đã quá hạn hủy.
+     * Tiêu hủy vĩnh viễn vector mẫu của các nhân sự đã rút Informed Consent và đã quá hạn hủy (FINDING-BE-TX-001).
      *
      * @param asOfInstant mốc thời gian kiểm tra
      * @return số lượng hồ sơ rút consent đã được tiêu hủy
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int cleanupWithdrawnConsents(Instant asOfInstant) {
         List<ConsentWithdrawal> dueWithdrawals = consentWithdrawalRepository
                 .findByProcessedAtIsNullAndBiometricDisposalDueAtLessThanEqual(asOfInstant);
@@ -139,6 +164,16 @@ public class BiometricCleanupExecutor {
         }
 
         return processedCount;
+    }
+
+    /**
+     * Thực thi tiêu hủy consent withdrawal qua Spring transactional proxy để tránh self-invocation (FINDING-BE-TX-001).
+     *
+     * @param asOfInstant mốc thời gian kiểm tra
+     * @return số lượng hồ sơ đã xử lý
+     */
+    public int executeConsentWithdrawalCleanup(Instant asOfInstant) {
+        return getSelf().cleanupWithdrawnConsents(asOfInstant);
     }
 
     private void recordAuditLog(Long userId, Map<String, Object> beforeState) {

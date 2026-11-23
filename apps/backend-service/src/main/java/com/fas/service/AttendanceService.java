@@ -15,6 +15,7 @@ import com.fas.service.audit.AuditContextHolder;
 import com.fas.service.audit.Auditable;
 import com.fas.service.cache.CooldownManager;
 import com.fas.data.entity.AttendanceLog;
+import com.fas.data.entity.AttendanceModificationHistory;
 import com.fas.data.entity.Kiosk;
 import com.fas.data.entity.Shift;
 import com.fas.data.entity.User;
@@ -23,10 +24,12 @@ import com.fas.data.enums.EmployeeStatus;
 import com.fas.data.enums.PunchType;
 import com.fas.data.enums.VerificationMethod;
 import com.fas.data.repository.AttendanceLogRepository;
+import com.fas.data.repository.AttendanceModificationHistoryRepository;
 import com.fas.data.repository.KioskRepository;
 import com.fas.data.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,11 +39,14 @@ import com.fas.config.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -76,6 +82,26 @@ public class AttendanceService {
     private final ShiftManagementService shiftManagementService;
     private final CooldownManager cooldownManager;
     private final StompEventBroadcaster stompEventBroadcaster;
+    private final AttendanceModificationHistoryRepository attendanceModificationHistoryRepository;
+
+    @Autowired
+    public AttendanceService(
+            AttendanceLogRepository attendanceLogRepository,
+            UserRepository userRepository,
+            KioskRepository kioskRepository,
+            ShiftManagementService shiftManagementService,
+            CooldownManager cooldownManager,
+            StompEventBroadcaster stompEventBroadcaster,
+            AttendanceModificationHistoryRepository attendanceModificationHistoryRepository
+    ) {
+        this.attendanceLogRepository = attendanceLogRepository;
+        this.userRepository = userRepository;
+        this.kioskRepository = kioskRepository;
+        this.shiftManagementService = shiftManagementService;
+        this.cooldownManager = cooldownManager;
+        this.stompEventBroadcaster = stompEventBroadcaster;
+        this.attendanceModificationHistoryRepository = attendanceModificationHistoryRepository;
+    }
 
     public AttendanceService(
             AttendanceLogRepository attendanceLogRepository,
@@ -85,12 +111,8 @@ public class AttendanceService {
             CooldownManager cooldownManager,
             StompEventBroadcaster stompEventBroadcaster
     ) {
-        this.attendanceLogRepository = attendanceLogRepository;
-        this.userRepository = userRepository;
-        this.kioskRepository = kioskRepository;
-        this.shiftManagementService = shiftManagementService;
-        this.cooldownManager = cooldownManager;
-        this.stompEventBroadcaster = stompEventBroadcaster;
+        this(attendanceLogRepository, userRepository, kioskRepository, shiftManagementService,
+                cooldownManager, stompEventBroadcaster, null);
     }
 
     /**
@@ -101,7 +123,7 @@ public class AttendanceService {
      * @return kết quả lượt điểm danh đã xử lý
      */
     @CacheEvict(value = CacheConfig.ATTENDANCE_STATS_CACHE, allEntries = true)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public PunchResult recordPunch(String kioskId, KioskPunchRequest request) {
         // 1. Thẩm định trạm Kiosk
         Kiosk kiosk = kioskRepository.findByIdAndIsActiveTrue(kioskId)
@@ -153,6 +175,7 @@ public class AttendanceService {
         // 6. Đánh giá ca làm việc & tính toán trạng thái
         AttendanceStatus status;
         int lateMinutes = 0;
+        int overtimeMinutes = 0;
 
         if (punchType == PunchType.CHECK_IN) {
             ShiftEvaluationResult evaluation = shiftManagementService.evaluatePunch(employee.getId(), punchDate, punchTime);
@@ -162,16 +185,30 @@ public class AttendanceService {
             // CHECK_OUT
             Optional<Shift> shiftOpt = shiftManagementService.findActiveShiftForUser(employee.getId(), punchDate);
             if (shiftOpt.isEmpty()) {
+                shiftOpt = shiftManagementService.findActiveShiftForUser(employee.getId(), punchDate.minusDays(1));
+            }
+            if (shiftOpt.isEmpty()) {
                 status = AttendanceStatus.ANOMALOUS;
                 lateMinutes = 0;
             } else {
                 Shift shift = shiftOpt.get();
-                if (punchTime.isBefore(shift.getEndTime())) {
+                LocalDateTime shiftEndDateTime = LocalDateTime.of(punchDate, shift.getEndTime());
+                LocalDateTime punchDateTime = LocalDateTime.of(punchDate, punchTime);
+
+                if (punchDateTime.isBefore(shiftEndDateTime)) {
                     status = AttendanceStatus.EARLY_LEAVE;
                     lateMinutes = 0;
                 } else {
-                    status = AttendanceStatus.ON_TIME;
                     lateMinutes = 0;
+                    long diffMinutes = Duration.between(shiftEndDateTime, punchDateTime).toMinutes();
+                    int quantized = (int) (diffMinutes / 15) * 15;
+                    if (quantized > 0) {
+                        status = AttendanceStatus.OVERTIME;
+                        overtimeMinutes = quantized;
+                    } else {
+                        status = AttendanceStatus.ON_TIME;
+                        overtimeMinutes = 0;
+                    }
                 }
             }
         }
@@ -195,12 +232,13 @@ public class AttendanceService {
                 .kiosk(kiosk)
                 .status(status)
                 .lateMinutes(lateMinutes)
+                .overtimeMinutes(overtimeMinutes)
                 .isOfflineSync(false)
                 .build();
 
         AttendanceLog savedLog = attendanceLogRepository.save(attendanceLog);
-        log.info("Ghi nhận điểm danh thành công: LogID={}, User={}, Type={}, Status={}, LateMinutes={}",
-                savedLog.getId(), employee.getEmployeeCode(), punchType, status, lateMinutes);
+        log.info("Ghi nhận điểm danh thành công: LogID={}, User={}, Type={}, Status={}, LateMinutes={}, OvertimeMinutes={}",
+                savedLog.getId(), employee.getEmployeeCode(), punchType, status, lateMinutes, overtimeMinutes);
 
         // 9. Phát sóng STOMP WebSocket
         AttendanceLogItem logItem = new AttendanceLogItem(
@@ -214,7 +252,8 @@ public class AttendanceService {
                 verificationMethod,
                 status,
                 lateMinutes,
-                kiosk.getId()
+                kiosk.getId(),
+                overtimeMinutes
         );
 
         try {
@@ -233,7 +272,8 @@ public class AttendanceService {
                 punchTimeOffset,
                 status,
                 lateMinutes,
-                employee.getDepartment()
+                employee.getDepartment(),
+                overtimeMinutes
         );
     }
 
@@ -254,6 +294,19 @@ public class AttendanceService {
                 .findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(userId, startOfDay, endOfDay);
 
         if (latestLog.isEmpty()) {
+            Instant yesterdayStart = punchDate.minusDays(1).atStartOfDay(zoneId).toInstant();
+            Optional<AttendanceLog> yesterdayLog = attendanceLogRepository
+                    .findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                            userId, yesterdayStart, startOfDay);
+            if (yesterdayLog.isPresent() && yesterdayLog.get().getPunchType() == PunchType.CHECK_IN) {
+                Optional<Shift> shiftOpt = shiftManagementService.findActiveShiftForUser(userId, punchDate.minusDays(1));
+                if (shiftOpt.isEmpty()) {
+                    shiftOpt = shiftManagementService.findActiveShiftForUser(userId, punchDate);
+                }
+                if (shiftOpt.isPresent() && Boolean.TRUE.equals(shiftOpt.get().getIsOvernight())) {
+                    return PunchType.CHECK_OUT;
+                }
+            }
             return PunchType.CHECK_IN;
         }
 
@@ -270,7 +323,7 @@ public class AttendanceService {
      */
     @Auditable(action = "UPDATE_ATTENDANCE", entityType = "ATTENDANCE_LOG", entityId = "#logId")
     @CacheEvict(value = CacheConfig.ATTENDANCE_STATS_CACHE, allEntries = true)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public AttendanceLogItem adjustAttendanceLog(Long logId, AdjustAttendanceRequest request) {
         AttendanceLog attendanceLog = attendanceLogRepository.findById(logId)
                 .orElseThrow(() -> {
@@ -279,10 +332,14 @@ public class AttendanceService {
                             "Không tìm thấy bản ghi điểm danh ID=" + logId);
                 });
 
+        Instant originalTimestamp = attendanceLog.getPunchTimestamp();
+        AttendanceStatus originalStatus = attendanceLog.getStatus();
+
         // 1. Chụp trạng thái trước khi sửa (before state) vào context holder
         AuditContextHolder.setBeforeState(mapToAuditState(attendanceLog));
 
         // 2. Cập nhật các trường dữ liệu theo yêu cầu
+        int overtimeMinutes = attendanceLog.getOvertimeMinutes() != null ? attendanceLog.getOvertimeMinutes() : 0;
         if (request.punchTimestamp() != null) {
             attendanceLog.setPunchTimestamp(request.punchTimestamp().toInstant());
             User user = attendanceLog.getUser();
@@ -298,23 +355,40 @@ public class AttendanceService {
                     ShiftEvaluationResult evalResult = shiftManagementService.evaluatePunch(user.getId(), punchDate, punchTime);
                     evaluatedStatus = evalResult.status();
                     lateMinutes = (int) evalResult.lateMinutes();
+                    overtimeMinutes = 0;
                 } else {
                     Optional<Shift> activeShiftOpt = shiftManagementService.findActiveShiftForUser(user.getId(), punchDate);
+                    if (activeShiftOpt.isEmpty()) {
+                        activeShiftOpt = shiftManagementService.findActiveShiftForUser(user.getId(), punchDate.minusDays(1));
+                    }
                     if (activeShiftOpt.isPresent()) {
                         Shift shift = activeShiftOpt.get();
-                        if (punchTime.isBefore(shift.getEndTime())) {
+                        LocalDateTime shiftEndDateTime = LocalDateTime.of(punchDate, shift.getEndTime());
+                        LocalDateTime punchDateTime = LocalDateTime.of(punchDate, punchTime);
+                        if (punchDateTime.isBefore(shiftEndDateTime)) {
                             evaluatedStatus = AttendanceStatus.EARLY_LEAVE;
+                            overtimeMinutes = 0;
                         } else {
-                            evaluatedStatus = AttendanceStatus.ON_TIME;
+                            long diffMinutes = Duration.between(shiftEndDateTime, punchDateTime).toMinutes();
+                            int quantized = (int) (diffMinutes / 15) * 15;
+                            if (quantized > 0) {
+                                evaluatedStatus = AttendanceStatus.OVERTIME;
+                                overtimeMinutes = quantized;
+                            } else {
+                                evaluatedStatus = AttendanceStatus.ON_TIME;
+                                overtimeMinutes = 0;
+                            }
                         }
                     } else {
                         evaluatedStatus = AttendanceStatus.ANOMALOUS;
+                        overtimeMinutes = 0;
                     }
                     lateMinutes = 0;
                 }
 
                 attendanceLog.setStatus(request.status() != null ? request.status() : evaluatedStatus);
                 attendanceLog.setLateMinutes(lateMinutes);
+                attendanceLog.setOvertimeMinutes(overtimeMinutes);
             } else if (request.status() != null) {
                 attendanceLog.setStatus(request.status());
             }
@@ -323,8 +397,32 @@ public class AttendanceService {
         }
 
         AttendanceLog saved = attendanceLogRepository.save(attendanceLog);
-        log.info("Đã điều chỉnh bản ghi điểm danh ID={} (Status={}, LateMinutes={}): {}",
-                saved.getId(), saved.getStatus(), saved.getLateMinutes(), request.reason());
+        log.info("Đã điều chỉnh bản ghi điểm danh ID={} (Status={}, LateMinutes={}, OvertimeMinutes={}): {}",
+                saved.getId(), saved.getStatus(), saved.getLateMinutes(), saved.getOvertimeMinutes(), request.reason());
+
+        if (attendanceModificationHistoryRepository != null) {
+            String modifiedBy = "SYSTEM";
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()
+                    && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+                if (StringUtils.hasText(auth.getName())) {
+                    modifiedBy = auth.getName();
+                }
+            }
+
+            AttendanceModificationHistory history = AttendanceModificationHistory.builder()
+                    .attendanceLogId(saved.getId())
+                    .originalTimestamp(originalTimestamp)
+                    .updatedTimestamp(saved.getPunchTimestamp())
+                    .originalStatus(originalStatus != null ? originalStatus.name() : null)
+                    .updatedStatus(saved.getStatus() != null ? saved.getStatus().name() : null)
+                    .modifiedBy(modifiedBy)
+                    .reason(request.reason())
+                    .createdAt(Instant.now())
+                    .build();
+            attendanceModificationHistoryRepository.save(history);
+        }
 
         // 3. Trả về kết quả sau khi chỉnh sửa
         User user = saved.getUser();
@@ -340,7 +438,8 @@ public class AttendanceService {
                 saved.getVerificationMethod(),
                 saved.getStatus(),
                 saved.getLateMinutes(),
-                saved.getKiosk() != null ? saved.getKiosk().getId() : null
+                saved.getKiosk() != null ? saved.getKiosk().getId() : null,
+                saved.getOvertimeMinutes() != null ? saved.getOvertimeMinutes() : 0
         );
     }
 
@@ -407,7 +506,8 @@ public class AttendanceService {
                     log.getVerificationMethod(),
                     log.getStatus(),
                     log.getLateMinutes() != null ? log.getLateMinutes() : 0,
-                    log.getKiosk() != null ? log.getKiosk().getId() : null
+                    log.getKiosk() != null ? log.getKiosk().getId() : null,
+                    log.getOvertimeMinutes() != null ? log.getOvertimeMinutes() : 0
             );
         });
     }

@@ -45,15 +45,17 @@ public class AttendanceLogBatchRepositoryImpl implements AttendanceLogBatchRepos
         if (isPostgreSql()) {
             return "INSERT INTO attendance_logs (" +
                     "   user_id, punch_timestamp, punch_type, verification_method, " +
-                    "   confidence_score, kiosk_id, status, late_minutes, is_offline_sync, created_at" +
-                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                    "ON CONFLICT (user_id, punch_timestamp, punch_type) DO NOTHING";
+                    "   confidence_score, kiosk_id, status, late_minutes, is_offline_sync, " +
+                    "   created_at, overtime_minutes" +
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON CONFLICT (user_id, punch_timestamp) DO NOTHING";
         } else {
             return "MERGE INTO attendance_logs (" +
                     "   user_id, punch_timestamp, punch_type, verification_method, " +
-                    "   confidence_score, kiosk_id, status, late_minutes, is_offline_sync, created_at" +
-                    ") KEY (user_id, punch_timestamp, punch_type) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "   confidence_score, kiosk_id, status, late_minutes, is_offline_sync, " +
+                    "   created_at, overtime_minutes" +
+                    ") KEY (user_id, punch_timestamp) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         }
     }
 
@@ -86,6 +88,7 @@ public class AttendanceLogBatchRepositoryImpl implements AttendanceLogBatchRepos
 
                     Instant createdAt = log.getCreatedAt() != null ? log.getCreatedAt() : Instant.now();
                     ps.setTimestamp(10, Timestamp.from(createdAt));
+                    ps.setInt(11, log.getOvertimeMinutes() != null ? log.getOvertimeMinutes() : 0);
                 }
         );
 

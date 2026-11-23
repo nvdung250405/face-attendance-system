@@ -47,6 +47,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
      */
     List<User> findByStatusAndTerminatedDateLessThanEqual(EmployeeStatus status, LocalDate terminatedDate);
 
+    Page<User> findByStatusAndTerminatedDateLessThanEqual(
+            EmployeeStatus status, LocalDate terminatedDate, Pageable pageable);
+
     Page<User> findByStatusOrderByTerminatedDateDesc(EmployeeStatus status, Pageable pageable);
 
     /**

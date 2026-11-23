@@ -19,6 +19,10 @@ import java.time.Instant;
                 @UniqueConstraint(
                         name = "uq_punch_user_time_type",
                         columnNames = {"user_id", "punch_timestamp", "punch_type"}
+                ),
+                @UniqueConstraint(
+                        name = "idx_attendance_unique_punch",
+                        columnNames = {"user_id", "punch_timestamp"}
                 )
         }
 )
@@ -63,6 +67,10 @@ public class AttendanceLog {
     @Column(name = "late_minutes", nullable = false)
     @Builder.Default
     private Integer lateMinutes = 0;
+
+    @Column(name = "overtime_minutes", nullable = false)
+    @Builder.Default
+    private Integer overtimeMinutes = 0;
 
     @Column(name = "is_offline_sync", nullable = false)
     @Builder.Default

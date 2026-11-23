@@ -1,5 +1,9 @@
 package com.fas.api.controller;
 
+import com.fas.api.dto.request.LogoutRequest;
+import com.fas.security.CurrentUserService;
+import com.fas.service.AccountManagementService;
+import com.fas.service.AuthService;
 import com.fas.service.SessionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Map;
-
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,24 +29,33 @@ class LogoutControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Mock
+    private AuthService authService;
+
+    @Mock
+    private AccountManagementService accountManagementService;
+
+    @Mock
+    private CurrentUserService currentUserService;
+
+    @Mock
     private SessionService sessionService;
 
     @InjectMocks
-    private LogoutController logoutController;
+    private AuthController authController;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(logoutController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
     }
 
     @Test
     @DisplayName("Đăng xuất thành công với refreshToken hợp lệ -> trả về 204 No Content")
     void logout_Success() throws Exception {
-        Map<String, String> body = Map.of("refreshToken", "sample-refresh-token");
+        LogoutRequest request = new LogoutRequest("sample-refresh-token");
 
         mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent());
 
         verify(sessionService).logout("sample-refresh-token");
