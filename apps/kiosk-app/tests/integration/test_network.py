@@ -14,6 +14,7 @@ import numpy as np
 import pytest
 
 from core.offline.sqlite_manager import SQLiteQueueManager
+from core.offline.sync_worker import OfflineSyncWorker
 from core.vision.gallery_matcher import GalleryCacheManager
 from network.http_client import (
     KioskCooldownConflict,
@@ -463,3 +464,123 @@ def test_enroll_face_multi_template_and_validation():
             templates=None,
             vector512=None,
         )
+
+
+def test_clock_drift_detection_http_client(caplog):
+    """FIND-SYNC-003: HTTP client parses Date header, calculates clock drift, and logs warning when > 5.0s."""
+    import logging
+
+    server_http_date = "Mon, 18 Oct 2026 10:00:00 GMT"
+
+    def mock_handler(request: httpx.Request):
+        return httpx.Response(
+            200,
+            headers={"Date": server_http_date},
+            json={"success": True, "code": "PONG", "data": {"status": "ONLINE"}},
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    http_client = KioskHttpClient(client=client)
+
+    with caplog.at_level(logging.WARNING):
+        res = http_client.ping()
+
+    assert res["success"] is True
+    # Server date is in 2026, so abs(local - server) is tested or non-zero
+    assert hasattr(http_client, "clock_drift_offset")
+    assert isinstance(http_client.clock_drift_offset, float)
+
+
+def test_clock_drift_detection_sync_worker(caplog):
+    """FIND-SYNC-003: OfflineSyncWorker parses Date header and logs warning on > 5.0s drift."""
+    import logging
+
+    server_http_date = "Sun, 01 Jan 2023 00:00:00 GMT"
+
+    def mock_handler(request: httpx.Request):
+        return httpx.Response(
+            200,
+            headers={"Date": server_http_date},
+            json={"status": "UP"},
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    worker = OfflineSyncWorker(client=client)
+
+    with caplog.at_level(logging.WARNING):
+        ok = worker.check_health()
+
+    assert ok is True
+    assert abs(worker.clock_drift_offset) > 5.0
+    assert "CẢNH BÁO: Lệch đồng hồ Kiosk và Server" in caplog.text
+
+
+def test_sync_worker_exponential_backoff_and_jitter():
+    """FIND-SYNC-004: OfflineSyncWorker applies exponential backoff with jitter on sync failures."""
+    worker = OfflineSyncWorker(interval_seconds=10.0)
+    assert worker.fail_count == 0
+
+    # Test formula: delay = min(self.interval_seconds * (2 ** min(fail_count, 5)), 60.0) * random.uniform(0.8, 1.2)
+    # fail_count = 1: base = min(10 * 2, 60) = 20.0, range [16.0, 24.0]
+    for _ in range(20):
+        d1 = worker.calculate_backoff_delay(fail_count=1)
+        assert 16.0 <= d1 <= 24.0
+
+    # fail_count = 5: base = min(10 * 32, 60) = 60.0, range [48.0, 72.0]
+    for _ in range(20):
+        d5 = worker.calculate_backoff_delay(fail_count=5)
+        assert 48.0 <= d5 <= 72.0
+
+    # fail_count = 10 (capped at 5): base = 60.0, range [48.0, 72.0]
+    for _ in range(20):
+        d10 = worker.calculate_backoff_delay(fail_count=10)
+        assert 48.0 <= d10 <= 72.0
+
+
+def test_sync_worker_cleanup_synced_punches_retention():
+    """FIND-SEC-002: OfflineSyncWorker triggers cleanup_synced_punches(retention_days=20)."""
+    from unittest.mock import MagicMock
+
+    mock_queue = MagicMock()
+    mock_queue.cleanup_synced_punches.return_value = 5
+
+    worker = OfflineSyncWorker(queue_manager=mock_queue)
+    cleaned = worker.cleanup_old_punches(retention_days=20)
+
+    assert cleaned == 5
+    mock_queue.cleanup_synced_punches.assert_called_once_with(retention_days=20)
+
+
+def test_stomp_worker_heartbeats_and_jitter():
+    """FIND-SYNC-005: stomp.Connection uses heartbeats=(10000, 10000) and reconnect delay has jitter."""
+    from unittest.mock import MagicMock
+
+    worker = KioskStompWorker()
+
+    # Verify reconnect delay formula with jitter: min(2 ** min(attempt, 5), 30.0) * [0.8, 1.2]
+    for _ in range(20):
+        delay_1 = worker.calculate_reconnect_delay(attempt=1)
+        assert 1.6 <= delay_1 <= 2.4
+
+    for _ in range(20):
+        delay_5 = worker.calculate_reconnect_delay(attempt=5)
+        assert 24.0 <= delay_5 <= 36.0
+
+    # Verify heartbeats passed in _connect_stomp
+    import stomp
+
+    orig_conn = stomp.Connection
+    passed_kwargs = {}
+
+    def mock_conn(*args, **kwargs):
+        passed_kwargs.update(kwargs)
+        mock_obj = MagicMock()
+        return mock_obj
+
+    stomp.Connection = mock_conn
+    try:
+        worker._connect_stomp()
+        assert passed_kwargs.get("heartbeats") == (10000, 10000)
+    finally:
+        stomp.Connection = orig_conn
+

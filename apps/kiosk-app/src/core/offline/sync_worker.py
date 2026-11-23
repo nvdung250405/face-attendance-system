@@ -6,6 +6,9 @@ Tài liệu tham chiếu:
 - DDS.md (Mục 2.1, Mục 3.1 & Mục 4.3 - REST API /api/v1/kiosk/sync-batch)
 """
 
+import email.utils
+import random
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -62,6 +65,10 @@ class OfflineSyncWorker(QThread):
             else float(settings.sync_interval_seconds)
         )
         self.batch_size: int = batch_size or settings.sync_batch_size
+        self._last_cleanup_time: float = 0.0
+        self._cleanup_interval_seconds: float = 86400.0  # 24 giờ một lần
+        self._fail_count: int = 0
+        self.clock_drift_offset: float = 0.0
 
         self._custom_client = client
         self._internal_client: httpx.Client | None = None
@@ -83,13 +90,58 @@ class OfflineSyncWorker(QThread):
             )
         return self._internal_client
 
+    @property
+    def fail_count(self) -> int:
+        """Số lần đồng bộ thất bại liên tiếp."""
+        return self._fail_count
+
+    def calculate_backoff_delay(self, fail_count: int | None = None) -> float:
+        """Tính toán thời gian chờ theo hàm mũ kèm jitter ngẫu nhiên khi đồng bộ thất bại.
+
+        Công thức: delay = min(self.interval_seconds * (2 ** min(fail_count, 5)), 60.0) * random.uniform(0.8, 1.2)
+        """
+        fc = self._fail_count if fail_count is None else fail_count
+        base = min(self.interval_seconds * (2 ** min(fc, 5)), 60.0)
+        return float(base * random.uniform(0.8, 1.2))
+
+    def cleanup_old_punches(self, retention_days: int = 20) -> int:
+        """Dọn dẹp các bản ghi đã đồng bộ quá hạn lưu trữ quy định (20 ngày theo Nghị định 356/2025/NĐ-CP)."""
+        if hasattr(self.queue_manager, "cleanup_synced_punches"):
+            try:
+                return self.queue_manager.cleanup_synced_punches(retention_days=retention_days)
+            except Exception as exc:
+                logger.debug("Lỗi khi dọn dẹp bản ghi điểm danh cũ: %s", exc)
+        return 0
+
+    def _check_clock_drift(self, response: httpx.Response) -> None:
+        """Phân tích HTTP Date header để cảnh báo độ lệch đồng hồ (clock drift)."""
+        date_header = response.headers.get("Date") if hasattr(response, "headers") else None
+        if not date_header:
+            return
+        try:
+            server_time = email.utils.parsedate_to_datetime(date_header)
+            if server_time.tzinfo is None:
+                server_time = server_time.replace(tzinfo=UTC)
+            local_time = datetime.now(UTC)
+            drift = (local_time - server_time).total_seconds()
+            self.clock_drift_offset = drift
+            if abs(drift) > 5.0:
+                logger.warning(
+                    "CẢNH BÁO: Lệch đồng hồ Kiosk và Server vượt ngưỡng 5.0s (độ lệch: %.2fs). Kiosk UTC: %s, Server UTC: %s",
+                    drift,
+                    local_time.isoformat(),
+                    server_time.isoformat(),
+                )
+        except Exception as exc:
+            logger.debug("Lỗi phân tích cú pháp HTTP Date header: %s", exc)
+
     def _close_client(self) -> None:
         """Đóng kết nối client nội bộ nếu có."""
         if self._internal_client is not None and not self._internal_client.is_closed:
             try:
                 self._internal_client.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Lỗi khi đóng client HTTP nội bộ: %s", exc)
             self._internal_client = None
 
     def check_health(self) -> bool:
@@ -103,11 +155,12 @@ class OfflineSyncWorker(QThread):
         ping_url = f"{self.backend_url}/kiosk/ping"
         try:
             response = client.post(ping_url, timeout=3.0)
+            self._check_clock_drift(response)
             if response.status_code in (200, 204):
                 self._update_network_status(True, f"Máy chủ hoạt động bình thường ({ping_url})")
                 return True
-        except httpx.RequestError:
-            pass
+        except httpx.RequestError as exc:
+            logger.debug("Ping kiểm tra máy chủ thất bại: %s", exc)
 
         # Thử kiểm tra endpoint actuator/health hoặc kiosk/health
         candidates = [
@@ -119,10 +172,12 @@ class OfflineSyncWorker(QThread):
         for url in candidates:
             try:
                 response = client.get(url, timeout=3.0)
+                self._check_clock_drift(response)
                 if response.status_code in (200, 204):
                     self._update_network_status(True, f"Máy chủ hoạt động bình thường ({url})")
                     return True
-            except httpx.RequestError:
+            except httpx.RequestError as exc:
+                logger.debug("Kiểm tra candidate health thất bại (%s): %s", url, exc)
                 continue
 
         self._update_network_status(False, "Không thể kết nối đến máy chủ backend")
@@ -155,7 +210,8 @@ class OfflineSyncWorker(QThread):
                 try:
                     dt = datetime.fromisoformat(raw_time).astimezone()
                     iso_time = dt.isoformat()
-                except Exception:
+                except Exception as exc:
+                    logger.debug("Lỗi phân tích iso_time (%s): %s", raw_time, exc)
                     iso_time = datetime.now(UTC).isoformat()
             elif isinstance(raw_time, datetime):
                 iso_time = raw_time.isoformat()
@@ -207,12 +263,14 @@ class OfflineSyncWorker(QThread):
                 },
                 timeout=15.0,
             )
+            self._check_clock_drift(response)
 
             if response.status_code == 200:
                 all_ids = [p["id"] for p in punches if "id" in p]
                 try:
                     body = response.json()
-                except Exception:
+                except Exception as exc:
+                    logger.debug("Phản hồi sync-batch không phải JSON: %s", exc)
                     body = {}
                 data = body.get("data") if isinstance(body, dict) else None
                 data = data or {}
@@ -264,6 +322,7 @@ class OfflineSyncWorker(QThread):
             int: Tổng số bản ghi đã được đồng bộ thành công trong chu kỳ này.
         """
         total_synced = 0
+        sync_failed = False
 
         while True:
             # Đọc tối đa batch_size bản ghi chưa đồng bộ
@@ -274,12 +333,18 @@ class OfflineSyncWorker(QThread):
             success = self.sync_batch(batch)
             if not success:
                 # Gặp lỗi mạng hoặc máy chủ từ chối, ngừng chu kỳ hiện tại để thử lại sau
+                sync_failed = True
                 break
 
             batch_count = len(batch)
             total_synced += batch_count
             remaining = self.queue_manager.get_unsynced_count()
             self.sync_progress.emit(batch_count, remaining)
+
+        if sync_failed:
+            self._fail_count += 1
+        else:
+            self._fail_count = 0
 
         return total_synced
 
@@ -289,6 +354,14 @@ class OfflineSyncWorker(QThread):
         logger.info("OfflineSyncWorker bắt đầu chạy (chu kỳ %.1f giây)", self.interval_seconds)
 
         while self._running:
+            # Định kỳ kích hoạt dọn dẹp các bản ghi đã đồng bộ quá hạn 20 ngày
+            now = time.time()
+            if now - self._last_cleanup_time >= self._cleanup_interval_seconds:
+                cleaned = self.cleanup_old_punches(retention_days=20)
+                if cleaned > 0:
+                    logger.info("Đã dọn dẹp %d bản ghi đã đồng bộ quá hạn 20 ngày", cleaned)
+                self._last_cleanup_time = now
+
             try:
                 # Kiểm tra hàng đợi có dữ liệu không
                 unsynced_count = self.queue_manager.get_unsynced_count()
@@ -298,11 +371,23 @@ class OfflineSyncWorker(QThread):
                     # Kiểm tra kết nối định kỳ ngay cả khi hàng đợi rỗng
                     self.check_health()
             except Exception as exc:
+                self._fail_count += 1
                 logger.error("Lỗi ngoại lệ trong vòng lặp OfflineSyncWorker: %s", exc)
                 self._update_network_status(False, str(exc))
 
+            # Xác định thời gian chờ: backoff nếu lỗi đồng bộ, ngược lại dùng interval_seconds
+            if self._fail_count > 0:
+                delay = self.calculate_backoff_delay(self._fail_count)
+                logger.debug(
+                    "Đồng bộ lỗi (lần %d), chờ lui hàm mũ: %.2fs",
+                    self._fail_count,
+                    delay,
+                )
+            else:
+                delay = self.interval_seconds
+
             # Ngủ ngắt quãng để phản hồi tín hiệu dừng stop() tức thì
-            sleep_slices = max(1, int(self.interval_seconds * 10))
+            sleep_slices = max(1, int(delay * 10))
             for _ in range(sleep_slices):
                 if not self._running:
                     break
