@@ -34,7 +34,9 @@ class FaceDetectionResult:
 DetectedFace = FaceDetectionResult
 
 
-def estimate_euler_angles(landmarks: np.ndarray) -> tuple[float, float, float]:
+def estimate_euler_angles(
+    landmarks: np.ndarray, is_mirrored: bool = False
+) -> tuple[float, float, float]:
     """Ước lượng góc Euler (Yaw, Pitch, Roll) từ 5 điểm mốc đặc trưng với khử xoay Roll 2D.
 
     Thuật toán tuân thủ FEAT-ENROLL-001 spec.md §2.2 & §5.3:
@@ -91,6 +93,11 @@ def estimate_euler_angles(landmarks: np.ndarray) -> tuple[float, float, float]:
     else:
         yaw = 0.0
 
+    # Đối với khung hình đã lật gương (Mirrored frame từ CameraWorker), đảo dấu Yaw để
+    # góc nghiêng mặt hướng về bên Trái/Phải đồng bộ trực quan với người dùng trước gương.
+    if is_mirrored:
+        yaw = -yaw
+
     # 3. Pitch: Tỷ lệ khoảng cách mắt-mũi so với mũi-miệng trên tọa độ đã de-rotate
     eye_center_y = (float(r_eye_rot[1]) + float(l_eye_rot[1])) / 2.0
     mouth_center_y = (float(mouth_r_rot[1]) + float(mouth_l_rot[1])) / 2.0
@@ -121,6 +128,7 @@ class YuNetFaceDetector:
         min_face_size: int = 120,
         max_angle_deg: float = 15.0,
         input_size: tuple[int, int] = (320, 320),
+        is_mirrored: bool = True,
     ) -> None:
         """Khởi tạo YuNetFaceDetector.
 
@@ -132,6 +140,7 @@ class YuNetFaceDetector:
             min_face_size: Kích thước cạnh tối thiểu của bounding box (mặc định 120 px).
             max_angle_deg: Góc nghiêng tối đa cho phép của từng trục Euler (mặc định 15.0 độ).
             input_size: Kích thước đầu vào chuẩn cho suy luận YuNet (mặc định 320x320 px).
+            is_mirrored: Khung hình camera đã được lật ngang (mirror mode) hay chưa (mặc định True).
         """
         self.model_path: Path = model_path or settings.yunet_model_path
         self.score_threshold: float = score_threshold
@@ -140,6 +149,7 @@ class YuNetFaceDetector:
         self.min_face_size: int = min_face_size
         self.max_angle_deg: float = max_angle_deg
         self.input_size: tuple[int, int] = input_size
+        self.is_mirrored: bool = is_mirrored
 
         if not self.model_path.exists():
             raise FileNotFoundError(
@@ -179,7 +189,7 @@ class YuNetFaceDetector:
         Returns:
             tuple[float, float, float]: (yaw, pitch, roll) tính theo độ.
         """
-        return estimate_euler_angles(landmarks)
+        return estimate_euler_angles(landmarks, is_mirrored=self.is_mirrored)
 
     def detect(self, frame: np.ndarray) -> list[FaceDetectionResult]:
         """Thực hiện phát hiện khuôn mặt trên khung hình camera.

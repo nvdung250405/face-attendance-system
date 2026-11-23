@@ -152,6 +152,12 @@ def test_euler_angle_estimation_left_and_right_tilt():
     assert -25.0 <= yaw_right <= -10.0
     assert pytest.approx(yaw_right, abs=0.1) == -18.0
 
+    # Khi áp dụng chế độ lật gương (is_mirrored=True) cho camera trạm Kiosk
+    yaw_left_mirrored, _, _ = estimate_euler_angles(left_landmarks, is_mirrored=True)
+    assert pytest.approx(yaw_left_mirrored, abs=0.1) == -18.0
+    yaw_right_mirrored, _, _ = estimate_euler_angles(right_landmarks, is_mirrored=True)
+    assert pytest.approx(yaw_right_mirrored, abs=0.1) == 18.0
+
 
 def test_euler_angle_estimation_degenerate_clamping():
     """Kiểm tra giới hạn tỷ lệ [-1.0, 1.0] ngăn ngừa ngoại suy góc Euler phi thực tế."""
