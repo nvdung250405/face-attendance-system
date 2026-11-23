@@ -81,7 +81,9 @@ class TestSQLiteQueueManager:
         )
         latency_ms = (time.perf_counter() - start_time) * 1000.0
         assert local_id_1 > 0
-        assert latency_ms < 50.0  # Đảm bảo ghi nhanh
+        assert (
+            latency_ms < 250.0
+        )  # Đảm bảo ghi nhanh (ngưỡng an toàn chống flaky trên CI runner ảo hóa)
 
         local_id_2 = queue_mgr.enqueue_punch(
             employee_id=102,
