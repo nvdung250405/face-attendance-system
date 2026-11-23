@@ -384,7 +384,7 @@ def main() -> int:
         detector=detector,
         extractor=extractor,
         liveness_gate=liveness_gate,
-        demo_mode=args.demo,
+        demo_mode=(is_dev_mode or args.demo),
     )
     # 6a. Khởi tạo InferenceWorker để tách tính toán AI và SQLite WAL khỏi Main GUI Thread
     inference_worker = InferenceWorker(

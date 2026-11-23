@@ -11,10 +11,16 @@ Item {
     id: root
     anchors.fill: parent
     z: 1000
-    visible: root.opacity > 0
+    visible: root.isOpen || root.opacity > 0
     opacity: 0.0
 
     property bool isOpen: false
+
+    onIsOpenChanged: {
+        if (isOpen) {
+            cardItem.forceActiveFocus()
+        }
+    }
 
     function open() {
         if (typeof enrollmentController !== "undefined" && enrollmentController) {
@@ -116,16 +122,22 @@ Item {
         // Bắt sự kiện chuột không lọt ra ngoài nền
         MouseArea {
             anchors.fill: parent
-            // Chặn click xuyên qua backdrop
+            onClicked: cardItem.forceActiveFocus()
+            // Chặn click xuyên qua backdrop và khôi phục active focus cho card
         }
 
         // Hỗ trợ gõ trực tiếp từ bàn phím vật lý
         focus: true
         Keys.onPressed: function(event) {
-            if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
-                const digit = String(event.key - Qt.Key_0)
+            const isDigitKey = (event.key >= Qt.Key_0 && event.key <= Qt.Key_9);
+            const isDigitText = (event.text && event.text.length === 1 && event.text >= "0" && event.text <= "9");
+            if (isDigitKey || isDigitText) {
+                const digit = isDigitText ? event.text : String(event.key - Qt.Key_0)
                 if (typeof enrollmentController !== "undefined" && enrollmentController) {
                     enrollmentController.appendOtpDigit(digit)
+                    if (enrollmentController.currentOtp.length === 6) {
+                        enrollmentController.verifyOtp()
+                    }
                 }
                 event.accepted = true
             } else if (event.key === Qt.Key_Backspace) {
@@ -394,6 +406,9 @@ Item {
                     onDigitClicked: (digit) => {
                         if (typeof enrollmentController !== "undefined" && enrollmentController) {
                             enrollmentController.appendOtpDigit(digit)
+                            if (enrollmentController.currentOtp.length === 6) {
+                                enrollmentController.verifyOtp()
+                            }
                         }
                     }
                     onBackspaceClicked: {
@@ -494,6 +509,7 @@ Item {
                                     for (let i = 0; i < "482619".length; i++) {
                                         enrollmentController.appendOtpDigit("482619"[i])
                                     }
+                                    enrollmentController.verifyOtp()
                                 }
                             }
                         }

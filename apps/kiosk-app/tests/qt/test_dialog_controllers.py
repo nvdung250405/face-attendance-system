@@ -161,6 +161,26 @@ def test_enrollment_controller_verify_otp(qapp):
     assert "Nguyen Van A" in controller.statusMessage
 
 
+def test_enrollment_controller_dev_mode_sample_otp(qapp):
+    """Kiểm tra mã OTP mẫu thử nghiệm 482619 được chấp nhận tự động trong chế độ dev/demo."""
+    controller = EnrollmentController(demo_mode=True)
+    assert controller.currentStep == 1
+
+    for d in "482619":
+        controller.appendOtpDigit(d)
+
+    assert controller.currentOtp == "482619"
+    # Xác thực mã OTP mẫu trong dev/demo mode mà không cần mock HTTP client
+    assert controller.verifyOtp() is True
+    assert controller.currentStep == 2
+    assert "Nhân viên Demo" in controller.statusMessage
+
+    # Thử nghiệm phím Space / completeCaptureStep trong demo mode
+    controller.completeCaptureStep()
+    assert controller.currentStep == 3
+    assert len(controller.capturedTemplates) == 3
+
+
 def test_enrollment_controller_process_frame_and_submit(qapp):
     """Kiểm tra thu thập 3 frame đạt chuẩn và kích hoạt hoàn tất đăng ký."""
     mock_client = MagicMock(spec=httpx.Client)
