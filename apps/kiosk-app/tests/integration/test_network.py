@@ -583,4 +583,3 @@ def test_stomp_worker_heartbeats_and_jitter():
         assert passed_kwargs.get("heartbeats") == (10000, 10000)
     finally:
         stomp.Connection = orig_conn
-

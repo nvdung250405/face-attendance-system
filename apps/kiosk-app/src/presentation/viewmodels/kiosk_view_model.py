@@ -357,7 +357,9 @@ class KioskViewModel(QObject):
             self.messageChanged.emit(message)
             changed = True
         if changed:
-            logger.debug("Trạng thái oval cập nhật: state=%s, message=%s", self._oval_state, self._message)
+            logger.debug(
+                "Trạng thái oval cập nhật: state=%s, message=%s", self._oval_state, self._message
+            )
 
     def _trigger_hold(self, duration_sec: float = 2.5) -> None:
         """Kích hoạt khoảng thời gian giữ kết quả trước khi tiếp tục quét."""
