@@ -653,7 +653,11 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
                 self.enrollmentCompleted.emit(event_payload)
             else:
-                if self._demo_mode or self._otp == "482619" or getattr(self, "_session_token", "") == "demo-session-token":
+                if (
+                    self._demo_mode
+                    or self._otp == "482619"
+                    or getattr(self, "_session_token", "") == "demo-session-token"
+                ):
                     self._current_step = 3
                     self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
                     self.currentStepChanged.emit(self._current_step)
@@ -676,7 +680,11 @@ class EnrollmentController(QObject):
                 self.statusMessageChanged.emit(self._status_message)
         except Exception as exc:
             logger.warning("Lỗi gửi dữ liệu đăng ký lên Backend: %s", exc)
-            if self._demo_mode or self._otp == "482619" or getattr(self, "_session_token", "") == "demo-session-token":
+            if (
+                self._demo_mode
+                or self._otp == "482619"
+                or getattr(self, "_session_token", "") == "demo-session-token"
+            ):
                 self._current_step = 3
                 self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
                 self.currentStepChanged.emit(self._current_step)
