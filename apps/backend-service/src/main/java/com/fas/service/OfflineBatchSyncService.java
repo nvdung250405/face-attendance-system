@@ -25,12 +25,15 @@ import org.springframework.data.domain.Sort;
 import com.fas.config.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -40,6 +43,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Dịch vụ Đồng bộ Bù Ngoại tuyến cho Trạm Kiosk (SOL-BE-003, FR-BE-003,
@@ -74,6 +79,7 @@ public class OfflineBatchSyncService {
     private final UserRepository userRepository;
     private final ShiftManagementService shiftManagementService;
     private final Clock clock;
+    private final ConcurrentMap<Long, Instant> userPunchCooldownBuffer = new ConcurrentHashMap<>();
 
     @Autowired
     public OfflineBatchSyncService(
@@ -106,7 +112,7 @@ public class OfflineBatchSyncService {
      * @return kết quả đồng bộ chi tiết
      */
     @CacheEvict(value = CacheConfig.ATTENDANCE_STATS_CACHE, allEntries = true)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public BatchSyncResult processOfflineBatch(String kioskId, KioskSyncBatchRequest request) {
         validateRequest(kioskId, request);
 
@@ -173,14 +179,27 @@ public class OfflineBatchSyncService {
                 punchType = determineInitialPunchType(employeeId, punchDate, zoneId);
             }
 
+            // Kiểm tra bộ đệm Cooldown 120s (FINDING-BE-DOM-004 & BIZ-004)
+            Instant lastPunch = userPunchCooldownBuffer.get(employeeId);
+            if (lastPunch != null && Math.abs(Duration.between(lastPunch, punchInstant).getSeconds()) < 120) {
+                log.warn("Bỏ qua bản ghi offline localQueueId={}: Nhân viên ID={} vi phạm khoảng cách 120s",
+                        record.localQueueId(), employeeId);
+                failedLocalIds.add(record.localQueueId());
+                continue;
+            }
+
             // Kiểm tra ràng buộc duy nhất chống trùng lặp (Idempotency)
-            if (attendanceLogRepository.existsByUserIdAndPunchTimestampAndPunchType(employeeId, punchInstant,
+            if (attendanceLogRepository.existsByUserIdAndPunchTimestamp(employeeId, punchInstant)
+                    || attendanceLogRepository.existsByUserIdAndPunchTimestampAndPunchType(employeeId, punchInstant,
                     punchType)) {
                 log.info("Bản ghi offline localQueueId={} đã tồn tại trong CSDL (User={}, Time={}, Type={})",
                         record.localQueueId(), employeeId, punchInstant, punchType);
                 failedLocalIds.add(record.localQueueId());
                 continue;
             }
+
+            // Cập nhật bộ đệm cooldown cho ứng viên hợp lệ
+            userPunchCooldownBuffer.put(employeeId, punchInstant);
 
             // Chỉ cập nhật bộ theo dõi lượt quẹt SAU khi bản ghi vượt qua kiểm tra trùng
             // lặp
@@ -190,6 +209,7 @@ public class OfflineBatchSyncService {
             // Đánh giá ca kíp và tính toán trạng thái
             AttendanceStatus status;
             int lateMinutes = 0;
+            int overtimeMinutes = 0;
 
             if (punchType == PunchType.CHECK_IN) {
                 ShiftEvaluationResult evaluation = shiftManagementService.evaluatePunch(employeeId, punchDate,
@@ -199,16 +219,30 @@ public class OfflineBatchSyncService {
             } else {
                 Optional<Shift> shiftOpt = shiftManagementService.findActiveShiftForUser(employeeId, punchDate);
                 if (shiftOpt.isEmpty()) {
+                    shiftOpt = shiftManagementService.findActiveShiftForUser(employeeId, punchDate.minusDays(1));
+                }
+                if (shiftOpt.isEmpty()) {
                     status = AttendanceStatus.ANOMALOUS;
                     lateMinutes = 0;
                 } else {
                     Shift shift = shiftOpt.get();
-                    if (punchTime.isBefore(shift.getEndTime())) {
+                    LocalDateTime shiftEndDateTime = LocalDateTime.of(punchDate, shift.getEndTime());
+                    LocalDateTime punchDateTime = LocalDateTime.of(punchDate, punchTime);
+
+                    if (punchDateTime.isBefore(shiftEndDateTime)) {
                         status = AttendanceStatus.EARLY_LEAVE;
                         lateMinutes = 0;
                     } else {
-                        status = AttendanceStatus.ON_TIME;
                         lateMinutes = 0;
+                        long diffMinutes = Duration.between(shiftEndDateTime, punchDateTime).toMinutes();
+                        int quantized = (int) (diffMinutes / 15) * 15;
+                        if (quantized > 0) {
+                            status = AttendanceStatus.OVERTIME;
+                            overtimeMinutes = quantized;
+                        } else {
+                            status = AttendanceStatus.ON_TIME;
+                            overtimeMinutes = 0;
+                        }
                     }
                 }
             }
@@ -225,6 +259,7 @@ public class OfflineBatchSyncService {
                     .kiosk(kiosk)
                     .status(status)
                     .lateMinutes(lateMinutes)
+                    .overtimeMinutes(overtimeMinutes)
                     .isOfflineSync(true)
                     .createdAt(clock.instant())
                     .build();
@@ -235,10 +270,31 @@ public class OfflineBatchSyncService {
 
         // 4. Thực thi batch insert nếu có bản ghi hợp lệ
         if (!logsToInsert.isEmpty()) {
-            attendanceLogRepository.batchInsertOfflineLogs(logsToInsert);
-            syncedLocalIds.addAll(pendingCandidateLocalIds);
-            log.info("Đồng bộ bù thành công {} bản ghi ngoại tuyến từ trạm Kiosk ID={}",
-                    syncedLocalIds.size(), kiosk.getId());
+            try {
+                attendanceLogRepository.batchInsertOfflineLogs(logsToInsert);
+                syncedLocalIds.addAll(pendingCandidateLocalIds);
+                for (AttendanceLog logItem : logsToInsert) {
+                    userPunchCooldownBuffer.put(logItem.getUser().getId(), logItem.getPunchTimestamp());
+                }
+                log.info("Đồng bộ bù thành công {} bản ghi ngoại tuyến từ trạm Kiosk ID={}",
+                        syncedLocalIds.size(), kiosk.getId());
+            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                log.warn("Batch insert gặp lỗi DataIntegrityViolationException, chuyển sang xử lý từng bản ghi: {}",
+                        ex.getMessage());
+                for (int i = 0; i < logsToInsert.size(); i++) {
+                    AttendanceLog logItem = logsToInsert.get(i);
+                    Long localId = pendingCandidateLocalIds.get(i);
+                    try {
+                        attendanceLogRepository.save(logItem);
+                        syncedLocalIds.add(localId);
+                        userPunchCooldownBuffer.put(logItem.getUser().getId(), logItem.getPunchTimestamp());
+                    } catch (org.springframework.dao.DataIntegrityViolationException dive) {
+                        log.warn("Bỏ qua bản ghi ngoại tuyến localQueueId={} do trùng lặp (DataIntegrityViolationException): {}",
+                                localId, dive.getMessage());
+                        failedLocalIds.add(localId);
+                    }
+                }
+            }
         }
 
         return new BatchSyncResult(syncedLocalIds.size(), syncedLocalIds, failedLocalIds);
@@ -267,10 +323,27 @@ public class OfflineBatchSyncService {
                 .findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(userId, startOfDay, endOfDay);
 
         if (latestLog.isEmpty()) {
+            Instant yesterdayStart = punchDate.minusDays(1).atStartOfDay(zoneId).toInstant();
+            Optional<AttendanceLog> yesterdayLog = attendanceLogRepository
+                    .findFirstByUserIdAndPunchTimestampBetweenOrderByPunchTimestampDesc(
+                            userId, yesterdayStart, startOfDay);
+            if (yesterdayLog.isPresent() && yesterdayLog.get().getPunchType() == PunchType.CHECK_IN) {
+                Optional<Shift> shiftOpt = shiftManagementService.findActiveShiftForUser(userId, punchDate.minusDays(1));
+                if (shiftOpt.isEmpty()) {
+                    shiftOpt = shiftManagementService.findActiveShiftForUser(userId, punchDate);
+                }
+                if (shiftOpt.isPresent() && Boolean.TRUE.equals(shiftOpt.get().getIsOvernight())) {
+                    return PunchType.CHECK_OUT;
+                }
+            }
             return PunchType.CHECK_IN;
         }
 
         return latestLog.get().getPunchType() == PunchType.CHECK_IN ? PunchType.CHECK_OUT : PunchType.CHECK_IN;
+    }
+
+    public void clearCooldownBuffer() {
+        userPunchCooldownBuffer.clear();
     }
 
     private VerificationMethod parseVerificationMethod(String rawMethod) {

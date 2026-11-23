@@ -194,7 +194,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
         logger.warn("Tham số không hợp lệ tại {}: {}", request.getRequestURI(), ex.getMessage());
-        return problemDetail(ApiErrorCode.VALIDATION_FAILED, ex.getMessage() != null ? ex.getMessage() : INVALID_PARAMS_DETAIL, List.of(), request);
+        return problemDetail(ApiErrorCode.VALIDATION_FAILED, "Dữ liệu tham số không hợp lệ.", List.of(), request);
     }
 
     @ExceptionHandler(ApiException.class)

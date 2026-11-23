@@ -1,7 +1,7 @@
 package com.fas.security;
 
 import com.fas.security.jwt.JwtAuthenticationFilter;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,12 +31,19 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final KioskTokenAuthenticationFilter kioskTokenAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final String corsAllowedOrigins;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            @org.springframework.beans.factory.annotation.Value("${fas.security.cors.allowed-origins:*}") String corsAllowedOrigins) {
+            KioskTokenAuthenticationFilter kioskTokenAuthenticationFilter,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+            @Value("${fas.security.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}")
+            String corsAllowedOrigins) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.kioskTokenAuthenticationFilter = kioskTokenAuthenticationFilter;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.corsAllowedOrigins = corsAllowedOrigins;
     }
 
@@ -47,26 +54,29 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: " + authException.getMessage())
-                        )
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Endpoint xác thực công khai
+                        // 1. Endpoint logout yêu cầu đã xác thực người dùng (SEC-005)
+                        .requestMatchers("/api/v1/auth/logout").authenticated()
+                        // 2. Endpoint xác thực công khai
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        // 2. Endpoint tự phục vụ của trạm Kiosk (xác thực OTP, đăng ký mẫu, đồng bộ điểm danh)
+                        // 3. Endpoint tự phục vụ của trạm Kiosk (xác thực OTP, đăng ký mẫu, đồng bộ điểm danh)
                         .requestMatchers("/api/v1/kiosk/**", "/api/v1/enrollment/**").permitAll()
-                        // 3. Endpoint WebSocket STOMP
+                        // Endpoint trạm kiosk (bảo vệ bởi KioskTokenAuthenticationFilter - SEC-004)
+                        .requestMatchers("/api/v1/attendance/kiosk-punch", "/api/v1/sync/offline-batch").permitAll()
+                        // 4. Endpoint WebSocket STOMP
                         .requestMatchers("/ws/**", "/ws-attendance/**").permitAll()
-                        // 4. Giám sát sức khỏe hệ thống Actuator
+                        // 5. Giám sát sức khỏe hệ thống Actuator
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        // 5. Trang lỗi mặc định
+                        // 6. Trang lỗi mặc định
                         .requestMatchers("/error").permitAll()
-                        // 6. Tài liệu OpenAPI & Swagger UI
+                        // 7. Tài liệu OpenAPI & Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // Mọi yêu cầu nghiệp vụ còn lại đều yêu cầu JWT Token
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(kioskTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -77,11 +87,14 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
                 .map(String::trim)
-                .filter(s -> !s.isEmpty())
+                .filter(s -> !s.isEmpty() && !s.equals("*"))
                 .toList();
-        configuration.setAllowedOriginPatterns(origins.isEmpty() ? List.of("*") : origins);
+        configuration.setAllowedOriginPatterns(origins.isEmpty()
+                ? List.of("http://localhost:*", "http://127.0.0.1:*")
+                : origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Kiosk-Id", "X-Kiosk-Secret", "X-Kiosk-Token"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization", "Content-Type", "X-Kiosk-Id", "X-Kiosk-Secret", "X-Kiosk-Token"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -92,7 +105,8 @@ public class SecurityConfig {
 
     @Bean
     public org.springframework.security.web.firewall.RequestRejectedHandler requestRejectedHandler() {
-        return new org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler(org.springframework.http.HttpStatus.BAD_REQUEST.value());
+        return new org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler(
+                org.springframework.http.HttpStatus.BAD_REQUEST.value());
     }
 
     @Bean
@@ -101,7 +115,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }

@@ -12,8 +12,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -55,6 +57,21 @@ class SecurityConfigTest {
     @DisplayName("Endpoint bảo vệ trả về 401 Unauthorized khi thiếu JWT Token")
     void protectedEndpointShouldReturn401WhenNoToken() throws Exception {
         mockMvc.perform(get("/api/v1/users"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string("Content-Type", startsWith("application/problem+json")));
+    }
+
+    @Test
+    @DisplayName("SEC-005: Endpoint /api/v1/auth/logout yêu cầu xác thực JWT Token")
+    void logoutEndpointShouldRequireAuthentication() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("SEC-004: Endpoint /api/v1/attendance/kiosk-punch yêu cầu header X-Kiosk-Token hợp lệ")
+    void kioskPunchShouldRequireKioskTokenHeader() throws Exception {
+        mockMvc.perform(post("/api/v1/attendance/kiosk-punch"))
                 .andExpect(status().isUnauthorized());
     }
 

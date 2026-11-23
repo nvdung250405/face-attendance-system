@@ -35,5 +35,16 @@ public record CreateShiftRequest(
         @NotNull(message = "Thời gian ân hạn không được để trống")
         @Min(value = 0, message = "Thời gian ân hạn tối thiểu là 0 phút")
         @Max(value = 60, message = "Thời gian ân hạn tối đa là 60 phút")
-        Integer gracePeriodMinutes) {
+        Integer gracePeriodMinutes,
+
+        Boolean isOvernight) {
+
+    public CreateShiftRequest(
+            String shiftCode,
+            String shiftName,
+            LocalTime startTime,
+            LocalTime endTime,
+            Integer gracePeriodMinutes) {
+        this(shiftCode, shiftName, startTime, endTime, gracePeriodMinutes, false);
+    }
 }

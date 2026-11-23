@@ -23,11 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -102,7 +104,7 @@ public class ShiftManagementService {
      * @param request thông tin ca làm việc cần tạo
      * @return thông tin ca làm việc sau khi lưu
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public ShiftResponse createShift(CreateShiftRequest request) {
         String shiftCode;
         if (request.shiftCode() != null && !request.shiftCode().isBlank()) {
@@ -116,7 +118,8 @@ public class ShiftManagementService {
                     request.shiftName(), request.startTime(), request.endTime());
         }
 
-        validateShiftTimes(request.startTime(), request.endTime(), request.gracePeriodMinutes());
+        Boolean isOvernight = Boolean.TRUE.equals(request.isOvernight());
+        validateShiftTimes(request.startTime(), request.endTime(), request.gracePeriodMinutes(), isOvernight);
 
         Shift shift = Shift.builder()
                 .shiftCode(shiftCode)
@@ -124,6 +127,7 @@ public class ShiftManagementService {
                 .startTime(request.startTime())
                 .endTime(request.endTime())
                 .gracePeriodMinutes(request.gracePeriodMinutes())
+                .isOvernight(isOvernight)
                 .isActive(true)
                 .build();
 
@@ -139,16 +143,19 @@ public class ShiftManagementService {
      * @param request thông tin cập nhật
      * @return thông tin ca làm việc sau cập nhật
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public ShiftResponse updateShift(Long shiftId, UpdateShiftRequest request) {
         Shift shift = findShiftById(shiftId);
 
-        validateShiftTimes(request.startTime(), request.endTime(), request.gracePeriodMinutes());
+        Boolean isOvernight = request.isOvernight() != null
+                ? request.isOvernight() : Boolean.TRUE.equals(shift.getIsOvernight());
+        validateShiftTimes(request.startTime(), request.endTime(), request.gracePeriodMinutes(), isOvernight);
 
         shift.setShiftName(request.shiftName().trim());
         shift.setStartTime(request.startTime());
         shift.setEndTime(request.endTime());
         shift.setGracePeriodMinutes(request.gracePeriodMinutes());
+        shift.setIsOvernight(isOvernight);
 
         if (request.isActive() != null) {
             if (!request.isActive() && Boolean.TRUE.equals(shift.getIsActive())) {
@@ -168,7 +175,7 @@ public class ShiftManagementService {
      * @param shiftId mã định danh ca cần vô hiệu hóa
      * @return thông tin ca sau khi cập nhật
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public ShiftResponse deactivateShift(Long shiftId) {
         Shift shift = findShiftById(shiftId);
         checkShiftNotInUse(shiftId);
@@ -185,7 +192,7 @@ public class ShiftManagementService {
      * @param shiftId mã định danh ca cần kích hoạt
      * @return thông tin ca sau khi kích hoạt
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public ShiftResponse activateShift(Long shiftId) {
         Shift shift = findShiftById(shiftId);
         shift.setIsActive(true);
@@ -223,7 +230,7 @@ public class ShiftManagementService {
      * @param request thông tin phân công ca
      * @return bản ghi phân công sau khi lưu
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public EmployeeShiftResponse assignShift(AssignShiftRequest request) {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ApiException(ApiErrorCode.EMPLOYEE_NOT_FOUND,
@@ -366,7 +373,7 @@ public class ShiftManagementService {
      *
      * @param employeeShiftId mã định danh bản ghi phân ca
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public void unassignShift(Long employeeShiftId) {
         EmployeeShift employeeShift = employeeShiftRepository.findById(employeeShiftId)
                 .orElseThrow(() -> new ApiException(ApiErrorCode.RESOURCE_NOT_FOUND,
@@ -410,12 +417,22 @@ public class ShiftManagementService {
         Shift shift = activeAssignmentOpt.get().getShift();
         LocalTime startTime = shift.getStartTime();
         int graceMinutes = shift.getGracePeriodMinutes() != null ? shift.getGracePeriodMinutes() : 0;
-        LocalTime cutoffTime = startTime.plusMinutes(graceMinutes);
 
-        if (!punchTime.isAfter(cutoffTime)) {
+        LocalDateTime shiftStartDateTime = LocalDateTime.of(punchDate, startTime);
+        LocalDateTime cutoffDateTime = shiftStartDateTime.plusMinutes(graceMinutes);
+
+        LocalDateTime punchDateTime = LocalDateTime.of(punchDate, punchTime);
+        if (cutoffDateTime.toLocalDate().isAfter(punchDate) && punchTime.isBefore(startTime)) {
+            punchDateTime = LocalDateTime.of(punchDate.plusDays(1), punchTime);
+        }
+
+        if (!punchDateTime.isAfter(cutoffDateTime)) {
             return ShiftEvaluationResult.onTime(shift.getId(), shift.getShiftCode(), startTime, graceMinutes);
         } else {
-            long lateMinutes = Duration.between(startTime, punchTime).toMinutes();
+            long lateMinutes = Duration.between(shiftStartDateTime, punchDateTime).toMinutes();
+            if (lateMinutes < 0) {
+                lateMinutes = 0;
+            }
             return ShiftEvaluationResult.late(shift.getId(), shift.getShiftCode(), lateMinutes, startTime,
                     graceMinutes);
         }
@@ -458,8 +475,9 @@ public class ShiftManagementService {
                         "Không tìm thấy ca làm việc với ID: " + shiftId));
     }
 
-    private void validateShiftTimes(LocalTime startTime, LocalTime endTime, Integer gracePeriodMinutes) {
-        if (!startTime.isBefore(endTime)) {
+    private void validateShiftTimes(LocalTime startTime, LocalTime endTime, Integer gracePeriodMinutes, Boolean isOvernight) {
+        boolean overnight = Boolean.TRUE.equals(isOvernight);
+        if (!overnight && !startTime.isBefore(endTime)) {
             throw new ApiException(ApiErrorCode.VALIDATION_FAILED,
                     "Giờ bắt đầu ca (" + startTime + ") phải nhỏ hơn giờ kết thúc ca (" + endTime + ").");
         }
@@ -477,7 +495,8 @@ public class ShiftManagementService {
                 shift.getStartTime(),
                 shift.getEndTime(),
                 shift.getGracePeriodMinutes(),
-                shift.getIsActive());
+                shift.getIsActive(),
+                Boolean.TRUE.equals(shift.getIsOvernight()));
     }
 
     private EmployeeShiftResponse toEmployeeShiftResponse(EmployeeShift es) {

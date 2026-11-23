@@ -252,4 +252,90 @@ class EntityMappingAndConstraintTest {
         assertThat(foundLog.getKiosk().getId()).isEqualTo(kiosk.getId());
         assertThat(foundLog.getPunchType()).isEqualTo(PunchType.CHECK_OUT);
     }
+
+    @Test
+    @DisplayName("FINDING-BE-DOM-005: Mapping và lưu trữ bản ghi AttendanceModificationHistory append-only")
+    void shouldPersistAndRetrieveAttendanceModificationHistory() {
+        AttendanceModificationHistory history = AttendanceModificationHistory.builder()
+                .attendanceLogId(9999L)
+                .originalTimestamp(Instant.now().minusSeconds(3600))
+                .updatedTimestamp(Instant.now())
+                .originalStatus("LATE")
+                .updatedStatus("ON_TIME")
+                .modifiedBy("supervisor_admin")
+                .reason("Duyệt đơn giải trình bổ sung")
+                .createdAt(Instant.now())
+                .build();
+
+        entityManager.persist(history);
+        entityManager.flush();
+        entityManager.clear();
+
+        AttendanceModificationHistory found = entityManager.find(AttendanceModificationHistory.class, history.getId());
+        assertThat(found).isNotNull();
+        assertThat(found.getAttendanceLogId()).isEqualTo(9999L);
+        assertThat(found.getOriginalStatus()).isEqualTo("LATE");
+        assertThat(found.getUpdatedStatus()).isEqualTo("ON_TIME");
+        assertThat(found.getModifiedBy()).isEqualTo("supervisor_admin");
+        assertThat(found.getReason()).isEqualTo("Duyệt đơn giải trình bổ sung");
+        assertThat(found.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("FINDING-BE-DOM-001 & DOM-003: Persist Shift với isOvernight và AttendanceLog với overtimeMinutes")
+    void shouldPersistShiftOvernightAndAttendanceLogOvertimeMinutes() {
+        User user = User.builder()
+                .employeeCode("NV-DOM-99")
+                .fullName("Nguyen Van Night")
+                .email("night@fas.com")
+                .passwordHash("$2a$12$dummyhash")
+                .role(Role.EMPLOYEE)
+                .status(EmployeeStatus.ACTIVE)
+                .build();
+        entityManager.persist(user);
+
+        Shift nightShift = Shift.builder()
+                .shiftCode("CA_DEM_TEST")
+                .shiftName("Ca Dem 22h-06h")
+                .startTime(LocalTime.of(22, 0))
+                .endTime(LocalTime.of(6, 0))
+                .gracePeriodMinutes(15)
+                .isActive(true)
+                .isOvernight(true)
+                .build();
+        entityManager.persist(nightShift);
+
+        Kiosk kiosk = Kiosk.builder()
+                .id("KIOSK-NIGHT-01")
+                .locationName("Sanh Ca Dem")
+                .secretTokenHash("$2a$12$dummysecret")
+                .isActive(true)
+                .build();
+        entityManager.persist(kiosk);
+
+        AttendanceLog log = AttendanceLog.builder()
+                .user(user)
+                .kiosk(kiosk)
+                .punchTimestamp(Instant.now())
+                .punchType(PunchType.CHECK_OUT)
+                .verificationMethod(VerificationMethod.FACE_MATCH)
+                .confidenceScore(new BigDecimal("0.9600"))
+                .status(AttendanceStatus.OVERTIME)
+                .lateMinutes(0)
+                .overtimeMinutes(45)
+                .isOfflineSync(false)
+                .build();
+        entityManager.persist(log);
+        entityManager.flush();
+        entityManager.clear();
+
+        Shift foundShift = entityManager.find(Shift.class, nightShift.getId());
+        assertThat(foundShift).isNotNull();
+        assertThat(foundShift.getIsOvernight()).isTrue();
+
+        AttendanceLog foundLog = entityManager.find(AttendanceLog.class, log.getId());
+        assertThat(foundLog).isNotNull();
+        assertThat(foundLog.getStatus()).isEqualTo(AttendanceStatus.OVERTIME);
+        assertThat(foundLog.getOvertimeMinutes()).isEqualTo(45);
+    }
 }

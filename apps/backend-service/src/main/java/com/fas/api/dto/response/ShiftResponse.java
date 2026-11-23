@@ -21,5 +21,17 @@ public record ShiftResponse(
         LocalTime startTime,
         LocalTime endTime,
         Integer gracePeriodMinutes,
-        Boolean isActive) {
+        Boolean isActive,
+        Boolean isOvernight) {
+
+    public ShiftResponse(
+            Long id,
+            String shiftCode,
+            String shiftName,
+            LocalTime startTime,
+            LocalTime endTime,
+            Integer gracePeriodMinutes,
+            Boolean isActive) {
+        this(id, shiftCode, shiftName, startTime, endTime, gracePeriodMinutes, isActive, false);
+    }
 }

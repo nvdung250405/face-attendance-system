@@ -5,6 +5,7 @@ import com.fas.api.dto.PageResponse;
 import com.fas.api.dto.request.AuditLogFilterCriteria;
 import com.fas.api.dto.response.AuditLogItemResponse;
 import com.fas.service.AuditQueryService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -39,7 +40,7 @@ public class AuditLogController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<PageResponse<AuditLogItemResponse>> getAuditLogs(
-            @ModelAttribute AuditLogFilterCriteria criteria,
+            @Valid @ModelAttribute AuditLogFilterCriteria criteria,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         PageResponse<AuditLogItemResponse> response = auditQueryService.queryAuditLogs(criteria, pageable);

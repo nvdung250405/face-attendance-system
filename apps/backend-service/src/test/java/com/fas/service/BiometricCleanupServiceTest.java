@@ -19,6 +19,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -60,9 +62,9 @@ class BiometricCleanupServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Logic giao dịch đã chuyển sang BiometricCleanupExecutor; dựng executor thật với các mock repo
         BiometricCleanupExecutor executor = new BiometricCleanupExecutor(
-                userRepository, biometricTemplateRepository, consentWithdrawalRepository, auditLogRepository, objectMapper);
+                userRepository, biometricTemplateRepository, consentWithdrawalRepository,
+                auditLogRepository, objectMapper);
         cleanupService = new BiometricCleanupService(executor);
         ReflectionTestUtils.setField(cleanupService, "retentionDays", 20);
     }
@@ -71,8 +73,9 @@ class BiometricCleanupServiceTest {
     @DisplayName("TST-BE-017-01: Không có nhân viên thôi việc quá 20 ngày -> không xóa gì và không ghi audit log")
     void cleanupTerminatedEmployees_whenNoTerminatedUsers_doesNothing() {
         LocalDate threshold = today.minusDays(20);
-        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(EmployeeStatus.TERMINATED, threshold))
-                .thenReturn(Collections.emptyList());
+        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(
+                eq(EmployeeStatus.TERMINATED), eq(threshold), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         int count = cleanupService.cleanupTerminatedEmployees(today);
 
@@ -93,7 +96,7 @@ class BiometricCleanupServiceTest {
                 .passwordHash("hashed")
                 .status(EmployeeStatus.TERMINATED)
                 .role(Role.EMPLOYEE)
-                .terminatedDate(today.minusDays(25)) // 25 ngày > 20 ngày
+                .terminatedDate(today.minusDays(25))
                 .build();
 
         BiometricTemplate template = BiometricTemplate.builder()
@@ -103,8 +106,9 @@ class BiometricCleanupServiceTest {
                 .encryptionIv(new byte[12])
                 .build();
 
-        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(EmployeeStatus.TERMINATED, threshold))
-                .thenReturn(List.of(terminatedUser));
+        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(
+                eq(EmployeeStatus.TERMINATED), eq(threshold), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(terminatedUser)));
         when(biometricTemplateRepository.findByUserId(101L))
                 .thenReturn(List.of(template));
 
@@ -139,7 +143,7 @@ class BiometricCleanupServiceTest {
                 .passwordHash("hashed")
                 .status(EmployeeStatus.TERMINATED)
                 .role(Role.EMPLOYEE)
-                .terminatedDate(threshold) // Đúng 20 ngày
+                .terminatedDate(threshold)
                 .build();
 
         BiometricTemplate template = BiometricTemplate.builder()
@@ -149,8 +153,9 @@ class BiometricCleanupServiceTest {
                 .encryptionIv(new byte[12])
                 .build();
 
-        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(EmployeeStatus.TERMINATED, threshold))
-                .thenReturn(List.of(userExactly20));
+        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(
+                eq(EmployeeStatus.TERMINATED), eq(threshold), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(userExactly20)));
         when(biometricTemplateRepository.findByUserId(102L))
                 .thenReturn(List.of(template));
 
@@ -176,8 +181,9 @@ class BiometricCleanupServiceTest {
                 .terminatedDate(today.minusDays(30))
                 .build();
 
-        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(EmployeeStatus.TERMINATED, threshold))
-                .thenReturn(List.of(terminatedUser));
+        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(
+                eq(EmployeeStatus.TERMINATED), eq(threshold), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(terminatedUser)));
         when(biometricTemplateRepository.findByUserId(103L))
                 .thenReturn(Collections.emptyList());
 
@@ -206,7 +212,7 @@ class BiometricCleanupServiceTest {
                 .user(user)
                 .clientIp("192.168.1.100")
                 .withdrawnAt(now.minus(8, ChronoUnit.DAYS))
-                .biometricDisposalDueAt(now.minus(1, ChronoUnit.DAYS)) // Đã quá hạn 1 ngày
+                .biometricDisposalDueAt(now.minus(1, ChronoUnit.DAYS))
                 .processedAt(null)
                 .build();
 
@@ -239,12 +245,12 @@ class BiometricCleanupServiceTest {
     @Test
     @DisplayName("TST-BE-017-06: Chạy tác vụ tổng thể cleanupAll và runScheduledCleanup")
     void runScheduledCleanup_executesSuccessfully() {
-        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(eq(EmployeeStatus.TERMINATED), any()))
-                .thenReturn(Collections.emptyList());
+        when(userRepository.findByStatusAndTerminatedDateLessThanEqual(
+                eq(EmployeeStatus.TERMINATED), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
         when(consentWithdrawalRepository.findByProcessedAtIsNullAndBiometricDisposalDueAtLessThanEqual(any()))
                 .thenReturn(Collections.emptyList());
 
-        // Kiểm tra không quăng ngoại lệ khi chạy lịch trình
         cleanupService.runScheduledCleanup();
 
         BiometricCleanupService.CleanupReport report = cleanupService.cleanupAll(today, now);

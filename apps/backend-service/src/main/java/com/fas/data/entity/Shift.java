@@ -38,6 +38,10 @@ public class Shift {
     @Builder.Default
     private Integer gracePeriodMinutes = 15;
 
+    @Column(name = "is_overnight", nullable = false)
+    @Builder.Default
+    private Boolean isOvernight = false;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

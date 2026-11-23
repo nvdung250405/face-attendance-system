@@ -79,4 +79,23 @@ class AuditLogControllerTest {
 
         verify(auditQueryService).queryAuditLogs(any(AuditLogFilterCriteria.class), any(Pageable.class));
     }
+
+    @Test
+    @DisplayName("SEC-007: Tham số action chứa ký tự đặc biệt trả về HTTP 400 ProblemDetail")
+    void getAuditLogs_InvalidActionPattern_Returns400() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/audit-logs")
+                        .param("action", "INVALID-ACTION!"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    @DisplayName("SEC-007: Tham số action dài hơn 64 ký tự trả về HTTP 400 ProblemDetail")
+    void getAuditLogs_ActionTooLong_Returns400() throws Exception {
+        String longAction = "A".repeat(65);
+        mockMvc.perform(get("/api/v1/admin/audit-logs")
+                        .param("action", longAction))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+    }
 }

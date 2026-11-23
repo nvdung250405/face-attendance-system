@@ -33,5 +33,22 @@ public record AttendanceLogItem(
         VerificationMethod verificationMethod,
         AttendanceStatus status,
         int lateMinutes,
-        String kioskId) {
+        String kioskId,
+        int overtimeMinutes) {
+
+    public AttendanceLogItem(
+            Long recordId,
+            Long employeeId,
+            String employeeCode,
+            String fullName,
+            String department,
+            OffsetDateTime punchTimestamp,
+            PunchType punchType,
+            VerificationMethod verificationMethod,
+            AttendanceStatus status,
+            int lateMinutes,
+            String kioskId) {
+        this(recordId, employeeId, employeeCode, fullName, department, punchTimestamp,
+                punchType, verificationMethod, status, lateMinutes, kioskId, 0);
+    }
 }
