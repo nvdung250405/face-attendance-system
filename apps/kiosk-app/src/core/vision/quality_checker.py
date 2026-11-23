@@ -6,6 +6,8 @@ from enum import StrEnum
 import cv2
 import numpy as np
 
+from config.settings import settings
+
 
 class PoseType(StrEnum):
     """Định danh 3 tư thế chuẩn thu nạp theo FEAT-ENROLL-001."""
@@ -44,7 +46,7 @@ class EnrollmentQualityChecker:
         max_roll_deg: float = 15.0,
         min_face_size: int = 120,
         min_sharpness: float = 30.0,
-        min_liveness: float = 0.90,
+        min_liveness: float | None = None,
         left_tilt_min_yaw: float = 10.0,
         left_tilt_max_yaw: float = 25.0,
         right_tilt_min_yaw: float = -25.0,
@@ -55,7 +57,9 @@ class EnrollmentQualityChecker:
         self.max_roll_deg: float = max_roll_deg
         self.min_face_size: int = min_face_size
         self.min_sharpness: float = min_sharpness
-        self.min_liveness: float = min_liveness
+        self.min_liveness: float = (
+            min_liveness if min_liveness is not None else settings.enrollment_liveness_threshold
+        )
         self.left_tilt_min_yaw: float = left_tilt_min_yaw
         self.left_tilt_max_yaw: float = left_tilt_max_yaw
         self.right_tilt_min_yaw: float = right_tilt_min_yaw
@@ -142,7 +146,7 @@ class EnrollmentQualityChecker:
         elif not sharpness_passed:
             feedback = "Hình ảnh bị nhòe/mờ, vui lòng đứng yên trước camera"
         elif not liveness_passed:
-            feedback = "Cảnh báo: Độ thực thể sống không đạt, vui lòng bỏ khẩu trang"
+            feedback = "Cảnh báo: Không đạt chuẩn thực thể sống (PAD). Vui lòng nhìn trực diện và đảm bảo đủ ánh sáng."
         else:
             feedback = "Khuôn mặt đạt chuẩn! Vui lòng giữ nguyên tư thế..."
 

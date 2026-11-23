@@ -243,6 +243,9 @@ class OfflineSyncWorker(QThread):
                 "punchType": p.get("punch_type"),
                 "verificationMethod": method,
                 "confidenceScore": score,
+                "clockDriftOffset": float(
+                    p.get("clock_drift_offset", 0.0) or self.clock_drift_offset or 0.0
+                ),
             }
             records_payload.append(rec)
 
@@ -368,8 +371,12 @@ class OfflineSyncWorker(QThread):
                 if unsynced_count > 0:
                     self.sync_once()
                 else:
-                    # Kiểm tra kết nối định kỳ ngay cả khi hàng đợi rỗng
-                    self.check_health()
+                    # Kiểm tra kết nối định kỳ ngay cả khi hàng đợi rỗng (SYNC-04)
+                    healthy = self.check_health()
+                    if healthy:
+                        self._fail_count = 0
+                    else:
+                        self._fail_count += 1
             except Exception as exc:
                 self._fail_count += 1
                 logger.error("Lỗi ngoại lệ trong vòng lặp OfflineSyncWorker: %s", exc)

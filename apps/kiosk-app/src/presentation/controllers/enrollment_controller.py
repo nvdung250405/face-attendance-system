@@ -13,7 +13,7 @@ from core.vision.face_detector import FaceDetectionResult, YuNetFaceDetector
 from core.vision.feature_extractor import ArcFaceFeatureExtractor
 from core.vision.liveness_gate import MiniFASNetLivenessGate
 from core.vision.quality_checker import EnrollmentQualityChecker, PoseType
-from presentation.viewmodels.kiosk_view_model import evaluate_face_oval_alignment
+from presentation.workers.enrollment_worker import EnrollmentFrameResult, EnrollmentWorker
 
 logger = get_logger("enrollment_controller")
 
@@ -28,7 +28,7 @@ POSE_CONFIGS: dict[PoseType, dict[str, Any]] = {
         "pitch_max": 15.0,
         "roll_max": 15.0,
         "min_sharpness": 30.0,
-        "min_liveness": 0.90,
+        "min_liveness": settings.enrollment_liveness_threshold,
         "direction": "CENTER",
     },
     PoseType.LEFT_TILT: {
@@ -41,7 +41,7 @@ POSE_CONFIGS: dict[PoseType, dict[str, Any]] = {
         "pitch_max": 15.0,
         "roll_max": 15.0,
         "min_sharpness": 30.0,
-        "min_liveness": 0.90,
+        "min_liveness": settings.enrollment_liveness_threshold,
         "direction": "LEFT",
     },
     PoseType.RIGHT_TILT: {
@@ -54,7 +54,7 @@ POSE_CONFIGS: dict[PoseType, dict[str, Any]] = {
         "pitch_max": 15.0,
         "roll_max": 15.0,
         "min_sharpness": 30.0,
-        "min_liveness": 0.90,
+        "min_liveness": settings.enrollment_liveness_threshold,
         "direction": "RIGHT",
     },
 }
@@ -95,6 +95,7 @@ class EnrollmentController(QObject):
         capture_interval: float = 0.35,
         pose_hold_duration: float = 0.25,
         demo_mode: bool = False,
+        async_mode: bool = False,
         parent: QObject | None = None,
     ) -> None:
         """Khởi tạo EnrollmentController.
@@ -103,23 +104,37 @@ class EnrollmentController(QObject):
             capture_interval: Khoảng cách thời gian tối thiểu giữa 2 lần chụp (giây).
             pose_hold_duration: Thời gian cần giữ ổn định tư thế trước khi chốt mẫu (giây).
             demo_mode: Chỉ cho phép fallback demo khi True. Trong production luôn False.
+            async_mode: Phân tách tác vụ mạng và suy luận sang luồng nền QThread (PERF-01, PERF-02, PERF-03).
         """
         super().__init__(parent)
         self.detector = detector
         self.extractor = extractor
         self.liveness_gate = liveness_gate
         self._demo_mode: bool = demo_mode
+        self._async_mode: bool = async_mode
         self.quality_checker = EnrollmentQualityChecker(
             max_angle_deg=5.0,
             max_pitch_deg=15.0,
             max_roll_deg=15.0,
             min_face_size=80,
             min_sharpness=30.0,
-            min_liveness=0.90,
+            min_liveness=settings.enrollment_liveness_threshold,
         )
         self._client = client or httpx.Client(timeout=10.0)
         self._capture_interval: float = capture_interval
         self._pose_hold_duration: float = pose_hold_duration
+
+        self.worker = EnrollmentWorker(
+            detector=self.detector,
+            extractor=self.extractor,
+            liveness_gate=self.liveness_gate,
+            quality_checker=self.quality_checker,
+        )
+        self.worker.frame_processed.connect(self._apply_frame_result)
+        self.worker.otp_completed.connect(self._on_worker_otp_completed)
+        self.worker.submission_completed.connect(self._on_worker_submission_completed)
+        if self._async_mode:
+            self.worker.start()
 
         self._is_dialog_open: bool = False
         self._current_step: int = 1  # 1: OTP, 2: Guided Capture, 3: Hoàn tất
@@ -318,42 +333,46 @@ class EnrollmentController(QObject):
             "otp": self._otp,
         }
 
-        try:
-            resp = self._client.post(url, json=payload, headers=headers)
-            if resp.status_code == 200:
-                raw = resp.json()
-                data = raw.get("data", raw) if isinstance(raw, dict) else {}
-                self._session_token = data.get("sessionToken", "")
-                self._employee_id = data.get("employeeId", 0)
-                self._employee_code = data.get("employeeCode", "")
-                self._employee_name = data.get("fullName") or data.get("employeeName", "")
+        if self._async_mode:
+            self._status_message = "Đang xác thực mã OTP qua máy chủ..."
+            self.statusMessageChanged.emit(self._status_message)
+            self.worker.verify_otp_async(self._client, url, payload, headers)
+            return True
 
-                self._current_step = 2
-                self._current_pose_index = 0
-                self._captured_templates = []
-                self._captured_embeddings = []
-                self._progress_percent = 0.0
-                self._pose_hold_start = None
-                self._last_capture_time = time.time()
-                self._status_message = (
-                    f"Xác thực thành công: {self._employee_name}. "
-                    f"{POSE_CONFIGS[PoseType.FRONTAL]['instruction']}"
-                )
+        ok, status_code, data, err_msg = self.worker.execute_otp_post(
+            self._client, url, payload, headers
+        )
+        return self._handle_otp_result(ok, status_code, data, err_msg)
 
-                self.currentStepChanged.emit(self._current_step)
-                self.poseIndexChanged.emit(0)
-                self.currentPoseChanged.emit("FRONTAL")
-                self.progressPercentChanged.emit(0.0)
-                self.statusMessageChanged.emit(self._status_message)
-                return True
-            else:
-                err_body = resp.json() if resp.text else {}
-                err_msg = err_body.get("message") or "Mã OTP không chính xác hoặc đã hết hạn!"
-                self._status_message = err_msg
-                self.statusMessageChanged.emit(self._status_message)
-                return False
-        except Exception as exc:
-            logger.warning("Không thể kết nối máy chủ xác thực OTP: %s", exc)
+    def _handle_otp_result(
+        self, ok: bool, status_code: int, data: dict[str, Any], err_msg: str
+    ) -> bool:
+        """Xử lý kết quả trả về từ tác vụ xác thực OTP (PERF-01)."""
+        if ok:
+            self._session_token = data.get("sessionToken", "")
+            self._employee_id = data.get("employeeId", 0)
+            self._employee_code = data.get("employeeCode", "")
+            self._employee_name = data.get("fullName") or data.get("employeeName", "")
+
+            self._current_step = 2
+            self._current_pose_index = 0
+            self._captured_templates = []
+            self._captured_embeddings = []
+            self._progress_percent = 0.0
+            self._pose_hold_start = None
+            self._last_capture_time = time.time()
+            self._status_message = (
+                f"Xác thực thành công: {self._employee_name}. "
+                f"{POSE_CONFIGS[PoseType.FRONTAL]['instruction']}"
+            )
+
+            self.currentStepChanged.emit(self._current_step)
+            self.poseIndexChanged.emit(0)
+            self.currentPoseChanged.emit("FRONTAL")
+            self.progressPercentChanged.emit(0.0)
+            self.statusMessageChanged.emit(self._status_message)
+            return True
+        else:
             if self._demo_mode:
                 self._session_token = "demo-session-token"
                 self._employee_id = 1001
@@ -377,16 +396,25 @@ class EnrollmentController(QObject):
                 self.progressPercentChanged.emit(0.0)
                 self.statusMessageChanged.emit(self._status_message)
                 return True
-            self._status_message = (
-                "Không thể kết nối máy chủ xác thực OTP. Vui lòng kiểm tra mạng và thử lại."
+
+            msg = (
+                err_msg
+                or "Không thể kết nối máy chủ xác thực OTP. Vui lòng kiểm tra mạng và thử lại."
             )
+            self._status_message = msg
             self.statusMessageChanged.emit(self._status_message)
             return False
+
+    def _on_worker_otp_completed(
+        self, ok: bool, status_code: int, data: dict[str, Any], err_msg: str
+    ) -> None:
+        """Khe tiếp nhận tín hiệu hoàn tất xác thực OTP từ EnrollmentWorker ngầm."""
+        self._handle_otp_result(ok, status_code, data, err_msg)
 
     # ------------------ Guided Multi-Pose Capture Loop ------------------
     @Slot(object)
     def process_capture_frame(self, frame: np.ndarray | None) -> None:
-        """Xử lý thẩm định và thu thập vector khuôn mặt đa tư thế tại Bước 2."""
+        """Xử lý thẩm định và thu thập vector khuôn mặt đa tư thế tại Bước 2 (PERF-03)."""
         if self._current_step != 2 or frame is None or frame.size == 0:
             return
         if self.detector is None or self.extractor is None:
@@ -397,17 +425,42 @@ class EnrollmentController(QObject):
         target_pose = CAPTURE_SEQUENCE[self._current_pose_index]
         target_cfg = POSE_CONFIGS[target_pose]
 
-        detection = self.detector.detect_face(frame)
-        if detection is None:
+        # Đồng bộ tham chiếu sang worker
+        self.worker.detector = self.detector
+        self.worker.extractor = self.extractor
+        self.worker.liveness_gate = self.liveness_gate
+        self.worker.quality_checker = self.quality_checker
+
+        if self._async_mode:
+            self.worker.enqueue_frame(frame, target_pose, target_cfg["min_liveness"])
+        else:
+            res = self.worker.process_frame(
+                frame,
+                target_pose,
+                target_cfg["min_liveness"],
+                self.quality_checker,
+            )
+            self._apply_frame_result(res, frame)
+
+    def _apply_frame_result(
+        self, res: EnrollmentFrameResult, frame: np.ndarray | None = None
+    ) -> None:
+        """Cập nhật máy trạng thái sau khi worker thẩm định frame camera."""
+        if self._current_step != 2 or self._current_pose_index >= len(CAPTURE_SEQUENCE):
+            return
+
+        target_pose = CAPTURE_SEQUENCE[self._current_pose_index]
+        target_cfg = POSE_CONFIGS[target_pose]
+
+        if res.detection is None:
             self._pose_hold_start = None
             self._is_pose_valid = False
-            self._status_message = "Vui lòng nhìn vào khung hình camera..."
+            self._status_message = res.align_message or "Vui lòng nhìn vào khung hình camera..."
             self.statusMessageChanged.emit(self._status_message)
             self.poseValidityChanged.emit(False)
             return
 
-        # Cập nhật góc Euler thời gian thực cho giao diện QML
-        yaw, pitch, roll = detection.euler_angles
+        yaw, pitch, roll = res.detection.euler_angles
         self._current_yaw = float(yaw)
         self._current_pitch = float(pitch)
         self._current_roll = float(roll)
@@ -415,73 +468,32 @@ class EnrollmentController(QObject):
         self.pitchChanged.emit(self._current_pitch)
         self.rollChanged.emit(self._current_roll)
 
-        # 1. Kiểm tra vị trí khuôn mặt trong khung Oval
-        is_aligned, align_msg = evaluate_face_oval_alignment(frame.shape, detection.bbox)
-        if not is_aligned:
+        if not res.is_aligned:
             self._pose_hold_start = None
             self._is_pose_valid = False
-            self._status_message = align_msg
+            self._status_message = res.align_message
             self.statusMessageChanged.emit(self._status_message)
             self.poseValidityChanged.emit(False)
             return
 
-        # 2. Tính điểm thực thể sống
-        liveness_score = 0.0
-        if self.liveness_gate:
-            try:
-                res = self.liveness_gate.predict(frame, detection.bbox)
-                liveness_score = float(res.score) if hasattr(res, "score") else float(res)
-            except Exception as exc:
-                logger.warning("Lỗi liveness predict trong enrollment: %s", exc)
-                liveness_score = 0.0
-        else:
-            liveness_score = 1.0
-
-        # Cắt face_crop an toàn
-        fh, fw = frame.shape[:2]
-        x, y, w, h = detection.bbox
-        x1 = max(0, x)
-        y1 = max(0, y)
-        x2 = min(fw, max(0, x + w))
-        y2 = min(fh, max(0, y + h))
-        face_crop = frame[y1:y2, x1:x2]
-
-        # 3. Thẩm định chất lượng hình ảnh qua quality_checker
-        try:
-            report = self.quality_checker.evaluate(
-                detection.bbox,
-                detection.euler_angles,
-                face_crop,
-                liveness_score,
-                target_pose=target_pose,
-            )
-        except TypeError:
-            report = self.quality_checker.evaluate(
-                detection.bbox,
-                detection.euler_angles,
-                face_crop,
-                liveness_score,
-            )
-
-        # 4. Kiểm tra tính hợp lệ của khuôn mặt và tư thế qua report
-        is_passed = getattr(report, "is_passed", False)
+        report = res.quality_report
+        is_passed = getattr(report, "is_passed", False) if report is not None else False
 
         if not is_passed:
             self._pose_hold_start = None
             self._is_pose_valid = False
             self.poseValidityChanged.emit(False)
-            self._status_message = getattr(
-                report, "feedback_message", "Vui lòng giữ đúng tư thế theo hướng dẫn"
+            self._status_message = (
+                getattr(report, "feedback_message", res.align_message)
+                or "Vui lòng giữ đúng tư thế theo hướng dẫn"
             )
             self.statusMessageChanged.emit(self._status_message)
             return
 
-        # Tư thế hiện tại đạt chuẩn
         self._is_pose_valid = True
         self.poseValidityChanged.emit(True)
 
         now = time.time()
-        # Cooldown giữa 2 bước chụp liên tiếp
         if (
             self._capture_interval > 0
             and now - self._last_capture_time < self._capture_interval
@@ -489,7 +501,6 @@ class EnrollmentController(QObject):
         ):
             return
 
-        # Kiểm tra thời gian giữ ổn định (stability hold time)
         if self._pose_hold_duration > 0 and self._capture_interval > 0:
             if self._pose_hold_start is None:
                 self._pose_hold_start = now
@@ -501,17 +512,24 @@ class EnrollmentController(QObject):
             elif now - self._pose_hold_start < self._pose_hold_duration:
                 return
 
-        # Chốt thu nhận vector ArcFace 512D
-        aligned = self.extractor.align_face(frame, detection.landmarks)
-        vector = self.extractor.extract_vector(aligned)
-        flat_vec = np.asarray(vector, dtype=np.float32).flatten()
+        vector = res.vector
+        if vector is None and self.extractor is not None and frame is not None:
+            try:
+                aligned = self.extractor.align_face(frame, res.detection.landmarks)
+                vector = self.extractor.extract_vector(aligned)
+            except Exception as exc:
+                logger.warning("Lỗi trích xuất vector ArcFace: %s", exc)
+
+        flat_vec = np.asarray(
+            vector if vector is not None else np.zeros(512), dtype=np.float32
+        ).flatten()
         norm = float(np.linalg.norm(flat_vec))
         if norm > 1e-6:
             flat_vec = flat_vec / norm
         vector512_list = [float(x) for x in flat_vec]
 
         sharpness_val = float(getattr(report, "sharpness", 40.0))
-        liveness_val = float(getattr(report, "liveness_score", liveness_score))
+        liveness_val = float(getattr(report, "liveness_score", res.liveness_score))
 
         template_record: dict[str, Any] = {
             "poseType": target_cfg["name"],
@@ -553,11 +571,19 @@ class EnrollmentController(QObject):
             self._status_message = "Đã thu thập đủ 3 ảnh mẫu! Đang hoàn tất đăng ký..."
             self.statusMessageChanged.emit(self._status_message)
             logger.info("✅ [ENROLL] Đã thu thập đủ 3 tư thế chuẩn -> Gửi gói đa mẫu lên máy chủ")
-            self._submit_enrollment(frame, detection)
+            self._submit_enrollment(frame, res.detection)
+
+    def _on_worker_frame_processed(self, res: EnrollmentFrameResult) -> None:
+        """Khe tiếp nhận frame đã phân tích từ EnrollmentWorker ngầm."""
+        self._apply_frame_result(res)
 
     # ------------------ Submission & Completion ------------------
-    def _submit_enrollment(self, final_frame: np.ndarray, detection: FaceDetectionResult) -> None:
-        """Gửi gói dữ liệu đăng ký đa mẫu hoàn chỉnh lên máy chủ trung tâm."""
+    def _submit_enrollment(
+        self,
+        final_frame: np.ndarray | None = None,
+        detection: FaceDetectionResult | None = None,
+    ) -> None:
+        """Gửi gói dữ liệu đăng ký đa mẫu hoàn chỉnh lên máy chủ trung tâm (PERF-02)."""
         self._status_message = "Đang gửi dữ liệu đăng ký lên máy chủ..."
         self.statusMessageChanged.emit(self._status_message)
 
@@ -629,55 +655,55 @@ class EnrollmentController(QObject):
             "avatarBase64": "",
         }
 
-        try:
-            resp = self._client.post(url, json=payload, headers=headers)
-            if resp.status_code in (200, 201):
-                self._current_step = 3
-                self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công."
-                self.currentStepChanged.emit(self._current_step)
-                self.statusMessageChanged.emit(self._status_message)
-                self.enrollmentCompleted.emit(event_payload)
-            else:
-                if self._demo_mode:
-                    self._current_step = 3
-                    self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
-                    self.currentStepChanged.emit(self._current_step)
-                    self.statusMessageChanged.emit(self._status_message)
-                    self.enrollmentCompleted.emit(event_payload)
-                    return
+        if self._async_mode:
+            self.worker.submit_enrollment_async(self._client, url, payload, headers, event_payload)
+            return
 
-                err_body = resp.json() if resp.text else {}
-                err_msg = err_body.get("message") or f"Lỗi phản hồi HTTP {resp.status_code}"
-                logger.warning("Backend từ chối nạp khuôn mặt: %s", err_msg)
-                self._status_message = f"Đăng ký không thành công: {err_msg}"
-                self._progress_percent = 0.0
-                self._current_pose_index = 0
-                self._captured_templates = []
-                self._captured_embeddings = []
-                self._pose_hold_start = None
-                self.poseIndexChanged.emit(0)
-                self.currentPoseChanged.emit("FRONTAL")
-                self.progressPercentChanged.emit(0.0)
-                self.statusMessageChanged.emit(self._status_message)
-        except Exception as exc:
-            logger.warning("Lỗi gửi dữ liệu đăng ký lên Backend: %s", exc)
-            if self._demo_mode:
-                self._current_step = 3
-                self._status_message = "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
-                self.currentStepChanged.emit(self._current_step)
-                self.statusMessageChanged.emit(self._status_message)
-                self.enrollmentCompleted.emit(event_payload)
-            else:
+        ok, status_code, ep, err_msg = self.worker.execute_submission_post(
+            self._client, url, payload, headers, event_payload
+        )
+        self._handle_submission_result(ok, status_code, ep, err_msg)
+
+    def _handle_submission_result(
+        self, ok: bool, status_code: int, event_payload: dict[str, Any], err_msg: str
+    ) -> None:
+        """Xử lý kết quả trả về từ tác vụ gửi đăng ký biometric (PERF-02)."""
+        if ok or self._demo_mode:
+            self._current_step = 3
+            msg = (
+                "Chúc mừng! Đăng ký khuôn mặt thành công."
+                if ok
+                else "Chúc mừng! Đăng ký khuôn mặt thành công (Chế độ demo)."
+            )
+            self._status_message = msg
+            self.currentStepChanged.emit(self._current_step)
+            self.statusMessageChanged.emit(self._status_message)
+            self.enrollmentCompleted.emit(event_payload)
+        else:
+            logger.warning("Backend từ chối nạp khuôn mặt: %s", err_msg)
+            if (
+                "refused" in err_msg.lower()
+                or "connect" in err_msg.lower()
+                or "kết nối" in err_msg.lower()
+            ):
                 self._status_message = "Không thể kết nối máy chủ đăng ký. Vui lòng thử lại."
-                self._progress_percent = 0.0
-                self._current_pose_index = 0
-                self._captured_templates = []
-                self._captured_embeddings = []
-                self._pose_hold_start = None
-                self.poseIndexChanged.emit(0)
-                self.currentPoseChanged.emit("FRONTAL")
-                self.progressPercentChanged.emit(0.0)
-                self.statusMessageChanged.emit(self._status_message)
+            else:
+                self._status_message = f"Đăng ký không thành công qua máy chủ: {err_msg}"
+            self._progress_percent = 0.0
+            self._current_pose_index = 0
+            self._captured_templates = []
+            self._captured_embeddings = []
+            self._pose_hold_start = None
+            self.poseIndexChanged.emit(0)
+            self.currentPoseChanged.emit("FRONTAL")
+            self.progressPercentChanged.emit(0.0)
+            self.statusMessageChanged.emit(self._status_message)
+
+    def _on_worker_submission_completed(
+        self, ok: bool, status_code: int, event_payload: dict[str, Any], err_msg: str
+    ) -> None:
+        """Khe tiếp nhận tín hiệu hoàn tất gửi đăng ký từ EnrollmentWorker ngầm."""
+        self._handle_submission_result(ok, status_code, event_payload, err_msg)
 
     @Slot()
     def completeCaptureStep(self) -> None:

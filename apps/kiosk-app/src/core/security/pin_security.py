@@ -45,6 +45,10 @@ class PinSecurityManager:
             from core.offline.sqlite_manager import SQLiteQueueManager
 
             mgr = SQLiteQueueManager(db_path=Path(db_path))
+        elif mgr is None:
+            from core.offline.sqlite_manager import SQLiteQueueManager
+
+            mgr = SQLiteQueueManager()
         elif isinstance(mgr, (str, Path)):
             from core.offline.sqlite_manager import SQLiteQueueManager
 

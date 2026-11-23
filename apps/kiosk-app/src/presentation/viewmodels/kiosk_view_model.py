@@ -48,6 +48,7 @@ class KioskViewModel(QObject):
     lastResultChanged = Signal()
     networkStatusChanged = Signal(bool, str)
     isStandbyChanged = Signal(bool)
+    galleryReconcileRequested = Signal()
 
     def __init__(
         self,
@@ -214,9 +215,15 @@ class KioskViewModel(QObject):
 
     def _on_network_status_changed(self, is_online: bool, message: str) -> None:
         """Xử lý tín hiệu cập nhật trạng thái mạng từ OfflineSyncWorker."""
+        was_online = self._is_online
         self._is_online = is_online
         self._network_message = message
         self.networkStatusChanged.emit(is_online, message)
+        if is_online and not was_online:
+            logger.info(
+                "Khôi phục mạng: kích hoạt yêu cầu đối soát lại danh mục Gallery (SEC-03, SYNC-06)"
+            )
+            self.galleryReconcileRequested.emit()
 
     def _on_sync_progress(self, synced_count: int, pending_count: int) -> None:
         """Xử lý tín hiệu tiến độ đồng bộ từ OfflineSyncWorker."""

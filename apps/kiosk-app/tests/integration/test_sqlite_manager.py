@@ -382,3 +382,16 @@ class TestOfflineSyncWorker:
         # Lần 3: Lần trước là CHECK_OUT -> Tạo CHECK_IN
         _ = queue_mgr.enqueue_punch(employee_id=emp_id, punch_type="AUTO")
         assert queue_mgr.get_last_punch_type(emp_id) == "CHECK_IN"
+
+    def test_sync_03_clock_drift_offset_persistence(self, queue_mgr):
+        """SYNC-03: Kiểm tra lưu trữ độ lệch đồng hồ clock_drift_offset vào SQLite."""
+        pid = queue_mgr.enqueue_punch(
+            employee_id=555,
+            punch_type="CHECK_IN",
+            clock_drift_offset=12.5,
+        )
+        assert pid > 0
+        punches = queue_mgr.fetch_pending_batch()
+        assert len(punches) == 1
+        assert punches[0]["id"] == pid
+        assert pytest.approx(punches[0]["clock_drift_offset"]) == 12.5

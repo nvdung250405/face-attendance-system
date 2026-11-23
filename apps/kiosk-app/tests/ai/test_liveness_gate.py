@@ -56,6 +56,12 @@ def test_crop_face_context_dimension_and_padding():
     assert crop_corner.shape == (80, 80, 3)
     assert crop_corner.dtype == np.uint8
 
+    # 3. AI-02: Khuôn mặt chữ nhật chạm biên góc (w != h) được padding vuông đối xứng 1:1 trước khi resize
+    bbox_boundary = (0, 0, 80, 140)
+    crop_boundary = gate.crop_face_context(frame, bbox_boundary)
+    assert crop_boundary.shape == (80, 80, 3)
+    assert crop_boundary.dtype == np.uint8
+
 
 def test_predict_on_empty_or_none():
     """Kiểm tra xử lý an toàn khi đầu vào rỗng, mặc định từ chối (SPOOF)."""

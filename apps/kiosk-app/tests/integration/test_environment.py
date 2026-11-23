@@ -133,3 +133,23 @@ def test_kiosk_secret_token_security_warning(caplog):
     cfg_secure = KioskConfig(kiosk_secret_token="SuperSecureProductionSecret_999!")
     assert cfg_secure.is_default_secret is False
     assert not any("FIND-SEC-004" in record.message for record in caplog.records)
+
+
+def test_kiosk_secret_token_production_fail_fast():
+    """SEC-04: Bắt buộc ném ValueError (fail-fast) nếu secret token mặc định/rỗng ở môi trường Production."""
+    import pytest
+
+    from config.settings import KioskConfig
+
+    with pytest.raises(ValueError, match="CRITICAL SECURITY ERROR"):
+        KioskConfig(kiosk_secret_token="Kiosk_Internal_Secret_Token_2026", app_env="production")
+
+    with pytest.raises(ValueError, match="CRITICAL SECURITY ERROR"):
+        KioskConfig(kiosk_secret_token="", app_env="prod")
+
+    # Khi cấu hình token an toàn trong production -> khởi tạo thành công
+    prod_cfg = KioskConfig(
+        kiosk_secret_token="SuperSecureProductionSecret_999!", app_env="production"
+    )
+    assert prod_cfg.is_production is True
+    assert prod_cfg.is_default_secret is False

@@ -16,6 +16,18 @@ except (ImportError, Exception):
     HAS_QT_WIDGETS = False
 
 
+@pytest.fixture(autouse=True)
+def isolate_test_db(tmp_path):
+    """Cách ly database cục bộ trong thư mục tạm tmp_path cho từng test case (tránh ô nhiễm state giữa các test)."""
+    from config.settings import settings
+
+    original_db = settings.db_path
+    test_db = tmp_path / "kiosk_local.db"
+    object.__setattr__(settings, "db_path", test_db)
+    yield test_db
+    object.__setattr__(settings, "db_path", original_db)
+
+
 @pytest.fixture(scope="session")
 def qapp():
     """Khởi tạo QApplication duy nhất phục vụ kiểm thử cả tín hiệu QThread và Widget GUI."""

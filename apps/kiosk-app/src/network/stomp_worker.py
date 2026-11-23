@@ -138,6 +138,7 @@ class KioskStompWorker(QThread):
 
     def _connect_stomp(self) -> bool:
         """Khởi tạo kết nối STOMP qua thư viện stomp.py."""
+        self._disconnect_stomp()
         try:
             import stomp
 
@@ -148,17 +149,19 @@ class KioskStompWorker(QThread):
             conn = stomp.Connection([(host, port)], heartbeats=(10000, 10000))
 
             class StompMsgListener(stomp.ConnectionListener):
-                def __init__(self, worker_ref: Any) -> None:
+                def __init__(self, worker_ref: "KioskStompWorker") -> None:
                     self.worker = worker_ref
 
-                def on_message(self, frame: Any) -> None:
+                def on_message(self, frame: object) -> None:
                     try:
-                        body_data = json.loads(frame.body)
+                        body_text = getattr(frame, "body", "")
+                        body_data = json.loads(body_text)
                         self.worker.process_event(body_data)
                     except Exception as e:
                         logger.error("Lỗi phân tích cú pháp bản tin STOMP: %s", e)
 
                 def on_disconnected(self) -> None:
+                    self.worker._disconnect_stomp()
                     self.worker._update_status(False, "Mất kết nối tới STOMP Broker")
 
             conn.set_listener("kiosk_listener", StompMsgListener(self))
