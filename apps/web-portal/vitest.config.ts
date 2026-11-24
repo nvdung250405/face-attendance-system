@@ -18,6 +18,7 @@ export default defineConfig({
       exclude: [
         'src/**/*.d.ts',
         'src/types/**',
+        'src/dev/**',
         'src/views/dev/**',
         'src/views/NotFoundView.tsx',
         'src/views/UnauthorizedView.tsx',
