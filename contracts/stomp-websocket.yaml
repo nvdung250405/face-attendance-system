@@ -9,6 +9,15 @@ protocol: "STOMP"
 version: "1.2"
 transport: "WebSocket"
 endpoint: "/ws-attendance"
+endpoints:
+  - path: "/ws"
+    transport: "WebSocket"
+    client: "Edge Kiosk (Python STOMP Client)"
+    description: "Native WebSocket STOMP endpoint trực tiếp cho trạm Kiosk Edge"
+  - path: "/ws-attendance"
+    transport: "SockJS / WebSocket"
+    client: "Web Portal (Browser React Client)"
+    description: "SockJS fallback endpoint cho trình duyệt Cổng Web Quản trị"
 
 info:
   title: "Enterprise Face Attendance Realtime STOMP Interface"
@@ -28,10 +37,14 @@ connection:
         - "accept-version"
         - "host"
       optional:
-        - "Authorization" # Bearer JWT token for authenticated WebSocket connection
+        - "Authorization" # Bearer JWT token cho Web Portal / Employee session
+        - "X-Kiosk-Id"    # Mã định danh trạm Kiosk trong kết nối STOMP của Kiosk
+        - "X-Kiosk-Secret" # Khóa bí mật xác thực trạm Kiosk (ROLE_KIOSK)
   security:
-    type: "bearer_token"
+    type: "composite_token_or_kiosk_secret"
     passcode_header: "Authorization"
+    kiosk_id_header: "X-Kiosk-Id"
+    kiosk_secret_header: "X-Kiosk-Secret"
 
 destinations:
   # Server -> Client Broadcast Channels
@@ -54,26 +67,36 @@ destinations:
         authorization: "Session authenticated user matching active OTP owner or ROLE_ADMIN"
         description: "Protected dynamic channel. Backend STOMP Channel Interceptor validates subscription session against OTP ownership to prevent unauthorized channel eavesdropping."
       message_payload:
-        $ref: "#/components/schemas/EnrollmentCompletedEvent"
+        $ref: "#/components/schemas/EnrollmentSuccessEvent"
 
     - address: "/topic/kiosk-gallery"
-      summary: "Broadcast encrypted vector updates and gallery sync signals to active Edge Kiosks"
+      summary: "Broadcast vector updates and gallery hot-patch sync commands to active Edge Kiosks"
       command: "SUBSCRIBE"
       ack_mode: "auto"
       security:
         roles: ["ROLE_KIOSK"]
         description: "Authenticated edge kiosk devices only."
       message_payload:
-        $ref: "#/components/schemas/KioskGallerySyncEvent"
+        $ref: "#/components/schemas/GalleryUpdateEvent"
+
+    - address: "/topic/kiosk-status"
+      summary: "Broadcast real-time online/offline connectivity status updates of Edge Kiosks"
+      command: "SUBSCRIBE"
+      ack_mode: "auto"
+      security:
+        roles: ["ROLE_ADMIN", "ROLE_HR_MANAGER"]
+        description: "Administrative monitoring of edge fleet status."
+      message_payload:
+        $ref: "#/components/schemas/KioskStatusEvent"
 
   # Client -> Server Inbound Channels
   inbound:
     - address: "/app/heartbeat"
-      summary: "Client-initiated application heartbeat and health ping"
+      summary: "Client-initiated diagnostic application ping (Optional; transport heartbeats enforced at STOMP level 10s/10s)"
       command: "SEND"
       security:
         roles: ["ROLE_KIOSK", "ROLE_EMPLOYEE", "ROLE_ADMIN"]
-        description: "Lightweight application ping for latency tracking and channel health verification."
+        description: "Lightweight diagnostic ping; native channel liveness is maintained by STOMP transport heartbeat frame."
 
   # System Error Handling
   error:
@@ -93,7 +116,6 @@ components:
         - "employeeId"
         - "employeeCode"
         - "fullName"
-        - "department"
         - "punchTimestamp"
         - "punchType"
         - "verificationMethod"
@@ -119,6 +141,7 @@ components:
           example: "Nguyen Van A"
         department:
           type: "string"
+          nullable: true
           example: "Ky thuat & R&D"
         kioskId:
           type: "string"
@@ -141,9 +164,19 @@ components:
           example: "ON_TIME"
         lateMinutes:
           type: "integer"
+          format: "int32"
           example: 0
+        overtimeMinutes:
+          type: "integer"
+          format: "int32"
+          description: "Số phút làm thêm giờ lượng tử hóa sau ca làm việc"
+          example: 30
+        isOfflineSync:
+          type: "boolean"
+          default: false
+          description: "Đánh dấu lượt điểm danh đồng bộ từ hàng đợi ngoại tuyến"
 
-    EnrollmentCompletedEvent:
+    EnrollmentSuccessEvent:
       type: "object"
       required:
         - "status"
@@ -183,25 +216,87 @@ components:
           format: "date-time"
           example: "2026-10-13T08:45:00.000+07:00"
 
-    KioskGallerySyncEvent:
+    EnrollmentCompletedEvent:
+      $ref: "#/components/schemas/EnrollmentSuccessEvent"
+
+    GalleryUpdateEvent:
       type: "object"
       required:
-        - "syncAction"
+        - "action"
         - "employeeId"
-        - "version"
-        - "timestamp"
+        - "updatedAt"
       properties:
-        syncAction:
+        action:
           type: "string"
-          enum: ["UPSERT_TEMPLATES", "DELETE_TEMPLATES", "FULL_RESYNC"]
+          enum: ["ADD_VECTOR", "DELETE_VECTOR"]
+          example: "ADD_VECTOR"
         employeeId:
-          type: "string"
-          format: "uuid"
-        version:
           type: "integer"
-        timestamp:
+          format: "int64"
+          example: 1048
+        employeeCode:
+          type: "string"
+          description: "Mã nhân viên (chỉ có ở lệnh ADD_VECTOR)"
+          example: "EMP-00128"
+        fullName:
+          type: "string"
+          description: "Họ tên nhân viên (chỉ có ở lệnh ADD_VECTOR)"
+          example: "Nguyen Van A"
+        vector512:
+          type: "array"
+          description: "Vector đặc trưng FRONTAL 512D đã giải mã phục vụ tương thích ngược Kiosk cũ"
+          items:
+            type: "number"
+            format: "float"
+          minItems: 512
+          maxItems: 512
+        templates:
+          type: "array"
+          description: "Danh sách các mẫu khuôn mặt đa tư thế kèm vector 512 chiều"
+          items:
+            type: "object"
+            required:
+              - "poseType"
+              - "vector512"
+            properties:
+              poseType:
+                type: "string"
+                enum: ["FRONTAL", "LEFT_TILT", "RIGHT_TILT"]
+                example: "FRONTAL"
+              vector512:
+                type: "array"
+                items:
+                  type: "number"
+                  format: "float"
+                minItems: 512
+                maxItems: 512
+        reason:
+          type: "string"
+          description: "Lý do gỡ vector (chỉ có ở lệnh DELETE_VECTOR)"
+          example: "Thu hồi chấp thuận sinh trắc theo Nghị định 13/2023"
+        updatedAt:
           type: "string"
           format: "date-time"
+          example: "2026-10-13T08:45:00.000+07:00"
+
+    KioskStatusEvent:
+      type: "object"
+      required:
+        - "kioskId"
+        - "status"
+        - "lastPingAt"
+      properties:
+        kioskId:
+          type: "string"
+          example: "KSK-01"
+        status:
+          type: "string"
+          enum: ["ONLINE", "OFFLINE"]
+          example: "ONLINE"
+        lastPingAt:
+          type: "string"
+          format: "date-time"
+          example: "2026-10-13T08:45:00.000+07:00"
 
     StompErrorPayload:
       type: "object"
@@ -215,4 +310,3 @@ components:
         description:
           type: "string"
           example: "Client lacks permissions to subscribe to the requested destination."
-

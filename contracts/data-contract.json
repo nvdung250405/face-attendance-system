@@ -18,28 +18,77 @@
       ],
       "properties": {
         "templateId": {
-          "type": "string",
-          "format": "uuid"
+          "type": "integer",
+          "format": "int64",
+          "description": "Mã định danh duy nhất của mẫu sinh trắc học"
         },
         "employeeId": {
-          "type": "string",
-          "format": "uuid"
+          "type": "integer",
+          "format": "int64",
+          "description": "Mã định danh nhân viên sở hữu mẫu khuôn mặt"
         },
         "poseType": {
           "type": "string",
-          "enum": ["FRONTAL", "LEFT_TILT", "RIGHT_TILT"]
+          "enum": ["FRONTAL", "LEFT_TILT", "RIGHT_TILT"],
+          "description": "Góc tư thế chụp khuôn mặt (Chính diện, Nghiêng trái, Nghiêng phải)"
         },
         "algorithm": {
           "type": "string",
-          "enum": ["ArcFace-512D"]
+          "enum": ["ARCFACE_512D", "ArcFace-512D"],
+          "description": "Thuật toán trích xuất vector đặc trưng khuôn mặt"
         },
         "vectorDimension": {
           "type": "integer",
-          "const": 512
+          "const": 512,
+          "description": "Số chiều của vector đặc trưng toán học (512 chiều)"
         },
         "l2Normalized": {
           "type": "boolean",
-          "const": true
+          "const": true,
+          "description": "Vector bắt buộc chuẩn hóa L2 norm = 1.0"
+        },
+        "vector512": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 512,
+          "maxItems": 512,
+          "description": "Mảng 512 phần tử float biểu diễn vector toán học khi truyền tải"
+        },
+        "encryptedVector": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Dữ liệu vector đã mã hóa AES-256-GCM lưu trữ tại CSDL trung tâm"
+        },
+        "encryptionIv": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Vector khởi tạo 12-byte IV ngẫu nhiên dùng trong mã hóa AES-GCM"
+        },
+        "poseQuality": {
+          "type": "object",
+          "description": "Chỉ số chất lượng tư thế và độ thực thể sống khi thu nhận",
+          "properties": {
+            "yaw": {
+              "type": "number",
+              "description": "Góc xoay ngang khuôn mặt (độ)"
+            },
+            "pitch": {
+              "type": "number",
+              "description": "Góc ngẩng/cúi khuôn mặt (độ)"
+            },
+            "laplacianScore": {
+              "type": "number",
+              "description": "Độ sắc nét của khung hình khuôn mặt"
+            },
+            "livenessScore": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Điểm số thực thể sống từ mạng MiniFASNet"
+            }
+          }
         },
         "encryption": {
           "type": "object",
@@ -64,44 +113,75 @@
     "AttendanceRecord": {
       "type": "object",
       "required": [
-        "punchId",
+        "recordId",
         "employeeId",
         "kioskId",
-        "punchTime",
-        "authMethod",
-        "evaluationStatus"
+        "punchTimestamp",
+        "punchType",
+        "verificationMethod",
+        "status"
       ],
       "properties": {
-        "punchId": {
-          "type": "string",
-          "format": "uuid"
+        "recordId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Mã định danh duy nhất của lượt điểm danh"
         },
         "employeeId": {
-          "type": "string",
-          "format": "uuid"
+          "type": "integer",
+          "format": "int64",
+          "description": "Mã định danh nhân viên thực hiện điểm danh"
         },
         "kioskId": {
-          "type": "string"
-        },
-        "punchTime": {
           "type": "string",
-          "format": "date-time"
+          "description": "Mã định danh trạm Kiosk ghi nhận lượt chấm công"
         },
-        "authMethod": {
+        "punchTimestamp": {
           "type": "string",
-          "enum": ["FACE", "PIN"]
+          "format": "date-time",
+          "description": "Thời điểm điểm danh theo ISO-8601 kèm múi giờ"
+        },
+        "punchType": {
+          "type": "string",
+          "enum": ["CHECK_IN", "CHECK_OUT"],
+          "description": "Loại chấm công (Vào ca hoặc Ra ca)"
+        },
+        "verificationMethod": {
+          "type": "string",
+          "enum": [
+            "VERIFICATION_FACE",
+            "VERIFICATION_PIN",
+            "MANUAL_HR",
+            "FACE_MATCH",
+            "FALLBACK_PIN",
+            "HR_OVERRIDE"
+          ],
+          "description": "Phương thức xác thực sinh trắc học hoặc mã PIN dự phòng"
         },
         "confidenceScore": {
           "type": "number",
           "minimum": 0.0,
-          "maximum": 1.0
+          "maximum": 1.0,
+          "description": "Điểm tương đồng Cosine giữa vector nhận diện và mẫu Gallery"
         },
-        "evaluationStatus": {
+        "status": {
           "type": "string",
-          "enum": ["ON_TIME", "LATE", "EARLY_LEAVE", "ANOMALOUS"]
+          "enum": ["ON_TIME", "LATE", "EARLY_LEAVE", "OVERTIME", "ANOMALOUS"],
+          "description": "Trạng thái đánh giá công theo quy tắc ca kíp"
+        },
+        "lateMinutes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Số phút đi muộn so với khung giờ ân hạn của ca"
+        },
+        "overtimeMinutes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Số phút làm thêm giờ sau ca làm việc đã lượng tử hóa 15/30p"
         },
         "offlineSynced": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Đánh dấu bản ghi được đồng bộ từ hàng đợi ngoại tuyến SQLite"
         }
       }
     },
@@ -110,35 +190,51 @@
       "required": [
         "consentId",
         "employeeId",
-        "legalNoticeVersion",
-        "signedAt",
-        "ipAddress"
+        "consentVersion",
+        "consentSignedAt",
+        "clientIp",
+        "status"
       ],
       "properties": {
         "consentId": {
-          "type": "string",
-          "format": "uuid"
+          "type": "integer",
+          "format": "int64",
+          "description": "Mã định danh duy nhất của văn bản thỏa thuận cam kết"
         },
         "employeeId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Mã định danh nhân viên ký cam kết"
+        },
+        "consentVersion": {
           "type": "string",
-          "format": "uuid"
+          "description": "Phiên bản văn bản cam kết chấp thuận xử lý dữ liệu sinh trắc"
         },
-        "legalNoticeVersion": {
-          "type": "string"
-        },
-        "signedAt": {
+        "consentSignedAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Mốc thời gian ký đồng ý điện tử theo Nghị định 13/2023"
         },
-        "ipAddress": {
-          "type": "string"
+        "clientIp": {
+          "type": "string",
+          "description": "Địa chỉ IP của thiết bị khi thực hiện ký thỏa thuận"
         },
         "status": {
           "type": "string",
-          "enum": ["ACTIVE", "WITHDRAWN"]
+          "enum": ["ACTIVE", "WITHDRAWN"],
+          "description": "Trạng thái hiệu lực của văn bản chấp thuận"
+        },
+        "withdrawnAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Thời điểm chủ thể dữ liệu thực hiện quyền rút lại sự đồng ý"
+        },
+        "biometricDisposalDueAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Hạn chót tiêu hủy toàn bộ mẫu sinh trắc học theo quy định (tối đa 20 ngày)"
         }
       }
     }
   }
 }
-
