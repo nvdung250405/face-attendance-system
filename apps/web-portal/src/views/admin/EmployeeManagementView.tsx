@@ -15,6 +15,7 @@ import {
   EmployeeTable,
   EmployeeActionModal,
 } from '@/components/account'
+import { EmployeeDetailDrawer } from '@/components/account/EmployeeDetailDrawer'
 import { useEmployeeManagement } from './hooks/useEmployeeManagement'
 
 export const EmployeeManagementView: React.FC = () => {
@@ -52,6 +53,11 @@ export const EmployeeManagementView: React.FC = () => {
     handleResetFilters,
     handleOpenCreate,
     handleOpenEdit,
+    detailEmployee,
+    isDetailDrawerOpen,
+    handleOpenDetail,
+    handleCloseDetail,
+    handleEditFromDetail,
     handleDrawerSuccess,
     handleCloseTempModal,
     handleResetCredentials,
@@ -142,6 +148,15 @@ export const EmployeeManagementView: React.FC = () => {
         onEdit={handleOpenEdit}
         onResetCredentials={handleResetCredentials}
         onToggleStatus={handleToggleStatus}
+        onRowClick={handleOpenDetail}
+      />
+
+      {/* ── Drawer Chi tiết hồ sơ nhân sự (Master-Detail Pattern) ── */}
+      <EmployeeDetailDrawer
+        isOpen={isDetailDrawerOpen}
+        employee={detailEmployee}
+        onClose={handleCloseDetail}
+        onEdit={handleEditFromDetail}
       />
 
       {/* ── Drawer Tạo / Sửa hồ sơ nhân sự (UXD-WEB-006) ── */}

@@ -7,6 +7,7 @@
 
 import { apiClient } from './apiClient'
 import { normalizeApiError } from './errorNormalizer'
+import { employeeService } from './employeeService'
 import type {
   ApiResponse,
   EmployeeItem,
@@ -196,6 +197,13 @@ export class AdminEmployeeService {
     } catch (error) {
       throw normalizeApiError(error)
     }
+  }
+
+  /**
+   * Cập nhật vai trò người dùng (PATCH /api/v1/admin/users/{id}/role - API-BE-043)
+   */
+  async updateUserRole(userId: number, role: UserRole): Promise<void> {
+    return employeeService.updateUserRole(userId, role)
   }
 }
 

@@ -7,15 +7,17 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { ConsentWithdrawalModal } from '@/components/consent/ConsentWithdrawalModal'
+import { ConsentWithdrawalTimeline } from '@/components/consent/ConsentWithdrawalTimeline'
 import { EmployeeConsentView } from '@/views/employee/EmployeeConsentView'
 import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsView'
+import { EmployeeDetailDrawer } from '@/components/account/EmployeeDetailDrawer'
 import { NotificationDrawer } from '@/components/notification/NotificationDrawer'
 import { TopHeader } from '@/components/layout/TopHeader'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { dataSubjectService } from '@/services/dataSubjectService'
 import { notificationService } from '@/services/notificationService'
-import type { UserProfile, NotificationItem, DataSubjectRequestItem } from '@/types'
+import type { UserProfile, NotificationItem, DataSubjectRequestItem, WithdrawConsentResponse, EmployeeItem } from '@/types'
 
 const mockEmployeeUser: UserProfile = {
   id: 1042,
@@ -211,6 +213,32 @@ describe('Module Rút Consent & Trung tâm Thông báo (TASK-WEB-026)', () => {
       fireEvent.click(screen.getByTestId('open-withdraw-modal-btn'))
       expect(screen.getByRole('dialog')).toBeTruthy()
       expect(screen.getByText('Rút Lại Cam Kết Sinh Trắc Học')).toBeTruthy()
+    })
+
+    it('tải và hiển thị ConsentWithdrawalTimeline khi có thông tin rút cam kết', async () => {
+      const mockWithdrawal: WithdrawConsentResponse = {
+        id: 1,
+        userId: 1042,
+        employeeCode: 'EMP-1042',
+        withdrawnAt: '2026-11-01T08:00:00Z',
+        biometricDisposalDueAt: '2026-11-21T08:00:00Z',
+        retentionDeadline: '2026-11-21T08:00:00Z',
+        status: 'PENDING_DISPOSAL',
+        reason: 'Chuyển sang chấm công bằng mã PIN',
+      }
+      vi.spyOn(dataSubjectService, 'getLatestWithdrawal').mockResolvedValueOnce(mockWithdrawal)
+
+      render(
+        <MemoryRouter>
+          <EmployeeConsentView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('consent-withdrawal-timeline')).toBeTruthy()
+        expect(screen.getByText(/Lộ trình Xử lý Rút Cam kết & Tiêu hủy Sinh trắc/i)).toBeTruthy()
+        expect(screen.getByTestId('disposal-countdown-badge')).toBeTruthy()
+      })
     })
   })
 
@@ -442,6 +470,211 @@ describe('Module Rút Consent & Trung tâm Thông báo (TASK-WEB-026)', () => {
       expect(useNotificationStore.getState().unreadCount).toBe(0)
       expect(screen.queryByTestId('drawer-unread-count-badge')).toBeNull()
       expect(notificationService.markAllAsRead).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 5. ConsentWithdrawalTimeline Tests (Lộ trình Tiêu hủy Sinh trắc 20 ngày)
+  // ────────────────────────────────────────────────────────────────────────────
+  describe('5. ConsentWithdrawalTimeline (Lộ trình Xử lý & Đếm ngược 20 ngày NĐ 356)', () => {
+    it('hiển thị ngày rút, đếm ngược luật định 20 ngày và trạng thái ĐANG CHỜ TIÊU HỦY', () => {
+      // Đặt hạn chót sau 15 ngày
+      const targetDate = new Date(Date.now() + 15 * 86400000).toISOString()
+      const withdrawal: WithdrawConsentResponse = {
+        id: 10,
+        userId: 1042,
+        employeeCode: 'EMP-1042',
+        withdrawnAt: '2026-11-01T08:30:00Z',
+        biometricDisposalDueAt: targetDate,
+        status: 'PENDING_DISPOSAL',
+        reason: 'Chuyển sang dùng mã PIN',
+      }
+
+      render(<ConsentWithdrawalTimeline withdrawal={withdrawal} />)
+
+      expect(screen.getByTestId('consent-withdrawal-timeline')).toBeTruthy()
+      expect(screen.getByTestId('withdrawal-status-badge').textContent).toContain('ĐANG CHỜ TIÊU HỦY')
+      expect(screen.getByTestId('disposal-countdown-badge').textContent).toContain('Còn 15 ngày đến hạn tiêu hủy')
+      expect(screen.getByTestId('timeline-withdrawn-date')).toBeTruthy()
+      expect(screen.getByText('Chuyển sang dùng mã PIN')).toBeTruthy()
+      expect(screen.getAllByText(/Nghị định 356\/2025\/NĐ-CP/i).length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('hiển thị trạng thái ĐÃ TIÊU HỦY DỮ LIỆU khi status = DISPOSED', () => {
+      const withdrawal: WithdrawConsentResponse = {
+        id: 11,
+        userId: 1042,
+        withdrawnAt: '2026-10-01T08:00:00Z',
+        biometricDisposalDueAt: '2026-10-21T08:00:00Z',
+        status: 'DISPOSED',
+      }
+
+      render(<ConsentWithdrawalTimeline withdrawal={withdrawal} />)
+
+      expect(screen.getByTestId('withdrawal-status-badge').textContent).toContain('ĐÃ TIÊU HỦY DỮ LIỆU')
+      expect(screen.getByTestId('disposal-countdown-badge').textContent).toContain('Đã hoàn tất tiêu hủy an toàn')
+      expect(screen.getByText(/Dữ liệu vector ArcFace 512D mã hóa AES-256-GCM đã được tiêu hủy vĩnh viễn/i)).toBeTruthy()
+    })
+
+    it('hiển thị cảnh báo quá hạn tiêu hủy khi ngày hạn đã qua', () => {
+      const pastDate = new Date(Date.now() - 3 * 86400000).toISOString()
+      const withdrawal: WithdrawConsentResponse = {
+        id: 12,
+        withdrawnAt: '2026-10-01T08:00:00Z',
+        biometricDisposalDueAt: pastDate,
+        status: 'PENDING_DISPOSAL',
+      }
+
+      render(<ConsentWithdrawalTimeline withdrawal={withdrawal} />)
+
+      expect(screen.getByTestId('disposal-countdown-badge').textContent).toContain('Quá hạn tiêu hủy')
+    })
+  })
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 6. dataSubjectService.getLatestWithdrawal Tests
+  // ────────────────────────────────────────────────────────────────────────────
+  describe('6. dataSubjectService.getLatestWithdrawal (Tích hợp API)', () => {
+    it('gọi GET /api/v1/employee/consent/withdrawal và trả về đối tượng rút cam kết', async () => {
+      const mockResult: WithdrawConsentResponse = {
+        id: 42,
+        userId: 1042,
+        employeeCode: 'EMP-1042',
+        withdrawnAt: '2026-11-15T09:00:00Z',
+        biometricDisposalDueAt: '2026-12-05T09:00:00Z',
+        status: 'PENDING_DISPOSAL',
+      }
+
+      vi.spyOn(dataSubjectService, 'getLatestWithdrawal').mockResolvedValueOnce(mockResult)
+
+      const result = await dataSubjectService.getLatestWithdrawal()
+      expect(result).toEqual(mockResult)
+      expect(result?.biometricDisposalDueAt).toBe('2026-12-05T09:00:00Z')
+    })
+
+    it('trả về null khi chưa từng có lượt rút cam kết nào', async () => {
+      vi.spyOn(dataSubjectService, 'getLatestWithdrawal').mockResolvedValueOnce(null)
+
+      const result = await dataSubjectService.getLatestWithdrawal()
+      expect(result).toBeNull()
+    })
+  })
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 7. EmployeeDetailDrawer Tests (Khung Chi tiết Hồ sơ Nhân sự Read-only)
+  // ────────────────────────────────────────────────────────────────────────────
+  describe('7. EmployeeDetailDrawer (Khung Chi tiết Hồ sơ Nhân sự Read-only)', () => {
+    const mockDetailEmployee: EmployeeItem = {
+      id: 1042,
+      employeeCode: 'EMP-1042',
+      fullName: 'Trần Văn Bảo',
+      email: 'bao.tv@example.com',
+      department: 'Phòng Phát Triển AI',
+      role: 'EMPLOYEE',
+      status: 'ACTIVE',
+      hasBiometric: true,
+      hasPin: true,
+      createdAt: '2026-01-10T08:00:00Z',
+    }
+
+    it('không hiển thị khi isOpen = false', () => {
+      const { container } = render(
+        <EmployeeDetailDrawer
+          isOpen={false}
+          onClose={vi.fn()}
+          employee={mockDetailEmployee}
+        />
+      )
+      expect(container.querySelector('[data-testid="employee-detail-drawer"]')).toBeNull()
+    })
+
+    it('hiển thị đầy đủ thông tin nhân sự, trạng thái sinh trắc, PIN dự phòng, ca làm việc và phiên bản consent', () => {
+      render(
+        <EmployeeDetailDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          employee={mockDetailEmployee}
+        />
+      )
+
+      expect(screen.getByTestId('employee-detail-drawer')).toBeTruthy()
+      expect(screen.getAllByText('Trần Văn Bảo').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByText('bao.tv@example.com')).toBeTruthy()
+      expect(screen.getByText('Phòng Phát Triển AI')).toBeTruthy()
+      expect(screen.getByTestId('employee-detail-status-badge').textContent).toContain('ĐANG HOẠT ĐỘNG')
+
+      // Sinh trắc & PIN
+      expect(screen.getByTestId('detail-biometric-status').textContent).toContain('ĐÃ KÍCH HOẠT')
+      expect(screen.getByTestId('detail-pin-status').textContent).toContain('ĐÃ THIẾT LẬP')
+
+      // Ca làm việc & Phiên bản consent
+      expect(screen.getByTestId('detail-active-shift').textContent).toContain('Ca Hành Chính (08:00 - 17:00)')
+      expect(screen.getByTestId('detail-consent-version').textContent).toContain('v2.0')
+    })
+
+    it('hiển thị CHƯA KÍCH HOẠT và CHƯA THIẾT LẬP khi nhân sự chưa có khuôn mặt/PIN', () => {
+      render(
+        <EmployeeDetailDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          employee={{
+            ...mockDetailEmployee,
+            hasBiometric: false,
+            hasPin: false,
+            status: 'PENDING_CONSENT',
+          }}
+        />
+      )
+
+      expect(screen.getByTestId('detail-biometric-status').textContent).toContain('CHƯA KÍCH HOẠT')
+      expect(screen.getByTestId('detail-pin-status').textContent).toContain('CHƯA THIẾT LẬP')
+      expect(screen.getByTestId('employee-detail-status-badge').textContent).toContain('CHỜ KÝ CAM KẾT')
+    })
+
+    it('nút chuyển vai trò cho phép đổi vai trò và gọi callback onRoleSwitch', () => {
+      const handleRoleSwitch = vi.fn()
+      render(
+        <EmployeeDetailDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          employee={mockDetailEmployee}
+          onRoleSwitch={handleRoleSwitch}
+        />
+      )
+
+      // Click nút "Chuyển vai trò"
+      fireEvent.click(screen.getByTestId('employee-role-switch-btn'))
+
+      // Dropdown chọn vai trò mới
+      const select = screen.getByLabelText(/Chọn vai trò mới cho nhân sự:/i) as HTMLSelectElement
+      fireEvent.change(select, { target: { value: 'HR_MANAGER' } })
+
+      // Click "Lưu vai trò mới"
+      fireEvent.click(screen.getByText('Lưu vai trò mới'))
+
+      expect(handleRoleSwitch).toHaveBeenCalledTimes(1)
+      expect(handleRoleSwitch).toHaveBeenCalledWith(mockDetailEmployee, 'HR_MANAGER')
+    })
+
+    it('nút Chỉnh sửa hồ sơ gọi callback onEdit và nút Đóng gọi onClose', () => {
+      const handleEdit = vi.fn()
+      const handleClose = vi.fn()
+
+      render(
+        <EmployeeDetailDrawer
+          isOpen={true}
+          onClose={handleClose}
+          employee={mockDetailEmployee}
+          onEdit={handleEdit}
+        />
+      )
+
+      fireEvent.click(screen.getByTestId('employee-detail-edit-btn'))
+      expect(handleEdit).toHaveBeenCalledTimes(1)
+      expect(handleEdit).toHaveBeenCalledWith(mockDetailEmployee)
+
+      fireEvent.click(screen.getByTestId('employee-detail-close-btn'))
+      expect(handleClose).toHaveBeenCalledTimes(1)
     })
   })
 })

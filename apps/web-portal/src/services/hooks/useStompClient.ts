@@ -14,6 +14,7 @@
  */
 
 import { useEffect } from 'react'
+import type { IMessage } from '@stomp/stompjs'
 import { stompClientService, type StompWebSocketService } from '../stompClientService'
 import { useStompConnectionStore } from '@/store/stompConnectionStore'
 import type { StompStatus } from '@/store/stompConnectionStore'
@@ -35,6 +36,14 @@ export interface UseStompClientResult {
   connect: () => void
   /** Ngắt kết nối thủ công */
   disconnect: () => Promise<void>
+  /** Đăng ký lắng nghe STOMP topic */
+  subscribe: (
+    destination: string,
+    callback: (message: IMessage) => void,
+    headers?: Record<string, string>
+  ) => import('../stompClientService').SubscriptionHandle
+  /** Instance service WebSocket STOMP */
+  service: StompWebSocketService
 }
 
 // Map ConnectionStatus của service → StompStatus của store
@@ -73,5 +82,8 @@ export function useStompClient(options: UseStompClientOptions = {}): UseStompCli
     isConnected: status === 'CONNECTED',
     connect: () => service.activate(),
     disconnect: () => service.deactivate(),
+    subscribe: (destination, callback, headers) =>
+      service.subscribe(destination, callback, headers),
+    service,
   }
 }

@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { DetailDrawer } from '@/components/ui/DetailDrawer'
 import { AttendanceDetailDrawer, type AttendanceRecordDetail } from '@/components/attendance/AttendanceDetailDrawer'
 import { ExcuseDetailDrawer, type ExcuseRequestDetail } from '@/components/excuse/ExcuseDetailDrawer'
-import type { AttendanceRecord, ExcuseRequestItem } from '@/types'
+import { KioskDetailDrawer } from '@/components/kiosk/KioskDetailDrawer'
+import { complianceAdminService } from '@/services/complianceAdminService'
+import type { AttendanceRecord, ExcuseRequestItem, KioskItemResponse } from '@/types'
 
 describe('Master-Detail Slide-over Detail Drawers', () => {
   describe('1. DetailDrawer Base Primitive', () => {
@@ -279,6 +281,77 @@ describe('Master-Detail Slide-over Detail Drawers', () => {
       expect(screen.getByText('Từ chối')).toBeDefined()
       expect(screen.getByText(/Đã từ chối bởi: Trần Quản Lý/)).toBeDefined()
       expect(screen.getByText(/Không có minh chứng hợp lệ đi kèm/)).toBeDefined()
+    })
+  })
+
+  describe('4. KioskDetailDrawer', () => {
+    const mockKiosk: KioskItemResponse = {
+      id: 1,
+      kioskId: 'KSK-HQ-LOBBY-01',
+      name: 'Kiosk Sảnh Chính Tòa A',
+      location: 'Tầng 1 - Sảnh chính HQ',
+      ipAddress: '192.168.10.101',
+      status: 'ONLINE',
+      lastPingAt: '2026-11-24T09:30:00Z',
+      appVersion: 'v2.4.0',
+    }
+
+    it('hiển thị thông báo khi kiosk = null', () => {
+      render(
+        <KioskDetailDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          kiosk={null}
+        />
+      )
+      expect(screen.getByText('Chưa chọn trạm Kiosk nào để kiểm tra viễn trắc.')).toBeDefined()
+    })
+
+    it('hiển thị đầy đủ thông số phần cứng, firmware, vector cache và lịch sử nhịp tim', async () => {
+      vi.spyOn(complianceAdminService, 'getKioskHealth').mockResolvedValue({
+        kioskId: 'KSK-HQ-LOBBY-01',
+        status: 'ONLINE',
+        isStale: false,
+        lastPingAt: '2026-11-24T09:30:00Z',
+        macAddress: '00:1B:44:11:3A:B7',
+        ipAddress: '192.168.10.101',
+        firmwareVersion: 'v1.4.2 (Linux Edge OS)',
+        appVersion: 'v2.4.0',
+        cachedGalleryCount: 1248,
+        heartbeatHistory: [
+          { timestamp: '2026-11-24T09:29:45Z', latencyMs: 14, status: 'SUCCESS' },
+        ],
+        diagnosticLogs: [
+          { timestamp: '2026-11-24T09:29:30Z', level: 'INFO', message: 'Camera feed healthy' },
+        ],
+      })
+
+      const handleReissue = vi.fn()
+
+      render(
+        <KioskDetailDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          kiosk={mockKiosk}
+          onReissueToken={handleReissue}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('kiosk-detail-drawer')).toBeDefined()
+      })
+      expect(screen.getAllByText('Kiosk Sảnh Chính Tòa A').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByTestId('kiosk-mac-address')).toBeDefined()
+      expect(screen.getByTestId('kiosk-ip-address')).toBeDefined()
+      expect(screen.getByTestId('kiosk-firmware-version')).toBeDefined()
+      expect(screen.getByTestId('kiosk-cached-vectors')).toBeDefined()
+      expect(screen.getByTestId('kiosk-heartbeat-history')).toBeDefined()
+      expect(screen.getByTestId('kiosk-diagnostic-logs')).toBeDefined()
+
+      // Nút Cấp lại Token
+      const reissueBtn = screen.getByTestId('drawer-reissue-token-btn-KSK-HQ-LOBBY-01')
+      fireEvent.click(reissueBtn)
+      expect(handleReissue).toHaveBeenCalledWith(mockKiosk)
     })
   })
 })

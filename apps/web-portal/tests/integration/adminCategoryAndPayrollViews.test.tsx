@@ -24,7 +24,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createQueryClient } from '@/services/queryClient'
@@ -34,6 +34,7 @@ import { AdminPayrollPeriodView } from '@/views/admin/AdminPayrollPeriodView'
 import { useAuthStore } from '@/store/authStore'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
+import { employeeService } from '@/services/employeeService'
 import { shiftAdminService } from '@/services/shiftAdminService'
 import { payrollPeriodService } from '@/services/payrollPeriodService'
 import { reportExportService } from '@/services/reportExportService'
@@ -366,6 +367,89 @@ describe('TASK-WEB-028: Màn Hình Quản Trị Danh Mục & Kỳ Công (UXD-WEB
 
       await waitFor(() => {
         expect(statusSpy).toHaveBeenCalledWith(101, 'INACTIVE')
+      })
+    })
+
+    it('mở EmployeeDetailDrawer khi click vào hàng nhân viên trong bảng và đóng drawer khi nhấn nút đóng', async () => {
+      renderEmployeeView()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('employee-row-101')).toBeTruthy()
+      })
+
+      // Click vào hàng nhân viên Đỗ Hoàng Nam
+      fireEvent.click(screen.getByTestId('employee-row-101'))
+
+      // Kiểm tra EmployeeDetailDrawer hiển thị
+      await waitFor(() => {
+        const drawer = screen.getByTestId('employee-detail-drawer')
+        expect(drawer).toBeTruthy()
+        expect(within(drawer).getByText('nam.dh@company.com')).toBeTruthy()
+        expect(within(drawer).getByText('NV-101')).toBeTruthy()
+      })
+
+      // Đóng drawer
+      fireEvent.click(screen.getByTestId('employee-detail-close-btn'))
+      await waitFor(() => {
+        expect(screen.queryByTestId('employee-detail-drawer')).toBeNull()
+      })
+    })
+
+    it('mở EmployeeDrawer từ nút chỉnh sửa trong EmployeeDetailDrawer và cập nhật vai trò người dùng (updateUserRole)', async () => {
+      const updateRoleSpy = vi.spyOn(employeeService, 'updateUserRole').mockResolvedValue(undefined)
+      const updateEmployeeSpy = vi.spyOn(adminEmployeeService, 'updateEmployee').mockResolvedValue({
+        id: 101,
+        employeeCode: 'NV-101',
+        fullName: 'Đỗ Hoàng Nam',
+        email: 'nam.dh@company.com',
+        department: 'Phòng Kỹ thuật',
+        role: 'HR_MANAGER',
+        status: 'ACTIVE',
+        hasBiometric: true,
+        hasPin: true,
+        createdAt: '2026-01-01T00:00:00Z',
+      })
+
+      renderEmployeeView()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('employee-row-101')).toBeTruthy()
+      })
+
+      // 1. Click vào hàng nhân viên để mở EmployeeDetailDrawer
+      fireEvent.click(screen.getByTestId('employee-row-101'))
+
+      await waitFor(() => {
+        const drawer = screen.getByTestId('employee-detail-drawer')
+        expect(drawer).toBeTruthy()
+        expect(within(drawer).getByTestId('employee-detail-edit-btn')).toBeTruthy()
+      })
+
+      // 2. Click nút "Chỉnh sửa hồ sơ" bên trong EmployeeDetailDrawer
+      fireEvent.click(screen.getByTestId('employee-detail-edit-btn'))
+
+      // EmployeeDetailDrawer đóng và EmployeeDrawer mở
+      await waitFor(() => {
+        expect(screen.queryByTestId('employee-detail-drawer')).toBeNull()
+        expect(screen.getByTestId('employee-drawer')).toBeTruthy()
+        expect(screen.getByText('Chỉnh sửa hồ sơ nhân sự')).toBeTruthy()
+      })
+
+      // 3. Thay đổi vai trò người dùng sang HR_MANAGER
+      const roleSelect = screen.getByTestId('drawer-role')
+      fireEvent.change(roleSelect, { target: { value: 'HR_MANAGER' } })
+
+      // 4. Lưu hồ sơ
+      fireEvent.click(screen.getByTestId('drawer-btn-submit'))
+
+      await waitFor(() => {
+        expect(updateRoleSpy).toHaveBeenCalledWith(101, 'HR_MANAGER')
+        expect(updateEmployeeSpy).toHaveBeenCalledWith(
+          101,
+          expect.objectContaining({
+            role: 'HR_MANAGER',
+          })
+        )
       })
     })
   })
