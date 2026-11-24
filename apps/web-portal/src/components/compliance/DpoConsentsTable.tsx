@@ -1,17 +1,31 @@
 import React from 'react'
-import { TableSkeleton } from '@/components/ui'
+import { TableSkeleton, PaginationBar } from '@/components/ui'
 import { formatDateTime } from '@/utils/date'
 import type { DpoConsentAuditItem } from '@/types'
 
 interface DpoConsentsTableProps {
   dpoConsents: DpoConsentAuditItem[]
   isConsentsLoading: boolean
+  page?: number
+  pageSize?: number
+  totalElements?: number
+  totalPages?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (size: number) => void
 }
 
 export const DpoConsentsTable: React.FC<DpoConsentsTableProps> = ({
   dpoConsents,
   isConsentsLoading,
+  page = 0,
+  pageSize = 20,
+  totalElements,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
 }) => {
+  const effectiveTotal = totalElements ?? dpoConsents.length
+  const effectiveTotalPages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
   return (
     <div className="card-surface overflow-hidden">
       <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/70">
@@ -84,6 +98,18 @@ export const DpoConsentsTable: React.FC<DpoConsentsTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Phân trang DPO Consents (F-SPEC-04) */}
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        totalElements={effectiveTotal}
+        totalPages={effectiveTotalPages}
+        onPageChange={onPageChange ?? (() => {})}
+        onPageSizeChange={onPageSizeChange}
+        pageSizeOptions={[10, 20, 50, 100]}
+        itemLabel="hồ sơ"
+      />
     </div>
   )
 }

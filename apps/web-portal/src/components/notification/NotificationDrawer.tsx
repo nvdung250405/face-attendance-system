@@ -23,6 +23,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { toast } from '@/components/ui'
 import { useNotificationStore } from '@/store/notificationStore'
 import { notificationService } from '@/services/notificationService'
 import type { NotificationEventType } from '@/types'
@@ -101,15 +102,18 @@ export const NotificationDrawer: React.FC = () => {
   const unreadCount = useNotificationStore((s) => s.unreadCount)
   const markAsRead = useNotificationStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
+  const rollbackMarkAsRead = useNotificationStore((s) => s.rollbackMarkAsRead)
 
   if (!isOpen) return null
 
   const handleMarkAllRead = async () => {
+    const unreadIds = notifications.filter((n) => !n.isRead).map((n) => n.id)
     markAllAsRead()
     try {
       await notificationService.markAllAsRead()
     } catch {
-      // Cập nhật lạc quan đã ghi nhận phía client
+      rollbackMarkAsRead(unreadIds)
+      toast.error('Không thể đánh dấu đã đọc tất cả thông báo. Vui lòng thử lại.')
     }
   }
 
@@ -120,7 +124,8 @@ export const NotificationDrawer: React.FC = () => {
       try {
         await notificationService.markAsRead(id)
       } catch {
-        // Ignored
+        rollbackMarkAsRead(id)
+        toast.error('Không thể cập nhật trạng thái thông báo. Vui lòng thử lại.')
       }
     }
   }

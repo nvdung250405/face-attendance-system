@@ -191,7 +191,10 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
       case 502:
       case 503:
       case 504:
-        if (!friendlyMessage) {
+        // F-SPEC-06: Che giấu thông tin lỗi máy chủ / cơ sở dữ liệu trên production để tránh rò rỉ stack trace
+        if (!import.meta.env?.DEV) {
+          friendlyMessage = 'Máy chủ gặp sự cố trong quá trình xử lý. Vui lòng thử lại sau.'
+        } else if (!friendlyMessage) {
           friendlyMessage = 'Máy chủ gặp sự cố trong quá trình xử lý. Vui lòng thử lại sau.'
         }
         break

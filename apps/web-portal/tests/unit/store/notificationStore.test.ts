@@ -135,6 +135,54 @@ describe('NotificationStateStore (TASK-WEB-022)', () => {
       expect(state.notifications.every((n) => n.isRead)).toBe(true)
       expect(state.unreadCount).toBe(0)
     })
+
+    it('restoreState khôi phục chính xác trạng thái từ snapshot (F-SPEC-05)', () => {
+      const store = useNotificationStore.getState()
+      store.initUser(1)
+      store.setNotifications([mockNotification1, mockNotification2])
+
+      const currentState = useNotificationStore.getState()
+      const snapshot = {
+        notifications: currentState.notifications.map((n) => ({ ...n })),
+        unreadCount: currentState.unreadCount,
+      }
+
+      store.markAllAsRead()
+      expect(useNotificationStore.getState().unreadCount).toBe(0)
+
+      store.restoreState(snapshot)
+      const restored = useNotificationStore.getState()
+      expect(restored.unreadCount).toBe(2)
+      expect(restored.notifications[0].isRead).toBe(false)
+    })
+
+    it('rollbackMarkAsRead chỉ hoàn tác đúng ID mục tiêu và bảo toàn thông báo mới đến đồng thời (F-SPEC-05)', () => {
+      const store = useNotificationStore.getState()
+      store.initUser(1)
+      store.setNotifications([mockNotification1, mockNotification2])
+
+      // Bắt đầu đánh dấu đã đọc ID 101
+      store.markAsRead(101)
+      expect(useNotificationStore.getState().unreadCount).toBe(1)
+
+      // Thông báo STOMP 104 (unread) đến đồng thời khi PATCH đang in-flight
+      const concurrentNotification: NotificationItem = {
+        ...mockNotification1,
+        id: 104,
+        title: 'Thông báo mới đồng thời',
+        isRead: false,
+      }
+      store.addNotification(concurrentNotification)
+      expect(useNotificationStore.getState().unreadCount).toBe(2)
+
+      // API thất bại -> hoàn tác chỉ ID 101
+      store.rollbackMarkAsRead(101)
+      const state = useNotificationStore.getState()
+      expect(state.notifications.some((n) => n.id === 104)).toBe(true)
+      expect(state.notifications.find((n) => n.id === 101)?.isRead).toBe(false)
+      expect(state.notifications.find((n) => n.id === 104)?.isRead).toBe(false)
+      expect(state.unreadCount).toBe(3)
+    })
   })
 
   describe('3. Đóng Mở Drawer & Xóa Sạch khi Đăng xuất', () => {

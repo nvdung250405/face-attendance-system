@@ -164,7 +164,12 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
             </div>
 
             {errorMessage && (
-              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              <div
+                id="excuse-error-message"
+                role="alert"
+                aria-live="assertive"
+                className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs"
+              >
                 {errorMessage}
               </div>
             )}
@@ -183,6 +188,8 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
                 rows={3}
                 maxLength={500}
                 required
+                aria-invalid={Boolean(errorMessage)}
+                aria-describedby={errorMessage ? 'excuse-error-message' : undefined}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Ví dụ: Kẹt xe, máy chấm công không nhận diện, đi công tác đột xuất..."

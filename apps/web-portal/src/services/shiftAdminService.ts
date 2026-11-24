@@ -296,14 +296,18 @@ export class ShiftAdminService {
     onProgress?: (completed: number, total: number) => void
   ): Promise<BatchAssignResult> {
     try {
+      const userIds = data.userIds ?? data.employeeIds ?? []
+      const effectiveFrom = data.effectiveFrom ?? data.effectiveStartDate ?? ''
+      const effectiveTo = (data.effectiveTo ?? data.effectiveEndDate) || null
+
       const payload = {
-        userIds: data.employeeIds,
+        userIds,
         shiftId: data.shiftId,
-        effectiveFrom: data.effectiveStartDate,
-        effectiveTo: data.effectiveEndDate || null,
+        effectiveFrom,
+        effectiveTo,
       }
 
-      onProgress?.(0, data.employeeIds.length)
+      onProgress?.(0, userIds.length)
 
       const response = await apiClient.post<ApiResponse<BackendBatchAssignResponse>>(
         '/api/v1/admin/employee-shifts/batch',

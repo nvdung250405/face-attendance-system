@@ -122,10 +122,11 @@ describe('Token Refresh Interceptor & Mutex Queue (TASK-WEB-014, TST-WEB-010)', 
         refreshToken: 'valid-refresh-token-222',
       })
 
-      // Kiểm tra session: SEC-002 accessToken lưu trong RAM, refreshToken lưu trong SafeLocalStorage
+      // Kiểm tra session: SEC-002 & F-TECH-08 accessToken và refreshToken lưu trong RAM Zustand, không lưu trong SafeLocalStorage
       const savedSession = safeLocalStorage.getItem<AuthSession>(AUTH_STORAGE_KEY)
       expect(savedSession?.accessToken).toBeUndefined()
-      expect(savedSession?.refreshToken).toBe('rotated-refresh-token-333')
+      expect(savedSession?.refreshToken).toBeUndefined()
+      expect(useAuthStore.getState().session?.refreshToken).toBe('rotated-refresh-token-333')
       expect(useAuthStore.getState().session?.accessToken).toBe(newAccessToken)
     })
   })

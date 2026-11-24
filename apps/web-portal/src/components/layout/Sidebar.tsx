@@ -102,6 +102,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: <ShieldCheck size={20} strokeWidth={1.75} />,
     roles: ["HR_MANAGER", "ADMIN", "DPO"],
   },
+  {
+    label: "Tuân thủ DPO & Quyền riêng tư",
+    to: "/admin/compliance",
+    icon: <ShieldCheck size={20} strokeWidth={1.75} />,
+    roles: ["ADMIN", "DPO"],
+  },
   // Nhóm Nhân viên
   {
     label: "Bảng công của tôi",
@@ -223,6 +229,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             const navLink = (
               <NavLink
                 to={item.to}
+                onClick={() => {
+                  if (window.innerWidth < 768 && !collapsed) {
+                    onToggleCollapse()
+                  }
+                }}
                 className={linkClassName}
               >
                 <span className="shrink-0 transition-colors duration-150">{item.icon}</span>

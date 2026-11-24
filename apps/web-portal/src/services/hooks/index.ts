@@ -5,3 +5,4 @@
 export * from './useStompClient'
 export * from './useLiveAttendance'
 export * from './useEnrollmentStatus'
+export * from './useAttendanceQueries'

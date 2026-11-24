@@ -80,12 +80,8 @@ export const useAdminShiftManagement = () => {
   const [overlapConflict, setOverlapConflict] = useState<OverlapConflictInfo | null>(null)
   const [isSubmittingAssign, setIsSubmittingAssign] = useState<boolean>(false)
   const [batchProgressText, setBatchProgressText] = useState<string | null>(null)
-
-  // Thông báo phản hồi chung (Alert banner)
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error' | 'warning'
-    message: string
-  } | null>(null)
+  const [shiftFieldErrors, setShiftFieldErrors] = useState<Record<string, string>>({})
+  const [assignFieldErrors, setAssignFieldErrors] = useState<Record<string, string>>({})
 
   // Tải danh mục ca
   const loadShifts = useCallback(async () => {
@@ -95,10 +91,7 @@ export const useAdminShiftManagement = () => {
       setShifts(data || [])
     } catch (err) {
       const error = err as NormalizedApiError
-      setNotification({
-        type: 'error',
-        message: error.message || 'Không thể tải danh sách ca làm việc.',
-      })
+      toast.error(error.message || 'Không thể tải danh sách ca làm việc.')
     } finally {
       setIsLoadingShifts(false)
     }
@@ -112,10 +105,7 @@ export const useAdminShiftManagement = () => {
       setAssignments(data || [])
     } catch (err) {
       const error = err as NormalizedApiError
-      setNotification({
-        type: 'error',
-        message: error.message || 'Không thể tải lịch phân ca nhân sự.',
-      })
+      toast.error(error.message || 'Không thể tải lịch phân ca nhân sự.')
     } finally {
       setIsLoadingAssignments(false)
     }
@@ -129,10 +119,7 @@ export const useAdminShiftManagement = () => {
       setEmployees(list)
       return list
     } catch {
-      setNotification({
-        type: 'warning',
-        message: 'Không thể nạp danh sách nhân sự phục vụ phân ca. Vui lòng thử lại.',
-      })
+      toast.warning('Không thể nạp danh sách nhân sự phục vụ phân ca. Vui lòng thử lại.')
       return []
     } finally {
       setIsLoadingEmployees(false)
@@ -147,13 +134,6 @@ export const useAdminShiftManagement = () => {
   // ── Thao tác Danh mục Ca ───────────────────────────────────────────────────
 
   const handleOpenCreateShiftDrawer = () => {
-    if (isAdjustmentLocked) {
-      setNotification({
-        type: 'warning',
-        message: 'Kỳ công hiện tại đang bị khóa. Không thể tạo ca làm việc mới.',
-      })
-      return
-    }
     setEditingShift(null)
     setShiftFormData({
       shiftCode: undefined,
@@ -165,17 +145,11 @@ export const useAdminShiftManagement = () => {
       isActive: true,
     })
     setShiftFormError(null)
+    setShiftFieldErrors({})
     setIsShiftDrawerOpen(true)
   }
 
   const handleOpenEditShiftDrawer = (shift: ShiftItem) => {
-    if (isAdjustmentLocked) {
-      setNotification({
-        type: 'warning',
-        message: 'Kỳ công hiện tại đang bị khóa. Không thể chỉnh sửa ca làm việc.',
-      })
-      return
-    }
     setEditingShift(shift)
     setShiftFormData({
       shiftCode: shift.shiftCode,
@@ -187,19 +161,23 @@ export const useAdminShiftManagement = () => {
       isActive: shift.isActive,
     })
     setShiftFormError(null)
+    setShiftFieldErrors({})
     setIsShiftDrawerOpen(true)
   }
 
   const handleSaveShift = async (e: React.FormEvent) => {
     e.preventDefault()
     setShiftFormError(null)
+    setShiftFieldErrors({})
 
     if (!shiftFormData.name.trim()) {
       setShiftFormError('Tên ca làm việc không được để trống.')
+      setShiftFieldErrors({ name: 'Tên ca làm việc không được để trống.' })
       return
     }
     if (shiftFormData.startTime === shiftFormData.endTime) {
       setShiftFormError('Giờ kết thúc ca phải khác giờ bắt đầu ca.')
+      setShiftFieldErrors({ endTime: 'Giờ kết thúc ca phải khác giờ bắt đầu ca.' })
       return
     }
 
@@ -215,7 +193,7 @@ export const useAdminShiftManagement = () => {
           isActive: shiftFormData.isActive,
         }
         await shiftAdminService.updateShift(editingShift.id, updateData)
-        setNotification({ type: 'success', message: `Đã cập nhật ca ${editingShift.name} thành công!` })
+        toast.success(`Đã cập nhật ca ${editingShift.name} thành công!`)
       } else {
         const createData: CreateShiftRequest = {
           name: shiftFormData.name.trim(),
@@ -228,13 +206,16 @@ export const useAdminShiftManagement = () => {
           createData.shiftCode = shiftFormData.shiftCode.trim().toUpperCase()
         }
         await shiftAdminService.createShift(createData)
-        setNotification({ type: 'success', message: 'Đã tạo mới ca làm việc thành công!' })
+        toast.success('Đã tạo mới ca làm việc thành công!')
       }
       setIsShiftDrawerOpen(false)
       await loadShifts()
     } catch (err) {
       const error = err as NormalizedApiError
       setShiftFormError(error.message || 'Lưu ca làm việc thất bại.')
+      if (error.fieldErrors) {
+        setShiftFieldErrors(error.fieldErrors)
+      }
     } finally {
       setIsSubmittingShift(false)
     }
@@ -242,24 +223,14 @@ export const useAdminShiftManagement = () => {
 
   // WEB-F-02 (STAB-002): Quản lý togglingShiftId khóa disabled tránh spam click
   const handleToggleShiftActive = async (shift: ShiftItem) => {
-    if (isAdjustmentLocked) {
-      setNotification({
-        type: 'warning',
-        message: 'Kỳ công hiện tại đang bị khóa. Không thể thay đổi trạng thái ca.',
-      })
-      return
-    }
     try {
       setTogglingShiftId(shift.id)
       await shiftAdminService.updateShift(shift.id, { isActive: !shift.isActive })
-      setNotification({
-        type: 'success',
-        message: `Đã ${!shift.isActive ? 'kích hoạt' : 'vô hiệu hóa'} ca ${shift.name}.`,
-      })
+      toast.success(`Đã ${!shift.isActive ? 'kích hoạt' : 'vô hiệu hóa'} ca ${shift.name}.`)
       await loadShifts()
     } catch (err) {
       const error = err as NormalizedApiError
-      setNotification({ type: 'error', message: error.message || 'Không thể đổi trạng thái ca.' })
+      toast.error(error.message || 'Không thể đổi trạng thái ca.')
     } finally {
       setTogglingShiftId(null)
     }
@@ -269,10 +240,7 @@ export const useAdminShiftManagement = () => {
 
   const handleOpenAssignDrawer = async () => {
     if (isAdjustmentLocked) {
-      setNotification({
-        type: 'warning',
-        message: 'Kỳ công hiện tại đang bị khóa. Không thể thực hiện phân ca mới.',
-      })
+      toast.warning('Kỳ công hiện tại đang bị khóa. Không thể thực hiện phân ca mới.')
       return
     }
     let currentEmployees = employees
@@ -287,16 +255,14 @@ export const useAdminShiftManagement = () => {
       effectiveEndDate: today,
     })
     setAssignFormError(null)
+    setAssignFieldErrors({})
     setOverlapConflict(null)
     setIsAssignDrawerOpen(true)
   }
 
   const handleQuickAssign = (employeeId: number, dateStr: string) => {
     if (isAdjustmentLocked) {
-      setNotification({
-        type: 'warning',
-        message: 'Kỳ công hiện tại đang bị khóa. Không thể thực hiện phân ca mới.',
-      })
+      toast.warning('Kỳ công hiện tại đang bị khóa. Không thể thực hiện phân ca mới.')
       return
     }
     setAssignFormData({
@@ -306,6 +272,7 @@ export const useAdminShiftManagement = () => {
       effectiveEndDate: dateStr,
     })
     setAssignFormError(null)
+    setAssignFieldErrors({})
     setOverlapConflict(null)
     setIsAssignDrawerOpen(true)
   }
@@ -356,22 +323,30 @@ export const useAdminShiftManagement = () => {
   const handleSaveAssign = async (e: React.FormEvent) => {
     e.preventDefault()
     setAssignFormError(null)
+    setAssignFieldErrors({})
     setOverlapConflict(null)
 
     if (!assignFormData.employeeId) {
       setAssignFormError('Vui lòng chọn nhân sự được phân ca.')
+      setAssignFieldErrors({ employeeId: 'Vui lòng chọn nhân sự được phân ca.' })
       return
     }
     if (!assignFormData.shiftId) {
       setAssignFormError('Vui lòng chọn ca làm việc áp dụng.')
+      setAssignFieldErrors({ shiftId: 'Vui lòng chọn ca làm việc áp dụng.' })
       return
     }
     if (!assignFormData.effectiveStartDate || !assignFormData.effectiveEndDate) {
       setAssignFormError('Vui lòng nhập đầy đủ ngày bắt đầu và kết thúc hiệu lực.')
+      setAssignFieldErrors({
+        effectiveStartDate: 'Vui lòng nhập ngày bắt đầu hiệu lực.',
+        effectiveEndDate: 'Vui lòng nhập ngày kết thúc hiệu lực.',
+      })
       return
     }
     if (assignFormData.effectiveStartDate > assignFormData.effectiveEndDate) {
       setAssignFormError('Ngày bắt đầu không được lớn hơn ngày kết thúc.')
+      setAssignFieldErrors({ effectiveStartDate: 'Ngày bắt đầu không được lớn hơn ngày kết thúc.' })
       return
     }
 
@@ -389,11 +364,14 @@ export const useAdminShiftManagement = () => {
     try {
       setIsSubmittingAssign(true)
       await shiftAdminService.assignShift(assignFormData)
-      setNotification({ type: 'success', message: 'Phân ca cho nhân sự thành công!' })
+      toast.success('Phân ca cho nhân sự thành công!')
       setIsAssignDrawerOpen(false)
       await loadAssignments()
     } catch (err) {
       const error = err as NormalizedApiError
+      if (error.fieldErrors) {
+        setAssignFieldErrors(error.fieldErrors)
+      }
       if (error.statusCode === 409 || error.overlapConflict) {
         const conflict = error.overlapConflict || {
           message: error.message || 'Lịch phân ca bị chồng lấn thời gian.',
@@ -417,6 +395,7 @@ export const useAdminShiftManagement = () => {
     departmentName?: string
   }) => {
     setAssignFormError(null)
+    setAssignFieldErrors({})
     setOverlapConflict(null)
 
     if (params.employeeIds.length === 0) {
@@ -425,6 +404,7 @@ export const useAdminShiftManagement = () => {
     }
     if (!params.shiftId) {
       setAssignFormError('Vui lòng chọn ca làm việc áp dụng.')
+      setAssignFieldErrors({ shiftId: 'Vui lòng chọn ca làm việc áp dụng.' })
       return
     }
     if (!params.effectiveStartDate || !params.effectiveEndDate) {
@@ -460,9 +440,9 @@ export const useAdminShiftManagement = () => {
         let msg = `Đã phân ca thành công cho ${result.successCount}/${result.total} nhân sự.`
         if (result.failedCount > 0) {
           msg += ` (${result.failedCount} nhân sự bị trùng ca hoặc lỗi).`
-          setNotification({ type: 'warning', message: msg })
+          toast.warning(msg)
         } else {
-          setNotification({ type: 'success', message: msg })
+          toast.success(msg)
         }
         setIsAssignDrawerOpen(false)
         await loadAssignments()
@@ -478,6 +458,9 @@ export const useAdminShiftManagement = () => {
     } catch (err) {
       const error = err as NormalizedApiError
       setAssignFormError(error.message || 'Phân ca hàng loạt thất bại.')
+      if (error.fieldErrors) {
+        setAssignFieldErrors(error.fieldErrors)
+      }
     } finally {
       setIsSubmittingAssign(false)
       setBatchProgressText(null)
@@ -502,10 +485,6 @@ export const useAdminShiftManagement = () => {
   const handleRemoveAssignment = (assignment: EmployeeShiftAssignment) => {
     if (isAdjustmentLocked) {
       toast.warning('Kỳ công hiện tại đang bị khóa. Không thể gỡ bỏ phân ca.')
-      setNotification({
-        type: 'warning',
-        message: 'Kỳ công hiện tại đang bị khóa. Không thể gỡ bỏ phân ca.',
-      })
       return
     }
     setAssignmentToDelete(assignment)
@@ -520,12 +499,10 @@ export const useAdminShiftManagement = () => {
       setDeletingAssignmentId(assignment.id)
       await shiftAdminService.removeShiftAssignment(assignment.id)
       toast.success('Đã hủy phân ca thành công.')
-      setNotification({ type: 'success', message: 'Đã hủy phân ca thành công.' })
       await loadAssignments()
     } catch (err) {
       const error = err as NormalizedApiError
       toast.error(error.message || 'Không thể hủy phân ca.')
-      setNotification({ type: 'error', message: error.message || 'Không thể hủy phân ca.' })
     } finally {
       setDeletingAssignmentId(null)
     }
@@ -571,17 +548,17 @@ export const useAdminShiftManagement = () => {
     shiftFormData,
     setShiftFormData,
     shiftFormError,
+    shiftFieldErrors,
     isSubmittingShift,
     isAssignDrawerOpen,
     setIsAssignDrawerOpen,
     assignFormData,
     setAssignFormData,
     assignFormError,
+    assignFieldErrors,
     overlapConflict,
     isSubmittingAssign,
     batchProgressText,
-    notification,
-    setNotification,
     loadShifts,
     loadAssignments,
     loadEmployees,

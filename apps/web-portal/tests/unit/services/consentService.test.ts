@@ -51,12 +51,18 @@ describe('ConsentService (TASK-WEB-017)', () => {
 
       expect(result).toEqual(mockConsentResult)
 
-      // Kiểm tra lưu phiên tạm trong SessionStorage (fas_consent_session)
+      // Kiểm tra lưu phiên tạm trong RAM (F-TECH-09)
       const stored = consentService.getStoredConsentSession()
       expect(stored).not.toBeNull()
       expect(stored?.otp).toBe('839201')
       expect(stored?.consentSigned).toBe(true)
       expect(stored?.kioskTargetHint).toBe('Sảnh Lễ tân Tầng 1 - KIOSK-HN-01')
+
+      // F-TECH-09: SessionStorage tuyệt đối không lưu OTP hoặc QR Code
+      const sessionInStorage = safeSessionStorage.getItem<Record<string, unknown>>(STORAGE_KEYS.CONSENT_SESSION)
+      expect(sessionInStorage).not.toBeNull()
+      expect(sessionInStorage?.otp).toBeUndefined()
+      expect(sessionInStorage?.qrCodeData).toBeUndefined()
     })
 
     it('ném ngoại lệ rõ ràng khi phản hồi từ máy chủ thiếu mã OTP', async () => {

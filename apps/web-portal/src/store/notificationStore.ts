@@ -22,6 +22,8 @@ export interface NotificationState {
   addNotification: (item: NotificationItem) => void
   markAsRead: (id: number) => void
   markAllAsRead: () => void
+  rollbackMarkAsRead: (ids: number | number[]) => void
+  restoreState: (snapshot: { notifications: NotificationItem[]; unreadCount: number }) => void
   setIsOpen: (isOpen: boolean) => void
   clearStore: () => void
   reset: () => void
@@ -114,6 +116,50 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
       unreadCount: 0,
     }))
+  },
+
+  /**
+   * Hoàn tác trạng thái đã đọc chỉ cho các ID thông báo mục tiêu khi API thất bại,
+   * bảo toàn các thông báo STOMP mới đến đồng thời (F-SPEC-05).
+   */
+  rollbackMarkAsRead: (ids: number | number[]) => {
+    const targetIds = new Set(Array.isArray(ids) ? ids : [ids])
+    if (targetIds.size === 0) return
+
+    set((state) => {
+      let revertedCount = 0
+      const updated = state.notifications.map((n) => {
+        if (targetIds.has(n.id) && n.isRead) {
+          revertedCount += 1
+          return { ...n, isRead: false }
+        }
+        return n
+      })
+
+      if (revertedCount === 0) {
+        return state
+      }
+
+      return {
+        notifications: updated,
+        unreadCount: state.unreadCount + revertedCount,
+      }
+    })
+  },
+
+  /**
+   * Khôi phục trạng thái thông báo từ snapshot (giữ lại các thông báo mới phát sinh đồng thời - F-SPEC-05)
+   */
+  restoreState: (snapshot: { notifications: NotificationItem[]; unreadCount: number }) => {
+    set((state) => {
+      const snapshotIds = new Set(snapshot.notifications.map((n) => n.id))
+      const concurrentAdded = state.notifications.filter((n) => !snapshotIds.has(n.id))
+      const concurrentUnread = concurrentAdded.filter((n) => !n.isRead).length
+      return {
+        notifications: [...concurrentAdded, ...snapshot.notifications],
+        unreadCount: snapshot.unreadCount + concurrentUnread,
+      }
+    })
   },
 
   /**

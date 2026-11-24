@@ -17,6 +17,7 @@ import { excuseService } from '@/services/excuseService'
 import { normalizeApiError } from '@/services/errorNormalizer'
 import { SubmitExcuseModal } from '@/components/excuse/SubmitExcuseModal'
 import { formatDateTime } from '@/utils/date'
+import { sanitizePlainText } from '@/utils/security'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
 
 export const EmployeeExcuseHistoryView: React.FC = () => {
@@ -237,8 +238,8 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
                     <td className="py-3 px-4 max-w-xs">
                       <div className="flex items-start gap-1.5">
                         <MessageSquare className="w-3.5 h-3.5 text-text-secondary shrink-0 mt-0.5" />
-                        <span className="line-clamp-2" title={item.reason}>
-                          {item.reason}
+                        <span className="line-clamp-2" title={sanitizePlainText(item.reason)}>
+                          {sanitizePlainText(item.reason)}
                         </span>
                       </div>
                     </td>
@@ -251,8 +252,8 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
                       ) : item.status === 'REJECTED' ? (
                         <div className="text-2xs text-status-danger font-medium space-y-0.5">
                           <div>Bởi {item.decidedByName || 'HR'}</div>
-                          <div className="italic text-slate-600 truncate max-w-[200px]" title={item.rejectionReason || ''}>
-                            Lý do: {item.rejectionReason}
+                          <div className="italic text-slate-600 truncate max-w-[200px]" title={sanitizePlainText(item.rejectionReason)}>
+                            Lý do: {sanitizePlainText(item.rejectionReason)}
                           </div>
                         </div>
                       ) : (

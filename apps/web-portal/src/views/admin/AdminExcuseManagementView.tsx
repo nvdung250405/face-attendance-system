@@ -22,7 +22,7 @@ import { ApproveExcuseModal, RejectExcuseModal } from '@/components/excuse'
 import { excuseService } from '@/services/excuseService'
 import { normalizeApiError } from '@/services/errorNormalizer'
 import { formatDateTime } from '@/utils/date'
-import { sanitizeUserContent } from '@/utils/security'
+import { sanitizePlainText } from '@/utils/security'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -293,13 +293,13 @@ export const AdminExcuseManagementView: React.FC = () => {
                     <td className="py-3 px-4 max-w-xs">
                       <div className="flex items-start gap-1.5">
                         <MessageSquare className="w-3.5 h-3.5 text-text-muted shrink-0 mt-0.5" />
-                        <span className="line-clamp-2" title={sanitizeUserContent(item.reason)}>
-                          {sanitizeUserContent(item.reason)}
+                        <span className="line-clamp-2" title={sanitizePlainText(item.reason)}>
+                          {sanitizePlainText(item.reason)}
                         </span>
                       </div>
                       {item.rejectionReason && (
-                        <div className="text-2xs text-status-danger italic mt-1 line-clamp-1" title={sanitizeUserContent(item.rejectionReason)}>
-                          Từ chối: {sanitizeUserContent(item.rejectionReason)}
+                        <div className="text-2xs text-status-danger italic mt-1 line-clamp-1" title={sanitizePlainText(item.rejectionReason)}>
+                          Từ chối: {sanitizePlainText(item.rejectionReason)}
                         </div>
                       )}
                     </td>
@@ -327,6 +327,7 @@ export const AdminExcuseManagementView: React.FC = () => {
                             type="button"
                             variant="primary"
                             size="sm"
+                            aria-label={`Phê duyệt đơn giải trình của ${item.fullName}`}
                             onClick={() => {
                               setApproveTarget(item)
                             }}
@@ -340,6 +341,7 @@ export const AdminExcuseManagementView: React.FC = () => {
                             type="button"
                             variant="secondary"
                             size="sm"
+                            aria-label={`Từ chối đơn giải trình của ${item.fullName}`}
                             onClick={() => {
                               setRejectTarget(item)
                               setRejectError(null)

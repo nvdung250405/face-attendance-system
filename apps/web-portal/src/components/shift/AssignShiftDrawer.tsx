@@ -33,6 +33,7 @@ export interface AssignShiftDrawerProps {
   formData: AssignShiftRequest
   onChangeFormData: React.Dispatch<React.SetStateAction<AssignShiftRequest>>
   formError: string | null
+  fieldErrors?: Record<string, string>
   overlapConflict: OverlapConflictInfo | null
   onApplySuggestedSlot: () => void
   isSubmitting: boolean
@@ -56,6 +57,7 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
   formData,
   onChangeFormData,
   formError,
+  fieldErrors,
   overlapConflict,
   onApplySuggestedSlot,
   isSubmitting,
@@ -272,7 +274,10 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
             value={formData.shiftId}
             onChange={(e) => onChangeFormData((prev) => ({ ...prev, shiftId: Number(e.target.value) }))}
             data-testid="select-assign-shift"
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white cursor-pointer"
+            aria-invalid={Boolean(fieldErrors?.shiftId)}
+            className={`w-full px-3 py-2 text-xs rounded-xl border bg-white cursor-pointer ${
+              fieldErrors?.shiftId ? 'border-status-danger ring-1 ring-status-danger' : 'border-border-subtle'
+            }`}
           >
             <option value={0}>-- Chọn ca làm việc --</option>
             {activeShifts.map((s) => (
@@ -281,7 +286,10 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
               </option>
             ))}
           </select>
-          {selectedShift && (
+          {fieldErrors?.shiftId && (
+            <p className="text-2xs text-status-danger">{fieldErrors.shiftId}</p>
+          )}
+          {selectedShift && !fieldErrors?.shiftId && (
             <p className="text-2xs text-indigo-700 font-medium">
               Ca đã chọn: {selectedShift.name} ({selectedShift.startTime} - {selectedShift.endTime})
             </p>
@@ -299,6 +307,7 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
               </>
             }
             type="date"
+            error={fieldErrors?.effectiveFrom || fieldErrors?.effectiveStartDate}
             value={formData.effectiveStartDate}
             onChange={(e) => onChangeFormData((prev) => ({ ...prev, effectiveStartDate: e.target.value }))}
             className="font-mono"
@@ -312,6 +321,7 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
               </>
             }
             type="date"
+            error={fieldErrors?.effectiveTo || fieldErrors?.effectiveEndDate}
             value={formData.effectiveEndDate}
             onChange={(e) => onChangeFormData((prev) => ({ ...prev, effectiveEndDate: e.target.value }))}
             className="font-mono"

@@ -43,4 +43,5 @@ export interface EmployeeSearchCriteria {
   department?: string
   status?: UserStatus
   role?: UserRole
+  hasBiometric?: boolean
 }

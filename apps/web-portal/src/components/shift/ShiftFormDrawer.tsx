@@ -18,6 +18,7 @@ export interface ShiftFormDrawerProps {
   formData: CreateShiftRequest & { isActive?: boolean }
   onChangeFormData: React.Dispatch<React.SetStateAction<CreateShiftRequest & { isActive?: boolean }>>
   formError: string | null
+  fieldErrors?: Record<string, string>
   isSubmitting: boolean
   onSubmit: (e: React.FormEvent) => void
 }
@@ -29,6 +30,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
   formData,
   onChangeFormData,
   formError,
+  fieldErrors,
   isSubmitting,
   onSubmit,
 }) => {
@@ -134,6 +136,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
                       data-testid="input-shift-code"
                       label="Mã ca làm việc thủ công"
                       type="text"
+                      error={fieldErrors?.shiftCode}
                       value={formData.shiftCode || ''}
                       onChange={(e) =>
                         onChangeFormData((prev) => ({ ...prev, shiftCode: e.target.value.toUpperCase() }))
@@ -156,6 +159,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
                 </>
               }
               type="text"
+              error={fieldErrors?.shiftName || fieldErrors?.name}
               value={formData.name}
               onChange={(e) => onChangeFormData((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="Ví dụ: Ca Hành Chính, Ca Chiều..."
@@ -172,6 +176,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
                   </>
                 }
                 type="time"
+                error={fieldErrors?.startTime}
                 value={formData.startTime}
                 onChange={(e) => onChangeFormData((prev) => ({ ...prev, startTime: e.target.value }))}
                 className="font-mono"
@@ -185,6 +190,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
                   </>
                 }
                 type="time"
+                error={fieldErrors?.endTime}
                 value={formData.endTime}
                 onChange={(e) => onChangeFormData((prev) => ({ ...prev, endTime: e.target.value }))}
                 className="font-mono"
@@ -200,6 +206,7 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
               type="number"
               min={0}
               max={60}
+              error={fieldErrors?.gracePeriodMinutes}
               value={formData.gracePeriodMinutes}
               onChange={(e) =>
                 onChangeFormData((prev) => ({ ...prev, gracePeriodMinutes: Number(e.target.value) }))

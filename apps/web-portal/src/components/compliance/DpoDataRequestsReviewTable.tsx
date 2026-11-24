@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { X, ShieldAlert, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react'
-import { Button, TableSkeleton } from '@/components/ui'
+import { Button, TableSkeleton, PaginationBar } from '@/components/ui'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { formatDateTime } from '@/utils/date'
 import { dataSubjectService } from '@/services/dataSubjectService'
@@ -14,6 +14,12 @@ interface DpoDataRequestsReviewTableProps {
   dataRequests: DataSubjectRequestItem[]
   isLoading: boolean
   onUpdateStatus?: (id: number, data: UpdateDataSubjectRequest) => Promise<void>
+  page?: number
+  pageSize?: number
+  totalElements?: number
+  totalPages?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (size: number) => void
 }
 
 function getRequestTypeBadge(type: string) {
@@ -83,7 +89,15 @@ export const DpoDataRequestsReviewTable: React.FC<DpoDataRequestsReviewTableProp
   dataRequests,
   isLoading,
   onUpdateStatus,
+  page = 0,
+  pageSize = 20,
+  totalElements,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
 }) => {
+  const effectiveTotal = totalElements ?? dataRequests.length
+  const effectiveTotalPages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
   const [selectedRequest, setSelectedRequest] = useState<DataSubjectRequestItem | null>(null)
   const [reviewStatus, setReviewStatus] = useState<DataSubjectRequestStatus>('FULFILLED')
   const [reviewNote, setReviewNote] = useState('')
@@ -236,6 +250,18 @@ export const DpoDataRequestsReviewTable: React.FC<DpoDataRequestsReviewTableProp
             </tbody>
           </table>
         </div>
+
+        {/* Phân trang DPO Data Requests (F-SPEC-04) */}
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          totalElements={effectiveTotal}
+          totalPages={effectiveTotalPages}
+          onPageChange={onPageChange ?? (() => {})}
+          onPageSizeChange={onPageSizeChange}
+          pageSizeOptions={[10, 20, 50, 100]}
+          itemLabel="yêu cầu"
+        />
       </div>
 
       {/* ── Modal Thẩm Tra & Phản Hồi Yêu Cầu DSR của DPO ── */}

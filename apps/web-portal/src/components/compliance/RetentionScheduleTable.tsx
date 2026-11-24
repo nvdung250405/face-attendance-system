@@ -1,17 +1,31 @@
 import React from 'react'
-import { TableSkeleton } from '@/components/ui'
+import { TableSkeleton, PaginationBar } from '@/components/ui'
 import { formatDateTime } from '@/utils/date'
 import type { RetentionScheduleItem } from '@/types'
 
 interface RetentionScheduleTableProps {
   retentionItems: RetentionScheduleItem[]
   isRetentionLoading: boolean
+  page?: number
+  pageSize?: number
+  totalElements?: number
+  totalPages?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (size: number) => void
 }
 
 export const RetentionScheduleTable: React.FC<RetentionScheduleTableProps> = ({
   retentionItems,
   isRetentionLoading,
+  page = 0,
+  pageSize = 20,
+  totalElements,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
 }) => {
+  const effectiveTotal = totalElements ?? retentionItems.length
+  const effectiveTotalPages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
   return (
     <div className="space-y-4">
       <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs sm:text-sm leading-relaxed shadow-xs">
@@ -96,6 +110,18 @@ export const RetentionScheduleTable: React.FC<RetentionScheduleTableProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Phân trang Retention Schedule (F-SPEC-04) */}
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          totalElements={effectiveTotal}
+          totalPages={effectiveTotalPages}
+          onPageChange={onPageChange ?? (() => {})}
+          onPageSizeChange={onPageSizeChange}
+          pageSizeOptions={[10, 20, 50, 100]}
+          itemLabel="bản ghi"
+        />
       </div>
     </div>
   )

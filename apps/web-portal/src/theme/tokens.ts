@@ -25,7 +25,7 @@ export const COLOR_TOKENS = {
   // Văn bản
   textPrimary: '#0F172A',
   textSecondary: '#64748B',
-  textMuted: '#94A3B8',
+  textMuted: '#64748B',
 
   // Trạng thái Điểm danh & Hệ thống
   statusSuccess: '#10B981',

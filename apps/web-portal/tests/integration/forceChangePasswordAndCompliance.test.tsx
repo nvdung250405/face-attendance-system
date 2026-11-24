@@ -438,8 +438,10 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
         </MemoryRouter>
       )
 
-      // Mở avatar dropdown
-      fireEvent.click(screen.getByRole('button', { name: /Header User/i }))
+      // Mở avatar dropdown (mô phỏng pointerdown + click như trình duyệt thực)
+      const avatarBtn = screen.getByRole('button', { name: /Header User/i })
+      fireEvent.pointerDown(avatarBtn, { button: 0, ctrlKey: false })
+      fireEvent.click(avatarBtn)
 
       // Bấm menu item Thiết lập mã PIN
       const pinMenuItem = screen.getByTestId('header-manage-pin')

@@ -451,7 +451,9 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       })
 
       expect(screen.getByText('Đăng ký Kiosk Mới')).toBeTruthy()
-      expect(screen.getByTestId('reissue-token-btn-KSK-HQ-LOBBY-01')).toBeTruthy()
+      const reissueBtn = screen.getByTestId('reissue-token-btn-KSK-HQ-LOBBY-01')
+      expect(reissueBtn).toBeTruthy()
+      expect(reissueBtn.getAttribute('aria-label')).toContain('Cấp lại Secret Token cho trạm')
     })
 
     it('vai trò DPO: hiển thị banner Chỉ đọc, ẨN nút Đăng ký mới và nút Cấp lại Token', async () => {

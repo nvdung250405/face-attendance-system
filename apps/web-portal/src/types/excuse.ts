@@ -11,12 +11,6 @@ export interface SubmitExcuseRequestPayload {
   requestedPunchTimestamp?: string // ISO-8601
 }
 
-export interface DecideExcuseRequestPayload {
-  status: 'APPROVED' | 'REJECTED'
-  reviewNote?: string
-  rejectionReason?: string
-}
-
 export interface ApproveExcuseRequestPayload {
   reviewNote?: string
 }

@@ -147,22 +147,49 @@ export class DataSubjectService {
   /**
    * DPO tra cứu toàn bộ danh sách yêu cầu dữ liệu cá nhân (GET /api/v1/dpo/data-requests)
    */
-  async getDpoDataRequests(): Promise<DataSubjectRequestItem[]> {
+  async getDpoDataRequests(criteria?: { page?: number; size?: number }): Promise<DataSubjectRequestItem[]> {
     try {
       const response = await apiClient.get<
-        ApiResponse<PaginatedResult<DataSubjectRequestItem> | DataSubjectRequestItem[]>
-      >('/api/v1/dpo/data-requests')
+        ApiResponse<PaginatedResult<DataSubjectRequestItem> | { items?: DataSubjectRequestItem[]; totalElements?: number; totalPages?: number } | DataSubjectRequestItem[]>
+      >('/api/v1/dpo/data-requests', { params: criteria })
       const data = response.data.data
       let list: unknown[] = []
+      let totalElements: number | undefined
+      let totalPages: number | undefined
+
       if (Array.isArray(data)) {
         list = data
-      } else if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<DataSubjectRequestItem>).content)) {
-        list = (data as PaginatedResult<DataSubjectRequestItem>).content
+        totalElements = data.length
+        totalPages = 1
+      } else if (data && typeof data === 'object') {
+        if ('content' in data && Array.isArray((data as PaginatedResult<DataSubjectRequestItem>).content)) {
+          list = (data as PaginatedResult<DataSubjectRequestItem>).content
+          totalElements = (data as PaginatedResult<DataSubjectRequestItem>).totalElements
+          totalPages = (data as PaginatedResult<DataSubjectRequestItem>).totalPages
+        } else if ('items' in data && Array.isArray((data as { items?: unknown[] }).items)) {
+          list = (data as { items: unknown[] }).items
+          totalElements = (data as { totalElements?: number }).totalElements ?? (data as { total?: number }).total ?? list.length
+          totalPages = (data as { totalPages?: number }).totalPages ?? 1
+        }
       }
-      return list.map((item) => adaptDataSubjectRequest(item))
+      const mapped = list.map((item) => adaptDataSubjectRequest(item)) as DataSubjectRequestItem[] & {
+        totalElements?: number
+        totalPages?: number
+        page?: number
+        size?: number
+      }
+      mapped.totalElements = totalElements ?? mapped.length
+      mapped.totalPages = totalPages ?? Math.max(1, Math.ceil(mapped.totalElements / (criteria?.size || 20)))
+      mapped.page = criteria?.page ?? 0
+      mapped.size = criteria?.size ?? 20
+      return mapped
     } catch (error) {
       throw normalizeApiError(error)
     }
+  }
+
+  async getDataRequests(criteria?: { page?: number; size?: number }): Promise<DataSubjectRequestItem[]> {
+    return this.getDpoDataRequests(criteria)
   }
 
   /**

@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore'
 import { DEPARTMENTS } from '@/constants/departments'
 import type { EmployeeItem, UserRole, UserStatus } from '@/types'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
+import type { BiometricFilterOption } from '@/components/account/EmployeeFilterToolbar'
 
 export interface PendingConfirmAction {
   type: 'RESET_PASSWORD' | 'TOGGLE_STATUS'
@@ -31,6 +32,7 @@ export const useEmployeeManagement = () => {
   const [departmentFilter, setDepartmentFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [roleFilter, setRoleFilter] = useState<string>('ALL')
+  const [biometricFilter, setBiometricFilter] = useState<BiometricFilterOption>('ALL')
 
   // Drawer Form State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -62,6 +64,13 @@ export const useEmployeeManagement = () => {
   // Tải danh sách nhân sự
   const fetchEmployees = useCallback(async () => {
     try {
+      const mappedBiometric =
+        biometricFilter === 'ENROLLED'
+          ? true
+          : biometricFilter === 'PENDING_ENROLLMENT'
+            ? false
+            : undefined
+
       const criteria = {
         page,
         size: pageSize,
@@ -69,6 +78,7 @@ export const useEmployeeManagement = () => {
         department: departmentFilter !== 'ALL' ? departmentFilter : undefined,
         status: statusFilter !== 'ALL' ? (statusFilter as UserStatus) : undefined,
         role: roleFilter !== 'ALL' ? (roleFilter as UserRole) : undefined,
+        hasBiometric: mappedBiometric,
       }
       const data = await adminEmployeeService.getEmployees(criteria)
       setEmployees(data.content || [])
@@ -80,7 +90,7 @@ export const useEmployeeManagement = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [page, pageSize, debouncedKeyword, departmentFilter, statusFilter, roleFilter])
+  }, [page, pageSize, debouncedKeyword, departmentFilter, statusFilter, roleFilter, biometricFilter])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -106,7 +116,11 @@ export const useEmployeeManagement = () => {
   }, [employees])
 
   const hasActiveFilters = Boolean(
-    keyword.trim() || departmentFilter !== 'ALL' || statusFilter !== 'ALL' || roleFilter !== 'ALL'
+    keyword.trim() ||
+      departmentFilter !== 'ALL' ||
+      statusFilter !== 'ALL' ||
+      roleFilter !== 'ALL' ||
+      biometricFilter !== 'ALL'
   )
 
   const handleResetFilters = () => {
@@ -114,6 +128,7 @@ export const useEmployeeManagement = () => {
     setDepartmentFilter('ALL')
     setStatusFilter('ALL')
     setRoleFilter('ALL')
+    setBiometricFilter('ALL')
     setPage(0)
   }
 
@@ -248,6 +263,8 @@ export const useEmployeeManagement = () => {
     setStatusFilter,
     roleFilter,
     setRoleFilter,
+    biometricFilter,
+    setBiometricFilter,
     isDrawerOpen,
     setIsDrawerOpen,
     drawerMode,

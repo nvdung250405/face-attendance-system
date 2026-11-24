@@ -299,6 +299,13 @@ export function adaptKioskItem(raw: unknown, index = 0): KioskItemResponse {
   }
 }
 
+export interface PaginatedList<T> extends Array<T> {
+  totalElements?: number
+  totalPages?: number
+  page?: number
+  size?: number
+}
+
 export class ComplianceAdminService {
   /**
    * Tra cứu nhật ký kiểm toán hệ thống (chỉ đọc) (GET /api/v1/admin/audit-logs)
@@ -426,19 +433,38 @@ export class ComplianceAdminService {
   /**
    * DPO tra cứu dữ liệu ký cam kết Informed Consent (chỉ đọc) (GET /api/v1/dpo/consents)
    */
-  async getDpoConsents(): Promise<DpoConsentAuditItem[]> {
+  async getDpoConsents(criteria?: { page?: number; size?: number }): Promise<PaginatedList<DpoConsentAuditItem>> {
     try {
-      const response = await apiClient.get<ApiResponse<PaginatedResult<DpoConsentAuditItem> | DpoConsentAuditItem[]>>(
-        '/api/v1/dpo/consents'
+      const response = await apiClient.get<ApiResponse<PaginatedResult<DpoConsentAuditItem> | { items?: DpoConsentAuditItem[]; totalElements?: number; totalPages?: number } | DpoConsentAuditItem[]>>(
+        '/api/v1/dpo/consents',
+        { params: criteria }
       )
       const data = response.data.data
       let list: unknown[] = []
+      let totalElements: number | undefined
+      let totalPages: number | undefined
+
       if (Array.isArray(data)) {
         list = data
-      } else if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<DpoConsentAuditItem>).content)) {
-        list = (data as PaginatedResult<DpoConsentAuditItem>).content
+        totalElements = data.length
+        totalPages = 1
+      } else if (data && typeof data === 'object') {
+        if ('content' in data && Array.isArray((data as PaginatedResult<DpoConsentAuditItem>).content)) {
+          list = (data as PaginatedResult<DpoConsentAuditItem>).content
+          totalElements = (data as PaginatedResult<DpoConsentAuditItem>).totalElements
+          totalPages = (data as PaginatedResult<DpoConsentAuditItem>).totalPages
+        } else if ('items' in data && Array.isArray((data as { items?: unknown[] }).items)) {
+          list = (data as { items: unknown[] }).items
+          totalElements = (data as { totalElements?: number }).totalElements ?? (data as { total?: number }).total ?? list.length
+          totalPages = (data as { totalPages?: number }).totalPages ?? 1
+        }
       }
-      return list.map((item, idx) => adaptDpoConsent(item, idx))
+      const mapped = list.map((item, idx) => adaptDpoConsent(item, idx)) as PaginatedList<DpoConsentAuditItem>
+      mapped.totalElements = totalElements ?? mapped.length
+      mapped.totalPages = totalPages ?? Math.max(1, Math.ceil(mapped.totalElements / (criteria?.size || 20)))
+      mapped.page = criteria?.page ?? 0
+      mapped.size = criteria?.size ?? 20
+      return mapped
     } catch (error) {
       throw normalizeApiError(error)
     }
@@ -447,43 +473,89 @@ export class ComplianceAdminService {
   /**
    * DPO tra cứu lịch tiêu hủy dữ liệu sinh trắc nhân sự thôi việc (chỉ đọc) (GET /api/v1/dpo/retention-schedule)
    */
-  async getDpoRetentionSchedule(): Promise<RetentionScheduleItem[]> {
+  async getDpoRetentionSchedule(criteria?: { page?: number; size?: number }): Promise<PaginatedList<RetentionScheduleItem>> {
     try {
-      const response = await apiClient.get<ApiResponse<PaginatedResult<RetentionScheduleItem> | RetentionScheduleItem[]>>(
-        '/api/v1/dpo/retention-schedule'
+      const response = await apiClient.get<ApiResponse<PaginatedResult<RetentionScheduleItem> | { items?: RetentionScheduleItem[]; totalElements?: number; totalPages?: number } | RetentionScheduleItem[]>>(
+        '/api/v1/dpo/retention-schedule',
+        { params: criteria }
       )
       const data = response.data.data
       let list: unknown[] = []
+      let totalElements: number | undefined
+      let totalPages: number | undefined
+
       if (Array.isArray(data)) {
         list = data
-      } else if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<RetentionScheduleItem>).content)) {
-        list = (data as PaginatedResult<RetentionScheduleItem>).content
+        totalElements = data.length
+        totalPages = 1
+      } else if (data && typeof data === 'object') {
+        if ('content' in data && Array.isArray((data as PaginatedResult<RetentionScheduleItem>).content)) {
+          list = (data as PaginatedResult<RetentionScheduleItem>).content
+          totalElements = (data as PaginatedResult<RetentionScheduleItem>).totalElements
+          totalPages = (data as PaginatedResult<RetentionScheduleItem>).totalPages
+        } else if ('items' in data && Array.isArray((data as { items?: unknown[] }).items)) {
+          list = (data as { items: unknown[] }).items
+          totalElements = (data as { totalElements?: number }).totalElements ?? (data as { total?: number }).total ?? list.length
+          totalPages = (data as { totalPages?: number }).totalPages ?? 1
+        }
       }
-      return list.map((item, idx) => adaptRetentionSchedule(item, idx))
+      const mapped = list.map((item, idx) => adaptRetentionSchedule(item, idx)) as PaginatedList<RetentionScheduleItem>
+      mapped.totalElements = totalElements ?? mapped.length
+      mapped.totalPages = totalPages ?? Math.max(1, Math.ceil(mapped.totalElements / (criteria?.size || 20)))
+      mapped.page = criteria?.page ?? 0
+      mapped.size = criteria?.size ?? 20
+      return mapped
     } catch (error) {
       throw normalizeApiError(error)
     }
   }
 
+  async getRetentionSchedule(criteria?: { page?: number; size?: number }): Promise<PaginatedList<RetentionScheduleItem>> {
+    return this.getDpoRetentionSchedule(criteria)
+  }
+
   /**
    * DPO tra cứu danh sách rút cam kết Informed Consent (chỉ đọc) (GET /api/v1/dpo/consent-withdrawals)
    */
-  async getDpoConsentWithdrawals(): Promise<DpoConsentWithdrawalItem[]> {
+  async getDpoConsentWithdrawals(criteria?: { page?: number; size?: number }): Promise<PaginatedList<DpoConsentWithdrawalItem>> {
     try {
-      const response = await apiClient.get<ApiResponse<PaginatedResult<DpoConsentWithdrawalItem> | DpoConsentWithdrawalItem[]>>(
-        '/api/v1/dpo/consent-withdrawals'
+      const response = await apiClient.get<ApiResponse<PaginatedResult<DpoConsentWithdrawalItem> | { items?: DpoConsentWithdrawalItem[]; totalElements?: number; totalPages?: number } | DpoConsentWithdrawalItem[]>>(
+        '/api/v1/dpo/consent-withdrawals',
+        { params: criteria }
       )
       const data = response.data.data
       let list: unknown[] = []
+      let totalElements: number | undefined
+      let totalPages: number | undefined
+
       if (Array.isArray(data)) {
         list = data
-      } else if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<DpoConsentWithdrawalItem>).content)) {
-        list = (data as PaginatedResult<DpoConsentWithdrawalItem>).content
+        totalElements = data.length
+        totalPages = 1
+      } else if (data && typeof data === 'object') {
+        if ('content' in data && Array.isArray((data as PaginatedResult<DpoConsentWithdrawalItem>).content)) {
+          list = (data as PaginatedResult<DpoConsentWithdrawalItem>).content
+          totalElements = (data as PaginatedResult<DpoConsentWithdrawalItem>).totalElements
+          totalPages = (data as PaginatedResult<DpoConsentWithdrawalItem>).totalPages
+        } else if ('items' in data && Array.isArray((data as { items?: unknown[] }).items)) {
+          list = (data as { items: unknown[] }).items
+          totalElements = (data as { totalElements?: number }).totalElements ?? (data as { total?: number }).total ?? list.length
+          totalPages = (data as { totalPages?: number }).totalPages ?? 1
+        }
       }
-      return list.map((item, idx) => adaptDpoConsentWithdrawal(item, idx))
+      const mapped = list.map((item, idx) => adaptDpoConsentWithdrawal(item, idx)) as PaginatedList<DpoConsentWithdrawalItem>
+      mapped.totalElements = totalElements ?? mapped.length
+      mapped.totalPages = totalPages ?? Math.max(1, Math.ceil(mapped.totalElements / (criteria?.size || 20)))
+      mapped.page = criteria?.page ?? 0
+      mapped.size = criteria?.size ?? 20
+      return mapped
     } catch (error) {
       throw normalizeApiError(error)
     }
+  }
+
+  async getConsentWithdrawals(criteria?: { page?: number; size?: number }): Promise<PaginatedList<DpoConsentWithdrawalItem>> {
+    return this.getDpoConsentWithdrawals(criteria)
   }
 }
 

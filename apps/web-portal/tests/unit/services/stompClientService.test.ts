@@ -445,6 +445,41 @@ describe('StompWebSocketService & Hooks (TASK-WEB-015)', () => {
       expect(result.current.latestEvents).toHaveLength(3)
       expect(result.current.latestEvents.map((r) => r.recordId)).toEqual([5, 4, 3])
     })
+
+    it('khử trùng lặp recordId khi nhận lại bản tin STOMP trùng và clearEvents đặt lại buffer (F-TECH-02)', () => {
+      const service = createTestService()
+      const queryClient = new QueryClient()
+      const onRecordReceived = vi.fn()
+
+      mockClientInstance.connected = true
+      service.getClient().onConnect?.(dummyFrame)
+
+      const { result } = renderHook(
+        () =>
+          useLiveAttendance({
+            service,
+            autoConnect: false,
+            onRecordReceived,
+          }),
+        { wrapper: createWrapper(queryClient) }
+      )
+
+      const subCallback = mockClientInstance.subscribe.mock.calls[0][1] as (msg: IMessage) => void
+
+      act(() => {
+        subCallback({ body: JSON.stringify({ ...mockAttendanceRecord, recordId: 9999 }) } as IMessage)
+        subCallback({ body: JSON.stringify({ ...mockAttendanceRecord, recordId: 9999 }) } as IMessage)
+      })
+
+      expect(result.current.latestEvents).toHaveLength(1)
+      expect(onRecordReceived).toHaveBeenCalledTimes(1)
+
+      act(() => {
+        result.current.clearEvents()
+      })
+
+      expect(result.current.latestEvents).toHaveLength(0)
+    })
   })
 
   describe('6. Hook useEnrollmentStatus (DD-WEB-011)', () => {

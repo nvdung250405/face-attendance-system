@@ -139,6 +139,7 @@ export interface FilterToolbarSelectProps {
   label?: string
   className?: string
   disabled?: boolean
+  id?: string
   'data-testid'?: string
   'aria-label'?: string
 }
@@ -151,12 +152,14 @@ export function FilterToolbarSelect({
   label,
   className,
   disabled = false,
+  id,
   'data-testid': dataTestId = 'filter-toolbar-select',
   'aria-label': ariaLabel,
 }: FilterToolbarSelectProps) {
   return (
     <div className={cn('w-full sm:w-auto min-w-[140px]', className)}>
       <select
+        id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
@@ -190,6 +193,8 @@ export interface FilterToolbarDateRangeProps {
   className?: string
   disabled?: boolean
   'data-testid'?: string
+  fromDataTestId?: string
+  toDataTestId?: string
 }
 
 export function FilterToolbarDateRange({
@@ -203,6 +208,8 @@ export function FilterToolbarDateRange({
   className,
   disabled = false,
   'data-testid': dataTestId = 'filter-toolbar-date-range',
+  fromDataTestId = 'filter-date-from',
+  toDataTestId = 'filter-date-to',
 }: FilterToolbarDateRangeProps) {
   return (
     <div
@@ -217,7 +224,7 @@ export function FilterToolbarDateRange({
         disabled={disabled}
         title={fromLabel}
         aria-label={fromLabel}
-        data-testid="filter-date-from"
+        data-testid={fromDataTestId}
         className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all disabled:bg-slate-50 cursor-pointer"
       />
       <span className="text-slate-400 text-xs font-medium shrink-0" aria-hidden="true">
@@ -230,7 +237,7 @@ export function FilterToolbarDateRange({
         disabled={disabled}
         title={toLabel}
         aria-label={toLabel}
-        data-testid="filter-date-to"
+        data-testid={toDataTestId}
         className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all disabled:bg-slate-50 cursor-pointer"
       />
     </div>

@@ -514,9 +514,15 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       expect(screen.getByTestId('payroll-locked-warning-banner')).toBeTruthy()
       expect(screen.getByTestId('shift-payroll-locked-badge')).toBeTruthy()
 
-      // Nút Thêm Ca Mới bị disabled
+      // Nút Thêm Ca Mới không bị disabled (F-SPEC-10: Decouple isAdjustmentLocked khỏi danh mục ca mẫu)
       const createShiftBtn = screen.getByTestId('open-create-shift-drawer-btn') as HTMLButtonElement
-      expect(createShiftBtn.disabled).toBe(true)
+      expect(createShiftBtn.disabled).toBe(false)
+
+      // Các nút Sửa / Tạm dừng trong ShiftCatalogTable cũng không bị disabled khi khóa kỳ công (F-SPEC-10)
+      const editShiftBtn = screen.getByTestId('edit-shift-btn-1') as HTMLButtonElement
+      const toggleShiftBtn = screen.getByTestId('toggle-shift-active-btn-1') as HTMLButtonElement
+      expect(editShiftBtn.disabled).toBe(false)
+      expect(toggleShiftBtn.disabled).toBe(false)
 
       // Chuyển tab sang Phân ca
       fireEvent.click(screen.getByTestId('tab-assignments-btn'))
@@ -524,6 +530,32 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       // Nút Phân Ca Nhân Sự bị disabled
       const assignShiftBtn = screen.getByTestId('open-assign-shift-drawer-btn') as HTMLButtonElement
       expect(assignShiftBtn.disabled).toBe(true)
+    })
+
+    it('9b. ShiftFormDrawer hiển thị lỗi RFC 9457 cho cả fieldErrors.shiftName và fieldErrors.name (F-SPEC-08)', async () => {
+      vi.spyOn(shiftAdminService, 'createShift').mockRejectedValueOnce({
+        message: 'Dữ liệu không hợp lệ',
+        statusCode: 400,
+        fieldErrors: {
+          shiftName: 'Tên ca làm việc đã tồn tại trong hệ thống',
+        },
+      })
+
+      renderShiftManagementView()
+
+      await waitFor(() => {
+        expect(screen.getByText('Ca Hành Chính')).toBeTruthy()
+      })
+
+      fireEvent.click(screen.getByTestId('open-create-shift-drawer-btn'))
+      fireEvent.change(screen.getByTestId('input-shift-name'), { target: { value: 'Ca Hành Chính' } })
+      fireEvent.click(screen.getByTestId('submit-shift-btn'))
+
+      await waitFor(() => {
+        const nameInput = screen.getByTestId('input-shift-name')
+        expect(nameInput.getAttribute('aria-invalid')).toBe('true')
+        expect(screen.getByText('Tên ca làm việc đã tồn tại trong hệ thống')).toBeTruthy()
+      })
     })
   })
 

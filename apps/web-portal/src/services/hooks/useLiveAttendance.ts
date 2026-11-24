@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { IMessage } from '@stomp/stompjs'
 import type { AttendanceRecord } from '@/types'
 import { stompClientService, type StompWebSocketService } from '../stompClientService'
-import { handleLiveAttendanceEvent } from '../queryClient'
+import { attendanceKeys, handleLiveAttendanceEvent } from '../queryClient'
 
 export interface UseLiveAttendanceOptions {
   /** Số lượng bản ghi tối đa duy trì trong danh sách cục bộ (mặc định 50) */
@@ -50,6 +50,7 @@ export function useLiveAttendance(options: UseLiveAttendanceOptions = {}): UseLi
   const queryClient = useQueryClient()
   const [latestEvents, setLatestEvents] = useState<AttendanceRecord[]>([])
   const [isConnected, setIsConnected] = useState<boolean>(service.isConnected())
+  const seenRecordIdsRef = useRef<Set<number>>(new Set())
 
   const onRecordReceivedRef = useRef(onRecordReceived)
   useEffect(() => {
@@ -57,8 +58,10 @@ export function useLiveAttendance(options: UseLiveAttendanceOptions = {}): UseLi
   }, [onRecordReceived])
 
   const clearEvents = useCallback(() => {
+    seenRecordIdsRef.current.clear()
     setLatestEvents([])
-  }, [])
+    queryClient.setQueryData(attendanceKeys.live(), [])
+  }, [queryClient])
 
   useEffect(() => {
     // 1. Theo dõi trạng thái kết nối
@@ -77,8 +80,19 @@ export function useLiveAttendance(options: UseLiveAttendanceOptions = {}): UseLi
         const record = JSON.parse(message.body) as AttendanceRecord
         if (!record || typeof record !== 'object') return
 
+        // Chống trùng lặp recordId khi STOMP gửi lại bản tin (F-TECH-02)
+        if (record.recordId != null && seenRecordIdsRef.current.has(record.recordId)) {
+          return
+        }
+        if (record.recordId != null) {
+          seenRecordIdsRef.current.add(record.recordId)
+        }
+
         // Cập nhật danh sách hiển thị cục bộ (chèn đầu, giữ tối đa maxRecords)
-        setLatestEvents((prev) => [record, ...prev.slice(0, maxRecords - 1)])
+        setLatestEvents((prev) => {
+          const filtered = prev.filter((r) => r.recordId !== record.recordId)
+          return [record, ...filtered].slice(0, maxRecords)
+        })
 
         // Cập nhật TanStack Query Cache (Live Table + KPI + Invalidation)
         handleLiveAttendanceEvent(record, queryClient)

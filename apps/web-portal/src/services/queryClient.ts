@@ -121,20 +121,27 @@ export function handleLiveAttendanceEvent(
 ): void {
   const today = customDate ?? getLocalDateString()
 
-  // 1. Chèn bản ghi mới lên đầu danh sách Live Table (tối đa 50 bản ghi)
+  // 1. Chèn bản ghi mới lên đầu danh sách Live Table (tối đa 50 bản ghi, chống trùng recordId)
   qc.setQueryData<AttendanceRecord[]>(attendanceKeys.live(), (oldData = []) => {
-    return [newRecord, ...oldData.slice(0, 49)]
+    const filtered = oldData.filter((r) => r.recordId !== newRecord.recordId)
+    return [newRecord, ...filtered].slice(0, 50)
   })
 
   // 2. Tăng bộ đếm KPI trên Dashboard
   qc.setQueryData<AttendanceStats>(attendanceKeys.stats(today), (oldStats) => {
     if (!oldStats) return oldStats
+    const newPresent = oldStats.presentCount + 1
     return {
       ...oldStats,
-      presentCount: oldStats.presentCount + 1,
+      presentCount: newPresent,
       onTimeCount:
         newRecord.status === 'ON_TIME' ? oldStats.onTimeCount + 1 : oldStats.onTimeCount,
       lateCount: newRecord.status === 'LATE' ? oldStats.lateCount + 1 : oldStats.lateCount,
+      ...(oldStats.totalEmployees !== undefined
+        ? { absentCount: Math.max(0, oldStats.totalEmployees - newPresent) }
+        : oldStats.absentCount !== undefined
+          ? { absentCount: Math.max(0, oldStats.absentCount - 1) }
+          : {}),
     }
   })
 

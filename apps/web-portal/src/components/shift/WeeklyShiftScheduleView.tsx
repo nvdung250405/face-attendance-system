@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { useDebounce } from '@/hooks/useDebounce'
 import type { ShiftItem, EmployeeShiftAssignment, EmployeeItem } from '@/types'
-import { formatLocalDateISO as formatDateISO } from '@/utils/date'
+import { formatLocalDateISO as formatDateISO, isOvernightShift } from '@/utils/date'
 
 export interface WeeklyShiftScheduleViewProps {
   shifts: ShiftItem[]
@@ -320,13 +320,26 @@ export const WeeklyShiftScheduleView: React.FC<WeeklyShiftScheduleViewProps> = (
                                   )}
                                 </div>
 
-                                <div className="flex items-center gap-1 text-2xs font-mono text-emerald-800">
-                                  <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
-                                  <span>
-                                    {assignedShift
-                                      ? `${assignedShift.startTime} - ${assignedShift.endTime}`
-                                      : 'Theo ca'}
-                                  </span>
+                                <div className="flex items-center gap-1 text-2xs font-mono text-emerald-800 flex-wrap">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
+                                    <span>
+                                      {assignedShift
+                                        ? `${assignedShift.startTime} - ${assignedShift.endTime}`
+                                        : 'Theo ca'}
+                                    </span>
+                                  </div>
+                                  {assignedShift &&
+                                    (Boolean(assignedShift.isOvernight) ||
+                                      isOvernightShift(assignedShift.startTime, assignedShift.endTime)) && (
+                                      <span
+                                        data-testid={`weekly-overnight-badge-${activeAssignment.id}`}
+                                        className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+                                        title="Ca làm việc qua đêm (kết thúc vào ngày hôm sau)"
+                                      >
+                                        +1 ngày
+                                      </span>
+                                    )}
                                 </div>
 
                                 <div className="pt-0.5">

@@ -3,8 +3,7 @@
  */
 
 import React from 'react'
-import { Search, X, RotateCcw } from 'lucide-react'
-import { Button } from '@/components/ui'
+import { FilterToolbar } from '@/components/ui'
 import { DEPARTMENTS } from '@/constants/departments'
 import type { AttendanceStatus, VerificationMethod } from '@/types'
 
@@ -43,132 +42,80 @@ export const AttendanceFilterToolbar: React.FC<AttendanceFilterToolbarProps> = R
     onResetFilters,
   }) => {
     return (
-      <div className="card-surface p-4 space-y-3">
+      <FilterToolbar className="flex-col !items-stretch space-y-3">
         {/* Hàng 1: Ô tìm kiếm từ khóa & 3 Dropdown bộ lọc */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-          {/* Ô tìm kiếm từ khóa */}
-          <div className="flex-1 min-w-56 relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <Search className="w-4 h-4 shrink-0" />
-            </div>
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => onKeywordChange(e.target.value)}
-              data-testid="filter-keyword-input"
-              aria-label="Tìm kiếm lượt điểm danh"
-              placeholder="Tìm theo Mã NV, Họ tên..."
-              maxLength={100}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            />
-            {keyword && (
-              <button
-                type="button"
-                data-testid="filter-keyword-clear"
-                onClick={() => onKeywordChange('')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-                title="Xóa tìm kiếm"
-                aria-label="Xóa tìm kiếm"
-              >
-                <X className="w-3.5 h-3.5 shrink-0" />
-              </button>
-            )}
-          </div>
+          <FilterToolbar.Search
+            value={keyword}
+            onChange={onKeywordChange}
+            data-testid="filter-keyword-input"
+            aria-label="Tìm kiếm lượt điểm danh"
+            placeholder="Tìm theo Mã NV, Họ tên..."
+            maxLength={100}
+            className="flex-1 min-w-56"
+          />
 
-          {/* Lọc theo phòng ban (EXP3-16: Centralized DEPARTMENTS) */}
-          <div className="w-full sm:w-44">
-            <select
-              value={department}
-              onChange={(e) => onDepartmentChange(e.target.value)}
-              data-testid="filter-department-select"
-              aria-label="Lọc theo phòng ban"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            >
-              <option value="">Tất cả phòng ban</option>
-              {DEPARTMENTS.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FilterToolbar.Select
+            value={department}
+            onChange={onDepartmentChange}
+            placeholder="Tất cả phòng ban"
+            data-testid="filter-department-select"
+            aria-label="Lọc theo phòng ban"
+            className="w-full sm:w-44"
+            options={DEPARTMENTS.map((dept) => ({ value: dept, label: dept }))}
+          />
 
-          {/* Lọc theo trạng thái (EXP3-11: Strict typing) */}
-          <div className="w-full sm:w-38">
-            <select
-              value={status}
-              onChange={(e) => onStatusChange(e.target.value as AttendanceStatus | '')}
-              data-testid="filter-status-select"
-              aria-label="Lọc theo trạng thái điểm danh"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="ON_TIME">Đúng giờ</option>
-              <option value="LATE">Đi muộn</option>
-              <option value="EARLY_LEAVE">Về sớm</option>
-              <option value="OVERTIME">Tăng ca</option>
-              <option value="ANOMALOUS">Bất thường</option>
-            </select>
-          </div>
+          <FilterToolbar.Select
+            value={status}
+            onChange={(val) => onStatusChange(val as AttendanceStatus | '')}
+            placeholder="Tất cả trạng thái"
+            data-testid="filter-status-select"
+            aria-label="Lọc theo trạng thái điểm danh"
+            className="w-full sm:w-38"
+            options={[
+              { value: 'ON_TIME', label: 'Đúng giờ' },
+              { value: 'LATE', label: 'Đi muộn' },
+              { value: 'EARLY_LEAVE', label: 'Về sớm' },
+              { value: 'OVERTIME', label: 'Tăng ca' },
+              { value: 'ANOMALOUS', label: 'Bất thường' },
+            ]}
+          />
 
-          {/* Lọc theo phương thức xác thực */}
-          <div className="w-full sm:w-44">
-            <select
-              value={verificationMethod}
-              onChange={(e) =>
-                onVerificationMethodChange(e.target.value as VerificationMethod | '')
-              }
-              data-testid="filter-method-select"
-              aria-label="Lọc theo phương thức xác thực"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-            >
-              <option value="">Tất cả phương thức</option>
-              <option value="VERIFICATION_FACE">Khuôn mặt (Face)</option>
-              <option value="VERIFICATION_PIN">Mã PIN</option>
-            </select>
-          </div>
+          <FilterToolbar.Select
+            value={verificationMethod}
+            onChange={(val) => onVerificationMethodChange(val as VerificationMethod | '')}
+            placeholder="Tất cả phương thức"
+            data-testid="filter-method-select"
+            aria-label="Lọc theo phương thức xác thực"
+            className="w-full sm:w-44"
+            options={[
+              { value: 'VERIFICATION_FACE', label: 'Khuôn mặt (Face)' },
+              { value: 'ARCFACE_512D', label: 'Khuôn mặt (ArcFace 512D)' },
+              { value: 'VERIFICATION_PIN', label: 'Mã PIN' },
+            ]}
+          />
         </div>
 
         {/* Hàng 2: Khoảng ngày & Nút Xóa lọc */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-100">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-slate-500 mr-1">Khoảng ngày:</span>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => onFromDateChange(e.target.value)}
-              data-testid="filter-from-date"
-              className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-              title="Từ ngày"
-            />
-            <span className="text-slate-400 text-xs font-medium">—</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => onToDateChange(e.target.value)}
-              data-testid="filter-to-date"
-              className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
-              title="Đến ngày"
-            />
-          </div>
+          <FilterToolbar.DateRange
+            from={fromDate}
+            to={toDate}
+            onFromChange={onFromDateChange}
+            onToChange={onToDateChange}
+            fromDataTestId="filter-from-date"
+            toDataTestId="filter-to-date"
+            label="Khoảng ngày:"
+          />
 
-          {hasActiveFilters && (
-            <div className="flex items-center self-end sm:self-auto">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={onResetFilters}
-                data-testid="reset-filters-btn"
-                leftIcon={<RotateCcw className="w-3.5 h-3.5 shrink-0" />}
-                className="h-9 px-3 text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs shrink-0 cursor-pointer"
-              >
-                Đặt lại
-              </Button>
-            </div>
-          )}
+          <FilterToolbar.Reset
+            visible={hasActiveFilters}
+            onClick={onResetFilters}
+            data-testid="reset-filters-btn"
+            label="Đặt lại"
+          />
         </div>
-      </div>
+      </FilterToolbar>
     )
   }
 )

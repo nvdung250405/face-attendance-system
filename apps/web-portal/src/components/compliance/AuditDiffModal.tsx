@@ -100,7 +100,7 @@ export const AuditDiffModal: React.FC<AuditDiffModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Đóng hộp thoại"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="min-w-[44px] min-h-[44px] p-1.5 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
               >
                 <X className="w-4 h-4 shrink-0" />
               </button>

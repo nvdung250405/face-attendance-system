@@ -31,7 +31,7 @@ describe('Tailwind Tokens & Theme (TASK-WEB-008)', () => {
     it('chứa các màu văn bản chuẩn', () => {
       expect(COLOR_TOKENS.textPrimary).toBe('#0F172A')
       expect(COLOR_TOKENS.textSecondary).toBe('#64748B')
-      expect(COLOR_TOKENS.textMuted).toBe('#94A3B8')
+      expect(COLOR_TOKENS.textMuted).toBe('#64748B')
     })
 
     it('chứa các màu trạng thái điểm danh và cảnh báo', () => {

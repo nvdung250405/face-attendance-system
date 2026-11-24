@@ -127,7 +127,8 @@ const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
           <div className="flex items-center gap-1.5">
             <span className="inline-flex items-center gap-1.5 font-medium text-slate-600">
               {record.verificationMethod === 'VERIFICATION_FACE' ||
-              record.verificationMethod === 'FACE_MATCH' ? (
+              record.verificationMethod === 'FACE_MATCH' ||
+              record.verificationMethod === 'ARCFACE_512D' ? (
                 <>
                   <ScanFace size={15} className="text-indigo-600 shrink-0" />
                   <span>Khuôn mặt</span>

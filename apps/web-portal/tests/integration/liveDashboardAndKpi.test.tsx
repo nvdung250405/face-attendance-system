@@ -3,6 +3,7 @@
  * (UXD-WEB-003, UXD-WEB-004, UI-WEB-003, DD-WEB-007, DD-WEB-014, BLD-WEB-006, TASK-WEB-010).
  */
 
+import { useState } from 'react'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -293,6 +294,28 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       expect(screen.getByTestId('confidence-badge-105').textContent).toBe('94%')
       expect(screen.getByTestId('overtime-badge-105').textContent).toBe('+60m OT')
     })
+
+    it('hiển thị phương thức xác thực Khuôn mặt cho ARCFACE_512D (F-TECH-18)', () => {
+      const arcfaceRecord: AttendanceRecord = {
+        recordId: 106,
+        employeeId: 1006,
+        employeeCode: 'NV-1006',
+        fullName: 'Lê ArcFace',
+        department: 'Kỹ thuật',
+        punchTimestamp: '2026-10-14T08:00:00.000+07:00',
+        punchType: 'CHECK_IN',
+        verificationMethod: 'ARCFACE_512D',
+        status: 'ON_TIME',
+        lateMinutes: 0,
+        kioskId: 'KIOSK-01',
+      }
+
+      render(<LiveAttendanceTable records={[arcfaceRecord]} />)
+
+      const row = screen.getByTestId('attendance-row-106')
+      expect(row.textContent).toContain('Khuôn mặt')
+      expect(row.textContent).not.toContain('Mã PIN')
+    })
   })
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -319,9 +342,13 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       let registeredCallback: ((record: AttendanceRecord) => void) | undefined
 
       vi.spyOn(useLiveAttendanceModule, 'useLiveAttendance').mockImplementation((options) => {
-        registeredCallback = options?.onRecordReceived
+        const [events, setEvents] = useState<AttendanceRecord[]>([])
+        registeredCallback = (record: AttendanceRecord) => {
+          setEvents((prev) => [record, ...prev])
+          options?.onRecordReceived?.(record)
+        }
         return {
-          latestEvents: [],
+          latestEvents: events,
           isConnected: true,
           clearEvents: vi.fn(),
         }
@@ -374,9 +401,13 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       let registeredCallback: ((record: AttendanceRecord) => void) | undefined
 
       vi.spyOn(useLiveAttendanceModule, 'useLiveAttendance').mockImplementation((options) => {
-        registeredCallback = options?.onRecordReceived
+        const [events, setEvents] = useState<AttendanceRecord[]>([])
+        registeredCallback = (record: AttendanceRecord) => {
+          setEvents((prev) => [record, ...prev])
+          options?.onRecordReceived?.(record)
+        }
         return {
-          latestEvents: [],
+          latestEvents: events,
           isConnected: true,
           clearEvents: vi.fn(),
         }
@@ -413,18 +444,73 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       expect(screen.getByTestId('kpi-late-count').textContent).toBe('9') // 8 + 1
     })
 
-    it('nút Làm mới gọi lại API tải dữ liệu', async () => {
+    it('nút Làm mới gọi lại API tải dữ liệu và clearEvents xóa buffer STOMP (F-TECH-02)', async () => {
+      const clearEventsSpy = vi.fn()
+      vi.spyOn(useLiveAttendanceModule, 'useLiveAttendance').mockImplementation(() => ({
+        latestEvents: [],
+        isConnected: true,
+        clearEvents: clearEventsSpy,
+      }))
+
       renderAdminDashboard()
 
       await waitFor(() => {
-        expect(screen.getByTestId('refresh-dashboard-btn')).toBeTruthy()
+        expect(screen.getByTestId('kpi-present-count').textContent).toBe('100')
       })
 
       fireEvent.click(screen.getByTestId('refresh-dashboard-btn'))
 
       await waitFor(() => {
+        expect(clearEventsSpy).toHaveBeenCalledTimes(1)
         expect(attendanceService.getAttendanceStats).toHaveBeenCalledTimes(2)
         expect(attendanceService.getAdminAttendance).toHaveBeenCalledTimes(2)
+      })
+    })
+
+    it('khử trùng lặp recordId khi nhận tin STOMP trùng lặp và không tăng trùng KPI (F-TECH-02)', async () => {
+      let registeredCallback: ((record: AttendanceRecord) => void) | undefined
+
+      vi.spyOn(useLiveAttendanceModule, 'useLiveAttendance').mockImplementation((options) => {
+        const [events, setEvents] = useState<AttendanceRecord[]>([])
+        registeredCallback = (record: AttendanceRecord) => {
+          setEvents((prev) => [record, ...prev])
+          options?.onRecordReceived?.(record)
+        }
+        return {
+          latestEvents: events,
+          isConnected: true,
+          clearEvents: vi.fn(),
+        }
+      })
+
+      renderAdminDashboard()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('kpi-present-count').textContent).toBe('100')
+      })
+
+      const dupRecord: AttendanceRecord = {
+        recordId: 9999,
+        employeeId: 1999,
+        employeeCode: 'NV-1999',
+        fullName: 'Trần Trùng Lặp',
+        department: 'Khối Công nghệ',
+        punchTimestamp: '2026-10-14T08:45:00.000+07:00',
+        punchType: 'CHECK_IN',
+        verificationMethod: 'ARCFACE_512D',
+        status: 'ON_TIME',
+        lateMinutes: 0,
+        kioskId: 'KSK-HQ-01',
+      }
+
+      act(() => {
+        registeredCallback?.(dupRecord)
+        registeredCallback?.(dupRecord)
+      })
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('attendance-row-9999')).toHaveLength(1)
+        expect(screen.getByTestId('kpi-present-count').textContent).toBe('101')
       })
     })
   })

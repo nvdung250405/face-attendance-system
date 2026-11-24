@@ -611,9 +611,9 @@ describe('TASK-WEB-028: Màn Hình Quản Trị Danh Mục & Kỳ Công (UXD-WEB
         expect(screen.getByTestId('shift-payroll-locked-badge')).toBeTruthy()
       })
 
-      // Nút Thêm Ca Mới bị disable
+      // Nút Thêm Ca Mới không bị disable (F-SPEC-10: Decouple isAdjustmentLocked khỏi danh mục ca mẫu)
       const addShiftBtn = screen.getByTestId('open-create-shift-drawer-btn') as HTMLButtonElement
-      expect(addShiftBtn.disabled).toBe(true)
+      expect(addShiftBtn.disabled).toBe(false)
 
       // Chuyển sang Tab phân ca: nút Phân Ca Nhân Sự cũng bị disable
       fireEvent.click(screen.getByTestId('tab-assignments-btn'))

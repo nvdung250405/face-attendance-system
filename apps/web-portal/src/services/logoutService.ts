@@ -7,6 +7,7 @@
 
 import { apiClient } from './apiClient'
 import { safeLocalStorage, safeSessionStorage, STORAGE_KEYS, AUTH_STORAGE_KEY } from './storage'
+import { consentService } from './consentService'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
@@ -25,8 +26,9 @@ export class LogoutService {
    */
   async logout(): Promise<void> {
     try {
+      const ramSession = useAuthStore.getState().session
       const stored = safeLocalStorage.getItem<Partial<AuthSession>>(AUTH_STORAGE_KEY)
-      const refreshToken = stored?.refreshToken
+      const refreshToken = ramSession?.refreshToken || stored?.refreshToken
 
       if (refreshToken) {
         await apiClient.post('/api/v1/auth/logout', { refreshToken })
@@ -45,6 +47,7 @@ export class LogoutService {
   clearLocalSession(): void {
     safeLocalStorage.removeItem(AUTH_STORAGE_KEY)
     safeSessionStorage.removeItem(STORAGE_KEYS.CONSENT_SESSION)
+    consentService.clearConsentSession()
     useAuthStore.getState().clearSession()
     // Dọn sạch dữ liệu RAM của người dùng hiện tại để tránh rò rỉ sang phiên đăng nhập khác
     useNotificationStore.getState().clearStore()
