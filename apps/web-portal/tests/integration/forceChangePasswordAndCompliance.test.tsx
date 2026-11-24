@@ -533,6 +533,8 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
 
       // Bấm nút cấp lại token
       fireEvent.click(screen.getByTestId('reissue-token-btn-KSK-GATE-01'))
+      const confirmBtn = await screen.findByTestId('confirm-reissue-btn')
+      fireEvent.click(confirmBtn)
 
       await waitFor(() => {
         expect(mockUpdate).toHaveBeenCalledWith(101, { resetSecretToken: true })

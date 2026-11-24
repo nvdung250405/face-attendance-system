@@ -12,7 +12,7 @@ import { cn } from '@/utils/cn'
  */
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string
+  label?: React.ReactNode
   error?: string
   hint?: string
   leftIcon?: React.ReactNode

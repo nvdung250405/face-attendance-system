@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { complianceAdminService } from '@/services/complianceAdminService'
 import { dataSubjectService } from '@/services/dataSubjectService'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import type {
   AuditLogItem,
   DpoConsentAuditItem,
@@ -89,7 +90,7 @@ export const useAdminAuditLog = () => {
         setPage(targetPage)
         setPageSize(targetPageSize)
       } catch (err) {
-        const error = err as { message?: string }
+        const error = normalizeApiError(err)
         setErrorMessage(error.message || 'Không thể tải nhật ký kiểm toán.')
       } finally {
         setIsAuditLoading(false)
@@ -106,7 +107,7 @@ export const useAdminAuditLog = () => {
       const data = await complianceAdminService.getDpoConsents()
       setDpoConsents(data)
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải danh sách cam kết DPO.')
     } finally {
       setIsConsentsLoading(false)
@@ -121,7 +122,7 @@ export const useAdminAuditLog = () => {
       const data = await complianceAdminService.getDpoRetentionSchedule()
       setRetentionItems(data)
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải lịch trình tiêu hủy dữ liệu.')
     } finally {
       setIsRetentionLoading(false)
@@ -136,7 +137,7 @@ export const useAdminAuditLog = () => {
       const data = await complianceAdminService.getDpoConsentWithdrawals()
       setDpoWithdrawals(data)
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải danh sách rút cam kết DPO.')
     } finally {
       setIsWithdrawalsLoading(false)
@@ -151,7 +152,7 @@ export const useAdminAuditLog = () => {
       const data = await dataSubjectService.getDpoDataRequests()
       setDpoDataRequests(data)
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải danh sách yêu cầu quyền chủ thể dữ liệu.')
     } finally {
       setIsDataRequestsLoading(false)
@@ -166,7 +167,7 @@ export const useAdminAuditLog = () => {
         await dataSubjectService.updateDataRequestStatus(id, data)
         await loadDpoDataRequests()
       } catch (err) {
-        const error = err as { message?: string }
+        const error = normalizeApiError(err)
         setErrorMessage(error.message || 'Không thể cập nhật trạng thái yêu cầu dữ liệu.')
         throw err
       }

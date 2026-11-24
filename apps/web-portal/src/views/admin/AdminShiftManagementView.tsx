@@ -8,7 +8,16 @@
  */
 
 import React from 'react'
-import { Calendar, Clock } from 'lucide-react'
+import { Calendar, Clock, AlertTriangle } from 'lucide-react'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui'
 import {
   WeeklyShiftScheduleView,
   ShiftFormDrawer,
@@ -72,6 +81,9 @@ export const AdminShiftManagementView: React.FC = () => {
     handleBatchAssign,
     handleApplySuggestedSlot,
     handleRemoveAssignment,
+    assignmentToDelete,
+    setAssignmentToDelete,
+    confirmRemoveAssignment,
     filteredAssignments,
   } = useAdminShiftManagement()
 
@@ -161,6 +173,10 @@ export const AdminShiftManagementView: React.FC = () => {
             shifts={shifts}
             filteredCount={filteredAssignments.length}
             totalCount={assignments.length}
+            onResetFilters={() => {
+              setSearchEmployeeKeyword('')
+              setFilterShiftId('')
+            }}
           />
 
           {assignmentViewMode === 'weekly' ? (
@@ -212,6 +228,46 @@ export const AdminShiftManagementView: React.FC = () => {
         isLoadingEmployees={isLoadingEmployees}
         progressText={batchProgressText}
       />
+
+      {/* ── Dialog Xác nhận Hủy Phân Ca ── */}
+      <Dialog
+        open={!!assignmentToDelete}
+        onOpenChange={(open) => !open && setAssignmentToDelete(null)}
+      >
+        <DialogContent className="sm:max-w-md" data-testid="delete-assignment-confirm-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+              <span>Xác nhận hủy phân ca</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600 mt-1">
+              Bạn có chắc chắn muốn hủy phân ca{' '}
+              <span className="font-semibold text-slate-900">{assignmentToDelete?.shiftName}</span> của nhân viên{' '}
+              <span className="font-semibold text-slate-900">{assignmentToDelete?.fullName}</span>? Thao tác này sẽ gỡ nhân viên khỏi ca làm việc đã chọn.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setAssignmentToDelete(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              isLoading={deletingAssignmentId === assignmentToDelete?.id}
+              data-testid="confirm-remove-assignment-btn"
+              onClick={confirmRemoveAssignment}
+            >
+              Hủy phân ca
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -3,7 +3,7 @@
  */
 
 import React from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { DEPARTMENTS } from '@/constants/departments'
 import type { AttendanceStatus, VerificationMethod } from '@/types'
@@ -59,8 +59,20 @@ export const AttendanceFilterToolbar: React.FC<AttendanceFilterToolbarProps> = R
               aria-label="Tìm kiếm lượt điểm danh"
               placeholder="Tìm theo Mã NV, Họ tên..."
               maxLength={100}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 shadow-2xs transition-all"
             />
+            {keyword && (
+              <button
+                type="button"
+                data-testid="filter-keyword-clear"
+                onClick={() => onKeywordChange('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                title="Xóa tìm kiếm"
+                aria-label="Xóa tìm kiếm"
+              >
+                <X className="w-3.5 h-3.5 shrink-0" />
+              </button>
+            )}
           </div>
 
           {/* Lọc theo phòng ban (EXP3-16: Centralized DEPARTMENTS) */}
@@ -145,12 +157,13 @@ export const AttendanceFilterToolbar: React.FC<AttendanceFilterToolbarProps> = R
               <Button
                 type="button"
                 variant="secondary"
+                size="sm"
                 onClick={onResetFilters}
                 data-testid="reset-filters-btn"
-                leftIcon={<X className="w-3.5 h-3.5 shrink-0" />}
-                className="h-9 px-3 text-xs font-semibold text-rose-700 bg-rose-50/80 border-rose-200 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800 shadow-2xs shrink-0 cursor-pointer"
+                leftIcon={<RotateCcw className="w-3.5 h-3.5 shrink-0" />}
+                className="h-9 px-3 text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs shrink-0 cursor-pointer"
               >
-                Xóa tất cả lọc
+                Đặt lại
               </Button>
             </div>
           )}

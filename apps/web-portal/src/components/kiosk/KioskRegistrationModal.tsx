@@ -15,6 +15,8 @@ import { Monitor, X, AlertTriangle, Check, Copy, Sparkles, ChevronDown } from 'l
 import { complianceAdminService } from '@/services/complianceAdminService'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { previewKioskId } from '@/utils/codePreview'
 import type { KioskItemResponse } from '@/types'
 
@@ -147,37 +149,35 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
 
           {step === 'FORM' ? (
             <form id="register-kiosk-form" onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="kiosk-name-input" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">
-                  Tên Trạm Kiosk *
-                </label>
-                <input
-                  type="text"
-                  id="kiosk-name-input"
-                  data-testid="kiosk-name-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ví dụ: Trạm Kiosk Sảnh Chính Tầng 2"
-                  className="input-base"
-                  required
-                />
-              </div>
+              <Input
+                id="kiosk-name-input"
+                data-testid="kiosk-name-input"
+                label={
+                  <>
+                    Tên Trạm Kiosk <span className="text-status-danger">*</span>
+                  </>
+                }
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ví dụ: Trạm Kiosk Sảnh Chính Tầng 2"
+                required
+              />
 
-              <div>
-                <label htmlFor="kiosk-location-input" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">
-                  Vị trí lắp đặt *
-                </label>
-                <input
-                  type="text"
-                  id="kiosk-location-input"
-                  data-testid="kiosk-location-input"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Ví dụ: Tòa nhà A - Sảnh Lễ tân"
-                  className="input-base"
-                  required
-                />
-              </div>
+              <Input
+                id="kiosk-location-input"
+                data-testid="kiosk-location-input"
+                label={
+                  <>
+                    Vị trí lắp đặt <span className="text-status-danger">*</span>
+                  </>
+                }
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Ví dụ: Tòa nhà A - Sảnh Lễ tân"
+                required
+              />
 
               {/* Live Preview Badge */}
               <div
@@ -211,18 +211,16 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
               </div>
 
               {showCustomKioskId && (
-                <div className="space-y-1 animate-in fade-in duration-150">
-                  <label htmlFor="kiosk-id-input" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">
-                    Mã Trạm Kiosk (Kiosk ID) thủ công
-                  </label>
-                  <input
-                    type="text"
+                <div className="animate-in fade-in duration-150">
+                  <Input
                     id="kiosk-id-input"
                     data-testid="kiosk-id-input"
+                    label="Mã Trạm Kiosk (Kiosk ID) thủ công"
+                    type="text"
                     value={kioskId}
                     onChange={(e) => setKioskId(e.target.value.toUpperCase())}
                     placeholder="Để trống để hệ thống tự sinh mã (ví dụ: KSK-XXXX)"
-                    className="input-base font-mono font-medium"
+                    className="font-mono font-medium uppercase"
                   />
                 </div>
               )}
@@ -280,43 +278,34 @@ const KioskRegistrationModalContent: React.FC<KioskRegistrationModalProps> = ({
         <div className="px-6 py-4 border-t border-border-subtle bg-slate-50/50 flex items-center justify-end gap-3">
           {step === 'FORM' ? (
             <>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 data-testid="cancel-kiosk-btn"
                 onClick={handleClose}
-                className="px-4 py-2 border border-border-subtle rounded-xl text-sm font-medium text-text-secondary hover:bg-slate-100 transition-colors"
               >
                 Hủy
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 form="register-kiosk-form"
                 data-testid="submit-register-kiosk-btn"
                 disabled={isSubmitting || !name.trim() || !location.trim()}
-                className="btn-primary flex items-center gap-2 text-sm disabled:opacity-50"
+                isLoading={isSubmitting}
+                variant="primary"
               >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Đang đăng ký...</span>
-                  </>
-                ) : (
-                  <span>Đăng ký trạm</span>
-                )}
-              </button>
+                Đăng ký trạm
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="primary"
               data-testid="close-token-display-btn"
               onClick={handleClose}
-              className="px-5 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
             >
               Tôi đã lưu Secret Token an toàn
-            </button>
+            </Button>
           )}
         </div>
       </div>

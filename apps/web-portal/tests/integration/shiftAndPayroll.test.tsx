@@ -489,6 +489,9 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       const removeBtn = screen.getByTestId('remove-assignment-btn-501')
       fireEvent.click(removeBtn)
 
+      const confirmBtn = await screen.findByTestId('confirm-remove-assignment-btn')
+      fireEvent.click(confirmBtn)
+
       await waitFor(() => {
         expect(shiftAdminService.removeShiftAssignment).toHaveBeenCalledWith(501)
       })

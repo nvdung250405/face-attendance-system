@@ -19,7 +19,18 @@ import {
   Search,
   RotateCcw,
 } from 'lucide-react'
-import { Button, TableSkeleton, toast } from '@/components/ui'
+import {
+  Button,
+  TableSkeleton,
+  toast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
@@ -91,6 +102,7 @@ export const AdminKioskManagementView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false)
+  const [kioskToReissue, setKioskToReissue] = useState<KioskItemResponse | null>(null)
 
   // Tìm kiếm & Lọc trạng thái (GAP-COMP-02, STAB-004)
   const [searchKeyword, setSearchKeyword] = useState<string>('')
@@ -137,12 +149,15 @@ export const AdminKioskManagementView: React.FC = () => {
     }
   }, [loadKiosks, clearStore])
 
-  const handleReissueToken = async (kiosk: KioskItemResponse) => {
+  const handleReissueToken = (kiosk: KioskItemResponse) => {
     if (isReadOnly) return
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn cấp lại Secret Token cho trạm ${kiosk.kioskId}? Mã cũ sẽ bị thu hồi ngay lập tức.`
-    )
-    if (!confirmed) return
+    setKioskToReissue(kiosk)
+  }
+
+  const confirmReissueToken = async () => {
+    if (!kioskToReissue) return
+    const kiosk = kioskToReissue
+    setKioskToReissue(null)
 
     try {
       setIsReissuing(kiosk.kioskId)
@@ -157,9 +172,10 @@ export const AdminKioskManagementView: React.FC = () => {
           kioskId: kiosk.kioskId,
           token: result.secretToken,
         })
+        toast.success(`Đã cấp lại Secret Token cho trạm ${kiosk.kioskId} thành công.`)
       }
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       toast.error(error.message || 'Không thể cấp lại token cho trạm Kiosk.')
     } finally {
       setIsReissuing(null)
@@ -535,6 +551,41 @@ export const AdminKioskManagementView: React.FC = () => {
         onReissueToken={handleReissueToken}
         isReadOnly={isReadOnly}
       />
+
+      {/* ── Dialog Xác nhận Cấp lại Secret Token ── */}
+      <Dialog open={!!kioskToReissue} onOpenChange={(open) => !open && setKioskToReissue(null)}>
+        <DialogContent className="sm:max-w-md" data-testid="reissue-confirm-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <span>Xác nhận cấp lại Secret Token</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600 mt-1">
+              Bạn có chắc chắn muốn cấp lại Secret Token cho trạm{' '}
+              <span className="font-semibold text-slate-900">{kioskToReissue?.kioskId}</span>? Mã cũ sẽ bị thu hồi ngay lập tức.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setKioskToReissue(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              data-testid="confirm-reissue-btn"
+              onClick={confirmReissueToken}
+            >
+              Cấp lại Token
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

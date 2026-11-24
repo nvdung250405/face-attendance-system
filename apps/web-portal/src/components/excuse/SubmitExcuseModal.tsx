@@ -13,6 +13,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { excuseService } from '@/services/excuseService'
 import { AlertTriangle, Clock, Send, CheckCircle2 } from 'lucide-react'
 
@@ -168,11 +170,11 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
             )}
 
             {/* Lý do giải trình */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label htmlFor="excuse-reason" className="text-xs font-semibold text-slate-800">
-                  Lý do giải trình <span className="text-rose-500">*</span>
-                </label>
+                <Label htmlFor="excuse-reason" className="text-xs font-semibold text-slate-800">
+                  Lý do giải trình <span className="text-status-danger">*</span>
+                </Label>
                 <span className="text-[11px] font-mono text-slate-400">{reason.length}/500</span>
               </div>
               <textarea
@@ -189,22 +191,19 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
             </div>
 
             {/* Giờ đề xuất điều chỉnh */}
-            <div className="space-y-1">
-              <label htmlFor="excuse-punch-time" className="text-xs font-semibold text-slate-800">
-                Thời gian đề xuất điều chỉnh <span className="text-slate-400 font-normal">(tùy chọn)</span>
-              </label>
-              <input
-                id="excuse-punch-time"
-                data-testid="excuse-punch-time-input"
-                type="datetime-local"
-                value={requestedPunchTimestamp}
-                onChange={(e) => setRequestedPunchTimestamp(e.target.value)}
-                className="w-full text-xs rounded-xl border border-slate-200 bg-white p-2 text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-              />
-              <p className="text-[11px] text-slate-400 leading-normal">
-                Nếu để trống, HR sẽ xem xét theo ca làm việc đã đăng ký.
-              </p>
-            </div>
+            <Input
+              id="excuse-punch-time"
+              data-testid="excuse-punch-time-input"
+              type="datetime-local"
+              label={
+                <>
+                  Thời gian đề xuất điều chỉnh <span className="text-slate-400 font-normal">(tùy chọn)</span>
+                </>
+              }
+              hint="Nếu để trống, HR sẽ xem xét theo ca làm việc đã đăng ký."
+              value={requestedPunchTimestamp}
+              onChange={(e) => setRequestedPunchTimestamp(e.target.value)}
+            />
 
             <DialogFooter className="pt-2">
               <Button

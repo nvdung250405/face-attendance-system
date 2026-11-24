@@ -13,6 +13,7 @@ import {
   FilterToolbar,
   PaginationBar,
   ConfettiEffect,
+  EmptyState,
 } from '@/components/ui'
 import { AttendanceStatusBadge } from '@/components/attendance'
 import { cn } from '@/utils/cn'
@@ -401,6 +402,23 @@ describe('UI Primitives (Generic Subdomain UI Library)', () => {
     it('ConfettiEffect render đúng cấu trúc canvas/effect', () => {
       render(<ConfettiEffect />)
       expect(screen.getByTestId('confetti-effect')).toBeDefined()
+    })
+  })
+
+  describe('EmptyState component', () => {
+    it('render tiêu đề, mô tả, icon và action CTA', () => {
+      render(
+        <EmptyState
+          icon={<span data-testid="empty-icon">Icon</span>}
+          title="Chưa có dữ liệu"
+          description="Vui lòng thử lại sau"
+          action={<button data-testid="empty-cta">Thêm mới</button>}
+        />
+      )
+      expect(screen.getByText('Chưa có dữ liệu')).toBeDefined()
+      expect(screen.getByText('Vui lòng thử lại sau')).toBeDefined()
+      expect(screen.getByTestId('empty-icon')).toBeDefined()
+      expect(screen.getByTestId('empty-cta')).toBeDefined()
     })
   })
 })

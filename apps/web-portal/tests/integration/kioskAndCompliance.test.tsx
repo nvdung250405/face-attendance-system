@@ -506,6 +506,10 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       // Bấm Cấp lại Token
       fireEvent.click(screen.getByTestId('reissue-token-btn-KSK-HQ-LOBBY-01'))
 
+      // Xác nhận trên Dialog Cấp lại
+      const confirmBtn = await screen.findByTestId('confirm-reissue-btn')
+      fireEvent.click(confirmBtn)
+
       // Modal hiển thị token xuất hiện
       await waitFor(() => {
         expect(screen.getByTestId('reissued-token-value')).toBeTruthy()

@@ -20,6 +20,8 @@ import {
   Download,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { AttendanceReportItem } from '@/types'
 
 export interface ExportReportModalProps {
@@ -208,64 +210,53 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
           </div>
 
           {/* Tên công ty */}
-          <div className="space-y-1">
-            <label
-              htmlFor="export-company-name"
-              className="text-xs font-semibold text-text-secondary flex items-center gap-1.5"
-            >
-              <Building2 className="w-3.5 h-3.5 text-text-tertiary" />
-              <span>Tên công ty / Cơ quan</span>
-            </label>
-            <input
-              id="export-company-name"
-              type="text"
-              data-testid="export-company-name-input"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
-              placeholder="VD: CÔNG TY CỔ PHẦN CÔNG NGHỆ FAS..."
-            />
-          </div>
+          <Input
+            id="export-company-name"
+            type="text"
+            data-testid="export-company-name-input"
+            label={
+              <span className="flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-text-tertiary" />
+                <span>Tên công ty / Cơ quan</span>
+              </span>
+            }
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            placeholder="VD: CÔNG TY CỔ PHẦN CÔNG NGHỆ FAS..."
+          />
 
           {/* Tiêu đề báo cáo */}
-          <div className="space-y-1">
-            <label
-              htmlFor="export-report-title"
-              className="text-xs font-semibold text-text-secondary flex items-center gap-1.5"
-            >
-              <FileText className="w-3.5 h-3.5 text-text-tertiary" />
-              <span>Tiêu đề báo cáo</span>
-            </label>
-            <input
-              id="export-report-title"
-              type="text"
-              data-testid="export-report-title-input"
-              value={reportTitle}
-              onChange={(e) => setReportTitle(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
-              placeholder="VD: BÁO CÁO BẢNG CHẤM CÔNG NHÂN SỰ..."
-            />
-          </div>
+          <Input
+            id="export-report-title"
+            type="text"
+            data-testid="export-report-title-input"
+            label={
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-text-tertiary" />
+                <span>Tiêu đề báo cáo</span>
+              </span>
+            }
+            value={reportTitle}
+            onChange={(e) => setReportTitle(e.target.value)}
+            placeholder="VD: BÁO CÁO BẢNG CHẤM CÔNG NHÂN SỰ..."
+          />
 
           {/* Kỳ báo cáo */}
-          <div className="space-y-1">
-            <label
-              htmlFor="export-period"
-              className="text-xs font-semibold text-text-secondary flex items-center gap-1.5"
-            >
-              <Calendar className="w-3.5 h-3.5 text-text-tertiary" />
-              <span>Kỳ báo cáo (Tháng/Năm)</span>
-            </label>
-            <input
-              id="export-period"
-              type="text"
-              data-testid="export-period-input"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary font-mono"
-              placeholder="YYYY-MM (VD: 2026-10)"
-            />
-          </div>
+          <Input
+            id="export-period"
+            type="text"
+            data-testid="export-period-input"
+            label={
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-text-tertiary" />
+                <span>Kỳ báo cáo (Tháng/Năm)</span>
+              </span>
+            }
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="font-mono"
+            placeholder="YYYY-MM (VD: 2026-10)"
+          />
 
           {/* Thông tin số lượng bản ghi */}
           <div className="p-3 bg-slate-50 rounded-xl border border-border-subtle flex items-center justify-between text-2xs text-text-secondary">
@@ -278,39 +269,43 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
           {/* Nút hành động */}
           <div className="pt-2 flex items-center justify-between gap-3">
             {onPrintPreview ? (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={handlePrint}
                 data-testid="print-preview-btn"
-                className="btn-secondary text-xs py-2.5 px-3 flex items-center gap-1.5"
-                title="Xem trước &amp; In báo cáo"
+                leftIcon={<Printer className="w-3.5 h-3.5" />}
+                title="Xem trước & In báo cáo"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Xem bản in</span>
-              </button>
+                Xem bản in
+              </Button>
             ) : (
               <div />
             )}
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={onClose}
                 data-testid="cancel-export-btn"
-                className="btn-secondary text-xs py-2.5 px-4"
               >
                 Hủy
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                size="sm"
+                isLoading={isSubmitting}
                 disabled={isSubmitting}
                 data-testid="confirm-export-btn"
-                className="btn-primary text-xs py-2.5 px-4 flex items-center gap-2 shadow-xs disabled:opacity-50"
+                leftIcon={<Download className="w-4 h-4 shrink-0" />}
               >
-                <Download className="w-4 h-4" />
-                <span>{isSubmitting ? 'Đang xuất tệp...' : 'Tải Xuống Báo Cáo'}</span>
-              </button>
+                {isSubmitting ? 'Đang xuất tệp...' : 'Tải Xuống Báo Cáo'}
+              </Button>
             </div>
           </div>
         </form>

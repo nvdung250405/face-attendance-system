@@ -192,7 +192,11 @@ export const AdminAuditLogView: React.FC = () => {
       </div>
 
       {errorMessage && (
-        <div className="p-4 bg-rose-50 text-rose-700 text-sm rounded-xl border border-rose-200">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-4 bg-rose-50 text-rose-700 text-sm rounded-xl border border-rose-200"
+        >
           {errorMessage}
         </div>
       )}

@@ -14,12 +14,11 @@ import {
   Unlock,
   Calendar,
   AlertTriangle,
-  CheckCircle2,
   X,
   RotateCw,
   Download,
 } from 'lucide-react'
-import { Button, PaginationBar, TableSkeleton } from '@/components/ui'
+import { Button, PaginationBar, TableSkeleton, toast } from '@/components/ui'
 import { LockPayrollModal, UnlockPayrollModal } from '@/components/payroll'
 import { payrollPeriodService } from '@/services/payrollPeriodService'
 import { reportExportService } from '@/services/reportExportService'
@@ -119,10 +118,9 @@ export const AdminPayrollPeriodView: React.FC = () => {
         lockedByName: updated.lockedByName || currentUser?.fullName || 'Quản trị viên Nhân sự',
         lockedAt: updated.lockedAt || new Date().toISOString(),
       })
-      setNotification({
-        type: 'success',
-        message: `Đã chốt thành công kỳ công ${periodToLock.periodMonth}/${periodToLock.periodYear}. Toàn bộ chức năng điều chỉnh công của kỳ này đã được khóa.`,
-      })
+      toast.success(
+        `Đã chốt thành công kỳ công ${periodToLock.periodMonth}/${periodToLock.periodYear}. Toàn bộ chức năng điều chỉnh công của kỳ này đã được khóa.`
+      )
       setPeriodToLock(null)
     } catch (err) {
       const error = err as NormalizedApiError
@@ -150,10 +148,9 @@ export const AdminPayrollPeriodView: React.FC = () => {
       await payrollPeriodService.unlockPeriod(periodCode, { reason })
       // Cập nhật trạng thái mở lại vào Store tập trung (isAdjustmentLocked -> false)
       updatePeriodStatus(periodToUnlock.id, 'OPEN')
-      setNotification({
-        type: 'success',
-        message: `Đã mở lại thành công kỳ công ${periodToUnlock.periodMonth}/${periodToUnlock.periodYear}. Các nút điều chỉnh công đã được mở khóa.`,
-      })
+      toast.success(
+        `Đã mở lại thành công kỳ công ${periodToUnlock.periodMonth}/${periodToUnlock.periodYear}. Các nút điều chỉnh công đã được mở khóa.`
+      )
       setPeriodToUnlock(null)
     } catch (err) {
       const error = err as NormalizedApiError
@@ -179,10 +176,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
         format: 'xlsx',
       })
       reportExportService.triggerDownload(result.blob, result.filename)
-      setNotification({
-        type: 'success',
-        message: `Đã xuất thành công bảng công kỳ ${period.periodMonth}/${period.periodYear}.`,
-      })
+      toast.success(`Đã xuất thành công bảng công kỳ ${period.periodMonth}/${period.periodYear}.`)
     } catch {
       // Fallback tạo file client-side (DD-WEB-017)
       const fallbackResult = reportExportService.generateClientExcelReport({
@@ -193,10 +187,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
         records: [],
       })
       reportExportService.triggerDownload(fallbackResult.blob, fallbackResult.filename)
-      setNotification({
-        type: 'success',
-        message: `Đã xuất bảng công (bản offline) kỳ ${period.periodMonth}/${period.periodYear}.`,
-      })
+      toast.success(`Đã xuất bảng công (bản offline) kỳ ${period.periodMonth}/${period.periodYear}.`)
     } finally {
       setExportingPeriodId(null)
     }
@@ -285,23 +276,19 @@ export const AdminPayrollPeriodView: React.FC = () => {
         </div>
       )}
 
-      {/* Thông báo thao tác */}
-      {notification && (
+      {/* Thông báo thao tác lỗi / cảnh báo */}
+      {notification && notification.type !== 'success' && (
         <div
+          role="alert"
+          aria-live="assertive"
           className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-medium shadow-xs ${
-            notification.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : notification.type === 'warning'
+            notification.type === 'warning'
               ? 'bg-amber-50 text-amber-800 border-amber-200'
               : 'bg-rose-50 text-rose-800 border-rose-200'
           }`}
         >
           <div className="flex items-center gap-2">
-            {notification.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            ) : (
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-            )}
+            <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{notification.message}</span>
           </div>
           <button

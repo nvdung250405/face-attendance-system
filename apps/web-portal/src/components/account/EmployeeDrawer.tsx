@@ -14,6 +14,8 @@ import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { employeeService } from '@/services/employeeService'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { DEPARTMENTS } from '@/constants/departments'
 import { previewEmployeeCode } from '@/utils/codePreview'
 import type { EmployeeItem, UserRole } from '@/types'
@@ -188,105 +190,87 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
                 </span>
               </div>
 
-              <div>
-                <label
-                  htmlFor="drawer-employee-code"
-                  className="block text-xs font-semibold text-text-secondary mb-1"
-                >
-                  Mã nhân viên <span className="text-text-muted font-normal">(Tùy chọn - để trống để cấp tự động)</span>
-                </label>
-                <input
-                  id="drawer-employee-code"
-                  data-testid="drawer-employee-code"
-                  type="text"
-                  value={employeeCode}
-                  maxLength={50}
-                  onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
-                  disabled={isLoading}
-                  placeholder="Để trống hoặc nhập mã định danh riêng..."
-                  className={`input-base font-mono w-full ${fieldErrors.employeeCode ? 'border-rose-400 focus:border-rose-500' : ''}`}
-                />
-              </div>
-            </>
-          ) : (
-            <div>
-              <label
-                htmlFor="drawer-employee-code"
-                className="block text-xs font-semibold text-text-secondary mb-1"
-              >
-                Mã nhân viên <span className="text-rose-500">*</span>
-              </label>
-              <input
+              <Input
                 id="drawer-employee-code"
                 data-testid="drawer-employee-code"
                 type="text"
+                label={
+                  <>
+                    Mã nhân viên{' '}
+                    <span className="text-text-muted font-normal">(Tùy chọn - để trống để cấp tự động)</span>
+                  </>
+                }
+                error={fieldErrors.employeeCode}
                 value={employeeCode}
-                disabled
-                className="input-base font-mono w-full bg-slate-50 text-text-muted"
+                maxLength={50}
+                onChange={(e) => setEmployeeCode(e.target.value.toUpperCase())}
+                disabled={isLoading}
+                placeholder="Để trống hoặc nhập mã định danh riêng..."
+                className="font-mono"
               />
-            </div>
-          )}
-          {fieldErrors.employeeCode && (
-            <p className="text-xs text-rose-600 mt-1">{fieldErrors.employeeCode}</p>
+            </>
+          ) : (
+            <Input
+              id="drawer-employee-code"
+              data-testid="drawer-employee-code"
+              type="text"
+              label={
+                <>
+                  Mã nhân viên <span className="text-status-danger">*</span>
+                </>
+              }
+              error={fieldErrors.employeeCode}
+              value={employeeCode}
+              disabled
+              className="font-mono bg-slate-50 text-text-muted"
+            />
           )}
         </div>
 
         {/* Họ và tên */}
-        <div>
-          <label
-            htmlFor="drawer-full-name"
-            className="block text-xs font-semibold text-text-secondary mb-1"
-          >
-            Họ và tên <span className="text-rose-500">*</span>
-          </label>
-          <input
-            id="drawer-full-name"
-            data-testid="drawer-full-name"
-            type="text"
-            value={fullName}
-            maxLength={100}
-            onChange={(e) => setFullName(e.target.value)}
-            disabled={isLoading}
-            placeholder="VD: Nguyễn Văn A"
-            className={`input-base ${fieldErrors.fullName ? 'border-rose-400 focus:border-rose-500' : ''}`}
-          />
-          {fieldErrors.fullName && (
-            <p className="text-xs text-rose-600 mt-1">{fieldErrors.fullName}</p>
-          )}
-        </div>
+        <Input
+          id="drawer-full-name"
+          data-testid="drawer-full-name"
+          type="text"
+          label={
+            <>
+              Họ và tên <span className="text-status-danger">*</span>
+            </>
+          }
+          error={fieldErrors.fullName}
+          value={fullName}
+          maxLength={100}
+          onChange={(e) => setFullName(e.target.value)}
+          disabled={isLoading}
+          placeholder="VD: Nguyễn Văn A"
+        />
 
         {/* Email */}
-        <div>
-          <label
-            htmlFor="drawer-email"
-            className="block text-xs font-semibold text-text-secondary mb-1"
-          >
-            Email công vụ <span className="text-rose-500">*</span>
-          </label>
-          <input
-            id="drawer-email"
-            data-testid="drawer-email"
-            type="email"
-            value={email}
-            maxLength={100}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={mode === 'edit' || isLoading}
-            placeholder="VD: a.nv@company.com"
-            className={`input-base ${fieldErrors.email ? 'border-rose-400 focus:border-rose-500' : ''}`}
-          />
-          {fieldErrors.email && (
-            <p className="text-xs text-rose-600 mt-1">{fieldErrors.email}</p>
-          )}
-        </div>
+        <Input
+          id="drawer-email"
+          data-testid="drawer-email"
+          type="email"
+          label={
+            <>
+              Email công vụ <span className="text-status-danger">*</span>
+            </>
+          }
+          error={fieldErrors.email}
+          value={email}
+          maxLength={100}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={mode === 'edit' || isLoading}
+          placeholder="VD: a.nv@company.com"
+        />
 
         {/* Phòng ban */}
-        <div>
-          <label
+        <div className="space-y-1.5">
+          <Label
             htmlFor="drawer-department"
-            className="block text-xs font-semibold text-text-secondary mb-1"
+            className="block text-xs font-semibold text-text-secondary"
           >
             Phòng ban
-          </label>
+          </Label>
           <select
             id="drawer-department"
             data-testid="drawer-department"
@@ -304,14 +288,14 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
         </div>
 
         {/* Vai trò */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label
               htmlFor="drawer-role"
               className="block text-xs font-semibold text-text-secondary"
             >
-              Vai trò & Phân quyền <span className="text-rose-500">*</span>
-            </label>
+              Vai trò & Phân quyền <span className="text-status-danger">*</span>
+            </Label>
             {isLastActiveAdmin && mode === 'edit' && (
               <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-medium inline-flex items-center gap-1">
                 <AlertCircle size={12} className="text-amber-600 shrink-0" />

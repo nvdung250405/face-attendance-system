@@ -57,3 +57,18 @@ export const useToastStore = create<ToastState>((set) => ({
     set({ toasts: [] })
   },
 }))
+
+/**
+ * Tiện ích kích hoạt Toast toàn cục (Global Toast Dispatcher)
+ */
+export const toast = {
+  success: (message: string, title?: string, duration?: number) =>
+    useToastStore.getState().addToast({ message, title, type: 'success', duration }),
+  error: (message: string, title?: string, duration?: number) =>
+    useToastStore.getState().addToast({ message, title, type: 'error', duration }),
+  warning: (message: string, title?: string, duration?: number) =>
+    useToastStore.getState().addToast({ message, title, type: 'warning', duration }),
+  info: (message: string, title?: string, duration?: number) =>
+    useToastStore.getState().addToast({ message, title, type: 'info', duration }),
+}
+

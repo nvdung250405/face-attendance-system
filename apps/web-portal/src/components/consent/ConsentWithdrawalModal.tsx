@@ -20,6 +20,7 @@ import { AlertTriangle, X, AlertCircle, Check } from 'lucide-react'
 import { dataSubjectService } from '@/services/dataSubjectService'
 import { useAuthStore } from '@/store/authStore'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/utils/date'
 import type { WithdrawConsentResponse } from '@/types'
 
@@ -247,67 +248,59 @@ const ConsentWithdrawalModalContent: React.FC<ConsentWithdrawalModalProps> = ({
         <div className="px-6 py-4 border-t border-border-subtle bg-slate-50/50 flex items-center justify-end gap-3">
           {step === 'WARNING' && (
             <>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 data-testid="withdrawal-cancel-btn"
                 onClick={onClose}
-                className="px-4 py-2 border border-border-subtle rounded-xl text-sm font-medium text-text-secondary hover:bg-slate-100 transition-colors"
               >
                 Hủy bỏ
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
                 data-testid="withdrawal-next-step-btn"
                 onClick={handleNextToConfirm}
-                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
+                className="bg-amber-600 hover:bg-amber-700 text-white"
               >
                 Tiếp tục
-              </button>
+              </Button>
             </>
           )}
 
           {step === 'CONFIRM' && (
             <>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 data-testid="withdrawal-back-btn"
                 onClick={handleBackToWarning}
                 disabled={isSubmitting}
-                className="px-4 py-2 border border-border-subtle rounded-xl text-sm font-medium text-text-secondary hover:bg-slate-100 transition-colors disabled:opacity-50"
               >
                 Quay lại
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="destructive"
                 data-testid="confirm-withdraw-submit-btn"
                 onClick={handleExecuteWithdrawal}
                 disabled={!isAgreed || isSubmitting}
-                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                isLoading={isSubmitting}
               >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Đang xử lý...</span>
-                  </>
-                ) : (
-                  <span>Xác nhận rút cam kết</span>
-                )}
-              </button>
+                Xác nhận rút cam kết
+              </Button>
             </>
           )}
 
           {step === 'SUCCESS' && (
-            <button
+            <Button
               type="button"
+              variant="primary"
               data-testid="withdrawal-close-success-btn"
               onClick={onClose}
-              className="px-5 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
             >
               Đóng
-            </button>
+            </Button>
           )}
         </div>
       </div>

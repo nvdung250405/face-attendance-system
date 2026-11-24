@@ -23,7 +23,7 @@ export const useEmployeeManagement = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [totalElements, setTotalElements] = useState(0)
   const [page, setPage] = useState(0)
-  const pageSize = 10
+  const [pageSize, setPageSize] = useState(10)
 
   // Bộ lọc (WEB-F-05: STAB-004 useDebounce 350ms)
   const [keyword, setKeyword] = useState('')
@@ -80,7 +80,7 @@ export const useEmployeeManagement = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [page, debouncedKeyword, departmentFilter, statusFilter, roleFilter])
+  }, [page, pageSize, debouncedKeyword, departmentFilter, statusFilter, roleFilter])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -238,6 +238,7 @@ export const useEmployeeManagement = () => {
     totalElements,
     page,
     pageSize,
+    setPageSize,
     setPage,
     keyword,
     setKeyword,
