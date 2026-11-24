@@ -3,7 +3,7 @@
  * (BIZ-01, RFC-02, TASK-WEB-019).
  */
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Users,
   CheckCircle2,
@@ -63,15 +63,6 @@ export const BulkAdjustAttendanceModal: React.FC<BulkAdjustAttendanceModalProps>
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      const timer = timerRef.current
-      if (timer) clearTimeout(timer)
-    }
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

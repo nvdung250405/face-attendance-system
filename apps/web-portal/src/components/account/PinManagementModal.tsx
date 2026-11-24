@@ -58,21 +58,16 @@ const PinManagementDialog: React.FC<{
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => {
-      const stepTimer = stepTimerRef.current
-      const closeTimer = closeTimerRef.current
-      if (stepTimer) clearTimeout(stepTimer)
-      if (closeTimer) clearTimeout(closeTimer)
+      if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
     }
   }, [])
 
   const handleClose = () => {
     if (isLoading) return
     if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     onClose()
   }
 

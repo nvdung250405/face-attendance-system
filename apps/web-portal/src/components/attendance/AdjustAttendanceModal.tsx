@@ -8,7 +8,7 @@
  * - Timer cleanup khi unmount để tránh rò rỉ bộ nhớ
  */
 
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Edit3,
   CheckCircle2,
@@ -72,15 +72,6 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      const timer = timerRef.current
-      if (timer) clearTimeout(timer)
-    }
-  }, [])
 
   // Kiểm tra xem kỳ công chứa ngày này có đang bị LOCKED không
   const isDateLocked = useMemo(() => {
