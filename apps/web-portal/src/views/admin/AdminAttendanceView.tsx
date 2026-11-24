@@ -23,6 +23,7 @@ import {
   Radio,
   SlidersHorizontal,
   Pause,
+  Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { PaginationBar } from '@/components/ui/pagination-bar'
@@ -33,6 +34,7 @@ import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
 import { ExportReportModal } from '@/components/report'
 import {
   AdjustAttendanceModal,
+  BulkAdjustAttendanceModal,
   AttendanceFilterToolbar,
   useLiveAttendanceBuffer,
 } from '@/components/attendance'

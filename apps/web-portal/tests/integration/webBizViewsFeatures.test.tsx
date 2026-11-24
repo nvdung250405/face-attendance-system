@@ -60,6 +60,7 @@ describe('Web Portal Business Workflows and Responsive Views Suite', () => {
         {
           id: 1,
           shiftCode: 'CA_NGAY',
+          name: 'Ca Ngày Chuẩn',
           shiftName: 'Ca Ngày Chuẩn',
           startTime: '08:00',
           endTime: '17:00',
@@ -69,6 +70,7 @@ describe('Web Portal Business Workflows and Responsive Views Suite', () => {
         {
           id: 2,
           shiftCode: 'CA_DEM',
+          name: 'Ca Đêm Vắt Ngày',
           shiftName: 'Ca Đêm Vắt Ngày',
           startTime: '22:00',
           endTime: '06:00',
@@ -303,16 +305,16 @@ describe('Web Portal Business Workflows and Responsive Views Suite', () => {
         actorEmail: 'admin@fas.vn',
         targetResource: 'Shift #1',
         createdAt: '2026-10-15T10:00:00Z',
-        oldValues: JSON.stringify({
+        oldValues: {
           startTime: '08:00',
           gracePeriod: 15,
           deprecatedNote: 'Ghi chú cũ',
-        }),
-        newValues: JSON.stringify({
+        },
+        newValues: {
           startTime: '08:30',
           gracePeriod: 15,
           newPolicy: 'Chính sách mới',
-        }),
+        },
       }
 
       render(<AuditDiffModal selectedLogDetail={mockLog} onClose={vi.fn()} />)
@@ -338,6 +340,7 @@ describe('Web Portal Business Workflows and Responsive Views Suite', () => {
           employeeCode: 'NV-001',
           fullName: 'Nguyễn Văn A',
           email: 'a@fas.vn',
+          department: 'Engineering',
           role: 'EMPLOYEE',
           status: 'ACTIVE',
           hasBiometric: true,
@@ -359,6 +362,7 @@ describe('Web Portal Business Workflows and Responsive Views Suite', () => {
           employeeCode: 'NV-001',
           fullName: 'Nguyễn Văn A',
           email: 'a@fas.vn',
+          department: 'Engineering',
           role: 'EMPLOYEE',
           status: 'ACTIVE',
           hasBiometric: true,

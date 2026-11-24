@@ -4,7 +4,6 @@
  *  FINDING-A11Y-005, FINDING-A11Y-006, FINDING-A11Y-008, FINDING-A11Y-009)
  */
 
-import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -82,7 +81,7 @@ describe('Web Portal Accessibility & Design System Suite', () => {
         id: 'toast-1',
         type: 'info',
         message: 'Thông báo kiểm tra kích thước touch target',
-        durationMs: 5000,
+        duration: 5000,
       }
 
       render(<ToastCard toast={mockToast} />)
@@ -131,7 +130,7 @@ describe('Web Portal Accessibility & Design System Suite', () => {
         id: 'toast-err',
         type: 'error',
         message: 'Lỗi xác thực hệ thống nghiêm trọng',
-        durationMs: 5000,
+        duration: 5000,
       }
 
       render(<ToastCard toast={errorToast} />)
@@ -146,7 +145,7 @@ describe('Web Portal Accessibility & Design System Suite', () => {
         id: 'toast-suc',
         type: 'success',
         message: 'Thao tác hoàn thành xuất sắc',
-        durationMs: 5000,
+        duration: 5000,
       }
 
       render(<ToastCard toast={successToast} />)
@@ -198,6 +197,7 @@ describe('Web Portal Accessibility & Design System Suite', () => {
           employeeCode: 'NV-001',
           fullName: 'Test User',
           email: 'test@fas.vn',
+          department: 'IT',
           role: 'EMPLOYEE',
           status: 'ACTIVE',
           hasPin: false,
@@ -220,6 +220,7 @@ describe('Web Portal Accessibility & Design System Suite', () => {
           employeeCode: 'NV-001',
           fullName: 'Test User',
           email: 'test@fas.vn',
+          department: 'IT',
           role: 'EMPLOYEE',
           status: 'ACTIVE',
           hasPin: false,
