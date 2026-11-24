@@ -474,6 +474,55 @@ describe('Module Rút Consent & Trung tâm Thông báo (TASK-WEB-026)', () => {
       expect(screen.queryByTestId('drawer-unread-count-badge')).toBeNull()
       expect(notificationService.markAllAsRead).toHaveBeenCalledTimes(1)
     })
+
+    it('NotificationDrawer: hoàn tác đúng ID mục tiêu khi markAsRead thất bại và giữ lại thông báo STOMP đến đồng thời (F-SPEC-05)', async () => {
+      let rejectMark!: (reason?: unknown) => void
+      vi.spyOn(notificationService, 'markAsRead').mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            rejectMark = reject
+          })
+      )
+
+      const store = useNotificationStore.getState()
+      store.initUser(1042)
+      store.setNotifications(mockItems)
+      store.setIsOpen(true)
+
+      render(
+        <>
+          <Toaster />
+          <NotificationDrawer />
+        </>
+      )
+
+      // Click đánh dấu đã đọc 201 (unreadCount 2 -> 1)
+      fireEvent.click(screen.getByTestId('notification-item-201'))
+      expect(useNotificationStore.getState().unreadCount).toBe(1)
+
+      // Nhận thông báo STOMP mới 204 trong lúc API đang chạy
+      store.addNotification({
+        id: 204,
+        userId: 1042,
+        eventType: 'ATTENDANCE_PUNCH',
+        title: 'Thông báo STOMP đồng thời',
+        message: 'Vừa nhận được bản tin mới',
+        isRead: false,
+        createdAt: '2026-10-14T09:05:00.000+07:00',
+      })
+
+      // API thất bại
+      rejectMark(new Error('Network error'))
+
+      await waitFor(() => {
+        const state = useNotificationStore.getState()
+        expect(state.notifications.find((n) => n.id === 204)).toBeDefined()
+        expect(state.notifications.find((n) => n.id === 201)?.isRead).toBe(false)
+        expect(state.unreadCount).toBe(3)
+        expect(screen.getByTestId('notification-item-204')).toBeTruthy()
+        expect(screen.getByTestId('unread-dot-201')).toBeTruthy()
+      })
+    })
   })
 
   // ────────────────────────────────────────────────────────────────────────────

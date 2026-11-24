@@ -34,15 +34,15 @@ export function readSessionFromStorage(): AuthSession | null {
 }
 
 /**
- * Lưu phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003, SEC-002)
- * Lưu trữ refreshToken và thông tin người dùng; accessToken được lưu trong RAM Zustand.
+ * Lưu phiên an toàn qua SafeLocalStorage (DTD-WEB-001, DD-WEB-003, SEC-002, F-TECH-08)
+ * Lưu trữ thông tin người dùng; accessToken và refreshToken được lưu trong RAM Zustand.
  */
 export function writeSessionToStorage(session: AuthSession | null): void {
   if (session) {
-    // SEC-002: Exclude sensitive accessToken from localStorage to prevent DOM XSS theft.
-    // accessToken is preserved in Zustand in-memory RAM state.
+    // SEC-002 & F-TECH-08: Exclude sensitive accessToken and refreshToken from localStorage to prevent DOM XSS theft.
+    // Both tokens are strictly preserved in Zustand in-memory RAM state.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { accessToken: _, ...persistentSession } = session
+    const { accessToken: _a, refreshToken: _r, ...persistentSession } = session
     safeLocalStorage.setItem(AUTH_STORAGE_KEY, persistentSession)
   } else {
     safeLocalStorage.removeItem(AUTH_STORAGE_KEY)
@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
   return {
     session: initialSession,
     user: initialSession?.user ?? null,
-    isAuthenticated: Boolean((initialSession?.accessToken || initialSession?.refreshToken) && initialSession?.user),
+    isAuthenticated: Boolean(initialSession?.user),
     isInitialized: true,
 
     initialize: () => {

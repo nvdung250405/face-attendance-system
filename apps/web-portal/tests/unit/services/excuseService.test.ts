@@ -119,35 +119,7 @@ describe('ExcuseService (API-BE-026, API-BE-027, API-BE-028, API-BE-029)', () =>
     expect(res.content).toEqual([])
   })
 
-  it('4. decideExcuseRequest gọi PATCH /api/v1/admin/excuse-requests/{id} với APPROVED', async () => {
-    const mockApproved = {
-      id: 101,
-      status: 'APPROVED',
-      decidedByName: 'HR Manager',
-      decidedAt: '2026-10-18T10:00:00Z',
-    }
-
-    vi.spyOn(apiClient, 'patch').mockResolvedValueOnce({
-      data: {
-        success: true,
-        code: 'EXCUSE_REQUEST_APPROVED',
-        data: mockApproved,
-      },
-    })
-
-    const res = await excuseService.decideExcuseRequest(101, {
-      status: 'APPROVED',
-      reviewNote: 'Duyệt điều chỉnh',
-    })
-
-    expect(apiClient.patch).toHaveBeenCalledWith('/api/v1/admin/excuse-requests/101', {
-      status: 'APPROVED',
-      reviewNote: 'Duyệt điều chỉnh',
-    })
-    expect(res.status).toBe('APPROVED')
-  })
-
-  it('5. approveExcuseRequest gọi POST /api/v1/admin/excuse-requests/{id}/approve', async () => {
+  it('4. approveExcuseRequest gọi POST /api/v1/admin/excuse-requests/{id}/approve', async () => {
     vi.spyOn(apiClient, 'post').mockResolvedValueOnce({
       data: {
         success: true,
@@ -163,7 +135,7 @@ describe('ExcuseService (API-BE-026, API-BE-027, API-BE-028, API-BE-029)', () =>
     expect(res.status).toBe('APPROVED')
   })
 
-  it('6. rejectExcuseRequest gọi POST /api/v1/admin/excuse-requests/{id}/reject', async () => {
+  it('5. rejectExcuseRequest gọi POST /api/v1/admin/excuse-requests/{id}/reject', async () => {
     vi.spyOn(apiClient, 'post').mockResolvedValueOnce({
       data: {
         success: true,

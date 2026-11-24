@@ -122,4 +122,33 @@ describe('ShiftAdminService - Batch Assign Shifts (TASK-BE-042 / TASK-WEB-034)',
     expect(result.failedCount).toBe(1)
     expect(result.failures[0].employeeName).toBe('Nhân viên Fallback')
   })
+
+  it('3. assignShiftBatch hỗ trợ các trường chuẩn userIds, effectiveFrom, effectiveTo (F-SPEC-07)', async () => {
+    const postSpy = vi.spyOn(apiClient, 'post').mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          total: 1,
+          successCount: 1,
+          failedCount: 0,
+          failures: [],
+          assignments: [],
+        },
+      },
+    })
+
+    await shiftAdminService.assignShiftBatch({
+      userIds: [201],
+      shiftId: 5,
+      effectiveFrom: '2026-05-01',
+      effectiveTo: '2026-05-31',
+    })
+
+    expect(postSpy).toHaveBeenCalledWith('/api/v1/admin/employee-shifts/batch', {
+      userIds: [201],
+      shiftId: 5,
+      effectiveFrom: '2026-05-01',
+      effectiveTo: '2026-05-31',
+    })
+  })
 })

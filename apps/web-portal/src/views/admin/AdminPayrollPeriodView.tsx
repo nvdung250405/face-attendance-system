@@ -13,8 +13,6 @@ import {
   Lock,
   Unlock,
   Calendar,
-  AlertTriangle,
-  X,
   RotateCw,
   Download,
 } from 'lucide-react'
@@ -64,12 +62,6 @@ export const AdminPayrollPeriodView: React.FC = () => {
     return memoizedPeriods.slice(start, start + pageSize)
   }, [memoizedPeriods, safePage, pageSize])
 
-  // Thông báo phản hồi
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error' | 'warning'
-    message: string
-  } | null>(null)
-
   // Modal Chốt kỳ công (Lock Modal)
   const [periodToLock, setPeriodToLock] = useState<PayrollPeriodResponse | null>(null)
   const [isLocking, setIsLocking] = useState<boolean>(false)
@@ -86,10 +78,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
       setPeriods(data || [])
     } catch (err) {
       const error = err as NormalizedApiError
-      setNotification({
-        type: 'error',
-        message: error.message || 'Không thể tải danh sách kỳ công.',
-      })
+      toast.error(error.message || 'Không thể tải danh sách kỳ công.')
     } finally {
       setIsLoading(false)
     }
@@ -124,10 +113,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
       setPeriodToLock(null)
     } catch (err) {
       const error = err as NormalizedApiError
-      setNotification({
-        type: 'error',
-        message: error.message || 'Không thể chốt kỳ công. Vui lòng kiểm tra lại.',
-      })
+      toast.error(error.message || 'Không thể chốt kỳ công. Vui lòng kiểm tra lại.')
     } finally {
       setIsLocking(false)
     }
@@ -154,10 +140,7 @@ export const AdminPayrollPeriodView: React.FC = () => {
       setPeriodToUnlock(null)
     } catch (err) {
       const error = err as NormalizedApiError
-      setNotification({
-        type: 'error',
-        message: error.message || 'Không thể mở lại kỳ công. Vui lòng thử lại.',
-      })
+      toast.error(error.message || 'Không thể mở lại kỳ công. Vui lòng thử lại.')
       throw error
     } finally {
       setIsUnlocking(false)
@@ -273,31 +256,6 @@ export const AdminPayrollPeriodView: React.FC = () => {
               Toàn bộ các nút duyệt đơn, phân ca và điều chỉnh công của kỳ này đang bị vô hiệu hóa trên toàn hệ thống.
             </p>
           </div>
-        </div>
-      )}
-
-      {/* Thông báo thao tác lỗi / cảnh báo */}
-      {notification && notification.type !== 'success' && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-medium shadow-xs ${
-            notification.type === 'warning'
-              ? 'bg-amber-50 text-amber-800 border-amber-200'
-              : 'bg-rose-50 text-rose-800 border-rose-200'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>{notification.message}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setNotification(null)}
-            className="text-slate-400 hover:text-slate-600"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
         </div>
       )}
 

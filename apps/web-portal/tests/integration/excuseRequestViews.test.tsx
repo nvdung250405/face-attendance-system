@@ -88,6 +88,45 @@ describe('Phân Hệ Giải Trình Công (UI & Consumer Integration)', () => {
         expect(screen.getByTestId('excuse-reason-input')).toBeTruthy()
       })
     })
+
+    it('làm sạch thẻ HTML và script trong lý do giải trình và lý do từ chối (F-TECH-11)', async () => {
+      vi.spyOn(excuseService, 'getMyExcuseRequests').mockResolvedValueOnce({
+        content: [
+          {
+            ...mockExcuseItem,
+            id: 88,
+            status: 'REJECTED',
+            reason: '<b>Sick</b><script>alert(1)</script>',
+            rejectionReason: '<b>Missing proof</b> &amp; invalid',
+            decidedByName: 'Admin',
+            decidedAt: '2026-10-18T10:00:00Z',
+          },
+        ],
+        totalElements: 1,
+        totalPages: 1,
+        size: 10,
+        page: 0,
+        first: true,
+        last: true,
+      })
+
+      render(
+        <MemoryRouter>
+          <EmployeeExcuseHistoryView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('#88')).toBeTruthy()
+      })
+
+      const tableText = screen.getByTestId('employee-excuses-table').textContent || ''
+      expect(tableText).toContain('Sick')
+      expect(tableText).toContain('Missing proof & invalid')
+      expect(tableText).not.toContain('<b>')
+      expect(tableText).not.toContain('<script>')
+      expect(tableText).not.toContain('alert(1)')
+    })
   })
 
   describe('2. SubmitExcuseModal (API-BE-026)', () => {
@@ -207,6 +246,10 @@ describe('Phân Hệ Giải Trình Công (UI & Consumer Integration)', () => {
       await waitFor(() => {
         expect(screen.getByTestId('approve-btn-101')).toBeTruthy()
       })
+
+      // F-TECH-14: Kiểm tra aria-label mang ngữ cảnh tên nhân viên
+      expect(screen.getByTestId('approve-btn-101').getAttribute('aria-label')).toContain('Phê duyệt đơn giải trình của')
+      expect(screen.getByTestId('reject-btn-101').getAttribute('aria-label')).toContain('Từ chối đơn giải trình của')
 
       fireEvent.click(screen.getByTestId('approve-btn-101'))
 

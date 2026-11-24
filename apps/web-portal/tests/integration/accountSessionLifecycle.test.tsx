@@ -610,8 +610,9 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
         </MemoryRouter>
       )
 
-      // Mở dropdown avatar
+      // Mở dropdown avatar (mô phỏng pointerdown + click như trình duyệt thực)
       const avatarBtn = screen.getByRole('button', { name: /Nguyễn Quản Trị Nhân Sự/i })
+      fireEvent.pointerDown(avatarBtn, { button: 0, ctrlKey: false })
       fireEvent.click(avatarBtn)
 
       // Nút Đổi mật khẩu
@@ -634,6 +635,7 @@ describe('Module Vòng đời Tài khoản & Phiên (TASK-WEB-024, BLD-WEB-018)'
       )
 
       const avatarBtn = screen.getByRole('button', { name: /Nguyễn Quản Trị Nhân Sự/i })
+      fireEvent.pointerDown(avatarBtn, { button: 0, ctrlKey: false })
       fireEvent.click(avatarBtn)
 
       const logoutBtn = screen.getByRole('menuitem', { name: /Đăng xuất/i })

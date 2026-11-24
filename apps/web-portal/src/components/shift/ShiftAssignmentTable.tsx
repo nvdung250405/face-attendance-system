@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { Trash2 } from 'lucide-react'
 import { PaginationBar } from '@/components/ui/pagination-bar'
 import { TableSkeleton } from '@/components/ui/table-skeleton'
+import { isOvernightShift } from '@/utils/date'
 import type { EmployeeShiftAssignment, ShiftItem } from '@/types'
 
 export interface ShiftAssignmentTableProps {
@@ -106,7 +107,20 @@ export const ShiftAssignmentTable: React.FC<ShiftAssignmentTableProps> = ({
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-text-secondary text-xs font-mono">
-                      {matchedShift ? `${matchedShift.startTime} - ${matchedShift.endTime}` : 'Theo ca'}
+                      <div className="inline-flex items-center gap-1.5 flex-wrap">
+                        <span>{matchedShift ? `${matchedShift.startTime} - ${matchedShift.endTime}` : 'Theo ca'}</span>
+                        {matchedShift &&
+                          (Boolean(matchedShift.isOvernight) ||
+                            isOvernightShift(matchedShift.startTime, matchedShift.endTime)) && (
+                            <span
+                              data-testid={`overnight-badge-${item.id}`}
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+                              title="Ca làm việc qua đêm (kết thúc vào ngày hôm sau)"
+                            >
+                              +1 ngày
+                            </span>
+                          )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 font-mono text-text-secondary text-xs">
                       {item.effectiveStartDate || item.effectiveFrom || '—'}

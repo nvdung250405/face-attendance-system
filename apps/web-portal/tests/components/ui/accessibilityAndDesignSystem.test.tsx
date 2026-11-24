@@ -18,6 +18,13 @@ import { ToastCard } from '@/components/ui/toast'
 import { PaginationBar } from '@/components/ui/pagination-bar'
 import { LoginView } from '@/views/auth/LoginView'
 import { PinManagementModal } from '@/components/account/PinManagementModal'
+import { ChangePasswordModal } from '@/components/account/ChangePasswordModal'
+import { AuditDiffModal } from '@/components/compliance/AuditDiffModal'
+import { SubmitExcuseModal } from '@/components/excuse/SubmitExcuseModal'
+import { excuseService } from '@/services/excuseService'
+import { AdminAuditLogView } from '@/views/admin/AdminAuditLogView'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { AdminShellLayout } from '@/components/layout/AdminShellLayout'
 import { apiClient } from '@/services/apiClient'
 import { useAuthStore } from '@/store/authStore'
 import type { ToastItem } from '@/store/toastStore'
@@ -120,6 +127,45 @@ describe('Web Portal Accessibility & Design System Suite', () => {
       expect(prevBtn.className).toContain('focus-visible:ring-2')
       expect(nextBtn.className).toContain('focus-visible:ring-2')
       expect(sizeSelect.className).toContain('focus-visible:ring-2')
+    })
+
+    it('nút đổi trạng thái hiển thị mật khẩu trong ChangePasswordModal đáp ứng touch target >= 44x44px và focus visible ring (F-TECH-15)', () => {
+      render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} />)
+
+      const toggleButtons = [
+        screen.getByRole('button', { name: /Hiện mật khẩu hiện tại/i }),
+        screen.getByRole('button', { name: /Hiện mật khẩu mới/i }),
+        screen.getByRole('button', { name: /Hiện xác nhận mật khẩu/i }),
+      ]
+
+      toggleButtons.forEach((btn) => {
+        expect(btn.className).toContain('min-w-[44px]')
+        expect(btn.className).toContain('min-h-[44px]')
+        expect(btn.className).toContain('focus-visible:ring-2')
+        expect(btn.className).toContain('focus-visible:ring-indigo-600')
+        expect(btn.className).toContain('focus-visible:ring-offset-2')
+      })
+    })
+
+    it('nút đóng AuditDiffModal đáp ứng touch target >= 44x44px và focus visible ring (F-TECH-15)', () => {
+      render(
+        <AuditDiffModal
+          selectedLogDetail={{
+            id: 99,
+            action: 'LOGIN',
+            targetResource: 'User',
+            actorEmail: 'admin@company.com',
+            createdAt: '2026-11-24T12:00:00Z',
+          }}
+          onClose={vi.fn()}
+        />
+      )
+
+      const dismissBtn = screen.getByRole('button', { name: 'Đóng hộp thoại' })
+      expect(dismissBtn.className).toContain('min-w-[44px]')
+      expect(dismissBtn.className).toContain('min-h-[44px]')
+      expect(dismissBtn.className).toContain('focus-visible:ring-2')
+      expect(dismissBtn.className).toContain('focus-visible:ring-indigo-600')
     })
   })
 
@@ -252,7 +298,7 @@ describe('Web Portal Accessibility & Design System Suite', () => {
       expect(passwordInput.getAttribute('autocomplete')).toBe('current-password')
     })
 
-    it('gán cờ aria-invalid="true" khi phát hiện lỗi đăng nhập', async () => {
+    it('gán cờ aria-invalid="true" và liên kết aria-describedby khi phát hiện lỗi đăng nhập (F-TECH-16)', async () => {
       vi.spyOn(apiClient, 'post').mockRejectedValueOnce({
         isAxiosError: true,
         response: {
@@ -272,6 +318,8 @@ describe('Web Portal Accessibility & Design System Suite', () => {
 
       expect(emailInput.getAttribute('aria-invalid')).toBe('false')
       expect(passwordInput.getAttribute('aria-invalid')).toBe('false')
+      expect(emailInput.getAttribute('aria-describedby')).toBeNull()
+      expect(passwordInput.getAttribute('aria-describedby')).toBeNull()
 
       fireEvent.change(emailInput, { target: { value: 'notfound@company.com' } })
       fireEvent.change(passwordInput, { target: { value: 'secret' } })
@@ -280,7 +328,131 @@ describe('Web Portal Accessibility & Design System Suite', () => {
       await waitFor(() => {
         expect(emailInput.getAttribute('aria-invalid')).toBe('true')
         expect(passwordInput.getAttribute('aria-invalid')).toBe('true')
+        expect(emailInput.getAttribute('aria-describedby')).toBe('login-error-alert')
+        expect(passwordInput.getAttribute('aria-describedby')).toBe('login-error-alert')
+        expect(screen.getByRole('alert').getAttribute('id')).toBe('login-error-alert')
       })
+    })
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  describe('6. F-TECH-13 (Radix Accessible Tabs & ARIA Semantics)', () => {
+    it('AdminAuditLogView sử dụng WAI-ARIA tablist, tab và tabpanel với Radix Tabs', async () => {
+      render(
+        <MemoryRouter>
+          <AdminAuditLogView />
+        </MemoryRouter>
+      )
+
+      const tablist = screen.getByRole('tablist', { name: /Các danh mục kiểm toán và tuân thủ DPO/i })
+      expect(tablist).toBeTruthy()
+
+      const tabs = screen.getAllByRole('tab')
+      expect(tabs.length).toBe(5)
+
+      // Tab đầu tiên active
+      expect(tabs[0].getAttribute('aria-selected')).toBe('true')
+      expect(screen.getByRole('tabpanel')).toBeTruthy()
+    })
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  describe('7. F-TECH-16 (Form Error Linking via aria-describedby in SubmitExcuseModal)', () => {
+    it('SubmitExcuseModal liên kết textarea lý do với thông báo lỗi qua aria-describedby và aria-invalid', async () => {
+      vi.spyOn(excuseService, 'submitExcuseRequest').mockRejectedValueOnce({
+        message: 'Lý do giải trình không được để trống.',
+      })
+
+      render(
+        <SubmitExcuseModal
+          isOpen={true}
+          onClose={vi.fn()}
+          attendanceLogId={101}
+          attendanceDate="2026-11-24"
+        />
+      )
+
+      const reasonTextarea = screen.getByTestId('excuse-reason-input')
+      expect(reasonTextarea.getAttribute('aria-invalid')).toBe('false')
+      expect(reasonTextarea.getAttribute('aria-describedby')).toBeNull()
+
+      fireEvent.change(reasonTextarea, { target: { value: 'Đi trễ vì kẹt xe' } })
+      fireEvent.click(screen.getByTestId('submit-excuse-btn'))
+
+      await waitFor(() => {
+        const errorAlert = screen.getByRole('alert')
+        expect(errorAlert.getAttribute('id')).toBe('excuse-error-message')
+        expect(reasonTextarea.getAttribute('aria-invalid')).toBe('true')
+        expect(reasonTextarea.getAttribute('aria-describedby')).toBe('excuse-error-message')
+      })
+    })
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  describe('8. F-TECH-17 (Mobile Navigation Auto-Close & Escape Dismissal)', () => {
+    it('Sidebar tự động đóng khi click link trên màn hình mobile < 768px', () => {
+      useAuthStore.setState({
+        user: {
+          id: 1,
+          employeeCode: 'EMP-001',
+          fullName: 'Quản trị viên',
+          email: 'admin@company.com',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          department: 'IT',
+        },
+        isAuthenticated: true,
+      })
+
+      const onToggleCollapse = vi.fn()
+      window.innerWidth = 500
+
+      render(
+        <MemoryRouter initialEntries={['/admin/dashboard']}>
+          <Sidebar collapsed={false} onToggleCollapse={onToggleCollapse} />
+        </MemoryRouter>
+      )
+
+      const navLink = screen.getByRole('link', { name: /Lịch sử điểm danh/i })
+      fireEvent.click(navLink)
+
+      expect(onToggleCollapse).toHaveBeenCalledTimes(1)
+    })
+
+    it('AdminShellLayout đóng mobile navigation drawer khi nhấn phím Escape', () => {
+      useAuthStore.setState({
+        user: {
+          id: 1,
+          employeeCode: 'EMP-001',
+          fullName: 'Quản trị viên',
+          email: 'admin@company.com',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          department: 'IT',
+        },
+        isAuthenticated: true,
+      })
+
+      window.innerWidth = 500
+
+      render(
+        <MemoryRouter initialEntries={['/admin/dashboard']}>
+          <AdminShellLayout />
+        </MemoryRouter>
+      )
+
+      // Mở sidebar trên mobile (toggle)
+      const toggleBtn = screen.getByTestId('header-mobile-menu')
+      fireEvent.click(toggleBtn)
+
+      // Kiểm tra mobile overlay xuất hiện
+      expect(screen.getByTestId('mobile-overlay')).toBeTruthy()
+
+      // Nhấn Escape trên window
+      fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' })
+
+      // mobile-overlay biến mất
+      expect(screen.queryByTestId('mobile-overlay')).toBeNull()
     })
   })
 })

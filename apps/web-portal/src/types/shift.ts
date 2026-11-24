@@ -78,10 +78,14 @@ export interface OverlapConflictInfo {
   readonly message?: string
 }
 export interface BatchAssignShiftRequest {
-  employeeIds: number[]
+  userIds?: number[]
   shiftId: number
-  effectiveStartDate: string
-  effectiveEndDate: string
+  effectiveFrom?: string
+  effectiveTo?: string
+  // Legacy aliases for backward compatibility (F-SPEC-07)
+  employeeIds?: number[]
+  effectiveStartDate?: string
+  effectiveEndDate?: string
 }
 
 export interface BatchAssignResult {

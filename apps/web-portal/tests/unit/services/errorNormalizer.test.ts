@@ -211,4 +211,30 @@ describe('errorNormalizer - Chuẩn hóa lỗi API (TASK-WEB-023)', () => {
     expect(normalized.code).toBe('CLIENT_ERROR')
     expect(normalized.message).toBe('Lỗi logic client')
   })
+
+  it('10. Che giấu chi tiết lỗi cơ sở dữ liệu trên HTTP 500 khi không ở chế độ DEV (F-SPEC-06)', () => {
+    const originalDev = import.meta.env.DEV
+    try {
+      import.meta.env.DEV = false
+
+      const headers = new AxiosHeaders()
+      const error = new AxiosError('Internal Error', 'ERR_BAD_RESPONSE', undefined, undefined, {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers,
+        config: { headers },
+        data: {
+          detail: 'org.postgresql.util.PSQLException: Connection reset by peer',
+          message: 'Internal SQL Error',
+        },
+      })
+
+      const normalized = normalizeApiError(error)
+      expect(normalized.statusCode).toBe(500)
+      expect(normalized.message).toBe('Máy chủ gặp sự cố trong quá trình xử lý. Vui lòng thử lại sau.')
+      expect(normalized.detail).toBe('org.postgresql.util.PSQLException: Connection reset by peer')
+    } finally {
+      import.meta.env.DEV = originalDev
+    }
+  })
 })

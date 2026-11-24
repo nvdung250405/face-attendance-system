@@ -41,6 +41,20 @@ export const AdminShellLayout: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Đóng mobile navigation drawer khi nhấn phím Escape (F-TECH-17)
+  useEffect(() => {
+    if (collapsed) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setCollapsed(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [collapsed])
+
   // Khởi động kết nối STOMP singleton và đồng bộ trạng thái vào stompConnectionStore
   // để TopHeader hiển thị chỉ báo kết nối Kiosk Live (TASK-WEB-018)
   useStompClient({ autoConnect: true })

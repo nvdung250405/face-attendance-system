@@ -282,6 +282,25 @@ describe('Master-Detail Slide-over Detail Drawers', () => {
       expect(screen.getByText(/Đã từ chối bởi: Trần Quản Lý/)).toBeDefined()
       expect(screen.getByText(/Không có minh chứng hợp lệ đi kèm/)).toBeDefined()
     })
+
+    it('không render thẻ <a> hoặc <img> khi proofUrl chứa scheme độc hại như javascript: (F-SPEC-13)', () => {
+      const maliciousExcuse: ExcuseRequestDetail = {
+        ...mockPendingExcuse,
+        proofUrl: 'javascript:alert(1)',
+      }
+
+      render(
+        <ExcuseDetailDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          request={maliciousExcuse}
+        />
+      )
+
+      expect(screen.queryByText('Mở toàn màn hình')).toBeNull()
+      expect(screen.queryByAltText('Minh chứng giải trình')).toBeNull()
+      expect(screen.getByText('Không có tệp minh chứng đính kèm.')).toBeDefined()
+    })
   })
 
   describe('4. KioskDetailDrawer', () => {

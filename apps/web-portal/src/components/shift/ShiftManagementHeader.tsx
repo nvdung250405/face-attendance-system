@@ -52,7 +52,6 @@ export const ShiftManagementHeader: React.FC<ShiftManagementHeaderProps> = ({
             variant="primary"
             size="sm"
             onClick={onOpenCreateShift}
-            disabled={isAdjustmentLocked}
             data-testid="open-create-shift-drawer-btn"
             leftIcon={<Plus className="w-4 h-4" />}
           >

@@ -1,17 +1,31 @@
 import React from 'react'
-import { TableSkeleton } from '@/components/ui'
+import { TableSkeleton, PaginationBar } from '@/components/ui'
 import { formatDateTime } from '@/utils/date'
 import type { DpoConsentWithdrawalItem } from '@/types'
 
 interface DpoConsentWithdrawalsTableProps {
   dpoWithdrawals: DpoConsentWithdrawalItem[]
   isWithdrawalsLoading: boolean
+  page?: number
+  pageSize?: number
+  totalElements?: number
+  totalPages?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (size: number) => void
 }
 
 export const DpoConsentWithdrawalsTable: React.FC<DpoConsentWithdrawalsTableProps> = ({
   dpoWithdrawals,
   isWithdrawalsLoading,
+  page = 0,
+  pageSize = 20,
+  totalElements,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
 }) => {
+  const effectiveTotal = totalElements ?? dpoWithdrawals.length
+  const effectiveTotalPages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
   return (
     <div className="space-y-4">
       {/* ── Banner Quy định 20 Ngày Tiêu Hủy Khi Rút Consent ── */}
@@ -104,6 +118,18 @@ export const DpoConsentWithdrawalsTable: React.FC<DpoConsentWithdrawalsTableProp
             </tbody>
           </table>
         </div>
+
+        {/* Phân trang DPO Withdrawals (F-SPEC-04) */}
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          totalElements={effectiveTotal}
+          totalPages={effectiveTotalPages}
+          onPageChange={onPageChange ?? (() => {})}
+          onPageSizeChange={onPageSizeChange}
+          pageSizeOptions={[10, 20, 50, 100]}
+          itemLabel="yêu cầu"
+        />
       </div>
     </div>
   )

@@ -11,42 +11,58 @@ import type { ApiResponse, ConsentRequest, ConsentResult, ConsentFlowSession } f
 export const CONSENT_ENDPOINT = '/api/v1/employee/consent'
 
 export class ConsentService {
+  private inMemorySession: ConsentFlowSession | null = null
+
   /**
-   * Đọc phiên ký cam kết tạm thời từ SessionStorage nếu còn hạn
+   * Đọc phiên ký cam kết tạm thời từ RAM nếu còn hạn (F-TECH-09: OTP & QR code lưu trong RAM, không lưu trong SessionStorage)
    */
   getStoredConsentSession(): ConsentFlowSession | null {
     try {
-      const session = safeSessionStorage.getItem<ConsentFlowSession>(STORAGE_KEYS.CONSENT_SESSION)
-      if (!session || !session.otp) {
+      // Đồng bộ nếu sessionStorage đã bị xóa sạch (ví dụ: đăng xuất hoặc reset phiên)
+      const storageMarker = safeSessionStorage.getItem<{ consentSigned?: boolean; expiresAt?: string }>(
+        STORAGE_KEYS.CONSENT_SESSION
+      )
+      if (!storageMarker) {
+        this.inMemorySession = null
+        return null
+      }
+
+      if (!this.inMemorySession || !this.inMemorySession.otp) {
         return null
       }
 
       // Kiểm tra hạn sử dụng nếu có
-      if (session.expiresAt) {
-        const expiresTime = new Date(session.expiresAt).getTime()
+      if (this.inMemorySession.expiresAt) {
+        const expiresTime = new Date(this.inMemorySession.expiresAt).getTime()
         if (!isNaN(expiresTime) && Date.now() > expiresTime) {
           this.clearConsentSession()
           return null
         }
       }
 
-      return session
+      return this.inMemorySession
     } catch {
       return null
     }
   }
 
   /**
-   * Lưu phiên ký cam kết tạm thời vào SessionStorage
+   * Lưu phiên ký cam kết: Dữ liệu nhạy cảm (OTP, QR code) lưu trong RAM;
+   * SessionStorage chỉ lưu cờ metadata không nhạy cảm (F-TECH-09)
    */
   storeConsentSession(data: ConsentFlowSession): void {
-    safeSessionStorage.setItem(STORAGE_KEYS.CONSENT_SESSION, data)
+    this.inMemorySession = data
+    safeSessionStorage.setItem(STORAGE_KEYS.CONSENT_SESSION, {
+      consentSigned: data.consentSigned,
+      expiresAt: data.expiresAt,
+    })
   }
 
   /**
-   * Xóa sạch phiên ký cam kết tạm thời khỏi SessionStorage
+   * Xóa sạch phiên ký cam kết tạm thời khỏi cả RAM lẫn SessionStorage
    */
   clearConsentSession(): void {
+    this.inMemorySession = null
     safeSessionStorage.removeItem(STORAGE_KEYS.CONSENT_SESSION)
   }
 

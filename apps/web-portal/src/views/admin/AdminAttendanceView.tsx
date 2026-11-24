@@ -12,7 +12,8 @@
  * 7. EXP3-11: Khai báo status & verificationMethod theo Union Type chuẩn.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   History,
   RotateCw,
@@ -28,7 +29,11 @@ import {
 import { Button } from '@/components/ui'
 import { PaginationBar } from '@/components/ui/pagination-bar'
 import { useDebounce } from '@/hooks'
-import { attendanceService } from '@/services/attendanceService'
+import { attendanceKeys } from '@/services/queryClient'
+import {
+  useAttendanceStatsQuery,
+  useAdminAttendanceQuery,
+} from '@/services/hooks/useAttendanceQueries'
 import { normalizeApiError } from '@/services/errorNormalizer'
 import { reportExportService } from '@/services/reportExportService'
 import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
@@ -42,15 +47,16 @@ import {
 import type { AttendanceRecord, AttendanceStatus, AttendanceStats, VerificationMethod } from '@/types'
 
 export const AdminAttendanceView: React.FC = () => {
+  const queryClient = useQueryClient()
+
   // Dữ liệu bảng chấm công & Thống kê
   const [stats, setStats] = useState<AttendanceStats | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
   const [recordToAdjust, setRecordToAdjust] = useState<AttendanceRecord | null>(null)
   const [selectedRecordIds, setSelectedRecordIds] = useState<number[]>([])
   const [isBulkAdjustModalOpen, setIsBulkAdjustModalOpen] = useState<boolean>(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [dismissedError, setDismissedError] = useState<boolean>(false)
 
   // Bộ lọc tìm kiếm (EXP3-11: Union Types, STAB-004: useDebounce 350ms)
   const [keyword, setKeyword] = useState<string>('')
@@ -65,6 +71,34 @@ export const AdminAttendanceView: React.FC = () => {
   const [page, setPage] = useState<number>(0)
   const [pageSize, setPageSize] = useState<number>(50)
   const [totalElements, setTotalElements] = useState<number>(0)
+
+  const attendanceParams = useMemo(
+    () => ({
+      page,
+      size: pageSize,
+      keyword: debouncedKeyword.trim() || undefined,
+      department: department || undefined,
+      status: status || undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+    }),
+    [page, pageSize, debouncedKeyword, department, status, fromDate, toDate]
+  )
+
+  const attendanceQuery = useAdminAttendanceQuery(attendanceParams)
+  const statsQuery = useAttendanceStatsQuery()
+  const isLoading = attendanceQuery.isPending || attendanceQuery.isFetching
+  const errorMessage =
+    !dismissedError && attendanceQuery.isError
+      ? normalizeApiError(attendanceQuery.error).message || 'Không thể tải danh sách điểm danh.'
+      : null
+
+  const shouldSyncFromQueryRef = useRef<boolean>(true)
+  useEffect(() => {
+    shouldSyncFromQueryRef.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDismissedError(false)
+  }, [attendanceParams])
 
   // Kiểm tra một bản ghi STOMP có khớp bộ lọc hiện hành hay không (WEB-F-11: PERF-003 dùng debouncedKeyword)
   const recordMatchesFilters = useCallback(
@@ -89,24 +123,31 @@ export const AdminAttendanceView: React.FC = () => {
   )
 
   // Callback tăng KPI khi có lượt quẹt mới
-  const handleStatsIncrement = useCallback((newRecord: AttendanceRecord) => {
-    setStats((prev) => {
-      if (!prev) return prev
-      const total = prev.totalEmployees ?? 0
-      const newPresent = prev.presentCount + 1
-      const newOnTime =
-        newRecord.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount
-      const newLate =
-        newRecord.status === 'LATE' ? prev.lateCount + 1 : prev.lateCount
-      return {
-        ...prev,
-        presentCount: newPresent,
-        onTimeCount: newOnTime,
-        lateCount: newLate,
-        absentCount: Math.max(0, total - newPresent),
+  const handleStatsIncrement = useCallback(
+    (newRecord: AttendanceRecord) => {
+      const liveCache = queryClient.getQueryData<AttendanceRecord[]>(attendanceKeys.live())
+      if (liveCache?.some((r) => r.recordId === newRecord.recordId)) {
+        return
       }
-    })
-  }, [])
+      setStats((prev) => {
+        if (!prev) return prev
+        const total = prev.totalEmployees ?? 0
+        const newPresent = prev.presentCount + 1
+        const newOnTime =
+          newRecord.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount
+        const newLate =
+          newRecord.status === 'LATE' ? prev.lateCount + 1 : prev.lateCount
+        return {
+          ...prev,
+          presentCount: newPresent,
+          onTimeCount: newOnTime,
+          lateCount: newLate,
+          absentCount: Math.max(0, total - newPresent),
+        }
+      })
+    },
+    [queryClient]
+  )
 
   const handleRecordAdded = useCallback(() => {
     setTotalElements((prev) => prev + 1)
@@ -128,43 +169,39 @@ export const AdminAttendanceView: React.FC = () => {
     onRecordAdded: handleRecordAdded,
   })
 
-  // Tải dữ liệu từ REST API
-  const fetchAttendanceData = useCallback(async () => {
-    try {
-      const [pageData, statsData] = await Promise.allSettled([
-        attendanceService.getAdminAttendance({
-          page,
-          size: pageSize,
-          keyword: debouncedKeyword.trim() || undefined,
-          department: department || undefined,
-          status: status || undefined,
-          fromDate: fromDate || undefined,
-          toDate: toDate || undefined,
-        }),
-        attendanceService.getAttendanceStats(),
-      ])
-
-      setErrorMessage(null)
-      if (pageData.status === 'fulfilled' && pageData.value) {
-        setRecords(pageData.value.content || [])
-        setTotalElements(pageData.value.totalElements || 0)
-      } else if (pageData.status === 'rejected') {
-        const err = normalizeApiError(pageData.reason)
-        setErrorMessage(err.message || 'Không thể tải danh sách điểm danh.')
-      }
-
-      if (statsData.status === 'fulfilled' && statsData.value) {
-        setStats(statsData.value)
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [page, pageSize, debouncedKeyword, department, status, fromDate, toDate, setRecords])
-
-  // Tái sử dụng fetchAttendanceData trực tiếp trong useEffect (EXP1-15, EXP3-08, PERF-03)
+  // Đồng bộ dữ liệu từ TanStack Query vào buffer bảng chấm công (F-TECH-01)
   useEffect(() => {
-    void fetchAttendanceData()
-  }, [fetchAttendanceData])
+    if (attendanceQuery.data && shouldSyncFromQueryRef.current) {
+      shouldSyncFromQueryRef.current = false
+      setRecords(attendanceQuery.data.content || [])
+      setTotalElements(attendanceQuery.data.totalElements || 0)
+    }
+  }, [attendanceQuery.data, setRecords])
+
+  useEffect(() => {
+    if (statsQuery.data) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStats(statsQuery.data)
+    }
+  }, [statsQuery.data])
+
+  // Làm mới dữ liệu từ REST API thông qua TanStack Query
+  const fetchAttendanceData = useCallback(async () => {
+    setDismissedError(false)
+    shouldSyncFromQueryRef.current = true
+    const [pageResult, statsResult] = await Promise.allSettled([
+      attendanceQuery.refetch(),
+      statsQuery.refetch(),
+    ])
+    if (pageResult.status === 'fulfilled' && pageResult.value.data) {
+      shouldSyncFromQueryRef.current = false
+      setRecords(pageResult.value.data.content || [])
+      setTotalElements(pageResult.value.data.totalElements || 0)
+    }
+    if (statsResult.status === 'fulfilled' && statsResult.value.data) {
+      setStats(statsResult.value.data)
+    }
+  }, [attendanceQuery, statsQuery, setRecords])
 
   // Lọc cục bộ theo phương thức xác thực nếu có (EXP3-02: Memoized)
   const displayRecords = useMemo(() => {
@@ -194,7 +231,10 @@ export const AdminAttendanceView: React.FC = () => {
   const faceRecognitionRatio = useMemo(() => {
     if (records.length === 0) return '100%'
     const faceCount = records.filter(
-      (r) => r.verificationMethod === 'VERIFICATION_FACE' || r.verificationMethod === 'FACE_MATCH'
+      (r) =>
+        r.verificationMethod === 'VERIFICATION_FACE' ||
+        r.verificationMethod === 'FACE_MATCH' ||
+        r.verificationMethod === 'ARCFACE_512D'
     ).length
     return `${Math.round((faceCount / records.length) * 100)}%`
   }, [records])
@@ -564,7 +604,7 @@ export const AdminAttendanceView: React.FC = () => {
           <span>{errorMessage}</span>
           <button
             type="button"
-            onClick={() => setErrorMessage(null)}
+            onClick={() => setDismissedError(true)}
             className="text-xs underline font-semibold hover:text-rose-900 ml-2"
           >
             Đóng

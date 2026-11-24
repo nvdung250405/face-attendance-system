@@ -199,6 +199,7 @@ export const LoginView: React.FC = () => {
 
           {error && (
             <div
+              id="login-error-alert"
               role="alert"
               aria-live="assertive"
               className="p-3 bg-rose-50 border border-rose-200 text-status-danger text-xs sm:text-sm rounded-xl"
@@ -218,6 +219,7 @@ export const LoginView: React.FC = () => {
                 required
                 autoComplete="username"
                 aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'login-error-alert' : undefined}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ten.nv@company.com"
@@ -235,6 +237,7 @@ export const LoginView: React.FC = () => {
                 required
                 autoComplete="current-password"
                 aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'login-error-alert' : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"

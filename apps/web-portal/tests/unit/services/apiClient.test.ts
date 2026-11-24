@@ -160,11 +160,12 @@ describe('ApiClient & Request Interceptor (TASK-WEB-013)', () => {
   })
 
   describe('createApiClient & singleton instance', () => {
-    it('khởi tạo instance có baseURL và timeout 10 giây mặc định', () => {
+    it('khởi tạo instance có baseURL và timeout 10 giây mặc định (F-SPEC-09 Accept header)', () => {
       const client = createApiClient('/api/v1')
       expect(client.defaults.baseURL).toBe('/api/v1')
       expect(client.defaults.timeout).toBe(DEFAULT_TIMEOUT_MS)
       expect(client.defaults.headers['Content-Type']).toBe('application/json')
+      expect(client.defaults.headers.Accept).toBe('application/json, application/problem+json')
     })
 
     it('apiClient singleton instance được tạo thành công với cấu hình môi trường', () => {

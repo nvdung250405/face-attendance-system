@@ -36,6 +36,8 @@ export const EmployeeManagementView: React.FC = () => {
     setStatusFilter,
     roleFilter,
     setRoleFilter,
+    biometricFilter,
+    setBiometricFilter,
     isDrawerOpen,
     setIsDrawerOpen,
     drawerMode,
@@ -132,6 +134,11 @@ export const EmployeeManagementView: React.FC = () => {
         roleFilter={roleFilter}
         onChangeRoleFilter={(val) => {
           setRoleFilter(val)
+        }}
+        biometricFilter={biometricFilter}
+        onChangeBiometricFilter={(val) => {
+          setBiometricFilter(val)
+          setPage(0)
         }}
         hasActiveFilters={hasActiveFilters}
         onResetFilters={handleResetFilters}

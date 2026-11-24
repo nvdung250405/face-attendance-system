@@ -3,25 +3,23 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, KeyRound } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { ConsentModal } from '@/components/consent'
-import { PinManagementModal } from '@/components/account'
+import { PinManagementModal, LogoutConfirmModal } from '@/components/account'
 import { PersonalAttendanceCalendar } from '@/components/calendar'
 import { consentService } from '@/services/consentService'
-import { logoutService } from '@/services/logoutService'
 import { apiClient } from '@/services/apiClient'
 import type { ApiResponse, UserProfile } from '@/types'
 
 export const EmployeeDashboardView: React.FC = () => {
   const { user } = useAuthStore()
-  const navigate = useNavigate()
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(() => {
     const session = consentService.getStoredConsentSession()
     return Boolean(session?.otp || user?.status === 'PENDING_CONSENT')
   })
   const [isPinModalOpen, setIsPinModalOpen] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -69,10 +67,7 @@ export const EmployeeDashboardView: React.FC = () => {
         <div>
           <button
             type="button"
-            onClick={async () => {
-              await logoutService.logout()
-              navigate('/login', { replace: true })
-            }}
+            onClick={() => setIsLogoutModalOpen(true)}
             className="btn-secondary hover:bg-rose-50 hover:text-status-danger"
           >
             Đăng xuất
@@ -189,6 +184,12 @@ export const EmployeeDashboardView: React.FC = () => {
       <PinManagementModal
         isOpen={isPinModalOpen}
         onClose={() => setIsPinModalOpen(false)}
+      />
+
+      {/* Modal Xác nhận Đăng xuất (F-TECH-07) */}
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
       />
     </div>
   )

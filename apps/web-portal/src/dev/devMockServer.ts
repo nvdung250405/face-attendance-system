@@ -799,6 +799,10 @@ export function initDevMockServer(options: { delayResponse?: number } = { delayR
     if (params.department) {
       list = list.filter((e) => e.department === params.department)
     }
+    if (params.hasBiometric !== undefined) {
+      const boolVal = String(params.hasBiometric) === 'true'
+      list = list.filter((e) => Boolean(e.hasBiometric) === boolVal)
+    }
     if (params.keyword) {
       const kw = String(params.keyword).toLowerCase()
       list = list.filter((e) => e.fullName.toLowerCase().includes(kw) || e.employeeCode.toLowerCase().includes(kw))

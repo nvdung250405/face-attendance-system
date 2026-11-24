@@ -10,12 +10,18 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { normalizeApiError } from '@/services/errorNormalizer'
 import { useAuthStore } from '@/store/authStore'
-import { attendanceService } from '@/services/attendanceService'
+import { attendanceKeys } from '@/services/queryClient'
+import {
+  useAttendanceStatsQuery,
+  useAdminAttendanceQuery,
+} from '@/services/hooks/useAttendanceQueries'
 import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'
+import { formatLocalDateISO } from '@/utils/date'
 import { KpiCardsGrid } from '@/components/dashboard/KpiCardsGrid'
 import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
 import type { AttendanceRecord, AttendanceStats } from '@/types'
@@ -30,54 +36,79 @@ const DEFAULT_STATS: AttendanceStats = {
 
 export const AdminDashboardView: React.FC = () => {
   const user = useAuthStore((s) => s.user)
+  const queryClient = useQueryClient()
 
-  // Dữ liệu khởi tạo từ REST
-  const [initialRecords, setInitialRecords] = useState<AttendanceRecord[]>([])
-  const [stompRecords, setStompRecords] = useState<AttendanceRecord[]>([])
-  const [stats, setStats] = useState<AttendanceStats>(DEFAULT_STATS)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  // Truy vấn dữ liệu khởi tạo bằng TanStack Query (F-TECH-01)
+  const statsQuery = useAttendanceStatsQuery()
+  const attendanceQuery = useAdminAttendanceQuery({ page: 0, size: 50 })
+
+  const initialRecords = useMemo(
+    () => attendanceQuery.data?.content ?? [],
+    [attendanceQuery.data]
+  )
+  const stats = statsQuery.data ?? DEFAULT_STATS
+  const isLoading = statsQuery.isFetching || attendanceQuery.isFetching
+  const isRefreshing = statsQuery.isRefetching || attendanceQuery.isRefetching
+  const errorMessage =
+    statsQuery.isError && attendanceQuery.isError
+      ? normalizeApiError(attendanceQuery.error || statsQuery.error).message ||
+        'Không thể tải dữ liệu ban đầu cho bảng điều khiển.'
+      : null
 
   // Hiệu ứng Green Flash 1.5s cho dòng mới nhất
   const [highlightedRecordId, setHighlightedRecordId] = useState<number | null>(null)
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const seenLiveIdsRef = useRef<Set<number>>(new Set())
 
   // Callback khi nhận sự kiện điểm danh STOMP
-  const handleRecordReceived = useCallback((record: AttendanceRecord) => {
-    // 1. Kích hoạt hiệu ứng Green Flash 1.5s (DD-WEB-014)
-    setHighlightedRecordId(record.recordId)
-    if (highlightTimerRef.current) {
-      clearTimeout(highlightTimerRef.current)
-    }
-    highlightTimerRef.current = setTimeout(() => {
-      setHighlightedRecordId(null)
-    }, 1500)
-
-    // 2. Chèn bản ghi mới lên đầu danh sách sự kiện trực tiếp
-    setStompRecords((prev) => [
-      record,
-      ...prev.filter((r) => r.recordId !== record.recordId).slice(0, 49),
-    ])
-
-    // 3. Tự động tăng bộ đếm KPI thời gian thực
-    setStats((prev) => {
-      const total = prev.totalEmployees ?? 0
-      const newPresent = prev.presentCount + 1
-      const newOnTime =
-        record.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount
-      const newLate =
-        record.status === 'LATE' ? prev.lateCount + 1 : prev.lateCount
-      const newAbsent = Math.max(0, total - newPresent)
-
-      return {
-        ...prev,
-        presentCount: newPresent,
-        onTimeCount: newOnTime,
-        lateCount: newLate,
-        absentCount: newAbsent,
+  const handleRecordReceived = useCallback(
+    (record: AttendanceRecord) => {
+      // 1. Kích hoạt hiệu ứng Green Flash 1.5s (DD-WEB-014)
+      setHighlightedRecordId(record.recordId)
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current)
       }
-    })
-  }, [])
+      highlightTimerRef.current = setTimeout(() => {
+        setHighlightedRecordId(null)
+      }, 1500)
+
+      // 2. Chống tăng trùng KPI nếu nhận lại cùng recordId hoặc đã được handleLiveAttendanceEvent cập nhật
+      if (record.recordId != null && seenLiveIdsRef.current.has(record.recordId)) {
+        return
+      }
+      if (record.recordId != null) {
+        seenLiveIdsRef.current.add(record.recordId)
+      }
+
+      const liveCache = queryClient.getQueryData<AttendanceRecord[]>(attendanceKeys.live())
+      const alreadyUpdatedByHook = Boolean(
+        liveCache?.some((r) => r.recordId === record.recordId)
+      )
+      if (alreadyUpdatedByHook) {
+        return
+      }
+
+      const today = formatLocalDateISO(new Date())
+      queryClient.setQueryData<AttendanceStats>(attendanceKeys.stats(today), (prev) => {
+        if (!prev) return prev
+        const total = prev.totalEmployees ?? 0
+        const newPresent = prev.presentCount + 1
+        const newOnTime =
+          record.status === 'ON_TIME' ? prev.onTimeCount + 1 : prev.onTimeCount
+        const newLate = record.status === 'LATE' ? prev.lateCount + 1 : prev.lateCount
+        const newAbsent = Math.max(0, total - newPresent)
+
+        return {
+          ...prev,
+          presentCount: newPresent,
+          onTimeCount: newOnTime,
+          lateCount: newLate,
+          absentCount: newAbsent,
+        }
+      })
+    },
+    [queryClient]
+  )
 
   // Dọn dẹp timer khi component unmount để tránh rò rỉ bộ nhớ (EXP1-02)
   useEffect(() => {
@@ -89,72 +120,36 @@ export const AdminDashboardView: React.FC = () => {
   }, [])
 
   // Hook STOMP lắng nghe kênh '/topic/live-attendance'
-  const { latestEvents, isConnected } = useLiveAttendance({
+  const { latestEvents, isConnected, clearEvents } = useLiveAttendance({
     onRecordReceived: handleRecordReceived,
   })
 
-  // Hàm làm mới dữ liệu
-  const loadDashboardData = useCallback(async () => {
-    try {
-      const [statsData, attendanceData] = await Promise.allSettled([
-        attendanceService.getAttendanceStats(),
-        attendanceService.getAdminAttendance({ page: 0, size: 50 }),
-      ])
+  // Hàm làm mới dữ liệu (xóa buffer STOMP cũ và refetch TanStack Query) (F-TECH-01, F-TECH-02)
+  const loadDashboardData = useCallback(() => {
+    clearEvents()
+    seenLiveIdsRef.current.clear()
+    void Promise.all([statsQuery.refetch(), attendanceQuery.refetch()])
+  }, [clearEvents, statsQuery, attendanceQuery])
 
-      setErrorMessage(null)
-
-      if (statsData.status === 'fulfilled' && statsData.value) {
-        setStats(statsData.value)
-      }
-
-      if (attendanceData.status === 'fulfilled' && attendanceData.value?.content) {
-        setInitialRecords(attendanceData.value.content)
-      }
-
-      if (statsData.status === 'rejected' && attendanceData.status === 'rejected') {
-        const err = normalizeApiError(attendanceData.reason || statsData.reason)
-        setErrorMessage(err.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
-      }
-    } catch (err) {
-      const error = normalizeApiError(err)
-      setErrorMessage(error.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadDashboardData()
-  }, [loadDashboardData])
-
-  // Hợp nhất danh sách hiển thị: latestEvents & stompRecords chèn lên đầu initialRecords
+  // Hợp nhất danh sách hiển thị: khử trùng lặp recordId giữa latestEvents và initialRecords (F-TECH-02)
   const mergedRecords = useMemo(() => {
-    const map = new Map<number, AttendanceRecord>()
+    const seen = new Set<number>()
+    const merged: AttendanceRecord[] = []
 
-    // Ưu tiên các sự kiện mới nhất từ STOMP
-    latestEvents.forEach((rec) => {
-      map.set(rec.recordId, rec)
-    })
-    stompRecords.forEach((rec) => {
-      map.set(rec.recordId, rec)
-    })
-
-    // Ghép thêm dữ liệu khởi tạo ban đầu nếu chưa có trong map
-    initialRecords.forEach((rec) => {
-      if (!map.has(rec.recordId)) {
-        map.set(rec.recordId, rec)
+    for (const r of latestEvents) {
+      if (!seen.has(r.recordId)) {
+        seen.add(r.recordId)
+        merged.push(r)
       }
-    })
-
-    // Sắp xếp giảm dần theo thời gian quẹt, tối đa 50 bản ghi
-    return Array.from(map.values())
-      .sort(
-        (a, b) =>
-          new Date(b.punchTimestamp).getTime() - new Date(a.punchTimestamp).getTime()
-      )
-      .slice(0, 50)
-  }, [latestEvents, stompRecords, initialRecords])
+    }
+    for (const r of initialRecords) {
+      if (!seen.has(r.recordId)) {
+        seen.add(r.recordId)
+        merged.push(r)
+      }
+    }
+    return merged.slice(0, 50)
+  }, [latestEvents, initialRecords])
 
   return (
     <div className="space-y-6" data-testid="admin-dashboard-view">
@@ -175,11 +170,8 @@ export const AdminDashboardView: React.FC = () => {
             data-testid="refresh-dashboard-btn"
             variant="secondary"
             size="sm"
-            onClick={() => {
-              setIsLoading(true)
-              void loadDashboardData()
-            }}
-            isLoading={isLoading}
+            onClick={loadDashboardData}
+            isLoading={isRefreshing}
             leftIcon={<RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />}
           >
             Làm mới
@@ -197,10 +189,7 @@ export const AdminDashboardView: React.FC = () => {
           <span>{errorMessage}</span>
           <button
             type="button"
-            onClick={() => {
-              setIsLoading(true)
-              void loadDashboardData()
-            }}
+            onClick={loadDashboardData}
             className="text-xs underline font-semibold hover:text-rose-900"
           >
             Thử lại

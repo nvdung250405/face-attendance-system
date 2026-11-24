@@ -84,9 +84,9 @@ describe('Zustand Auth Store (TASK-WEB-016)', () => {
 
       const stored = localStorage.getItem(AUTH_STORAGE_KEY)
       expect(stored).not.toBeNull()
-      // SEC-002: accessToken is stored in-memory (Zustand RAM) and excluded from localStorage
+      // SEC-002 & F-TECH-08: accessToken and refreshToken are stored in-memory (Zustand RAM) and excluded from localStorage
       expect(JSON.parse(stored!).accessToken).toBeUndefined()
-      expect(JSON.parse(stored!).refreshToken).toBe('test-refresh-token-456')
+      expect(JSON.parse(stored!).refreshToken).toBeUndefined()
     })
 
     it('xóa sạch state và LocalStorage khi clearSession (Logout)', () => {

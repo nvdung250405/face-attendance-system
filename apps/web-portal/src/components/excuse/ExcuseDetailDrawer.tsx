@@ -27,7 +27,7 @@ import { DetailDrawer } from '@/components/ui/DetailDrawer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatDateTime } from '@/utils/date'
-import { sanitizeUserContent } from '@/utils/security'
+import { sanitizeUserContent, isValidProofUrl } from '@/utils/security'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
 
 export interface ExcuseRequestDetail extends ExcuseRequestItem {
@@ -58,6 +58,12 @@ export const ExcuseDetailDrawer: React.FC<ExcuseDetailDrawerProps> = ({
   isProcessing = false,
 }) => {
   const detail = request as ExcuseRequestDetail | null
+  const [imageError, setImageError] = React.useState(false)
+
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setImageError(false)
+  }, [request, isOpen])
 
   if (!detail) {
     return (
@@ -105,7 +111,8 @@ export const ExcuseDetailDrawer: React.FC<ExcuseDetailDrawerProps> = ({
     }
   }
 
-  const proofUrl = detail.proofUrl || detail.attachmentUrl
+  const rawProofUrl = detail.proofUrl || detail.attachmentUrl
+  const proofUrl = isValidProofUrl(rawProofUrl) ? rawProofUrl : null
   const isPending = detail.status === 'PENDING'
 
   return (
@@ -296,13 +303,29 @@ export const ExcuseDetailDrawer: React.FC<ExcuseDetailDrawerProps> = ({
                 </a>
               </div>
 
-              <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center max-h-56">
-                <img
-                  src={proofUrl}
-                  alt="Minh chứng giải trình"
-                  className="max-h-56 w-auto object-contain hover:scale-102 transition-transform duration-200"
-                />
-              </div>
+              {imageError ? (
+                <div
+                  data-testid="proof-document-fallback"
+                  className="p-6 rounded-lg border border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-2 text-center"
+                >
+                  <FileText className="w-10 h-10 text-slate-400 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-700">
+                    Tệp tài liệu đính kèm ({detail.proofFileName || 'Tài liệu'})
+                  </span>
+                  <span className="text-2xs text-slate-400">
+                    Không thể xem trước dưới dạng hình ảnh. Vui lòng mở toàn màn hình để xem tệp gốc.
+                  </span>
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center max-h-56">
+                  <img
+                    src={proofUrl}
+                    alt="Minh chứng giải trình"
+                    onError={() => setImageError(true)}
+                    className="max-h-56 w-auto object-contain hover:scale-102 transition-transform duration-200"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-4 bg-white rounded-lg border border-slate-200 text-center space-y-1">

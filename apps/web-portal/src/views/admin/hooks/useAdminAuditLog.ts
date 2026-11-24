@@ -42,18 +42,34 @@ export const useAdminAuditLog = () => {
   // Tab 2: DPO Consents state
   const [dpoConsents, setDpoConsents] = useState<DpoConsentAuditItem[]>([])
   const [isConsentsLoading, setIsConsentsLoading] = useState(false)
+  const [consentsPage, setConsentsPage] = useState(0)
+  const [consentsPageSize, setConsentsPageSize] = useState(20)
+  const [consentsTotal, setConsentsTotal] = useState(0)
+  const [consentsTotalPages, setConsentsTotalPages] = useState(1)
 
   // Tab 3: Retention Schedule state
   const [retentionItems, setRetentionItems] = useState<RetentionScheduleItem[]>([])
   const [isRetentionLoading, setIsRetentionLoading] = useState(false)
+  const [retentionPage, setRetentionPage] = useState(0)
+  const [retentionPageSize, setRetentionPageSize] = useState(20)
+  const [retentionTotal, setRetentionTotal] = useState(0)
+  const [retentionTotalPages, setRetentionTotalPages] = useState(1)
 
   // Tab 4: DPO Consent Withdrawals state
   const [dpoWithdrawals, setDpoWithdrawals] = useState<DpoConsentWithdrawalItem[]>([])
   const [isWithdrawalsLoading, setIsWithdrawalsLoading] = useState(false)
+  const [withdrawalsPage, setWithdrawalsPage] = useState(0)
+  const [withdrawalsPageSize, setWithdrawalsPageSize] = useState(20)
+  const [withdrawalsTotal, setWithdrawalsTotal] = useState(0)
+  const [withdrawalsTotalPages, setWithdrawalsTotalPages] = useState(1)
 
   // Tab 5: DPO Data Subject Requests state
   const [dpoDataRequests, setDpoDataRequests] = useState<DataSubjectRequestItem[]>([])
   const [isDataRequestsLoading, setIsDataRequestsLoading] = useState(false)
+  const [dataRequestsPage, setDataRequestsPage] = useState(0)
+  const [dataRequestsPageSize, setDataRequestsPageSize] = useState(20)
+  const [dataRequestsTotal, setDataRequestsTotal] = useState(0)
+  const [dataRequestsTotalPages, setDataRequestsTotalPages] = useState(1)
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedLogDetail, setSelectedLogDetail] = useState<AuditLogItem | null>(null)
@@ -100,12 +116,19 @@ export const useAdminAuditLog = () => {
   )
 
   // 2. Tải DPO Consents
-  const loadDpoConsents = useCallback(async () => {
+  const loadDpoConsents = useCallback(async (targetPage = 0, targetPageSize = 20) => {
     try {
       setIsConsentsLoading(true)
       setErrorMessage(null)
-      const data = await complianceAdminService.getDpoConsents()
-      setDpoConsents(data)
+      const data = await complianceAdminService.getDpoConsents({ page: targetPage, size: targetPageSize })
+      const items = Array.isArray(data) ? data : ((data as { content?: DpoConsentAuditItem[]; items?: DpoConsentAuditItem[] }).content || (data as { items?: DpoConsentAuditItem[] }).items || [])
+      const total = (data as { totalElements?: number })?.totalElements ?? (Array.isArray(data) ? data.length : items.length)
+      const totalP = (data as { totalPages?: number })?.totalPages ?? Math.max(1, Math.ceil(total / targetPageSize))
+      setDpoConsents(items)
+      setConsentsTotal(total)
+      setConsentsTotalPages(totalP)
+      setConsentsPage(targetPage)
+      setConsentsPageSize(targetPageSize)
     } catch (err) {
       const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải danh sách cam kết DPO.')
@@ -115,12 +138,19 @@ export const useAdminAuditLog = () => {
   }, [])
 
   // 3. Tải Retention Schedule
-  const loadRetentionSchedule = useCallback(async () => {
+  const loadRetentionSchedule = useCallback(async (targetPage = 0, targetPageSize = 20) => {
     try {
       setIsRetentionLoading(true)
       setErrorMessage(null)
-      const data = await complianceAdminService.getDpoRetentionSchedule()
-      setRetentionItems(data)
+      const data = await complianceAdminService.getDpoRetentionSchedule({ page: targetPage, size: targetPageSize })
+      const items = Array.isArray(data) ? data : ((data as { content?: RetentionScheduleItem[]; items?: RetentionScheduleItem[] }).content || (data as { items?: RetentionScheduleItem[] }).items || [])
+      const total = (data as { totalElements?: number })?.totalElements ?? (Array.isArray(data) ? data.length : items.length)
+      const totalP = (data as { totalPages?: number })?.totalPages ?? Math.max(1, Math.ceil(total / targetPageSize))
+      setRetentionItems(items)
+      setRetentionTotal(total)
+      setRetentionTotalPages(totalP)
+      setRetentionPage(targetPage)
+      setRetentionPageSize(targetPageSize)
     } catch (err) {
       const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải lịch trình tiêu hủy dữ liệu.')
@@ -130,12 +160,19 @@ export const useAdminAuditLog = () => {
   }, [])
 
   // 4. Tải DPO Consent Withdrawals
-  const loadDpoConsentWithdrawals = useCallback(async () => {
+  const loadDpoConsentWithdrawals = useCallback(async (targetPage = 0, targetPageSize = 20) => {
     try {
       setIsWithdrawalsLoading(true)
       setErrorMessage(null)
-      const data = await complianceAdminService.getDpoConsentWithdrawals()
-      setDpoWithdrawals(data)
+      const data = await complianceAdminService.getDpoConsentWithdrawals({ page: targetPage, size: targetPageSize })
+      const items = Array.isArray(data) ? data : ((data as { content?: DpoConsentWithdrawalItem[]; items?: DpoConsentWithdrawalItem[] }).content || (data as { items?: DpoConsentWithdrawalItem[] }).items || [])
+      const total = (data as { totalElements?: number })?.totalElements ?? (Array.isArray(data) ? data.length : items.length)
+      const totalP = (data as { totalPages?: number })?.totalPages ?? Math.max(1, Math.ceil(total / targetPageSize))
+      setDpoWithdrawals(items)
+      setWithdrawalsTotal(total)
+      setWithdrawalsTotalPages(totalP)
+      setWithdrawalsPage(targetPage)
+      setWithdrawalsPageSize(targetPageSize)
     } catch (err) {
       const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải danh sách rút cam kết DPO.')
@@ -145,12 +182,19 @@ export const useAdminAuditLog = () => {
   }, [])
 
   // 5. Tải DPO Data Subject Requests
-  const loadDpoDataRequests = useCallback(async () => {
+  const loadDpoDataRequests = useCallback(async (targetPage = 0, targetPageSize = 20) => {
     try {
       setIsDataRequestsLoading(true)
       setErrorMessage(null)
-      const data = await dataSubjectService.getDpoDataRequests()
-      setDpoDataRequests(data)
+      const data = await dataSubjectService.getDpoDataRequests({ page: targetPage, size: targetPageSize })
+      const items = Array.isArray(data) ? data : ((data as { content?: DataSubjectRequestItem[]; items?: DataSubjectRequestItem[] }).content || (data as { items?: DataSubjectRequestItem[] }).items || [])
+      const total = (data as { totalElements?: number })?.totalElements ?? (Array.isArray(data) ? data.length : items.length)
+      const totalP = (data as { totalPages?: number })?.totalPages ?? Math.max(1, Math.ceil(total / targetPageSize))
+      setDpoDataRequests(items)
+      setDataRequestsTotal(total)
+      setDataRequestsTotalPages(totalP)
+      setDataRequestsPage(targetPage)
+      setDataRequestsPageSize(targetPageSize)
     } catch (err) {
       const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải danh sách yêu cầu quyền chủ thể dữ liệu.')
@@ -237,12 +281,28 @@ export const useAdminAuditLog = () => {
     setFilterEndDate,
     dpoConsents,
     isConsentsLoading,
+    consentsPage,
+    consentsPageSize,
+    consentsTotal,
+    consentsTotalPages,
     retentionItems,
     isRetentionLoading,
+    retentionPage,
+    retentionPageSize,
+    retentionTotal,
+    retentionTotalPages,
     dpoWithdrawals,
     isWithdrawalsLoading,
+    withdrawalsPage,
+    withdrawalsPageSize,
+    withdrawalsTotal,
+    withdrawalsTotalPages,
     dpoDataRequests,
     isDataRequestsLoading,
+    dataRequestsPage,
+    dataRequestsPageSize,
+    dataRequestsTotal,
+    dataRequestsTotalPages,
     errorMessage,
     selectedLogDetail,
     setSelectedLogDetail,

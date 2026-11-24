@@ -222,7 +222,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none transition-colors cursor-pointer"
+                className="min-w-[44px] min-h-[44px] w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
                 aria-label={showOld ? 'Ẩn mật khẩu hiện tại' : 'Hiện mật khẩu hiện tại'}
                 aria-pressed={showOld}
                 aria-controls="input-old-password"
@@ -256,7 +256,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none transition-colors cursor-pointer"
+                  className="min-w-[44px] min-h-[44px] w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
                   aria-label={showNew ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
                   aria-pressed={showNew}
                   aria-controls="input-new-password"
@@ -320,7 +320,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none transition-colors cursor-pointer"
+                className="min-w-[44px] min-h-[44px] w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 transition-colors cursor-pointer"
                 aria-label={showConfirm ? 'Ẩn xác nhận mật khẩu' : 'Hiện xác nhận mật khẩu'}
                 aria-pressed={showConfirm}
                 aria-controls="input-confirm-password"

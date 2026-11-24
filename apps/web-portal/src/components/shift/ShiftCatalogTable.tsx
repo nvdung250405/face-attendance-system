@@ -16,7 +16,6 @@ export interface ShiftCatalogTableProps {
 export const ShiftCatalogTable: React.FC<ShiftCatalogTableProps> = ({
   shifts,
   isLoadingShifts,
-  isAdjustmentLocked,
   togglingShiftId,
   onEditShift,
   onToggleShiftActive,
@@ -107,7 +106,6 @@ export const ShiftCatalogTable: React.FC<ShiftCatalogTableProps> = ({
                       <button
                         type="button"
                         onClick={() => onEditShift(shift)}
-                        disabled={isAdjustmentLocked}
                         data-testid={`edit-shift-btn-${shift.id}`}
                         title="Sửa thông tin ca"
                         className="p-1.5 rounded-lg border border-slate-200 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors disabled:opacity-40 shrink-0"
@@ -117,7 +115,7 @@ export const ShiftCatalogTable: React.FC<ShiftCatalogTableProps> = ({
                       <button
                         type="button"
                         onClick={() => onToggleShiftActive(shift)}
-                        disabled={isAdjustmentLocked || togglingShiftId === shift.id}
+                        disabled={togglingShiftId === shift.id}
                         data-testid={`toggle-shift-active-btn-${shift.id}`}
                         className={`px-2.5 py-1 rounded-lg text-2xs font-semibold border transition-all shrink-0 ${
                           shift.isActive

@@ -6,6 +6,7 @@
  */
 
 import React from 'react'
+import * as Tabs from '@radix-ui/react-tabs'
 import {
   ShieldCheck,
   FileText,
@@ -45,12 +46,32 @@ export const AdminAuditLogView: React.FC = () => {
     setFilterEndDate,
     dpoConsents,
     isConsentsLoading,
+    consentsPage,
+    consentsPageSize,
+    consentsTotal,
+    consentsTotalPages,
+    loadDpoConsents,
     retentionItems,
     isRetentionLoading,
+    retentionPage,
+    retentionPageSize,
+    retentionTotal,
+    retentionTotalPages,
+    loadRetentionSchedule,
     dpoWithdrawals,
     isWithdrawalsLoading,
+    withdrawalsPage,
+    withdrawalsPageSize,
+    withdrawalsTotal,
+    withdrawalsTotalPages,
+    loadDpoConsentWithdrawals,
     dpoDataRequests,
     isDataRequestsLoading,
+    dataRequestsPage,
+    dataRequestsPageSize,
+    dataRequestsTotal,
+    dataRequestsTotalPages,
+    loadDpoDataRequests,
     errorMessage,
     selectedLogDetail,
     setSelectedLogDetail,
@@ -93,173 +114,206 @@ export const AdminAuditLogView: React.FC = () => {
         </span>
       </div>
 
-      {/* ── Tab Navigation Đồng bộ ── */}
-      <div className="flex border-b border-border-subtle gap-6 overflow-x-auto">
-        <button
-          type="button"
-          data-testid="tab-audit-logs"
-          onClick={() => handleTabChange('AUDIT_LOGS')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
-            activeTab === 'AUDIT_LOGS'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+      {/* ── Tab Navigation Đồng bộ Radix Accessible Tabs (F-TECH-13) ── */}
+      <Tabs.Root
+        value={activeTab}
+        onValueChange={(val) => handleTabChange(val as ComplianceTab)}
+        className="space-y-6"
+      >
+        <Tabs.List
+          aria-label="Các danh mục kiểm toán và tuân thủ DPO"
+          className="flex border-b border-border-subtle gap-6 overflow-x-auto"
         >
-          <History className="w-4 h-4 shrink-0" />
-          <span>Nhật ký Kiểm toán</span>
-          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-            activeTab === 'AUDIT_LOGS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {auditTotal}
-          </span>
-        </button>
+          <Tabs.Trigger
+            value="AUDIT_LOGS"
+            data-testid="tab-audit-logs"
+            onClick={() => handleTabChange('AUDIT_LOGS')}
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+              activeTab === 'AUDIT_LOGS'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <History className="w-4 h-4 shrink-0" />
+            <span>Nhật ký Kiểm toán</span>
+            <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+              activeTab === 'AUDIT_LOGS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {auditTotal}
+            </span>
+          </Tabs.Trigger>
 
-        <button
-          type="button"
-          data-testid="tab-dpo-consents"
-          onClick={() => handleTabChange('DPO_CONSENTS')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
-            activeTab === 'DPO_CONSENTS'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <FileText className="w-4 h-4 shrink-0" />
-          <span>Hồ sơ Cam kết DPO</span>
-          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-            activeTab === 'DPO_CONSENTS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {dpoConsents.length}
-          </span>
-        </button>
+          <Tabs.Trigger
+            value="DPO_CONSENTS"
+            data-testid="tab-dpo-consents"
+            onClick={() => handleTabChange('DPO_CONSENTS')}
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+              activeTab === 'DPO_CONSENTS'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <FileText className="w-4 h-4 shrink-0" />
+            <span>Hồ sơ Cam kết DPO</span>
+            <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+              activeTab === 'DPO_CONSENTS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {dpoConsents.length}
+            </span>
+          </Tabs.Trigger>
 
-        <button
-          type="button"
-          data-testid="tab-retention-schedule"
-          onClick={() => handleTabChange('RETENTION_SCHEDULE')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
-            activeTab === 'RETENTION_SCHEDULE'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Trash2 className="w-4 h-4 shrink-0" />
-          <span>Lịch Tiêu hủy 20 Ngày</span>
-          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-            activeTab === 'RETENTION_SCHEDULE' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {retentionItems.length}
-          </span>
-        </button>
+          <Tabs.Trigger
+            value="RETENTION_SCHEDULE"
+            data-testid="tab-retention-schedule"
+            onClick={() => handleTabChange('RETENTION_SCHEDULE')}
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+              activeTab === 'RETENTION_SCHEDULE'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            <span>Lịch Tiêu hủy 20 Ngày</span>
+            <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+              activeTab === 'RETENTION_SCHEDULE' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {retentionItems.length}
+            </span>
+          </Tabs.Trigger>
 
-        <button
-          type="button"
-          data-testid="tab-dpo-withdrawals"
-          onClick={() => handleTabChange('DPO_WITHDRAWALS')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
-            activeTab === 'DPO_WITHDRAWALS'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <UserX className="w-4 h-4 shrink-0" />
-          <span>Rút Cam Kết</span>
-          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-            activeTab === 'DPO_WITHDRAWALS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {dpoWithdrawals.length}
-          </span>
-        </button>
+          <Tabs.Trigger
+            value="DPO_WITHDRAWALS"
+            data-testid="tab-dpo-withdrawals"
+            onClick={() => handleTabChange('DPO_WITHDRAWALS')}
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+              activeTab === 'DPO_WITHDRAWALS'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <UserX className="w-4 h-4 shrink-0" />
+            <span>Rút Cam Kết</span>
+            <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+              activeTab === 'DPO_WITHDRAWALS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {dpoWithdrawals.length}
+            </span>
+          </Tabs.Trigger>
 
-        <button
-          type="button"
-          data-testid="tab-dpo-data-requests"
-          onClick={() => handleTabChange('DPO_DATA_REQUESTS')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
-            activeTab === 'DPO_DATA_REQUESTS'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <ClipboardList className="w-4 h-4 shrink-0" />
-          <span>Yêu Cầu Dữ Liệu (DSR)</span>
-          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-            activeTab === 'DPO_DATA_REQUESTS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {dpoDataRequests.length}
-          </span>
-        </button>
-      </div>
+          <Tabs.Trigger
+            value="DPO_DATA_REQUESTS"
+            data-testid="tab-dpo-data-requests"
+            onClick={() => handleTabChange('DPO_DATA_REQUESTS')}
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+              activeTab === 'DPO_DATA_REQUESTS'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ClipboardList className="w-4 h-4 shrink-0" />
+            <span>Yêu Cầu Dữ Liệu (DSR)</span>
+            <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+              activeTab === 'DPO_DATA_REQUESTS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {dpoDataRequests.length}
+            </span>
+          </Tabs.Trigger>
+        </Tabs.List>
 
-      {errorMessage && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className="p-4 bg-rose-50 text-rose-700 text-sm rounded-xl border border-rose-200"
-        >
-          {errorMessage}
-        </div>
-      )}
+        {errorMessage && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="p-4 bg-rose-50 text-rose-700 text-sm rounded-xl border border-rose-200"
+          >
+            {errorMessage}
+          </div>
+        )}
 
-      {/* ── TAB 1: NHẬT KÝ KIỂM TOÁN HỆ THỐNG ── */}
-      {activeTab === 'AUDIT_LOGS' && (
-        <AuditLogTable
-          filterAction={filterAction}
-          onChangeFilterAction={setFilterAction}
-          filterEmail={filterEmail}
-          onChangeFilterEmail={setFilterEmail}
-          filterStartDate={filterStartDate}
-          onChangeFilterStartDate={setFilterStartDate}
-          filterEndDate={filterEndDate}
-          onChangeFilterEndDate={setFilterEndDate}
-          onFilterSubmit={handleFilterSubmit}
-          onResetFilter={handleResetFilter}
-          auditLogs={auditLogs}
-          isAuditLoading={isAuditLoading}
-          auditTotal={auditTotal}
-          page={page}
-          pageSize={pageSize}
-          totalPages={totalPages}
-          onPageChange={(newPage) => loadAuditLogs(newPage, pageSize)}
-          onPageSizeChange={(newSize) => {
-            loadAuditLogs(0, newSize)
-          }}
-          onSelectLogDetail={setSelectedLogDetail}
-        />
-      )}
+        {/* ── TAB 1: NHẬT KÝ KIỂM TOÁN HỆ THỐNG ── */}
+        <Tabs.Content value="AUDIT_LOGS" className="focus-visible:outline-hidden">
+          <AuditLogTable
+            filterAction={filterAction}
+            onChangeFilterAction={setFilterAction}
+            filterEmail={filterEmail}
+            onChangeFilterEmail={setFilterEmail}
+            filterStartDate={filterStartDate}
+            onChangeFilterStartDate={setFilterStartDate}
+            filterEndDate={filterEndDate}
+            onChangeFilterEndDate={setFilterEndDate}
+            onFilterSubmit={handleFilterSubmit}
+            onResetFilter={handleResetFilter}
+            auditLogs={auditLogs}
+            isAuditLoading={isAuditLoading}
+            auditTotal={auditTotal}
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={(newPage) => loadAuditLogs(newPage, pageSize)}
+            onPageSizeChange={(newSize) => {
+              loadAuditLogs(0, newSize)
+            }}
+            onSelectLogDetail={setSelectedLogDetail}
+          />
+        </Tabs.Content>
 
-      {/* ── TAB 2: HỒ SƠ CAM KẾT DPO ── */}
-      {activeTab === 'DPO_CONSENTS' && (
-        <DpoConsentsTable
-          dpoConsents={dpoConsents}
-          isConsentsLoading={isConsentsLoading}
-        />
-      )}
+        {/* ── TAB 2: HỒ SƠ CAM KẾT DPO ── */}
+        <Tabs.Content value="DPO_CONSENTS" className="focus-visible:outline-hidden">
+          <DpoConsentsTable
+            dpoConsents={dpoConsents}
+            isConsentsLoading={isConsentsLoading}
+            page={consentsPage}
+            pageSize={consentsPageSize}
+            totalElements={consentsTotal}
+            totalPages={consentsTotalPages}
+            onPageChange={(newPage) => loadDpoConsents(newPage, consentsPageSize)}
+            onPageSizeChange={(newSize) => loadDpoConsents(0, newSize)}
+          />
+        </Tabs.Content>
 
-      {/* ── TAB 3: LỊCH TIÊU HỦY DỮ LIỆU SINH TRẮC 20 NGÀY ── */}
-      {activeTab === 'RETENTION_SCHEDULE' && (
-        <RetentionScheduleTable
-          retentionItems={retentionItems}
-          isRetentionLoading={isRetentionLoading}
-        />
-      )}
+        {/* ── TAB 3: LỊCH TIÊU HỦY DỮ LIỆU SINH TRẮC 20 NGÀY ── */}
+        <Tabs.Content value="RETENTION_SCHEDULE" className="focus-visible:outline-hidden">
+          <RetentionScheduleTable
+            retentionItems={retentionItems}
+            isRetentionLoading={isRetentionLoading}
+            page={retentionPage}
+            pageSize={retentionPageSize}
+            totalElements={retentionTotal}
+            totalPages={retentionTotalPages}
+            onPageChange={(newPage) => loadRetentionSchedule(newPage, retentionPageSize)}
+            onPageSizeChange={(newSize) => loadRetentionSchedule(0, newSize)}
+          />
+        </Tabs.Content>
 
-      {/* ── TAB 4: DANH SÁCH RÚT CAM KẾT DPO ── */}
-      {activeTab === 'DPO_WITHDRAWALS' && (
-        <DpoConsentWithdrawalsTable
-          dpoWithdrawals={dpoWithdrawals}
-          isWithdrawalsLoading={isWithdrawalsLoading}
-        />
-      )}
+        {/* ── TAB 4: DANH SÁCH RÚT CAM KẾT DPO ── */}
+        <Tabs.Content value="DPO_WITHDRAWALS" className="focus-visible:outline-hidden">
+          <DpoConsentWithdrawalsTable
+            dpoWithdrawals={dpoWithdrawals}
+            isWithdrawalsLoading={isWithdrawalsLoading}
+            page={withdrawalsPage}
+            pageSize={withdrawalsPageSize}
+            totalElements={withdrawalsTotal}
+            totalPages={withdrawalsTotalPages}
+            onPageChange={(newPage) => loadDpoConsentWithdrawals(newPage, withdrawalsPageSize)}
+            onPageSizeChange={(newSize) => loadDpoConsentWithdrawals(0, newSize)}
+          />
+        </Tabs.Content>
 
-      {/* ── TAB 5: YÊU CẦU QUYỀN CHỦ THỂ DỮ LIỆU (DSR) ── */}
-      {activeTab === 'DPO_DATA_REQUESTS' && (
-        <DpoDataRequestsReviewTable
-          dataRequests={dpoDataRequests}
-          isLoading={isDataRequestsLoading}
-          onUpdateStatus={handleUpdateDataRequest}
-        />
-      )}
+        {/* ── TAB 5: YÊU CẦU QUYỀN CHỦ THỂ DỮ LIỆU (DSR) ── */}
+        <Tabs.Content value="DPO_DATA_REQUESTS" className="focus-visible:outline-hidden">
+          <DpoDataRequestsReviewTable
+            dataRequests={dpoDataRequests}
+            isLoading={isDataRequestsLoading}
+            onUpdateStatus={handleUpdateDataRequest}
+            page={dataRequestsPage}
+            pageSize={dataRequestsPageSize}
+            totalElements={dataRequestsTotal}
+            totalPages={dataRequestsTotalPages}
+            onPageChange={(newPage) => loadDpoDataRequests(newPage, dataRequestsPageSize)}
+            onPageSizeChange={(newSize) => loadDpoDataRequests(0, newSize)}
+          />
+        </Tabs.Content>
+      </Tabs.Root>
 
       {/* ── Modal Chi Tiết Diff Giá Trị Cũ / Mới ── */}
       <AuditDiffModal

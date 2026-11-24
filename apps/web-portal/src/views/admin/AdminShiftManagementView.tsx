@@ -8,6 +8,7 @@
  */
 
 import React from 'react'
+import * as Tabs from '@radix-ui/react-tabs'
 import { Calendar, Clock, AlertTriangle } from 'lucide-react'
 import {
   Button,
@@ -27,7 +28,6 @@ import {
   ShiftAssignmentTable,
   ShiftPayrollLockedBanner,
   ShiftManagementHeader,
-  ShiftNotificationBanner,
 } from '@/components/shift'
 import { useAdminShiftManagement } from './hooks/useAdminShiftManagement'
 
@@ -58,17 +58,17 @@ export const AdminShiftManagementView: React.FC = () => {
     shiftFormData,
     setShiftFormData,
     shiftFormError,
+    shiftFieldErrors,
     isSubmittingShift,
     isAssignDrawerOpen,
     setIsAssignDrawerOpen,
     assignFormData,
     setAssignFormData,
     assignFormError,
+    assignFieldErrors,
     overlapConflict,
     isSubmittingAssign,
     batchProgressText,
-    notification,
-    setNotification,
     loadShifts,
     loadAssignments,
     handleOpenCreateShiftDrawer,
@@ -102,104 +102,108 @@ export const AdminShiftManagementView: React.FC = () => {
 
       {isAdjustmentLocked && <ShiftPayrollLockedBanner selectedPeriod={selectedPeriod} />}
 
-      <ShiftNotificationBanner
-        notification={notification}
-        onClose={() => setNotification(null)}
-      />
-
-      {/* ── Tabs Chuyển đổi Đồng bộ ── */}
-      <div className="border-b border-border-subtle flex items-center gap-6">
-        <button
-          type="button"
-          onClick={() => setActiveTab('shifts')}
-          data-testid="tab-shifts-btn"
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 cursor-pointer ${
-            activeTab === 'shifts'
-              ? 'text-indigo-600 border-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+      {/* ── Tabs Chuyển đổi Đồng bộ Radix Accessible Tabs (F-TECH-13) ── */}
+      <Tabs.Root
+        value={activeTab}
+        onValueChange={(val) => setActiveTab(val as 'shifts' | 'assignments')}
+        className="space-y-6"
+      >
+        <Tabs.List
+          aria-label="Quản lý ca làm việc và phân ca"
+          className="border-b border-border-subtle flex items-center gap-6"
         >
-          <Clock className="w-4 h-4" />
-          <span>Danh Mục Ca Làm Việc</span>
-          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-            activeTab === 'shifts' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {shifts.length}
-          </span>
-        </button>
+          <Tabs.Trigger
+            value="shifts"
+            data-testid="tab-shifts-btn"
+            onClick={() => setActiveTab('shifts')}
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+              activeTab === 'shifts'
+                ? 'text-indigo-600 border-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>Danh Mục Ca Làm Việc</span>
+            <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+              activeTab === 'shifts' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {shifts.length}
+            </span>
+          </Tabs.Trigger>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('assignments')}
-          data-testid="tab-assignments-btn"
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 cursor-pointer ${
-            activeTab === 'assignments'
-              ? 'text-indigo-600 border-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Lịch Phân Ca Nhân Sự</span>
-          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-            activeTab === 'assignments' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {assignments.length}
-          </span>
-        </button>
-      </div>
+          <Tabs.Trigger
+            value="assignments"
+            data-testid="tab-assignments-btn"
+            onClick={() => setActiveTab('assignments')}
+            className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+              activeTab === 'assignments'
+                ? 'text-indigo-600 border-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Lịch Phân Ca Nhân Sự</span>
+            <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+              activeTab === 'assignments' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {assignments.length}
+            </span>
+          </Tabs.Trigger>
+        </Tabs.List>
 
-      {/* ── Nội dung Tab 1: Danh mục Ca làm việc (ARCH-001 Subcomponent) ── */}
-      {activeTab === 'shifts' && (
-        <ShiftCatalogTable
-          shifts={shifts}
-          isLoadingShifts={isLoadingShifts}
-          isAdjustmentLocked={isAdjustmentLocked}
-          togglingShiftId={togglingShiftId}
-          onEditShift={handleOpenEditShiftDrawer}
-          onToggleShiftActive={handleToggleShiftActive}
-        />
-      )}
-
-      {/* ── Nội dung Tab 2: Lịch Phân ca Nhân sự (ARCH-001 Subcomponents) ── */}
-      {activeTab === 'assignments' && (
-        <div className="space-y-4">
-          <ShiftAssignmentToolbar
-            assignmentViewMode={assignmentViewMode}
-            onChangeViewMode={setAssignmentViewMode}
-            searchEmployeeKeyword={searchEmployeeKeyword}
-            onChangeSearchKeyword={setSearchEmployeeKeyword}
-            filterShiftId={filterShiftId}
-            onChangeFilterShiftId={setFilterShiftId}
+        {/* ── Nội dung Tab 1: Danh mục Ca làm việc (ARCH-001 Subcomponent) ── */}
+        <Tabs.Content value="shifts" className="focus-visible:outline-hidden">
+          <ShiftCatalogTable
             shifts={shifts}
-            filteredCount={filteredAssignments.length}
-            totalCount={assignments.length}
-            onResetFilters={() => {
-              setSearchEmployeeKeyword('')
-              setFilterShiftId('')
-            }}
+            isLoadingShifts={isLoadingShifts}
+            isAdjustmentLocked={isAdjustmentLocked}
+            togglingShiftId={togglingShiftId}
+            onEditShift={handleOpenEditShiftDrawer}
+            onToggleShiftActive={handleToggleShiftActive}
           />
+        </Tabs.Content>
 
-          {assignmentViewMode === 'weekly' ? (
-            <WeeklyShiftScheduleView
+        {/* ── Nội dung Tab 2: Lịch Phân ca Nhân sự (ARCH-001 Subcomponents) ── */}
+        <Tabs.Content value="assignments" className="focus-visible:outline-hidden">
+          <div className="space-y-4">
+            <ShiftAssignmentToolbar
+              assignmentViewMode={assignmentViewMode}
+              onChangeViewMode={setAssignmentViewMode}
+              searchEmployeeKeyword={searchEmployeeKeyword}
+              onChangeSearchKeyword={setSearchEmployeeKeyword}
+              filterShiftId={filterShiftId}
+              onChangeFilterShiftId={setFilterShiftId}
               shifts={shifts}
-              assignments={assignments}
-              employees={employees}
-              isAdjustmentLocked={isAdjustmentLocked}
-              onQuickAssign={handleQuickAssign}
-              onRemoveAssignment={handleRemoveAssignment}
+              filteredCount={filteredAssignments.length}
+              totalCount={assignments.length}
+              onResetFilters={() => {
+                setSearchEmployeeKeyword('')
+                setFilterShiftId('')
+              }}
             />
-          ) : (
-            <ShiftAssignmentTable
-              filteredAssignments={filteredAssignments}
-              shiftsMap={shiftsMap}
-              isLoadingAssignments={isLoadingAssignments}
-              isAdjustmentLocked={isAdjustmentLocked}
-              deletingAssignmentId={deletingAssignmentId}
-              onRemoveAssignment={handleRemoveAssignment}
-            />
-          )}
-        </div>
-      )}
+
+            {assignmentViewMode === 'weekly' ? (
+              <WeeklyShiftScheduleView
+                shifts={shifts}
+                assignments={assignments}
+                employees={employees}
+                isAdjustmentLocked={isAdjustmentLocked}
+                onQuickAssign={handleQuickAssign}
+                onRemoveAssignment={handleRemoveAssignment}
+              />
+            ) : (
+              <ShiftAssignmentTable
+                filteredAssignments={filteredAssignments}
+                shiftsMap={shiftsMap}
+                isLoadingAssignments={isLoadingAssignments}
+                isAdjustmentLocked={isAdjustmentLocked}
+                deletingAssignmentId={deletingAssignmentId}
+                onRemoveAssignment={handleRemoveAssignment}
+              />
+            )}
+          </div>
+        </Tabs.Content>
+      </Tabs.Root>
 
       <ShiftFormDrawer
         isOpen={isShiftDrawerOpen}
@@ -208,6 +212,7 @@ export const AdminShiftManagementView: React.FC = () => {
         formData={shiftFormData}
         onChangeFormData={setShiftFormData}
         formError={shiftFormError}
+        fieldErrors={shiftFieldErrors}
         isSubmitting={isSubmittingShift}
         onSubmit={handleSaveShift}
       />
@@ -218,6 +223,7 @@ export const AdminShiftManagementView: React.FC = () => {
         formData={assignFormData}
         onChangeFormData={setAssignFormData}
         formError={assignFormError}
+        fieldErrors={assignFieldErrors}
         overlapConflict={overlapConflict}
         onApplySuggestedSlot={handleApplySuggestedSlot}
         isSubmitting={isSubmittingAssign}

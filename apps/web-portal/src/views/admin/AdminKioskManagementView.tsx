@@ -16,11 +16,10 @@ import {
   Info,
   AlertTriangle,
   Monitor,
-  Search,
-  RotateCcw,
 } from 'lucide-react'
 import {
   Button,
+  FilterToolbar,
   TableSkeleton,
   toast,
   Dialog,
@@ -65,8 +64,25 @@ export const AdminKioskManagementView: React.FC = () => {
   const kiosks = useKioskRegistryStore((s) => s.kiosks)
   const isPingStale = useKioskRegistryStore((s) => s.isPingStale)
   const setKiosks = useKioskRegistryStore((s) => s.setKiosks)
-  const selectedKioskId = useKioskRegistryStore((s) => s.selectedKioskId)
-  const setSelectedKioskId = useKioskRegistryStore((s) => s.setSelectedKioskId)
+  const storeSelectedKioskId = useKioskRegistryStore((s) => s.selectedKioskId)
+  const setStoreSelectedKioskId = useKioskRegistryStore((s) => s.setSelectedKioskId)
+
+  // Colocate selectedKioskId in local state while synchronizing with kioskRegistryStore (F-TECH-03)
+  const [selectedKioskId, setSelectedKioskIdLocal] = useState<string | null>(storeSelectedKioskId)
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedKioskIdLocal(storeSelectedKioskId)
+  }, [storeSelectedKioskId])
+
+  const setSelectedKioskId = useCallback(
+    (id: string | null) => {
+      setSelectedKioskIdLocal(id)
+      setStoreSelectedKioskId(id)
+    },
+    [setStoreSelectedKioskId]
+  )
+
   const updateKioskStatus = useKioskRegistryStore((s) => s.updateKioskStatus)
   const setSecretToken = useKioskRegistryStore((s) => s.setSecretToken)
   const clearSecretToken = useKioskRegistryStore((s) => s.clearSecretToken)
@@ -323,60 +339,50 @@ export const AdminKioskManagementView: React.FC = () => {
       )}
 
       {/* ── Bảng Danh mục Trạm Kiosk ── */}
-      {/* ── Thanh Công Cụ Tìm Kiếm & Lọc Trạm Kiosk (GAP-COMP-02) ── */}
-      <div className="card-surface p-3.5 sm:p-4 rounded-xl border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* ── Thanh Công Cụ Tìm Kiếm & Lọc Trạm Kiosk (GAP-COMP-02, F-TECH-04) ── */}
+      <FilterToolbar className="justify-between">
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {/* Tìm kiếm theo mã trạm, tên hoặc vị trí */}
-          <div className="relative w-full sm:w-72">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Search className="w-4 h-4 shrink-0" />
-            </div>
-            <input
-              type="text"
-              maxLength={100}
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              data-testid="search-kiosk-input"
-              placeholder="Tìm theo mã trạm, tên, vị trí..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-            />
-          </div>
+          <FilterToolbar.Search
+            id="search-kiosk-input"
+            data-testid="search-kiosk-input"
+            maxLength={100}
+            value={searchKeyword}
+            onChange={setSearchKeyword}
+            placeholder="Tìm theo mã trạm, tên, vị trí..."
+            className="w-full sm:w-72"
+          />
 
           {/* Lọc theo trạng thái */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+          <FilterToolbar.Select
+            id="filter-kiosk-status-select"
             data-testid="filter-kiosk-status-select"
-            className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-auto cursor-pointer"
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="ONLINE">Trực tuyến</option>
-            <option value="WARNING">Cảnh báo</option>
-            <option value="OFFLINE">Ngoại tuyến</option>
-          </select>
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'ALL', label: 'Tất cả trạng thái' },
+              { value: 'ONLINE', label: 'Trực tuyến' },
+              { value: 'WARNING', label: 'Cảnh báo' },
+              { value: 'OFFLINE', label: 'Ngoại tuyến' },
+            ]}
+            className="w-full sm:w-auto"
+          />
 
-          {(searchKeyword || statusFilter !== 'ALL') && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setSearchKeyword('')
-                setStatusFilter('ALL')
-              }}
-              data-testid="reset-kiosk-filter-btn"
-              leftIcon={<RotateCcw className="w-3.5 h-3.5 shrink-0" />}
-              className="text-xs"
-            >
-              Đặt lại
-            </Button>
-          )}
+          <FilterToolbar.Reset
+            visible={Boolean(searchKeyword || statusFilter !== 'ALL')}
+            onClick={() => {
+              setSearchKeyword('')
+              setStatusFilter('ALL')
+            }}
+            data-testid="reset-kiosk-filter-btn"
+            label="Đặt lại"
+          />
         </div>
 
         <span className="text-xs text-text-secondary self-end sm:self-auto font-medium">
           Hiển thị <span className="font-semibold text-text-primary">{filteredKiosks.length}</span> / <span className="font-semibold text-text-primary">{kiosks.length}</span> trạm Kiosk
         </span>
-      </div>
+      </FilterToolbar>
 
       <div className="card-surface overflow-hidden">
         <div className="overflow-x-auto">
@@ -501,6 +507,7 @@ export const AdminKioskManagementView: React.FC = () => {
                             type="button"
                             variant="secondary"
                             size="sm"
+                            aria-label={`Cấp lại Secret Token cho trạm ${kiosk.name || kiosk.kioskId}`}
                             data-testid={`reissue-token-btn-${kiosk.kioskId}`}
                             onClick={(e) => {
                               e.stopPropagation()

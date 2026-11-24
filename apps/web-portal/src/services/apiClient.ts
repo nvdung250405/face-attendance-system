@@ -79,7 +79,7 @@ export function createApiClient(customBaseUrl?: string, timeoutMs: number = DEFA
     timeout: timeoutMs,
     headers: {
       'Content-Type': 'application/json',
-      Accept: 'application/json',
+      Accept: 'application/json, application/problem+json',
     },
   })
 

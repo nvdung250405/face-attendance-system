@@ -65,6 +65,7 @@ function renderShell(role: 'HR_MANAGER' | 'ADMIN' | 'EMPLOYEE' | 'DPO' = 'HR_MAN
         <Route element={<AdminShellLayout />}>
           <Route path="/admin/dashboard" element={<div data-testid="page-content">Admin Dashboard</div>} />
           <Route path="/admin/attendance" element={<div data-testid="page-content">Attendance</div>} />
+          <Route path="/admin/compliance" element={<div data-testid="page-content">Compliance</div>} />
           <Route path="/employee/dashboard" element={<div data-testid="page-content">Employee Dashboard</div>} />
         </Route>
       </Routes>
@@ -177,6 +178,15 @@ describe('Khung Bố cục Admin Shell Responsive (TST-WEB-005, TASK-WEB-009, UX
       expect(screen.queryByText('Hồ sơ nhân sự')).toBeNull()
       expect(screen.queryByText('Quản lý Kiosk')).toBeNull()
       expect(screen.getByText('Nhật ký kiểm toán')).toBeDefined()
+      expect(screen.getByText('Tuân thủ DPO & Quyền riêng tư')).toBeDefined()
+    })
+
+    it('DPO thấy menu Tuân thủ DPO & Quyền riêng tư và breadcrumb hiển thị đúng (F-SPEC-03)', () => {
+      renderShell('DPO', '/admin/compliance')
+
+      expect(screen.getByText('Tuân thủ DPO & Quyền riêng tư')).toBeDefined()
+      const header = screen.getByTestId('top-header')
+      expect(header.textContent).toContain('Tuân thủ DPO')
     })
 
     it('EMPLOYEE thấy menu Bảng công và Đăng ký sinh trắc nhưng không thấy menu quản trị', () => {

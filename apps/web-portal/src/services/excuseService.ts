@@ -10,7 +10,6 @@ import type {
   PageResponse,
   ExcuseRequestItem,
   SubmitExcuseRequestPayload,
-  DecideExcuseRequestPayload,
   ExcuseQueryParams,
 } from '@/types'
 
@@ -72,24 +71,6 @@ export class ExcuseService {
     try {
       const response = await apiClient.get<ApiResponse<ExcuseRequestItem>>(
         `/api/v1/admin/excuse-requests/${id}`
-      )
-      return response.data.data
-    } catch (error) {
-      throw normalizeApiError(error)
-    }
-  }
-
-  /**
-   * HR / Admin ra quyết định duyệt hoặc từ chối đơn giải trình (PATCH /api/v1/admin/excuse-requests/{id} - API-BE-029)
-   */
-  async decideExcuseRequest(
-    id: number,
-    payload: DecideExcuseRequestPayload
-  ): Promise<ExcuseRequestItem> {
-    try {
-      const response = await apiClient.patch<ApiResponse<ExcuseRequestItem>>(
-        `/api/v1/admin/excuse-requests/${id}`,
-        payload
       )
       return response.data.data
     } catch (error) {

@@ -116,6 +116,14 @@ export const AppRoutes: React.FC = () => {
             <Route path="reports" element={<AdminAttendanceView />} />
             <Route path="excuse-requests" element={<AdminExcuseManagementView />} />
             <Route path="audit-logs" element={<AdminAuditLogView />} />
+            <Route
+              path="compliance"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'DPO']}>
+                  <AdminAuditLogView />
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           {/* Không gian Tự phục vụ Nhân viên EMPLOYEE */}
