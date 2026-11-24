@@ -304,13 +304,11 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/Chào mừng trở lại/i)).toBeTruthy()
+        expect(screen.getByTestId('kpi-total-employees').textContent).toBe('120')
+        expect(screen.getByTestId('kpi-present-count').textContent).toBe('100')
+        expect(screen.getByTestId('kpi-late-count').textContent).toBe('8')
+        expect(screen.getByTestId('kpi-absent-count').textContent).toBe('20')
       })
-
-      // KPI số liệu ban đầu
-      expect(screen.getByTestId('kpi-total-employees').textContent).toBe('120')
-      expect(screen.getByTestId('kpi-present-count').textContent).toBe('100')
-      expect(screen.getByTestId('kpi-late-count').textContent).toBe('8')
-      expect(screen.getByTestId('kpi-absent-count').textContent).toBe('20')
 
       // Dữ liệu bảng ban đầu
       expect(screen.getByText('Trần Văn An')).toBeTruthy()
