@@ -14,6 +14,7 @@ interface EmployeeTableProps {
   onEdit: (emp: EmployeeItem) => void
   onResetCredentials: (emp: EmployeeItem) => void
   onToggleStatus: (emp: EmployeeItem) => void
+  onRowClick?: (emp: EmployeeItem) => void
 }
 
 const renderRoleBadge = (role: UserRole) => {
@@ -60,6 +61,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   onEdit,
   onResetCredentials,
   onToggleStatus,
+  onRowClick,
 }) => {
   return (
     <div className="card-surface overflow-hidden">
@@ -105,7 +107,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   <tr
                     key={emp.id}
                     data-testid={`employee-row-${emp.id}`}
-                    className="table-row-hover group transition-colors"
+                    onClick={() => onRowClick?.(emp)}
+                    className="table-row-hover group transition-colors cursor-pointer"
                   >
                     <td className="py-3.5 px-4 font-mono font-bold text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                       {emp.employeeCode}
@@ -164,7 +167,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                           type="button"
                           title="Chỉnh sửa hồ sơ"
                           aria-label={`Sửa hồ sơ ${emp.fullName}`}
-                          onClick={() => onEdit(emp)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onEdit(emp)
+                          }}
                           disabled={isBusy}
                           className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
                         >
@@ -175,7 +181,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                           type="button"
                           title="Cấp lại mật khẩu tạm"
                           aria-label={`Cấp lại mật khẩu cho ${emp.fullName}`}
-                          onClick={() => onResetCredentials(emp)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onResetCredentials(emp)
+                          }}
                           disabled={isBusy}
                           className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
                         >
@@ -186,7 +195,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                           type="button"
                           title={isDeactivated ? 'Kích hoạt lại' : 'Vô hiệu hóa'}
                           aria-label={`${isDeactivated ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
-                          onClick={() => onToggleStatus(emp)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onToggleStatus(emp)
+                          }}
                           disabled={isBusy}
                           className={`min-w-[44px] min-h-[44px] p-2.5 rounded-lg transition-colors shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 ${
                             isDeactivated

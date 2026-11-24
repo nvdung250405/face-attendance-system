@@ -1,4 +1,6 @@
 export * from './AuditLogTable'
 export * from './DpoConsentsTable'
 export * from './RetentionScheduleTable'
+export * from './DpoConsentWithdrawalsTable'
+export * from './DpoDataRequestsReviewTable'
 export * from './AuditDiffModal'

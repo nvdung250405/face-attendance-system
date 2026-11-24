@@ -48,7 +48,10 @@ import type {
 // ── Mock SockJS & STOMP hooks để không gọi WebSocket thật trong Happy-DOM ───
 
 vi.mock('@/store/stompConnectionStore', () => ({
-  useStompConnectionStore: () => ({ status: 'CONNECTED', setStatus: vi.fn() }),
+  useStompConnectionStore: (selector?: (state: { status: string; setStatus: ReturnType<typeof vi.fn> }) => unknown) => {
+    const state = { status: 'CONNECTED', setStatus: vi.fn() }
+    return typeof selector === 'function' ? selector(state) : state
+  },
 }))
 
 vi.mock('@/services/hooks', async (importOriginal) => {

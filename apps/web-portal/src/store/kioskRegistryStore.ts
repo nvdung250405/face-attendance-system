@@ -110,7 +110,7 @@ export const useKioskRegistryStore = create<KioskRegistryState>((set, get) => ({
   updateKioskStatus: (kioskId: string, status: KioskStatus, lastPingAt?: string) => {
     set((state) => ({
       kiosks: state.kiosks.map((k) => {
-        if (k.kioskId !== kioskId) return k
+        if (k.kioskId !== kioskId && String(k.id) !== kioskId) return k
         return {
           ...k,
           status,

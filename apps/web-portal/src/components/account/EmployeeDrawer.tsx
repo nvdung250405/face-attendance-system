@@ -11,6 +11,7 @@
 import React, { useState } from 'react'
 import { X, AlertCircle, Sparkles } from 'lucide-react'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
+import { employeeService } from '@/services/employeeService'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { DEPARTMENTS } from '@/constants/departments'
@@ -111,13 +112,16 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
         }
         return
       } else if (initialData) {
+        if (role !== initialData.role) {
+          await employeeService.updateUserRole(initialData.id, role)
+        }
         const updated = await adminEmployeeService.updateEmployee(initialData.id, {
           fullName: fullName.trim(),
           department,
           role,
         })
         onClose()
-        onSuccess({ employee: updated })
+        onSuccess({ employee: { ...updated, role } })
         return
       }
     } catch (err: unknown) {

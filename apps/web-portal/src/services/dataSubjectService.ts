@@ -74,6 +74,27 @@ export class DataSubjectService {
   }
 
   /**
+   * Tra cứu lượt rút cam kết gần nhất của nhân viên (GET /api/v1/employee/consent/withdrawal)
+   * Phục vụ theo dõi tiến trình tiêu hủy sinh trắc 20 ngày theo Nghị định 356/2025/NĐ-CP.
+   */
+  async getLatestWithdrawal(): Promise<WithdrawConsentResponse | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<WithdrawConsentResponse | null>>(
+        '/api/v1/employee/consent/withdrawal'
+      )
+      const data = response.data?.data
+      if (!data) return null
+      return {
+        ...data,
+        retentionDeadline: data.retentionDeadline || data.biometricDisposalDueAt || '',
+        biometricDisposalDueAt: data.biometricDisposalDueAt || data.retentionDeadline || '',
+      }
+    } catch {
+      return null
+    }
+  }
+
+  /**
    * Nhân viên gửi yêu cầu về dữ liệu cá nhân (POST /api/v1/employee/data-requests)
    */
   async createEmployeeDataRequest(request: CreateDataSubjectRequest): Promise<DataSubjectRequestItem> {

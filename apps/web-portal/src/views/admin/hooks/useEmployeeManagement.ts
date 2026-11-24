@@ -37,6 +37,10 @@ export const useEmployeeManagement = () => {
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create')
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeItem | null>(null)
 
+  // Employee Detail Drawer State (Master-Detail Pattern)
+  const [detailEmployee, setDetailEmployee] = useState<EmployeeItem | null>(null)
+  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false)
+
   // Temporary Password Modal State (CHỈ TỒN TẠI TRONG RAM, TUYỆT ĐỐI KHÔNG LƯU STORAGE)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [tempPasswordTarget, setTempPasswordTarget] = useState<{ name: string; code: string } | null>(null)
@@ -126,6 +130,27 @@ export const useEmployeeManagement = () => {
     setDrawerMode('edit')
     setIsDrawerOpen(true)
   }
+
+  // Mở Detail Drawer xem chi tiết hồ sơ
+  const handleOpenDetail = useCallback((emp: EmployeeItem) => {
+    setDetailEmployee(emp)
+    setIsDetailDrawerOpen(true)
+  }, [])
+
+  // Đóng Detail Drawer
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailDrawerOpen(false)
+    setDetailEmployee(null)
+  }, [])
+
+  // Mở Edit Drawer từ trong Detail Drawer
+  const handleEditFromDetail = useCallback((emp: EmployeeItem) => {
+    setIsDetailDrawerOpen(false)
+    setDetailEmployee(null)
+    setSelectedEmployee(emp)
+    setDrawerMode('edit')
+    setIsDrawerOpen(true)
+  }, [])
 
   // Xử lý sau khi lưu hồ sơ từ Drawer
   const handleDrawerSuccess = (result: { employee?: Partial<EmployeeItem>; temporaryPassword?: string }) => {
@@ -243,6 +268,11 @@ export const useEmployeeManagement = () => {
     handleResetFilters,
     handleOpenCreate,
     handleOpenEdit,
+    detailEmployee,
+    isDetailDrawerOpen,
+    handleOpenDetail,
+    handleCloseDetail,
+    handleEditFromDetail,
     handleDrawerSuccess,
     handleCloseTempModal,
     handleResetCredentials,

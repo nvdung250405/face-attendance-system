@@ -145,6 +145,29 @@ export const mockDpoConsentList: import('@/types').DpoConsentAuditItem[] = [
   },
 ]
 
+export const mockDpoConsentWithdrawalList: import('@/types').DpoConsentWithdrawalItem[] = [
+  {
+    id: 1,
+    employeeId: 1042,
+    employeeCode: 'EMP-1042',
+    fullName: 'Nguyễn Văn A',
+    withdrawnAt: '2026-10-14T09:00:00.000+07:00',
+    biometricDisposalDueAt: '2026-11-03T09:00:00.000+07:00',
+    status: 'PENDING_DISPOSAL',
+    reason: 'Rút cam kết và chuyển sang thẻ vật lý',
+  },
+  {
+    id: 2,
+    employeeId: 1045,
+    employeeCode: 'EMP-1045',
+    fullName: 'Trần Thị B',
+    withdrawnAt: '2026-10-01T10:00:00.000+07:00',
+    biometricDisposalDueAt: '2026-10-21T10:00:00.000+07:00',
+    status: 'COMPLETED',
+    reason: 'Nghỉ việc theo nguyện vọng cá nhân',
+  },
+]
+
 export const mockRetentionScheduleList: import('@/types').RetentionScheduleItem[] = [
   {
     id: 1,
