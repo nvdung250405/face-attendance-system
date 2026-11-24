@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
   return {
     session: initialSession,
     user: initialSession?.user ?? null,
-    isAuthenticated: Boolean((initialSession?.accessToken || initialSession?.refreshToken) && initialSession?.user),
+    isAuthenticated: Boolean(initialSession?.user),
     isInitialized: true,
 
     initialize: () => {
