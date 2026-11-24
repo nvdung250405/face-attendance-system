@@ -26,7 +26,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import type { NormalizedApiError } from '@/services/errorNormalizer'
+import { Input } from '@/components/ui/input'
+import { toast } from '@/components/ui'
+import { normalizeApiError } from '@/services/errorNormalizer'
 
 export interface PinManagementModalProps {
   isOpen: boolean
@@ -56,19 +58,16 @@ const PinManagementDialog: React.FC<{
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => {
       if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     }
   }, [])
 
   const handleClose = () => {
     if (isLoading) return
     if (stepTimerRef.current) clearTimeout(stepTimerRef.current)
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     onClose()
   }
 
@@ -152,18 +151,17 @@ const PinManagementDialog: React.FC<{
         })
       }
 
-      setSuccessMessage('Thiết lập mã PIN dự phòng thành công! Mã PIN đã có hiệu lực tại mọi trạm Kiosk.')
+      const msg = 'Thiết lập mã PIN dự phòng thành công! Mã PIN đã có hiệu lực tại mọi trạm Kiosk.'
+      toast.success(msg)
+      setSuccessMessage(msg)
 
       // Cập nhật trạng thái hasPin vào store (ghi luôn xuống storage để không mất sau reload)
       useAuthStore.getState().updateUser({ hasPin: true })
 
       onSuccess?.()
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-      closeTimerRef.current = setTimeout(() => {
-        handleClose()
-      }, 1500)
+      handleClose()
     } catch (err) {
-      const error = err as NormalizedApiError
+      const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể thiết lập mã PIN. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
@@ -204,6 +202,8 @@ const PinManagementDialog: React.FC<{
       {errorMessage && (
         <div
           data-testid="pin-modal-error"
+          role="alert"
+          aria-live="assertive"
           className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center gap-2 animate-in fade-in"
         >
           <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -224,21 +224,17 @@ const PinManagementDialog: React.FC<{
       {/* Bước 0: Xác thực mật khẩu tài khoản nếu đã có PIN trước đó */}
       {step === 'password' && (
         <form onSubmit={handlePasswordVerified} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-text-secondary">Mật khẩu tài khoản</label>
-            <input
-              type="password"
-              value={accountPassword}
-              disabled={isLoading}
-              onChange={(e) => setAccountPassword(e.target.value)}
-              data-testid="pin-verify-password-input"
-              placeholder="Nhập mật khẩu tài khoản..."
-              className="w-full px-3.5 py-2.5 min-h-[44px] text-sm rounded-xl border border-border-subtle bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-colors disabled:bg-slate-50 disabled:cursor-not-allowed"
-            />
-            <p className="text-[11px] text-slate-500">
-              Xác thực danh tính trước khi đổi mã PIN dự phòng.
-            </p>
-          </div>
+          <Input
+            id="pin-verify-password-input"
+            data-testid="pin-verify-password-input"
+            type="password"
+            label="Mật khẩu tài khoản"
+            hint="Xác thực danh tính trước khi đổi mã PIN dự phòng."
+            value={accountPassword}
+            disabled={isLoading}
+            onChange={(e) => setAccountPassword(e.target.value)}
+            placeholder="Nhập mật khẩu tài khoản..."
+          />
 
           <Button
             type="submit"

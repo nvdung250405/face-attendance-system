@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { toast } from '@/components/ui'
 import { shiftAdminService } from '@/services/shiftAdminService'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
@@ -495,25 +496,35 @@ export const useAdminShiftManagement = () => {
     }
   }
 
+  const [assignmentToDelete, setAssignmentToDelete] = useState<EmployeeShiftAssignment | null>(null)
+
   // WEB-F-01 (STAB-002): Quản lý deletingAssignmentId khóa disabled tránh double click DELETE
-  const handleRemoveAssignment = async (assignment: EmployeeShiftAssignment) => {
+  const handleRemoveAssignment = (assignment: EmployeeShiftAssignment) => {
     if (isAdjustmentLocked) {
+      toast.warning('Kỳ công hiện tại đang bị khóa. Không thể gỡ bỏ phân ca.')
       setNotification({
         type: 'warning',
         message: 'Kỳ công hiện tại đang bị khóa. Không thể gỡ bỏ phân ca.',
       })
       return
     }
-    if (!window.confirm(`Xác nhận hủy phân ca ${assignment.shiftName} của nhân viên ${assignment.fullName}?`)) {
-      return
-    }
+    setAssignmentToDelete(assignment)
+  }
+
+  const confirmRemoveAssignment = async () => {
+    if (!assignmentToDelete) return
+    const assignment = assignmentToDelete
+    setAssignmentToDelete(null)
+
     try {
       setDeletingAssignmentId(assignment.id)
       await shiftAdminService.removeShiftAssignment(assignment.id)
+      toast.success('Đã hủy phân ca thành công.')
       setNotification({ type: 'success', message: 'Đã hủy phân ca thành công.' })
       await loadAssignments()
     } catch (err) {
       const error = err as NormalizedApiError
+      toast.error(error.message || 'Không thể hủy phân ca.')
       setNotification({ type: 'error', message: error.message || 'Không thể hủy phân ca.' })
     } finally {
       setDeletingAssignmentId(null)
@@ -584,6 +595,9 @@ export const useAdminShiftManagement = () => {
     handleBatchAssign,
     handleApplySuggestedSlot,
     handleRemoveAssignment,
+    assignmentToDelete,
+    setAssignmentToDelete,
+    confirmRemoveAssignment,
     filteredAssignments,
   }
 }

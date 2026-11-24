@@ -26,6 +26,7 @@ export const EmployeeManagementView: React.FC = () => {
     totalElements,
     page,
     pageSize,
+    setPageSize,
     setPage,
     keyword,
     setKeyword,
@@ -145,6 +146,10 @@ export const EmployeeManagementView: React.FC = () => {
         pageSize={pageSize}
         totalElements={totalElements}
         onPageChange={(newPage) => setPage(newPage)}
+        onPageSizeChange={(newPageSize) => {
+          setPageSize(newPageSize)
+          setPage(0)
+        }}
         onEdit={handleOpenEdit}
         onResetCredentials={handleResetCredentials}
         onToggleStatus={handleToggleStatus}

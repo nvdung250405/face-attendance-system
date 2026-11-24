@@ -12,6 +12,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import { useAuthStore } from '@/store/authStore'
 import { attendanceService } from '@/services/attendanceService'
 import { useLiveAttendance } from '@/services/hooks/useLiveAttendance'
@@ -111,11 +112,11 @@ export const AdminDashboardView: React.FC = () => {
       }
 
       if (statsData.status === 'rejected' && attendanceData.status === 'rejected') {
-        const err = (attendanceData.reason || statsData.reason) as { message?: string }
-        setErrorMessage(err?.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
+        const err = normalizeApiError(attendanceData.reason || statsData.reason)
+        setErrorMessage(err.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
       }
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải dữ liệu ban đầu cho bảng điều khiển.')
     } finally {
       setIsLoading(false)
@@ -190,6 +191,7 @@ export const AdminDashboardView: React.FC = () => {
       {errorMessage && (
         <div
           role="alert"
+          aria-live="assertive"
           className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium flex items-center justify-between"
         >
           <span>{errorMessage}</span>

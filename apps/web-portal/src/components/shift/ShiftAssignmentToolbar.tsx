@@ -1,5 +1,6 @@
 import React from 'react'
-import { List, CalendarDays, Search } from 'lucide-react'
+import { List, CalendarDays, Search, X, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui'
 import type { ShiftItem } from '@/types'
 
 export interface ShiftAssignmentToolbarProps {
@@ -12,6 +13,7 @@ export interface ShiftAssignmentToolbarProps {
   shifts: ShiftItem[]
   filteredCount: number
   totalCount: number
+  onResetFilters?: () => void
 }
 
 export const ShiftAssignmentToolbar: React.FC<ShiftAssignmentToolbarProps> = ({
@@ -24,7 +26,19 @@ export const ShiftAssignmentToolbar: React.FC<ShiftAssignmentToolbarProps> = ({
   shifts,
   filteredCount,
   totalCount,
+  onResetFilters,
 }) => {
+  const hasActiveFilters = Boolean(searchEmployeeKeyword || filterShiftId)
+
+  const handleReset = () => {
+    if (onResetFilters) {
+      onResetFilters()
+    } else {
+      onChangeSearchKeyword('')
+      onChangeFilterShiftId('')
+    }
+  }
+
   return (
     <div className="card-surface p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
@@ -71,8 +85,20 @@ export const ShiftAssignmentToolbar: React.FC<ShiftAssignmentToolbarProps> = ({
               onChange={(e) => onChangeSearchKeyword(e.target.value)}
               data-testid="search-assigned-employee-input"
               placeholder="Mã NV hoặc Họ tên..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              className="w-full pl-9 pr-8 py-1.5 text-xs rounded-lg border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
             />
+            {searchEmployeeKeyword && (
+              <button
+                type="button"
+                data-testid="search-assigned-employee-clear"
+                onClick={() => onChangeSearchKeyword('')}
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                title="Xóa tìm kiếm"
+                aria-label="Xóa tìm kiếm"
+              >
+                <X className="w-3.5 h-3.5 shrink-0" />
+              </button>
+            )}
           </div>
         )}
 
@@ -94,11 +120,28 @@ export const ShiftAssignmentToolbar: React.FC<ShiftAssignmentToolbarProps> = ({
         )}
       </div>
 
-      {assignmentViewMode === 'table' && (
-        <span className="text-xs text-text-secondary self-end sm:self-auto font-medium">
-          Hiển thị <span className="font-semibold text-text-primary">{filteredCount}</span> / <span className="font-semibold text-text-primary">{totalCount}</span> lịch phân ca
-        </span>
-      )}
+      <div className="flex items-center gap-3 self-end sm:self-auto">
+        {assignmentViewMode === 'table' && hasActiveFilters && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleReset}
+            data-testid="shift-assignment-reset-btn"
+            leftIcon={<RotateCcw className="w-3.5 h-3.5 shrink-0" />}
+            className="text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs shrink-0 cursor-pointer"
+          >
+            Đặt lại
+          </Button>
+        )}
+
+        {assignmentViewMode === 'table' && (
+          <span className="text-xs text-text-secondary font-medium">
+            Hiển thị <span className="font-semibold text-text-primary">{filteredCount}</span> /{' '}
+            <span className="font-semibold text-text-primary">{totalCount}</span> lịch phân ca
+          </span>
+        )}
+      </div>
     </div>
   )
 }

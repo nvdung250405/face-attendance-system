@@ -111,33 +111,11 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
           <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">
             Mật khẩu tạm (Temporary Password)
           </label>
-          <div className="flex items-center gap-2">
-            <div
-              data-testid="temporary-password-display"
-              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 font-mono text-base font-bold text-slate-800 tracking-wider select-all text-center"
-            >
-              {temporaryPassword}
-            </div>
-            <Button
-              type="button"
-              id="btn-copy-temp-password"
-              data-testid="btn-copy-temp-password"
-              onClick={handleCopy}
-              variant={copied ? 'default' : 'default'}
-              className={`h-12 px-4 rounded-xl ${copied ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
-            >
-              {copied ? (
-                <>
-                  <Check size={16} strokeWidth={2.5} />
-                  <span>Đã chép</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={16} strokeWidth={2} />
-                  <span>Sao chép</span>
-                </>
-              )}
-            </Button>
+          <div
+            data-testid="temporary-password-display"
+            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 font-mono text-base font-bold text-slate-800 tracking-wider select-all text-center"
+          >
+            {temporaryPassword}
           </div>
           {copied && (
             <p className="text-xs text-emerald-600 font-medium mt-1.5 text-center">
@@ -146,8 +124,8 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
           )}
         </div>
 
-        {/* Nút đóng */}
-        <DialogFooter className="pt-2">
+        {/* Footer: Secondary bên TRÁI, Primary bên PHẢI */}
+        <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-2">
           <Button
             type="button"
             id="btn-close-temp-password"
@@ -156,7 +134,27 @@ export const TemporaryPasswordModal: React.FC<TemporaryPasswordModalProps> = ({
             onClick={onClose}
             className="w-full sm:w-auto px-6 font-semibold"
           >
-            Đã lưu & Đóng hộp thoại
+            Đã lưu & Đóng
+          </Button>
+          <Button
+            type="button"
+            id="btn-copy-temp-password"
+            data-testid="btn-copy-temp-password"
+            onClick={handleCopy}
+            variant="default"
+            className={`w-full sm:w-auto px-6 font-semibold ${copied ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+          >
+            {copied ? (
+              <>
+                <Check size={16} strokeWidth={2.5} />
+                <span>Đã chép</span>
+              </>
+            ) : (
+              <>
+                <Copy size={16} strokeWidth={2} />
+                <span>Sao chép mật khẩu</span>
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

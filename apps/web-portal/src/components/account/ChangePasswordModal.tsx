@@ -19,7 +19,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import type { NormalizedApiError } from '@/services/errorNormalizer'
+import { Input } from '@/components/ui/input'
+import { normalizeApiError } from '@/services/errorNormalizer'
 
 import { calculatePasswordStrength } from './passwordStrength'
 
@@ -125,7 +126,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         handleClose()
       }, 2000)
     } catch (err: unknown) {
-      const apiErr = err as NormalizedApiError
+      const apiErr = normalizeApiError(err)
       setErrorMessage(apiErr?.message || 'Không thể đổi mật khẩu. Vui lòng kiểm tra lại thông tin.')
     } finally {
       setIsLoading(false)
@@ -199,77 +200,71 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         {/* Form nhập liệu */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Mật khẩu hiện tại */}
-          <div>
-            <label
-              htmlFor="input-old-password"
-              className="block text-xs font-semibold text-text-secondary mb-1"
-            >
-              Mật khẩu hiện tại <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="input-old-password"
-                data-testid="input-old-password"
-                type={showOld ? 'text' : 'password'}
-                autoComplete="current-password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                placeholder="Nhập mật khẩu đang sử dụng"
-                className="input-base pr-11"
-                disabled={isLoading}
-                required
-                aria-required="true"
-                aria-invalid={Boolean(errorMessage)}
-                aria-describedby={errorMessage ? 'change-password-error' : undefined}
-              />
+          <Input
+            id="input-old-password"
+            data-testid="input-old-password"
+            type={showOld ? 'text' : 'password'}
+            autoComplete="current-password"
+            label={
+              <>
+                Mật khẩu hiện tại <span className="text-status-danger">*</span>
+              </>
+            }
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            placeholder="Nhập mật khẩu đang sử dụng"
+            disabled={isLoading}
+            required
+            aria-required="true"
+            aria-invalid={Boolean(errorMessage)}
+            aria-describedby={errorMessage ? 'change-password-error' : undefined}
+            rightIcon={
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:text-text-primary transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none transition-colors cursor-pointer"
                 aria-label={showOld ? 'Ẩn mật khẩu hiện tại' : 'Hiện mật khẩu hiện tại'}
                 aria-pressed={showOld}
                 aria-controls="input-old-password"
               >
                 {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-            </div>
-          </div>
+            }
+          />
 
           {/* Mật khẩu mới */}
           <div>
-            <label
-              htmlFor="input-new-password"
-              className="block text-xs font-semibold text-text-secondary mb-1"
-            >
-              Mật khẩu mới <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="input-new-password"
-                data-testid="input-new-password"
-                type={showNew ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, số"
-                className="input-base pr-11"
-                disabled={isLoading}
-                required
-                aria-required="true"
-                aria-invalid={Boolean(errorMessage)}
-                aria-describedby={errorMessage ? 'change-password-error' : undefined}
-              />
-              <button
-                type="button"
-                onClick={() => setShowNew(!showNew)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:text-text-primary transition-colors cursor-pointer"
-                aria-label={showNew ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
-                aria-pressed={showNew}
-                aria-controls="input-new-password"
-              >
-                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
+            <Input
+              id="input-new-password"
+              data-testid="input-new-password"
+              type={showNew ? 'text' : 'password'}
+              autoComplete="new-password"
+              label={
+                <>
+                  Mật khẩu mới <span className="text-status-danger">*</span>
+                </>
+              }
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, số"
+              disabled={isLoading}
+              required
+              aria-required="true"
+              aria-invalid={Boolean(errorMessage)}
+              aria-describedby={errorMessage ? 'change-password-error' : undefined}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none transition-colors cursor-pointer"
+                  aria-label={showNew ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
+                  aria-pressed={showNew}
+                  aria-controls="input-new-password"
+                >
+                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
+            />
 
             {/* Thước đo độ mạnh mật khẩu */}
             {newPassword && (
@@ -303,41 +298,37 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           </div>
 
           {/* Xác nhận mật khẩu mới */}
-          <div>
-            <label
-              htmlFor="input-confirm-password"
-              className="block text-xs font-semibold text-text-secondary mb-1"
-            >
-              Xác nhận mật khẩu mới <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="input-confirm-password"
-                data-testid="input-confirm-password"
-                type={showConfirm ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu mới"
-                className="input-base pr-11"
-                disabled={isLoading}
-                required
-                aria-required="true"
-                aria-invalid={Boolean(errorMessage)}
-                aria-describedby={errorMessage ? 'change-password-error' : undefined}
-              />
+          <Input
+            id="input-confirm-password"
+            data-testid="input-confirm-password"
+            type={showConfirm ? 'text' : 'password'}
+            autoComplete="new-password"
+            label={
+              <>
+                Xác nhận mật khẩu mới <span className="text-status-danger">*</span>
+              </>
+            }
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Nhập lại mật khẩu mới"
+            disabled={isLoading}
+            required
+            aria-required="true"
+            aria-invalid={Boolean(errorMessage)}
+            aria-describedby={errorMessage ? 'change-password-error' : undefined}
+            rightIcon={
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:text-text-primary transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary focus:outline-none transition-colors cursor-pointer"
                 aria-label={showConfirm ? 'Ẩn xác nhận mật khẩu' : 'Hiện xác nhận mật khẩu'}
                 aria-pressed={showConfirm}
                 aria-controls="input-confirm-password"
               >
                 {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-            </div>
-          </div>
+            }
+          />
 
           {/* Action buttons */}
           <div className="pt-3 border-t border-border-subtle flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">

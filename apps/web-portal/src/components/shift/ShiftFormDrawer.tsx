@@ -6,6 +6,7 @@ import React, { useState } from 'react'
 import { Clock, X, AlertTriangle, Sparkles, ChevronDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { previewShiftCode } from '@/utils/codePreview'
 import type { ShiftItem, CreateShiftRequest } from '@/types'
@@ -87,18 +88,15 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
 
             {/* Mã ca làm việc / Live Preview */}
             {editingShift ? (
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Mã ca làm việc
-                </label>
-                <input
-                  type="text"
-                  value={formData.shiftCode || editingShift.shiftCode}
-                  disabled
-                  data-testid="input-shift-code"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-slate-50 text-text-muted uppercase font-mono"
-                />
-              </div>
+              <Input
+                id="input-shift-code"
+                data-testid="input-shift-code"
+                label="Mã ca làm việc"
+                type="text"
+                value={formData.shiftCode || editingShift.shiftCode}
+                disabled
+                className="uppercase font-mono bg-slate-50 text-text-muted"
+              />
             ) : (
               <div className="space-y-2">
                 <div
@@ -130,19 +128,18 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
                 </div>
 
                 {isCustomCodeActive && (
-                  <div className="space-y-1 animate-in fade-in duration-150">
-                    <label className="text-xs font-semibold text-text-secondary">
-                      Mã ca làm việc thủ công
-                    </label>
-                    <input
+                  <div className="animate-in fade-in duration-150">
+                    <Input
+                      id="input-shift-code"
+                      data-testid="input-shift-code"
+                      label="Mã ca làm việc thủ công"
                       type="text"
                       value={formData.shiftCode || ''}
                       onChange={(e) =>
                         onChangeFormData((prev) => ({ ...prev, shiftCode: e.target.value.toUpperCase() }))
                       }
-                      data-testid="input-shift-code"
                       placeholder="Để trống để hệ thống tự sinh (ví dụ: SHF-XXXX)"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white uppercase font-mono"
+                      className="uppercase font-mono"
                     />
                   </div>
                 )}
@@ -150,68 +147,64 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
             )}
 
             {/* Tên ca */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-text-secondary">
-                Tên ca làm việc <span className="text-status-danger">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => onChangeFormData((prev) => ({ ...prev, name: e.target.value }))}
-                data-testid="input-shift-name"
-                placeholder="Ví dụ: Ca Hành Chính, Ca Chiều..."
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
-              />
-            </div>
+            <Input
+              id="input-shift-name"
+              data-testid="input-shift-name"
+              label={
+                <>
+                  Tên ca làm việc <span className="text-status-danger">*</span>
+                </>
+              }
+              type="text"
+              value={formData.name}
+              onChange={(e) => onChangeFormData((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Ví dụ: Ca Hành Chính, Ca Chiều..."
+            />
 
             {/* Khung giờ: Bắt đầu - Kết thúc */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Giờ bắt đầu <span className="text-status-danger">*</span>
-                </label>
-                <input
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => onChangeFormData((prev) => ({ ...prev, startTime: e.target.value }))}
-                  data-testid="input-shift-start-time"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-text-secondary">
-                  Giờ kết thúc <span className="text-status-danger">*</span>
-                </label>
-                <input
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => onChangeFormData((prev) => ({ ...prev, endTime: e.target.value }))}
-                  data-testid="input-shift-end-time"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-                />
-              </div>
+              <Input
+                id="input-shift-start-time"
+                data-testid="input-shift-start-time"
+                label={
+                  <>
+                    Giờ bắt đầu <span className="text-status-danger">*</span>
+                  </>
+                }
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => onChangeFormData((prev) => ({ ...prev, startTime: e.target.value }))}
+                className="font-mono"
+              />
+              <Input
+                id="input-shift-end-time"
+                data-testid="input-shift-end-time"
+                label={
+                  <>
+                    Giờ kết thúc <span className="text-status-danger">*</span>
+                  </>
+                }
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => onChangeFormData((prev) => ({ ...prev, endTime: e.target.value }))}
+                className="font-mono"
+              />
             </div>
 
             {/* Ân hạn */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-text-secondary">
-                Thời gian ân hạn đi muộn (Phút)
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={60}
-                value={formData.gracePeriodMinutes}
-                onChange={(e) =>
-                  onChangeFormData((prev) => ({ ...prev, gracePeriodMinutes: Number(e.target.value) }))
-                }
-                data-testid="input-shift-grace-minutes"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white"
-              />
-              <span className="text-2xs text-text-secondary">
-                Khoảng thời gian nhân viên đến trễ mà không bị tính vi phạm đi muộn (0 - 60 phút)
-              </span>
-            </div>
+            <Input
+              id="input-shift-grace-minutes"
+              data-testid="input-shift-grace-minutes"
+              label="Thời gian ân hạn đi muộn (Phút)"
+              hint="Khoảng thời gian nhân viên đến trễ mà không bị tính vi phạm đi muộn (0 - 60 phút)"
+              type="number"
+              min={0}
+              max={60}
+              value={formData.gracePeriodMinutes}
+              onChange={(e) =>
+                onChangeFormData((prev) => ({ ...prev, gracePeriodMinutes: Number(e.target.value) }))
+              }
+            />
 
             {/* Ca qua đêm (isOvernight) */}
             <div className="pt-1">

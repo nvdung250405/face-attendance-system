@@ -11,6 +11,7 @@ interface EmployeeTableProps {
   pageSize: number
   totalElements: number
   onPageChange: (newPage: number) => void
+  onPageSizeChange?: (newPageSize: number) => void
   onEdit: (emp: EmployeeItem) => void
   onResetCredentials: (emp: EmployeeItem) => void
   onToggleStatus: (emp: EmployeeItem) => void
@@ -58,6 +59,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   pageSize,
   totalElements,
   onPageChange,
+  onPageSizeChange,
   onEdit,
   onResetCredentials,
   onToggleStatus,
@@ -110,37 +112,37 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                     onClick={() => onRowClick?.(emp)}
                     className="table-row-hover group transition-colors cursor-pointer"
                   >
-                    <td className="py-3.5 px-4 font-mono font-bold text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono font-bold text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap tabular-nums">
                       {emp.employeeCode}
                     </td>
 
-                    <td className="py-3.5 px-4 font-medium text-text-primary">
+                    <td className="py-3 px-4 font-medium text-text-primary">
                       <span className="truncate max-w-[200px] block" title={emp.fullName}>
                         {emp.fullName}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-text-secondary">
+                    <td className="py-3 px-4 text-text-secondary">
                       <span className="truncate max-w-[200px] block" title={emp.email}>
                         {emp.email}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-text-secondary">
+                    <td className="py-3 px-4 text-text-secondary">
                       <span className="truncate max-w-[200px] block" title={emp.department || '—'}>
                         {emp.department || '—'}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3 px-4">
                       {renderRoleBadge(emp.role)}
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3 px-4">
                       {renderStatusBadge(emp.status)}
                     </td>
 
-                    <td className="py-3.5 px-4 text-center">
+                    <td className="py-3 px-4 text-center">
                       <div className="inline-flex items-center gap-2">
                         <span
                           title={emp.hasBiometric ? 'Đã kích hoạt sinh trắc mặt' : 'Chưa kích hoạt'}
@@ -161,7 +163,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
+                    <td className="py-3 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
                       <div className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
@@ -228,6 +230,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         totalElements={totalElements}
         totalPages={Math.ceil(totalElements / pageSize) || 1}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        pageSizeOptions={[10, 20, 50, 100]}
         itemLabel="nhân sự"
       />
     </div>

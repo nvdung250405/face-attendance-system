@@ -29,6 +29,7 @@ import { Button } from '@/components/ui'
 import { PaginationBar } from '@/components/ui/pagination-bar'
 import { useDebounce } from '@/hooks'
 import { attendanceService } from '@/services/attendanceService'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import { reportExportService } from '@/services/reportExportService'
 import { LiveAttendanceTable } from '@/components/dashboard/LiveAttendanceTable'
 import { ExportReportModal } from '@/components/report'
@@ -148,7 +149,7 @@ export const AdminAttendanceView: React.FC = () => {
         setRecords(pageData.value.content || [])
         setTotalElements(pageData.value.totalElements || 0)
       } else if (pageData.status === 'rejected') {
-        const err = pageData.reason as { message?: string }
+        const err = normalizeApiError(pageData.reason)
         setErrorMessage(err.message || 'Không thể tải danh sách điểm danh.')
       }
 
@@ -555,7 +556,11 @@ export const AdminAttendanceView: React.FC = () => {
 
       {/* Thông báo lỗi nếu có */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-sm font-medium flex items-center justify-between">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-sm font-medium flex items-center justify-between"
+        >
           <span>{errorMessage}</span>
           <button
             type="button"

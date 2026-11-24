@@ -13,6 +13,7 @@ import { EmployeeDataRequestsView } from '@/views/employee/EmployeeDataRequestsV
 import { EmployeeDetailDrawer } from '@/components/account/EmployeeDetailDrawer'
 import { NotificationDrawer } from '@/components/notification/NotificationDrawer'
 import { TopHeader } from '@/components/layout/TopHeader'
+import { Toaster } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { dataSubjectService } from '@/services/dataSubjectService'
@@ -276,6 +277,7 @@ describe('Module Rút Consent & Trung tâm Thông báo (TASK-WEB-026)', () => {
 
       render(
         <MemoryRouter>
+          <Toaster />
           <EmployeeDataRequestsView />
         </MemoryRouter>
       )
@@ -304,6 +306,7 @@ describe('Module Rút Consent & Trung tâm Thông báo (TASK-WEB-026)', () => {
 
       render(
         <MemoryRouter>
+          <Toaster />
           <EmployeeDataRequestsView />
         </MemoryRouter>
       )

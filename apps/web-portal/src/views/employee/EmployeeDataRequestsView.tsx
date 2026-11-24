@@ -9,9 +9,10 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { RefreshCw, MessageSquare, Check, AlertCircle, Send } from 'lucide-react'
-import { Button, TableSkeleton, FilterToolbar } from '@/components/ui'
+import { RefreshCw, MessageSquare, AlertCircle, Send } from 'lucide-react'
+import { Button, TableSkeleton, FilterToolbar, toast } from '@/components/ui'
 import { dataSubjectService } from '@/services/dataSubjectService'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import { formatDateTime } from '@/utils/date'
 import type { DataRequestType, DataSubjectRequestItem } from '@/types'
 
@@ -80,7 +81,6 @@ export const EmployeeDataRequestsView: React.FC = () => {
   const [selectedType, setSelectedType] = useState<DataRequestType>('ACCESS')
   const [details, setDetails] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formSuccessMessage, setFormSuccessMessage] = useState<string | null>(null)
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
 
   const loadRequests = useCallback(async () => {
@@ -90,7 +90,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
       const data = await dataSubjectService.getEmployeeDataRequests()
       setRequests(data)
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       setErrorMessage(error.message || 'Không thể tải danh sách yêu cầu dữ liệu.')
     } finally {
       setIsLoading(false)
@@ -130,19 +130,18 @@ export const EmployeeDataRequestsView: React.FC = () => {
     try {
       setIsSubmitting(true)
       setFormErrorMessage(null)
-      setFormSuccessMessage(null)
 
       const created = await dataSubjectService.createEmployeeDataRequest({
         requestType: selectedType,
         details: details.trim(),
       })
 
-      setFormSuccessMessage('Yêu cầu dữ liệu cá nhân của bạn đã được gửi tới DPO thành công!')
+      toast.success('Yêu cầu dữ liệu cá nhân của bạn đã được gửi tới DPO thành công!')
       setDetails('')
       // Chèn yêu cầu mới lên đầu danh sách
       setRequests((prev) => [created, ...prev])
     } catch (err) {
-      const error = err as { message?: string }
+      const error = normalizeApiError(err)
       setFormErrorMessage(error.message || 'Không thể gửi yêu cầu. Vui lòng thử lại.')
     } finally {
       setIsSubmitting(false)
@@ -185,19 +184,10 @@ export const EmployeeDataRequestsView: React.FC = () => {
           </div>
         </div>
 
-        {formSuccessMessage && (
-          <div
-            role="status"
-            className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-status-success text-sm flex items-center gap-2"
-          >
-            <Check size={18} strokeWidth={2} className="shrink-0" />
-            <span>{formSuccessMessage}</span>
-          </div>
-        )}
-
         {formErrorMessage && (
           <div
             role="alert"
+            aria-live="assertive"
             className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2"
           >
             <AlertCircle size={18} strokeWidth={2} className="shrink-0" />
@@ -296,15 +286,19 @@ export const EmployeeDataRequestsView: React.FC = () => {
       {/* ── Bảng Lịch Sử Yêu Cầu ── */}
       <div className="card-surface overflow-hidden">
         {errorMessage && (
-          <div className="p-4 bg-rose-50 text-rose-700 text-sm border-b border-rose-200">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="p-4 bg-rose-50 text-rose-700 text-sm border-b border-rose-200"
+          >
             {errorMessage}
           </div>
         )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm" data-testid="data-requests-table">
-            <thead>
-              <tr className="table-sticky-header">
+            <thead className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <th scope="col" className="py-3 px-4 font-semibold">Mã YC</th>
                 <th scope="col" className="py-3 px-4 font-semibold">Loại Yêu Cầu</th>
                 <th scope="col" className="py-3 px-4 font-semibold">Nội Dung Chi Tiết</th>
@@ -343,7 +337,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                       data-testid={`data-request-row-${item.id}`}
                       className="table-row-hover transition-colors"
                     >
-                      <td className="py-3 px-4 font-mono font-semibold text-xs text-text-secondary whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono font-semibold text-xs text-text-secondary whitespace-nowrap tabular-nums">
                         #{item.id}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -354,7 +348,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                       <td className="py-3 px-4 max-w-xs truncate text-text-secondary text-xs" title={item.details || item.reason}>
                         {item.details || item.reason || '—'}
                       </td>
-                      <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap">
+                      <td className="py-3 px-4 text-xs text-text-secondary whitespace-nowrap tabular-nums">
                         {formatDate(item.submittedAt || item.createdAt || item.requestedAt)}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -367,7 +361,7 @@ export const EmployeeDataRequestsView: React.FC = () => {
                               {adminNoteText}
                             </p>
                             {(item.handledAt || item.completedAt) && (
-                              <p className="text-[11px] text-text-secondary whitespace-nowrap">
+                              <p className="text-[11px] text-text-secondary whitespace-nowrap tabular-nums">
                                 Xử lý ngày: {formatDate(item.handledAt || item.completedAt)} {item.handledBy ? `bởi ${item.handledBy}` : ''}
                               </p>
                             )}

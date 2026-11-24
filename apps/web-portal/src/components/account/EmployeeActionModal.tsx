@@ -74,7 +74,7 @@ export const EmployeeActionModal: React.FC<EmployeeActionModalProps> = ({
                 ? 'primary'
                 : isPendingDeactivated
                 ? 'primary'
-                : 'danger'
+                : 'destructive'
             }
             isLoading={Boolean(actionLoadingId)}
             onClick={onConfirm}

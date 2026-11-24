@@ -13,6 +13,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
 import { AttendanceStatusBadge } from '@/components/attendance'
 import { formatDate } from '@/utils/date'
 import type { PersonalAttendanceDayRecord } from '@/types'
@@ -224,14 +225,14 @@ export const AttendanceDayDetailDrawer: React.FC<AttendanceDayDetailDrawerProps>
 
           {/* Footer Drawer */}
           <div className="p-4 border-t border-border-subtle bg-slate-50 flex items-center justify-end gap-3">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
               data-testid="drawer-footer-close-btn"
-              className="px-5 py-2.5 text-sm font-semibold rounded-xl text-text-secondary hover:text-text-primary hover:bg-slate-200 transition-colors"
             >
               Đóng chi tiết
-            </button>
+            </Button>
           </div>
         </div>
       </SheetContent>

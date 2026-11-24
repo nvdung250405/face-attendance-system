@@ -3,7 +3,7 @@
  * (BIZ-01, RFC-02, TASK-WEB-019).
  */
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Users,
   CheckCircle2,
@@ -18,7 +18,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui'
+import { Button, toast } from '@/components/ui'
 import { attendanceService } from '@/services/attendanceService'
 import { normalizeApiError } from '@/services/errorNormalizer'
 import type { AttendanceRecord, AttendanceStatus, AdjustAttendanceRequest } from '@/types'
@@ -64,14 +64,6 @@ export const BulkAdjustAttendanceModal: React.FC<BulkAdjustAttendanceModalProps>
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -111,11 +103,11 @@ export const BulkAdjustAttendanceModal: React.FC<BulkAdjustAttendanceModalProps>
       const rejected = results.filter((r) => r.status === 'rejected')
 
       if (rejected.length === 0) {
-        setSuccessMessage(`Điều chỉnh thành công toàn bộ ${fulfilled.length} bản ghi điểm danh!`)
-        timerRef.current = setTimeout(() => {
-          onSuccess()
-          onClose()
-        }, 1200)
+        const msg = `Điều chỉnh thành công toàn bộ ${fulfilled.length} bản ghi điểm danh!`
+        toast.success(msg)
+        setSuccessMessage(msg)
+        onSuccess()
+        onClose()
       } else {
         const firstReject = rejected[0] as PromiseRejectedResult
         const normErr = normalizeApiError(firstReject.reason)
@@ -165,7 +157,11 @@ export const BulkAdjustAttendanceModal: React.FC<BulkAdjustAttendanceModalProps>
             )}
 
             {errorMessage && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-status-danger flex items-center gap-2">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-status-danger flex items-center gap-2"
+              >
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>{errorMessage}</span>
               </div>

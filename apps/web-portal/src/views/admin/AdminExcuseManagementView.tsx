@@ -3,7 +3,7 @@
  * (FR-BE-015, API-BE-028, API-BE-029, APD-BE-016, UI-WEB-003, TASK-WEB-019).
  */
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   FileQuestion,
   RotateCw,
@@ -17,9 +17,10 @@ import {
   User,
   MessageSquare,
 } from 'lucide-react'
-import { Button, TableSkeleton, PaginationBar, Badge } from '@/components/ui'
+import { Button, TableSkeleton, PaginationBar, Badge, toast } from '@/components/ui'
 import { ApproveExcuseModal, RejectExcuseModal } from '@/components/excuse'
 import { excuseService } from '@/services/excuseService'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import { formatDateTime } from '@/utils/date'
 import { sanitizeUserContent } from '@/utils/security'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
@@ -35,13 +36,13 @@ export const AdminExcuseManagementView: React.FC = () => {
   const [requests, setRequests] = useState<ExcuseRequestItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   // Bộ lọc trạng thái
   const [selectedStatus, setSelectedStatus] = useState<ExcuseRequestStatus | 'ALL'>('PENDING')
 
   // Phân trang
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(15)
   const [totalPages, setTotalPages] = useState(1)
   const [totalElements, setTotalElements] = useState(0)
 
@@ -53,18 +54,9 @@ export const AdminExcuseManagementView: React.FC = () => {
   const [rejectTarget, setRejectTarget] = useState<ExcuseRequestItem | null>(null)
   const [rejectError, setRejectError] = useState<string | null>(null)
   const [isProcessingReject, setIsProcessingReject] = useState(false)
-  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) {
-        clearTimeout(successTimerRef.current)
-      }
-    }
-  }, [])
 
   const fetchExcuseRequests = useCallback(
-    async (targetPage = 0, statusFilter = selectedStatus) => {
+    async (targetPage = 0, statusFilter = selectedStatus, targetPageSize = pageSize) => {
       setIsLoading(true)
       setErrorMessage(null)
       try {
@@ -72,20 +64,20 @@ export const AdminExcuseManagementView: React.FC = () => {
         const res = await excuseService.getAdminExcuseRequests({
           status: queryStatus,
           page: targetPage,
-          size: 15,
+          size: targetPageSize,
         })
         setRequests(res.content || [])
         setTotalPages(res.totalPages || 1)
         setTotalElements(res.totalElements || 0)
         setPage(targetPage)
       } catch (err: unknown) {
-        const errorObj = err as { message?: string }
+        const errorObj = normalizeApiError(err)
         setErrorMessage(errorObj.message || 'Không thể tải danh sách đơn giải trình.')
       } finally {
         setIsLoading(false)
       }
     },
-    [selectedStatus]
+    [selectedStatus, pageSize]
   )
 
   useEffect(() => {
@@ -101,15 +93,11 @@ export const AdminExcuseManagementView: React.FC = () => {
 
     try {
       await excuseService.approveExcuseRequest(approveTarget.id, note)
-      setSuccessMessage(`Đã phê duyệt đơn giải trình #${approveTarget.id} thành công!`)
+      toast.success(`Đã phê duyệt đơn giải trình #${approveTarget.id} thành công!`)
       setApproveTarget(null)
       fetchExcuseRequests(page, selectedStatus)
-      if (successTimerRef.current) {
-        clearTimeout(successTimerRef.current)
-      }
-      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err: unknown) {
-      const errorObj = err as { message?: string }
+      const errorObj = normalizeApiError(err)
       setErrorMessage(errorObj.message || 'Phê duyệt thất bại. Vui lòng kiểm tra lại.')
     } finally {
       setIsProcessingApprove(false)
@@ -125,15 +113,11 @@ export const AdminExcuseManagementView: React.FC = () => {
 
     try {
       await excuseService.rejectExcuseRequest(rejectTarget.id, reason)
-      setSuccessMessage(`Đã từ chối đơn giải trình #${rejectTarget.id}.`)
+      toast.success(`Đã từ chối đơn giải trình #${rejectTarget.id}.`)
       setRejectTarget(null)
       fetchExcuseRequests(page, selectedStatus)
-      if (successTimerRef.current) {
-        clearTimeout(successTimerRef.current)
-      }
-      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err: unknown) {
-      const errorObj = err as { message?: string }
+      const errorObj = normalizeApiError(err)
       setRejectError(errorObj.message || 'Từ chối thất bại. Vui lòng kiểm tra lại.')
       throw err
     } finally {
@@ -172,16 +156,13 @@ export const AdminExcuseManagementView: React.FC = () => {
         </div>
       </div>
 
-      {/* Thông báo Thành công / Lỗi */}
-      {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-status-success text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{successMessage}</span>
-        </div>
-      )}
-
+      {/* Thông báo Lỗi */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center gap-2">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center gap-2"
+        >
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
@@ -253,17 +234,17 @@ export const AdminExcuseManagementView: React.FC = () => {
       {/* ── Bảng Dữ Liệu Đơn Giải Trình (Permanent Table Structure - CLS Free) ── */}
       <div className="card-surface overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs" data-testid="admin-excuses-table">
-            <thead className="bg-slate-50 border-b border-border-subtle text-text-secondary font-semibold">
-              <tr>
-                <th scope="col" className="py-3 px-4 sticky left-0 z-10 bg-slate-50">Mã đơn</th>
+          <table className="w-full text-left text-sm" data-testid="admin-excuses-table">
+            <thead className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95">Mã đơn</th>
                 <th scope="col" className="py-3 px-4">Nhân sự</th>
                 <th scope="col" className="py-3 px-4">Ngày nộp</th>
                 <th scope="col" className="py-3 px-4">Giờ quẹt ban đầu</th>
                 <th scope="col" className="py-3 px-4">Giờ đề xuất</th>
                 <th scope="col" className="py-3 px-4 max-w-xs">Lý do giải trình</th>
                 <th scope="col" className="py-3 px-4">Trạng thái</th>
-                <th scope="col" className="py-3 px-4 text-right sticky right-0 z-10 bg-slate-50">Thao tác</th>
+                <th scope="col" className="py-3 px-4 text-right sticky right-0 z-20 bg-slate-50/95">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle text-text-primary">
@@ -287,24 +268,24 @@ export const AdminExcuseManagementView: React.FC = () => {
               ) : (
                 requests.map((item) => (
                   <tr key={item.id} className="group hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-brand-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 whitespace-nowrap">#{item.id}</td>
+                    <td className="py-3 px-4 font-mono font-bold text-brand-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 whitespace-nowrap tabular-nums">#{item.id}</td>
                     <td className="py-3 px-4">
                       <div className="font-semibold text-text-primary truncate max-w-[200px]" title={item.fullName}>{item.fullName}</div>
                       <div className="text-2xs text-text-secondary flex items-center gap-1">
                         <User className="w-3 h-3 text-text-muted shrink-0" />
-                        <span className="font-mono">{item.employeeCode}</span>
+                        <span className="font-mono tabular-nums">{item.employeeCode}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-text-secondary whitespace-nowrap">
+                    <td className="py-3 px-4 text-text-secondary whitespace-nowrap tabular-nums">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-text-muted shrink-0" />
                         <span>{formatDateTime(item.createdAt)}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-mono whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono whitespace-nowrap tabular-nums">
                       {formatDateTime(item.originalPunchTimestamp)}
                     </td>
-                    <td className="py-3 px-4 font-mono text-emerald-700 font-semibold whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono text-emerald-700 font-semibold whitespace-nowrap tabular-nums">
                       {item.requestedPunchTimestamp
                         ? formatDateTime(item.requestedPunchTimestamp)
                         : '--'}
@@ -386,10 +367,15 @@ export const AdminExcuseManagementView: React.FC = () => {
         {/* Phân trang */}
         <PaginationBar
           page={page}
-          pageSize={15}
+          pageSize={pageSize}
           totalElements={totalElements}
           totalPages={totalPages}
-          onPageChange={(newPage) => fetchExcuseRequests(newPage, selectedStatus)}
+          onPageChange={(newPage) => fetchExcuseRequests(newPage, selectedStatus, pageSize)}
+          onPageSizeChange={(newPageSize) => {
+            setPageSize(newPageSize)
+            fetchExcuseRequests(0, selectedStatus, newPageSize)
+          }}
+          pageSizeOptions={[10, 20, 50, 100]}
           itemLabel="đơn"
         />
       </div>

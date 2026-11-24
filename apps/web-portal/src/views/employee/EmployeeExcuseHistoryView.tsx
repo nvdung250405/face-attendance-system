@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Button, TableSkeleton, PaginationBar, Badge, FilterToolbar } from '@/components/ui'
 import { excuseService } from '@/services/excuseService'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import { SubmitExcuseModal } from '@/components/excuse/SubmitExcuseModal'
 import { formatDateTime } from '@/utils/date'
 import type { ExcuseRequestItem, ExcuseRequestStatus } from '@/types'
@@ -43,7 +44,7 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
       setTotalElements(res.totalElements || 0)
       setPage(targetPage)
     } catch (err: unknown) {
-      const errorObj = err as { message?: string }
+      const errorObj = normalizeApiError(err)
       setErrorMessage(errorObj.message || 'Không thể tải danh sách đơn giải trình.')
     } finally {
       setIsLoading(false)
@@ -132,7 +133,11 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
 
       {/* Thông báo lỗi nếu có */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center gap-2">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-status-danger text-xs flex items-center gap-2"
+        >
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
@@ -171,9 +176,9 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
       {/* ── Danh sách đơn giải trình (Permanent Table - CLS Free) ── */}
       <div className="card-surface overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs" data-testid="employee-excuses-table">
-            <thead className="bg-slate-50 border-b border-border-subtle text-text-secondary font-semibold">
-              <tr>
+          <table className="w-full text-left text-sm" data-testid="employee-excuses-table">
+            <thead className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <th scope="col" className="py-3 px-4">Mã đơn</th>
                 <th scope="col" className="py-3 px-4">Ngày nộp</th>
                 <th scope="col" className="py-3 px-4">Giờ quẹt ban đầu</th>
@@ -214,17 +219,17 @@ export const EmployeeExcuseHistoryView: React.FC = () => {
               ) : (
                 filteredRequests.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-brand-primary">#{item.id}</td>
-                    <td className="py-3 px-4 text-text-secondary whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono font-bold text-brand-primary tabular-nums">#{item.id}</td>
+                    <td className="py-3 px-4 text-text-secondary whitespace-nowrap tabular-nums">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-text-secondary shrink-0" />
                         <span>{formatDateTime(item.createdAt)}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-mono whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono whitespace-nowrap tabular-nums">
                       {formatDateTime(item.originalPunchTimestamp)}
                     </td>
-                    <td className="py-3 px-4 font-mono text-emerald-700 font-semibold whitespace-nowrap">
+                    <td className="py-3 px-4 font-mono text-emerald-700 font-semibold whitespace-nowrap tabular-nums">
                       {item.requestedPunchTimestamp
                         ? formatDateTime(item.requestedPunchTimestamp)
                         : '--'}

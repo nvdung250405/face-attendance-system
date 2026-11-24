@@ -17,4 +17,5 @@ export * from './confetti-effect'
 export * from './filter-toolbar'
 export * from './pagination-bar'
 export * from './DetailDrawer'
+export * from './EmptyState'
 

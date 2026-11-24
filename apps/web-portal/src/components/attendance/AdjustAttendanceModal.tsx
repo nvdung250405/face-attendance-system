@@ -8,7 +8,7 @@
  * - Timer cleanup khi unmount để tránh rò rỉ bộ nhớ
  */
 
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Edit3,
   CheckCircle2,
@@ -26,7 +26,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui'
+import { Button, toast } from '@/components/ui'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { attendanceService } from '@/services/attendanceService'
 import { normalizeApiError } from '@/services/errorNormalizer'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
@@ -70,14 +72,6 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [])
 
   // Kiểm tra xem kỳ công chứa ngày này có đang bị LOCKED không
   const isDateLocked = useMemo(() => {
@@ -127,11 +121,10 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
       }
 
       await attendanceService.adjustAttendance(record.recordId, payload)
+      toast.success('Điều chỉnh giờ công thành công!')
       setSuccessMessage('Điều chỉnh giờ công thành công!')
-      timerRef.current = setTimeout(() => {
-        onSuccess()
-        onClose()
-      }, 1200)
+      onSuccess()
+      onClose()
     } catch (err: unknown) {
       const apiErr = normalizeApiError(err)
       setErrorMessage(
@@ -169,7 +162,11 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
         )}
 
         {errorMessage && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-status-danger flex items-center gap-2">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-status-danger flex items-center gap-2"
+          >
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
@@ -209,42 +206,33 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
         </div>
 
         {/* Mốc thời gian quẹt */}
-        <div className="space-y-1">
-          <label htmlFor="punch-datetime" className="font-semibold text-text-primary flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-text-muted" />
-            <span>Mốc thời gian quẹt thẻ</span>
-          </label>
-          <input
-            id="punch-datetime"
-            data-testid="punch-datetime-input"
-            type="datetime-local"
-            value={punchDateTime}
-            onChange={(e) => {
-              setPunchDateTime(e.target.value)
-              if (fieldErrors.punchTimestamp) {
-                setFieldErrors((prev) => ({ ...prev, punchTimestamp: '' }))
-              }
-            }}
-            aria-invalid={Boolean(fieldErrors.punchTimestamp)}
-            aria-describedby={fieldErrors.punchTimestamp ? 'punch-datetime-error' : undefined}
-            disabled={isDateLocked || isLoading}
-            className={`w-full text-xs rounded-xl border p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50 ${
-              fieldErrors.punchTimestamp ? 'border-status-danger ring-1 ring-status-danger' : 'border-border-subtle'
-            }`}
-          />
-          {fieldErrors.punchTimestamp && (
-            <p id="punch-datetime-error" role="alert" className="text-2xs text-status-danger mt-1">
-              {fieldErrors.punchTimestamp}
-            </p>
-          )}
-        </div>
+        <Input
+          id="punch-datetime"
+          data-testid="punch-datetime-input"
+          type="datetime-local"
+          label={
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-text-muted" />
+              <span>Mốc thời gian quẹt thẻ</span>
+            </span>
+          }
+          error={fieldErrors.punchTimestamp}
+          value={punchDateTime}
+          onChange={(e) => {
+            setPunchDateTime(e.target.value)
+            if (fieldErrors.punchTimestamp) {
+              setFieldErrors((prev) => ({ ...prev, punchTimestamp: '' }))
+            }
+          }}
+          disabled={isDateLocked || isLoading}
+        />
 
         {/* Trạng thái công & Số phút trễ */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label htmlFor="adjust-status" className="font-semibold text-text-primary">
+          <div className="space-y-1.5">
+            <Label htmlFor="adjust-status" className="font-semibold text-text-primary">
               Trạng thái công <span className="text-status-danger">*</span>
-            </label>
+            </Label>
             <select
               id="adjust-status"
               data-testid="adjust-status-select"
@@ -275,33 +263,27 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
             )}
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="late-minutes" className="font-semibold text-text-primary">
-              Số phút trễ (Hệ thống tự tính)
-            </label>
-            <input
-              id="late-minutes"
-              data-testid="late-minutes-input"
-              type="number"
-              min="0"
-              max="1440"
-              value={lateMinutes}
-              readOnly
-              disabled
-              className="w-full text-xs rounded-xl border border-border-subtle p-2.5 bg-slate-50 text-text-muted focus:outline-none"
-            />
-            <p className="text-[10px] text-text-muted">
-              Máy chủ tự động tính số phút trễ từ ca làm việc và mốc giờ quẹt thẻ.
-            </p>
-          </div>
+          <Input
+            id="late-minutes"
+            data-testid="late-minutes-input"
+            type="number"
+            label="Số phút trễ (Hệ thống tự tính)"
+            hint="Máy chủ tự động tính số phút trễ từ ca làm việc và mốc giờ quẹt thẻ."
+            min={0}
+            max={1440}
+            value={lateMinutes}
+            readOnly
+            disabled
+            className="bg-slate-50 text-text-muted"
+          />
         </div>
 
         {/* Lý do điều chỉnh (Audit Trail) */}
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <label htmlFor="adjust-reason" className="font-semibold text-text-primary">
+            <Label htmlFor="adjust-reason" className="font-semibold text-text-primary">
               Lý do điều chỉnh <span className="text-status-danger">*</span>
-            </label>
+            </Label>
             <span className="text-2xs text-text-muted">{reason.length}/500</span>
           </div>
           <textarea

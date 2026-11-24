@@ -17,6 +17,9 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import type { ShiftItem, EmployeeItem, AssignShiftRequest, OverlapConflictInfo } from '@/types'
 import { DepartmentAssignSection } from './DepartmentAssignSection'
 import { MultiSelectAssignSection } from './MultiSelectAssignSection'
@@ -261,10 +264,10 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
         )}
 
         {/* Chọn ca làm việc */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-text-secondary">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-text-secondary">
             Chọn ca làm việc <span className="text-status-danger">*</span>
-          </label>
+          </Label>
           <select
             value={formData.shiftId}
             onChange={(e) => onChangeFormData((prev) => ({ ...prev, shiftId: Number(e.target.value) }))}
@@ -287,30 +290,32 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
 
         {/* Khoảng ngày hiệu lực */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-text-secondary">
-              Từ ngày <span className="text-status-danger">*</span>
-            </label>
-            <input
-              type="date"
-              value={formData.effectiveStartDate}
-              onChange={(e) => onChangeFormData((prev) => ({ ...prev, effectiveStartDate: e.target.value }))}
-              data-testid="input-assign-start-date"
-              className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-text-secondary">
-              Đến ngày <span className="text-status-danger">*</span>
-            </label>
-            <input
-              type="date"
-              value={formData.effectiveEndDate}
-              onChange={(e) => onChangeFormData((prev) => ({ ...prev, effectiveEndDate: e.target.value }))}
-              data-testid="input-assign-end-date"
-              className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle bg-white font-mono"
-            />
-          </div>
+          <Input
+            id="input-assign-start-date"
+            data-testid="input-assign-start-date"
+            label={
+              <>
+                Từ ngày <span className="text-status-danger">*</span>
+              </>
+            }
+            type="date"
+            value={formData.effectiveStartDate}
+            onChange={(e) => onChangeFormData((prev) => ({ ...prev, effectiveStartDate: e.target.value }))}
+            className="font-mono"
+          />
+          <Input
+            id="input-assign-end-date"
+            data-testid="input-assign-end-date"
+            label={
+              <>
+                Đến ngày <span className="text-status-danger">*</span>
+              </>
+            }
+            type="date"
+            value={formData.effectiveEndDate}
+            onChange={(e) => onChangeFormData((prev) => ({ ...prev, effectiveEndDate: e.target.value }))}
+            className="font-mono"
+          />
         </div>
 
         {progressText && (
@@ -338,38 +343,36 @@ const AssignShiftDrawerContent: React.FC<AssignShiftDrawerProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={handleClose}
-            className="px-4 py-2 text-xs font-semibold rounded-xl border border-border-subtle bg-white text-text-secondary hover:bg-slate-100 transition-colors shadow-xs cursor-pointer"
           >
             Hủy bỏ
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={handleFormSubmit}
             disabled={isSubmitting}
+            isLoading={isSubmitting}
             data-testid="submit-assign-shift-btn"
-            className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-xs disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+            leftIcon={!isSubmitting ? <CheckCircle2 className="w-4 h-4" /> : undefined}
           >
             {isSubmitting ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                <span>{progressText || 'Đang phân ca...'}</span>
-              </>
+              <span>{progressText || 'Đang phân ca...'}</span>
             ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>
-                  {mode === 'department'
-                    ? `Phân Ca Cho Phòng Ban (${departmentEmployees.length})`
-                    : mode === 'multi'
-                      ? `Phân Ca Hàng Loạt (${selectedEmployeeIds.length})`
-                      : 'Xác Nhận Phân Ca'}
-                </span>
-              </>
+              <span>
+                {mode === 'department'
+                  ? `Phân Ca Cho Phòng Ban (${departmentEmployees.length})`
+                  : mode === 'multi'
+                    ? `Phân Ca Hàng Loạt (${selectedEmployeeIds.length})`
+                    : 'Xác Nhận Phân Ca'}
+              </span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

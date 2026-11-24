@@ -115,11 +115,11 @@ const RejectExcuseModalContent: React.FC<RejectExcuseModalContentProps> = ({
           </Button>
           <Button
             type="submit"
-            variant="primary"
+            variant="destructive"
             size="sm"
             isLoading={isProcessing}
             data-testid="confirm-reject-btn"
-            className="bg-rose-600 hover:bg-rose-700 text-white gap-1"
+            className="gap-1"
           >
             <X className="w-4 h-4" />
             <span>Xác nhận từ chối</span>

@@ -2,7 +2,6 @@ export * from './AdjustAttendanceModal'
 export * from './BulkAdjustAttendanceModal'
 export * from './useLiveAttendanceBuffer'
 export * from './AttendanceFilterToolbar'
-export * from './AttendancePaginationBar'
 export * from './AttendanceStatusBadge'
 export * from './AttendanceDetailDrawer'
 

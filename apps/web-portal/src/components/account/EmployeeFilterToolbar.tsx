@@ -1,5 +1,5 @@
 import React from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui'
 
 interface EmployeeFilterToolbarProps {
@@ -119,14 +119,15 @@ export const EmployeeFilterToolbar: React.FC<EmployeeFilterToolbarProps> = ({
 
       {/* Nút đặt lại bộ lọc */}
       {hasActiveFilters && (
-        <div className="flex items-center sm:pl-2 sm:border-l sm:border-slate-200">
+        <div className="flex items-center sm:ml-auto">
           <Button
             type="button"
             variant="secondary"
             size="sm"
             data-testid="employee-clear-filters-btn"
             onClick={onResetFilters}
-            className="text-xs font-semibold text-slate-700 hover:text-slate-900 shrink-0 cursor-pointer"
+            leftIcon={<RotateCcw className="w-3.5 h-3.5 shrink-0" />}
+            className="text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs shrink-0 cursor-pointer"
           >
             Đặt lại
           </Button>
