@@ -82,6 +82,79 @@ export const LoginView: React.FC = () => {
     await loginWithCredentials(trimmedEmail, password)
   }
 
+  const handleDevQuickLogin = (role: 'ADMIN' | 'EMPLOYEE' | 'DPO') => {
+    const mockSessions: Record<'ADMIN' | 'EMPLOYEE' | 'DPO', { session: AuthSession; targetPath: string }> = {
+      ADMIN: {
+        session: {
+          accessToken: 'mock-dev-token-admin',
+          refreshToken: 'mock-dev-refresh-admin',
+          tokenType: 'Bearer',
+          expiresAt: Date.now() + 86400000,
+          user: {
+            id: 1,
+            employeeCode: 'EMP-ADMIN-001',
+            fullName: 'Quản Trị Viên (Dev)',
+            email: 'staging-admin@fas.company.com',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            department: 'Ban Quản Trị',
+            hasBiometric: true,
+            hasPin: true,
+            mustChangePassword: false,
+          },
+        },
+        targetPath: '/admin/dashboard',
+      },
+      EMPLOYEE: {
+        session: {
+          accessToken: 'mock-dev-token-employee',
+          refreshToken: 'mock-dev-refresh-employee',
+          tokenType: 'Bearer',
+          expiresAt: Date.now() + 86400000,
+          user: {
+            id: 2,
+            employeeCode: 'EMP-DEV-002',
+            fullName: 'Nhân Viên Mẫu (Dev)',
+            email: 'dev.an@fas.company.com',
+            role: 'EMPLOYEE',
+            status: 'ACTIVE',
+            department: 'Phòng Phát Triển',
+            hasBiometric: true,
+            hasPin: true,
+            mustChangePassword: false,
+          },
+        },
+        targetPath: '/employee/dashboard',
+      },
+      DPO: {
+        session: {
+          accessToken: 'mock-dev-token-dpo',
+          refreshToken: 'mock-dev-refresh-dpo',
+          tokenType: 'Bearer',
+          expiresAt: Date.now() + 86400000,
+          user: {
+            id: 3,
+            employeeCode: 'EMP-DPO-003',
+            fullName: 'Cán Bộ DPO (Dev)',
+            email: 'dpo.officer@fas.company.com',
+            role: 'DPO',
+            status: 'ACTIVE',
+            department: 'Phòng Pháp Chế & DPO',
+            hasBiometric: true,
+            hasPin: true,
+            mustChangePassword: false,
+          },
+        },
+        targetPath: '/admin/audit-logs',
+      },
+    }
+
+    const { session, targetPath } = mockSessions[role]
+    useAuthStore.getState().setSession(session)
+    const target = from || targetPath
+    navigate(target, { replace: true })
+  }
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-bg-app">
       {/* Cột Trái: Brand Dark Navy Workspace (Figma Frame 3:23919) - Chỉ hiển thị trên Desktop (md+) */}
@@ -177,6 +250,46 @@ export const LoginView: React.FC = () => {
               {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
             </button>
           </form>
+
+          {/* Chế độ Phát triển (Dev Mode) - Render khi import.meta.env.DEV */}
+          {import.meta.env.DEV && (
+            <div className="pt-4 border-t border-border-subtle space-y-3" data-testid="dev-quick-login-section">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                  Chế độ Phát triển (Dev Mode)
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  {import.meta.env.VITE_ENABLE_MOCK === 'true' ? 'MOCK AUTH' : 'DEV QUICK LOGIN'}
+                </span>
+              </div>
+              <p className="text-[11px] text-text-muted">
+                Đăng nhập nhanh 1-click cho môi trường phát triển cục bộ:
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDevQuickLogin('ADMIN')}
+                  className="px-2 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors text-center cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600"
+                >
+                  Admin / HR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDevQuickLogin('EMPLOYEE')}
+                  className="px-2 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors text-center cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600"
+                >
+                  Nhân viên (Employee)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDevQuickLogin('DPO')}
+                  className="px-2 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors text-center cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600"
+                >
+                  Cán bộ DPO
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

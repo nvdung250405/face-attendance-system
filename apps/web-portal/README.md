@@ -45,17 +45,36 @@ Agent tra cứu trực tiếp file view giao diện mà không cần tìm kiếm
 
 Thực hiện từ thư mục `apps/web-portal/`:
 
-```bash
-# 1. Khởi chạy máy chủ phát triển (Vite Dev Server)
-npm run dev
+### 3.1. Chế độ Phát triển Độc lập (Standalone UI Dev)
+Phát triển giao diện độc lập không phụ thuộc vào hạ tầng Backend hay Docker. Tự động kích hoạt mock server mô phỏng toàn bộ REST API và cung cấp tính năng Đăng nhập nhanh 1-click (Dev Mode Quick Login):
 
-# 2. Chạy toàn bộ Unit & Component Tests qua Vitest (Bắt buộc)
+```bash
+npm run dev:mock
+```
+* **Đặc điểm:** Không cần chạy Docker hay khởi động `fas-backend` / `fas-postgres`.
+* **Xác thực nhanh:** Trên trang đăng nhập xuất hiện các nút đăng nhập 1-click cho các vai trò (Admin / HR, Nhân viên, Cán bộ DPO) và thanh chuyển đổi vai trò nhanh trên giao diện quản trị.
+
+### 3.2. Chế độ Phát triển Tích hợp (Full-stack Integration Dev)
+Kết nối trực tiếp với backend Spring Boot và cơ sở dữ liệu PostgreSQL qua môi trường Docker Compose:
+
+```bash
+# Khởi động dịch vụ phụ trợ từ thư mục gốc
+docker compose up -d fas-backend fas-postgres
+
+# Khởi chạy giao diện Cổng Web (từ apps/web-portal/)
+npm run dev
+```
+
+### 3.3. Kiểm thử & Đóng gói Bản dựng
+
+```bash
+# 1. Chạy toàn bộ Unit & Component Tests qua Vitest (Bắt buộc)
 npm test
 
-# 3. Kiểm tra chuẩn mã nguồn & cú pháp ESLint (Bắt buộc)
+# 2. Kiểm tra chuẩn mã nguồn & cú pháp ESLint (Bắt buộc)
 npm run lint
 
-# 4. Đóng gói bản phát hành Production
+# 3. Đóng gói bản phát hành Production
 npm run build
 ```
 
