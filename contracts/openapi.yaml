@@ -1024,16 +1024,16 @@ paths:
   /api/v1/auth/logout:
     post:
       tags:
-        - logout-controller
+        - auth-controller
       summary: Logout
+      description: Đăng xuất và thu hồi Refresh Token (SEC-005, API-BE-038)
       operationId: logout
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties:
-                type: string
+              $ref: '#/components/schemas/LogoutRequest'
       responses:
         '204':
           description: No Content
@@ -1843,37 +1843,11 @@ paths:
   /api/v1/admin/employees:
     get:
       tags:
-        - attendance-admin-controller
+        - admin-employee-controller
       summary: Get employees
+      description: Tra cứu và phân trang danh sách nhân sự của HR/Quản trị
       operationId: getEmployees
       parameters:
-        - name: keyword
-          in: query
-          description: Từ khóa tìm kiếm theo họ tên hoặc mã nhân viên
-          schema:
-            type: string
-        - name: departmentId
-          in: query
-          description: Lọc theo ID phòng ban
-          schema:
-            type: integer
-            format: int64
-        - name: status
-          in: query
-          description: Lọc theo trạng thái tài khoản (ACTIVE, INACTIVE, SUSPENDED)
-          schema:
-            type: string
-        - name: hasBiometric
-          in: query
-          description: Lọc theo trạng thái đã đăng ký khuôn mặt
-          schema:
-            type: boolean
-        - name: shiftId
-          in: query
-          description: Lọc theo ID ca làm việc
-          schema:
-            type: integer
-            format: int64
         - name: page
           in: query
           description: Số thứ tự trang (bắt đầu từ 0)
@@ -1891,6 +1865,27 @@ paths:
             default: 20
             maximum: 100
             minimum: 1
+        - name: status
+          in: query
+          description: Lọc theo trạng thái hồ sơ nhân sự
+          schema:
+            type: string
+            enum:
+              - PENDING_CONSENT
+              - ACTIVE
+              - INACTIVE
+              - TERMINATED
+              - SUSPENDED
+        - name: department
+          in: query
+          description: Lọc theo tên phòng ban công tác
+          schema:
+            type: string
+        - name: keyword
+          in: query
+          description: Từ khóa tìm kiếm theo họ tên, mã nhân viên hoặc email
+          schema:
+            type: string
         - name: sort
           in: query
           description: 'Tiêu chí sắp xếp theo định dạng: property(,asc|desc)'
@@ -3079,7 +3074,19 @@ paths:
       tags:
         - kiosk-attendance-controller
       summary: Check health
+      description: Kiểm tra trạng thái sẵn sàng của trạm Kiosk
       operationId: checkHealth
+      parameters:
+        - name: X-Kiosk-Id
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Kiosk-Secret
+          in: header
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -3113,6 +3120,61 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
         '409':
           description: Xung đột dữ liệu hoặc bản ghi đã tồn tại (CONFLICT)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Lỗi hệ thống nội bộ (INTERNAL_SERVER_ERROR)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/v1/kiosk/ping:
+    post:
+      tags:
+        - kiosk-attendance-controller
+      summary: Nhịp tim Kiosk gửi định kỳ
+      description: Nhịp tim Kiosk gửi định kỳ để duy trì trạng thái trực tuyến (FR-BE-017, DATA-BE-019)
+      operationId: pingKiosk
+      parameters:
+        - name: X-Kiosk-Id
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Kiosk-Secret
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseMapStringObject'
+        '400':
+          description: Dữ liệu không hợp lệ (RFC 9457 ProblemDetails / VALIDATION_FAILED)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '401':
+          description: Chưa xác thực hoặc token không hợp lệ (UNAUTHORIZED)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '403':
+          description: Không đủ quyền truy cập tài nguyên (ACCESS_DENIED)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Không tìm thấy tài nguyên được yêu cầu (RESOURCE_NOT_FOUND)
           content:
             application/problem+json:
               schema:
@@ -4166,9 +4228,22 @@ paths:
       tags:
         - audit-log-controller
       summary: Get audit logs
+      description: Lọc và phân trang nhật ký kiểm toán bất biến
       operationId: getAuditLogs
       parameters:
-        - name: userId
+        - name: from
+          in: query
+          description: Mốc thời gian bắt đầu (ISO-8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: Mốc thời gian kết thúc (ISO-8601)
+          schema:
+            type: string
+            format: date-time
+        - name: actorId
           in: query
           description: Lọc theo ID người dùng thực hiện
           schema:
@@ -4179,26 +4254,9 @@ paths:
           description: Lọc theo hành động thực hiện
           schema:
             type: string
-        - name: status
+        - name: entityType
           in: query
-          description: Lọc theo trạng thái kết quả (SUCCESS, FAILURE)
-          schema:
-            type: string
-        - name: startDate
-          in: query
-          description: Mốc thời gian bắt đầu (ISO-8601)
-          schema:
-            type: string
-            format: date-time
-        - name: endDate
-          in: query
-          description: Mốc thời gian kết thúc (ISO-8601)
-          schema:
-            type: string
-            format: date-time
-        - name: keyword
-          in: query
-          description: Từ khóa tìm kiếm trong mô tả hoặc chi tiết log
+          description: Lọc theo loại thực thể (USER, SHIFT, KIOSK, ...)
           schema:
             type: string
         - name: page
@@ -4274,50 +4332,12 @@ paths:
       tags:
         - attendance-admin-controller
       summary: Get attendance logs
+      description: Tra cứu, lọc và phân trang lịch sử điểm danh toàn công ty của HR/Quản trị
       operationId: getAttendanceLogs
       parameters:
-        - name: keyword
-          in: query
-          description: Từ khóa tìm kiếm theo họ tên hoặc mã nhân viên
-          schema:
-            type: string
-        - name: departmentId
-          in: query
-          description: Lọc theo ID phòng ban
-          schema:
-            type: integer
-            format: int64
-        - name: date
-          in: query
-          description: Lọc theo ngày cụ thể (YYYY-MM-DD)
-          schema:
-            type: string
-            format: date
-        - name: startDate
-          in: query
-          description: Lọc từ ngày (YYYY-MM-DD)
-          schema:
-            type: string
-            format: date
-        - name: endDate
-          in: query
-          description: Lọc đến ngày (YYYY-MM-DD)
-          schema:
-            type: string
-            format: date
-        - name: status
-          in: query
-          description: Lọc theo trạng thái chấm công (ON_TIME, LATE, EARLY_LEAVE, ABSENT)
-          schema:
-            type: string
-        - name: punchType
-          in: query
-          description: Lọc theo loại chấm công (CHECK_IN, CHECK_OUT)
-          schema:
-            type: string
         - name: page
           in: query
-          description: Số thứ tự trang (bắt đầu từ 0)
+          description: Chỉ số trang (bắt đầu từ 0)
           schema:
             type: integer
             format: int32
@@ -4325,13 +4345,46 @@ paths:
             minimum: 0
         - name: size
           in: query
-          description: Số lượng bản ghi trên một trang
+          description: Số lượng bản ghi trên một trang (tối đa 100)
           schema:
             type: integer
             format: int32
             default: 20
             maximum: 100
             minimum: 1
+        - name: fromDate
+          in: query
+          description: Ngày bắt đầu lọc (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: Ngày kết thúc lọc (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: department
+          in: query
+          description: Tên phòng ban cần lọc
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Trạng thái chấm công cần lọc
+          schema:
+            type: string
+            enum:
+              - ON_TIME
+              - LATE
+              - EARLY_LEAVE
+              - OVERTIME
+              - ANOMALOUS
+        - name: keyword
+          in: query
+          description: Từ khóa tìm kiếm theo tên hoặc mã nhân viên
+          schema:
+            type: string
         - name: sort
           in: query
           description: 'Tiêu chí sắp xếp theo định dạng: property(,asc|desc)'
@@ -4713,6 +4766,11 @@ components:
           format: int32
         department:
           type: string
+        overtimeMinutes:
+          type: integer
+          format: int32
+          description: Số phút làm thêm giờ sau ca làm việc đã làm tròn sàn 15/30p
+          example: 45
     KioskEnrollFaceRequest:
       type: object
       properties:
@@ -5230,6 +5288,10 @@ components:
           format: int32
           maximum: 60
           minimum: 0
+        isOvernight:
+          type: boolean
+          default: false
+          description: Đánh dấu ca làm việc qua đêm (kết thúc vào ngày hôm sau)
       required:
         - endTime
         - gracePeriodMinutes
@@ -5283,6 +5345,9 @@ components:
           format: int32
         isActive:
           type: boolean
+        isOvernight:
+          type: boolean
+          description: Đánh dấu ca làm việc qua đêm (kết thúc vào ngày hôm sau)
     UnlockPeriodRequest:
       type: object
       properties:
@@ -5782,6 +5847,9 @@ components:
           minimum: 0
         isActive:
           type: boolean
+        isOvernight:
+          type: boolean
+          description: Đánh dấu ca làm việc qua đêm (kết thúc vào ngày hôm sau)
       required:
         - endTime
         - gracePeriodMinutes
@@ -6010,6 +6078,11 @@ components:
           format: int32
         kioskId:
           type: string
+        overtimeMinutes:
+          type: integer
+          format: int32
+          description: Số phút làm thêm giờ sau ca làm việc đã làm tròn sàn 15/30p
+          example: 45
     ApiResponsePageResponseNotificationResponse:
       type: object
       properties:
@@ -6061,6 +6134,30 @@ components:
           additionalProperties:
             type: integer
             format: int64
+        timestamp:
+          type: string
+          format: date-time
+    LogoutRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: Refresh token cần thu hồi khi đăng xuất (SEC-005, API-BE-038)
+          example: dGhpcy1pcy1hLXJlZnJlc2gtdG9rZW4=
+    ApiResponseMapStringObject:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
         timestamp:
           type: string
           format: date-time
@@ -6806,3 +6903,18 @@ components:
       description: Nhập Bearer Token nhận được từ /api/v1/auth/login
       scheme: bearer
       bearerFormat: JWT
+    kioskTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Kiosk-Token
+      description: Token xác thực chuyên dụng cho trạm Kiosk Edge (KioskTokenAuthenticationFilter)
+    kioskIdAuth:
+      type: apiKey
+      in: header
+      name: X-Kiosk-Id
+      description: Mã định danh trạm Kiosk trong hệ thống
+    kioskSecretAuth:
+      type: apiKey
+      in: header
+      name: X-Kiosk-Secret
+      description: Mã khóa bí mật của trạm Kiosk để xác thực an toàn
