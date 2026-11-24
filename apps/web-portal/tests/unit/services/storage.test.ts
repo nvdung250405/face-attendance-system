@@ -293,5 +293,59 @@ describe('Safe Storage Adapters (TASK-WEB-006)', () => {
 
       cleanup()
     })
+
+    it('setupMultiTabAuthSyncListener gọi onSessionUpdate khi một tab khác cập nhật session chỉ với refreshToken (SEC-01 In-Memory AccessToken)', () => {
+      const onLogout = vi.fn()
+      const onSessionUpdate = vi.fn()
+
+      const cleanup = setupMultiTabAuthSyncListener({
+        onLogout,
+        onSessionUpdate,
+      })
+
+      const updatedSession: Partial<AuthSession> = {
+        refreshToken: 'valid-refresh-token-in-storage',
+        tokenType: 'Bearer',
+      }
+
+      const updateEvent = new StorageEvent('storage', {
+        key: STORAGE_KEYS.AUTH_SESSION,
+        newValue: JSON.stringify(updatedSession),
+        oldValue: null,
+      })
+      window.dispatchEvent(updateEvent)
+
+      expect(onSessionUpdate).toHaveBeenCalledTimes(1)
+      expect(onSessionUpdate).toHaveBeenCalledWith(updatedSession)
+      expect(onLogout).not.toHaveBeenCalled()
+
+      cleanup()
+    })
+
+    it('setupMultiTabAuthSyncListener gọi onLogout khi session rỗng thiếu cả accessToken và refreshToken (SEC-02)', () => {
+      const onLogout = vi.fn()
+      const onSessionUpdate = vi.fn()
+
+      const cleanup = setupMultiTabAuthSyncListener({
+        onLogout,
+        onSessionUpdate,
+      })
+
+      const emptySession: Partial<AuthSession> = {
+        tokenType: 'Bearer',
+      }
+
+      const updateEvent = new StorageEvent('storage', {
+        key: STORAGE_KEYS.AUTH_SESSION,
+        newValue: JSON.stringify(emptySession),
+        oldValue: null,
+      })
+      window.dispatchEvent(updateEvent)
+
+      expect(onLogout).toHaveBeenCalledTimes(1)
+      expect(onSessionUpdate).not.toHaveBeenCalled()
+
+      cleanup()
+    })
   })
 })

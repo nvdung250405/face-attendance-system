@@ -58,7 +58,7 @@ export const PaginationBar: React.FC<PaginationBarProps> = React.memo(
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               data-testid="page-size-select"
               aria-label="Số dòng trên mỗi trang"
-              className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shrink-0 cursor-pointer"
+              className="min-h-[44px] px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 shrink-0 cursor-pointer"
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>
@@ -75,7 +75,7 @@ export const PaginationBar: React.FC<PaginationBarProps> = React.memo(
             disabled={page <= 0}
             onClick={() => onPageChange(Math.max(0, page - 1))}
             data-testid="prev-page-btn"
-            className="h-8 px-2.5 rounded-lg shrink-0 cursor-pointer disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] px-3 rounded-lg shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           >
             <ChevronLeft className="w-3.5 h-3.5 mr-1 shrink-0" aria-hidden="true" />
             Trước
@@ -95,7 +95,7 @@ export const PaginationBar: React.FC<PaginationBarProps> = React.memo(
             disabled={page + 1 >= effectiveTotalPages || totalElements === 0}
             onClick={() => onPageChange(page + 1)}
             data-testid="next-page-btn"
-            className="h-8 px-2.5 rounded-lg shrink-0 cursor-pointer disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] px-3 rounded-lg shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           >
             Sau
             <ChevronRight className="w-3.5 h-3.5 ml-1 shrink-0" aria-hidden="true" />

@@ -39,8 +39,8 @@ export const ToastCard: React.FC<{ toast: ToastItem }> = ({ toast }) => {
 
   return (
     <div
-      role="status"
-      aria-live="polite"
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
       data-testid={`toast-${toast.type}`}
       className={cn(
         'flex items-start gap-3 p-3.5 rounded-xl border shadow-xl backdrop-blur-md transition-all duration-200 pointer-events-auto select-none',
@@ -63,9 +63,9 @@ export const ToastCard: React.FC<{ toast: ToastItem }> = ({ toast }) => {
         type="button"
         onClick={() => removeToast(toast.id)}
         aria-label="Đóng thông báo"
-        className="p-1 -mr-1 -mt-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+        className="min-w-[44px] min-h-[44px] p-2 -mr-2 -mt-2 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
       >
-        <X size={15} />
+        <X size={16} />
       </button>
     </div>
   )

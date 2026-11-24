@@ -109,7 +109,6 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
       <DialogContent
         data-testid="export-report-modal"
         hideCloseButton
-        usePortal={false}
         className="card-surface w-full max-w-lg bg-white shadow-2xl rounded-3xl border border-slate-200/80 space-y-5 p-6 animate-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
       >
         {/* Header */}

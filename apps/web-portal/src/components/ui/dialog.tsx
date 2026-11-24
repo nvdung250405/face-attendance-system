@@ -94,7 +94,7 @@ const DialogContent = React.forwardRef<
           {!hideCloseButton && (
             <DialogPrimitive.Close
               aria-label="Đóng"
-              className="absolute right-3.5 top-3.5 rounded-xl p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+              className="absolute right-3.5 top-3.5 rounded-xl p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
             >
               <X size={18} strokeWidth={2} />
             </DialogPrimitive.Close>

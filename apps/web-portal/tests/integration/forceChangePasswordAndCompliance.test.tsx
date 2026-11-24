@@ -146,7 +146,7 @@ describe('TASK-WEB-029: Force Change Password, PIN Management & Compliance', () 
 
     it('Xác thực validation lỗi: mật khẩu cũ trống, độ dài ngắn, trùng mật khẩu cũ, xác nhận không khớp', async () => {
       const { container } = render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} />)
-      const form = container.querySelector('form')!
+      const form = (container.querySelector('form') || document.querySelector('form'))!
 
       // 1. Trống mật khẩu cũ
       fireEvent.submit(form)

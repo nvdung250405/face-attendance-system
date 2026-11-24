@@ -20,6 +20,8 @@ import {
   MinusCircle,
   RotateCw,
   Loader2,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import { attendanceService } from '@/services/attendanceService'
 import { useAuthStore } from '@/store/authStore'
@@ -55,6 +57,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
   const today = useMemo(() => new Date(), [])
   const [currentYear, setCurrentYear] = useState<number>(initialYear || today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState<number>(initialMonth || today.getMonth() + 1)
+  const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid')
 
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [attendanceData, setAttendanceData] = useState<PersonalAttendanceResponse | null>(null)
@@ -303,6 +306,37 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
             </button>
           </div>
 
+          <div className="flex items-center rounded-xl border border-border-subtle bg-white shadow-2xs p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              data-testid="calendar-view-grid-btn"
+              title="Chế độ xem lưới"
+              aria-label="Chế độ xem lưới"
+              className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                viewMode === 'grid'
+                  ? 'bg-brand-50 text-brand-600 font-bold'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-slate-100'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('agenda')}
+              data-testid="calendar-view-agenda-btn"
+              title="Chế độ xem danh sách (Agenda)"
+              aria-label="Chế độ xem danh sách"
+              className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                viewMode === 'agenda'
+                  ? 'bg-brand-50 text-brand-600 font-bold'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-slate-100'
+              }`}
+            >
+              <List className="w-4 h-4 shrink-0" />
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => {
@@ -368,32 +402,116 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
         </div>
       </div>
 
-      {/* ── Lưới Lịch 7 Cột (Calendar Grid 7 Columns) ── */}
-      <div className="space-y-2">
-        {/* Tiêu đề 7 thứ trong tuần */}
-        <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center">
-          {WEEKDAYS.map((w) => (
-            <div
-              key={w.key}
-              className={`py-2 text-xs font-bold uppercase tracking-wider rounded-lg ${
-                w.key === 0 || w.key === 6
-                  ? 'text-slate-400 bg-slate-50'
-                  : 'text-text-secondary bg-slate-100/70'
-              }`}
-            >
-              <span className="hidden sm:inline">{w.label}</span>
-              <span className="sm:hidden">{w.short}</span>
-            </div>
-          ))}
+      {/* ── Lưới Lịch 7 Cột hoặc Danh Sách Thẻ (Agenda View - FINDING-A11Y-007) ── */}
+      {isLoading ? (
+        <div className="py-24 flex flex-col items-center justify-center gap-3 text-text-tertiary">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600 shrink-0" />
+          <span className="text-sm">Đang tải lịch chấm công...</span>
         </div>
+      ) : viewMode === 'agenda' ? (
+        /* Chế độ xem Agenda / Card List tuyến tính chống tràn co cụm trên mobile */
+        <div
+          data-testid="calendar-agenda-view"
+          className="space-y-2.5"
+        >
+          {calendarDays
+            .filter((cell) => cell.isCurrentMonth)
+            .map((cell) => {
+              const rec = cell.record
+              const isSelected = selectedDay?.date === cell.dateStr
 
-        {/* Lưới các ô ngày */}
-        {isLoading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-3 text-text-tertiary">
-            <Loader2 className="w-8 h-8 animate-spin text-brand-600 shrink-0" />
-            <span className="text-sm">Đang tải lịch chấm công...</span>
+              return (
+                <div
+                  key={`agenda-${cell.dateStr}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelectDay(rec, cell.dateStr)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleSelectDay(rec, cell.dateStr)
+                    }
+                  }}
+                  data-testid={`calendar-agenda-item-${cell.dateStr}`}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    isSelected
+                      ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/30'
+                      : cell.isToday
+                        ? 'border-brand-300 ring-1 ring-brand-400 bg-white shadow-xs'
+                        : cell.isWeekend
+                          ? 'border-border-subtle bg-slate-50/70 hover:bg-slate-100/80'
+                          : 'border-border-subtle bg-white hover:border-brand-200 hover:shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center font-bold shrink-0 ${
+                        cell.isToday
+                          ? 'bg-brand-600 text-white'
+                          : cell.isWeekend
+                            ? 'bg-slate-100 text-slate-600'
+                            : 'bg-slate-50 text-text-primary border border-border-subtle'
+                      }`}
+                    >
+                      <span className="text-sm leading-none">{cell.dayNum}</span>
+                      <span className="text-[10px] font-medium mt-0.5 opacity-80">
+                        {cell.isToday ? 'Hôm nay' : cell.isWeekend ? 'Nghỉ' : 'Ngày'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-bold text-text-primary flex items-center gap-2">
+                        <span>{cell.dateStr}</span>
+                        {cell.isToday && (
+                          <span className="text-2xs font-semibold px-1.5 py-0.5 rounded bg-brand-100 text-brand-700">
+                            Hôm nay
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2.5 mt-1 text-2xs font-mono text-slate-600">
+                        {rec?.checkIn ? (
+                          <span className="text-emerald-700 font-medium">Vào: {rec.checkIn.slice(0, 5)}</span>
+                        ) : (
+                          <span className="text-slate-400">Chưa vào</span>
+                        )}
+                        <span>•</span>
+                        {rec?.checkOut ? (
+                          <span className="text-blue-700 font-medium">Ra: {rec.checkOut.slice(0, 5)}</span>
+                        ) : (
+                          <span className="text-slate-400">Chưa ra</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                    <div>{renderCellStatus(rec, cell.isWeekend)}</div>
+                  </div>
+                </div>
+              )
+            })}
+        </div>
+      ) : (
+        /* Chế độ xem Lưới 7 cột (Calendar Grid 7 Columns) */
+        <div className="space-y-2">
+          {/* Tiêu đề 7 thứ trong tuần */}
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center">
+            {WEEKDAYS.map((w) => (
+              <div
+                key={w.key}
+                className={`py-2 text-xs font-bold uppercase tracking-wider rounded-lg ${
+                  w.key === 0 || w.key === 6
+                    ? 'text-slate-600 bg-slate-50'
+                    : 'text-text-secondary bg-slate-100/70'
+                }`}
+              >
+                <span className="hidden sm:inline">{w.label}</span>
+                <span className="sm:hidden">{w.short}</span>
+              </div>
+            ))}
           </div>
-        ) : (
+
+          {/* Lưới các ô ngày */}
           <div
             data-testid="calendar-grid-cells"
             className="grid grid-cols-7 gap-1.5 sm:gap-2"
@@ -441,7 +559,7 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
                         cell.isToday
                           ? 'bg-brand-600 text-white'
                           : cell.isWeekend
-                            ? 'text-slate-400'
+                            ? 'text-slate-600'
                             : 'text-text-primary'
                       }`}
                     >
@@ -478,8 +596,8 @@ export const PersonalAttendanceCalendar: React.FC<PersonalAttendanceCalendarProp
               )
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Drawer Chi Tiết Ngày (420px Sliding Drawer) ── */}
       <AttendanceDayDetailDrawer

@@ -75,3 +75,23 @@ export function formatLocalDateISO(d: Date = new Date()): string {
   const pad = (n: number) => n.toString().padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
+
+/**
+ * Kiểm tra xem ca làm việc có phải là ca đêm (vắt qua nửa đêm) hay không.
+ * Ca đêm khi giờ kết thúc nhỏ hơn giờ bắt đầu (ví dụ: 22:00 -> 06:00).
+ */
+export function isOvernightShift(startTime?: string, endTime?: string): boolean {
+  if (!startTime || !endTime) return false
+  const parseMinutes = (timeStr: string) => {
+    const parts = timeStr.trim().split(':')
+    if (parts.length < 2) return null
+    const h = Number(parts[0])
+    const m = Number(parts[1])
+    if (isNaN(h) || isNaN(m)) return null
+    return h * 60 + m
+  }
+  const startM = parseMinutes(startTime)
+  const endM = parseMinutes(endTime)
+  if (startM === null || endM === null) return false
+  return endM < startM
+}

@@ -19,7 +19,7 @@ import React, { useState } from 'react'
 import { AlertTriangle, X, AlertCircle, Check } from 'lucide-react'
 import { dataSubjectService } from '@/services/dataSubjectService'
 import { useAuthStore } from '@/store/authStore'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { formatDateTime } from '@/utils/date'
 import type { WithdrawConsentResponse } from '@/types'
 
@@ -35,7 +35,7 @@ const ConsentWithdrawalModalContent: React.FC<ConsentWithdrawalModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { updateUser } = useAuthStore()
+  const { user, updateUser } = useAuthStore()
   const [step, setStep] = useState<WithdrawalStep>('WARNING')
   const [reason, setReason] = useState('')
   const [isAgreed, setIsAgreed] = useState(false)
@@ -92,14 +92,14 @@ const ConsentWithdrawalModalContent: React.FC<ConsentWithdrawalModalProps> = ({
               <AlertTriangle size={18} strokeWidth={2} />
             </div>
             <div>
-              <h2 id="withdrawal-modal-title" className="text-base font-bold text-text-primary">
+              <DialogTitle id="withdrawal-modal-title" className="text-base font-bold text-text-primary">
                 {step === 'SUCCESS' ? 'Rút Cam Kết Thành Công' : 'Rút Lại Cam Kết Sinh Trắc Học'}
-              </h2>
-              <p className="text-xs text-text-secondary">
+              </DialogTitle>
+              <DialogDescription id="withdrawal-modal-description" className="text-xs text-text-secondary">
                 {step === 'WARNING' && 'Bước 1/2: Cảnh báo hệ quả pháp lý & vận hành'}
                 {step === 'CONFIRM' && 'Bước 2/2: Xác nhận hủy dữ liệu nhận diện'}
                 {step === 'SUCCESS' && 'Quy trình tiêu hủy dữ liệu đã được kích hoạt'}
-              </p>
+              </DialogDescription>
             </div>
           </div>
 
@@ -122,6 +122,23 @@ const ConsentWithdrawalModalContent: React.FC<ConsentWithdrawalModalProps> = ({
             >
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {/* CẢNH BÁO MÃ PIN DỰ PHÒNG (BIZ-04: Consent Withdrawal PIN Guard) */}
+          {!user?.hasPin && (
+            <div
+              role="alert"
+              data-testid="missing-pin-warning"
+              className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 space-y-2"
+            >
+              <div className="flex items-center gap-2 font-bold text-sm text-amber-950">
+                <AlertTriangle className="w-4.5 h-4.5 text-amber-600 shrink-0" />
+                <span>Cảnh báo: Bạn chưa thiết lập mã PIN dự phòng!</span>
+              </div>
+              <p className="text-xs text-amber-900 leading-relaxed">
+                Sau khi rút cam kết sinh trắc học, bạn sẽ không thể quét khuôn mặt tại Kiosk và bắt buộc phải dùng mã PIN để chấm công. Vui lòng thiết lập mã PIN dự phòng trong phần Quản lý tài khoản trước khi hoàn tất rút cam kết để tránh gián đoạn việc chấm công.
+              </p>
             </div>
           )}
 
@@ -308,7 +325,8 @@ export const ConsentWithdrawalModal: React.FC<ConsentWithdrawalModalProps> = (pr
       <DialogContent
         data-testid="consent-withdrawal-modal"
         hideCloseButton
-        usePortal={false}
+        aria-labelledby="withdrawal-modal-title"
+        aria-describedby="withdrawal-modal-description"
         className="p-0 max-w-lg border-0 bg-transparent shadow-none"
       >
         <ConsentWithdrawalModalContent {...props} />

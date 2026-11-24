@@ -389,7 +389,7 @@ export interface MultiTabAuthSyncOptions {
 
 export function setupMultiTabAuthSyncListener(options: MultiTabAuthSyncOptions): () => void {
   return onStorageKeyChange<AuthSession>(STORAGE_KEYS.AUTH_SESSION, (newSession) => {
-    if (!newSession || !newSession.accessToken) {
+    if (!newSession || (!newSession.accessToken && !newSession.refreshToken)) {
       options.onLogout()
     } else if (options.onSessionUpdate) {
       options.onSessionUpdate(newSession)

@@ -156,7 +156,7 @@ export const SubmitExcuseModal: React.FC<SubmitExcuseModalProps> = ({
                   <span className="font-mono font-semibold text-amber-700">{currentPunchTime}</span>
                 </div>
               )}
-              <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60 flex items-center gap-1">
+              <div className="text-[11px] text-slate-600 pt-1 border-t border-slate-200/60 flex items-center gap-1">
                 <span>* Chỉ tiếp nhận đơn giải trình trong vòng 30 ngày kể từ ngày chấm công.</span>
               </div>
             </div>

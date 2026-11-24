@@ -45,6 +45,8 @@ export const AdminAttendanceView: React.FC = () => {
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
   const [recordToAdjust, setRecordToAdjust] = useState<AttendanceRecord | null>(null)
+  const [selectedRecordIds, setSelectedRecordIds] = useState<number[]>([])
+  const [isBulkAdjustModalOpen, setIsBulkAdjustModalOpen] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Bộ lọc tìm kiếm (EXP3-11: Union Types, STAB-004: useDebounce 350ms)
@@ -142,10 +144,7 @@ export const AdminAttendanceView: React.FC = () => {
       setErrorMessage(null)
       if (pageData.status === 'fulfilled' && pageData.value) {
         setRecords(pageData.value.content || [])
-        const total = pageData.value.totalElements || 0
-        setTotalElements(total)
-        const max = Math.max(0, Math.ceil(total / pageSize) - 1)
-        setPage((p) => (p > max ? max : p))
+        setTotalElements(pageData.value.totalElements || 0)
       } else if (pageData.status === 'rejected') {
         const err = pageData.reason as { message?: string }
         setErrorMessage(err.message || 'Không thể tải danh sách điểm danh.')
@@ -199,6 +198,38 @@ export const AdminAttendanceView: React.FC = () => {
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(totalElements / pageSize))
   }, [totalElements, pageSize])
+
+  // Phân tách điều chỉnh giới hạn trang khỏi fetchAttendanceData để chống re-render phân trang (RCT-01)
+  useEffect(() => {
+    const maxPage = Math.max(0, totalPages - 1)
+    if (page > maxPage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPage(maxPage)
+    }
+  }, [page, totalPages, totalElements])
+
+  // Xử lý chọn nhiều dòng chấm công để chỉnh sửa hàng loạt (BIZ-01)
+  const handleToggleSelectRecord = useCallback((recordId: number) => {
+    setSelectedRecordIds((prev) =>
+      prev.includes(recordId) ? prev.filter((id) => id !== recordId) : [...prev, recordId]
+    )
+  }, [])
+
+  const handleToggleSelectAll = useCallback(() => {
+    setSelectedRecordIds((prev) => {
+      const currentDisplayIds = displayRecords.map((r) => r.recordId)
+      const allSelected =
+        currentDisplayIds.length > 0 && currentDisplayIds.every((id) => prev.includes(id))
+      if (allSelected) {
+        return prev.filter((id) => !currentDisplayIds.includes(id))
+      }
+      return Array.from(new Set([...prev, ...currentDisplayIds]))
+    })
+  }, [displayRecords])
+
+  const selectedRecords = useMemo(() => {
+    return records.filter((r) => selectedRecordIds.includes(r.recordId))
+  }, [records, selectedRecordIds])
 
   // Xuất báo cáo bảng công Excel/PDF (TASK-WEB-020, BLD-WEB-016, DD-WEB-017)
   const handleExportReport = async (options?: {
@@ -354,6 +385,21 @@ export const AdminAttendanceView: React.FC = () => {
               </span>
               <span>+{pendingLiveCount} bản ghi mới</span>
             </button>
+          )}
+
+          {/* Nút Chỉnh sửa hàng loạt (BIZ-01) */}
+          {selectedRecordIds.length > 0 && (
+            <Button
+              type="button"
+              onClick={() => setIsBulkAdjustModalOpen(true)}
+              data-testid="bulk-adjust-trigger-btn"
+              variant="primary"
+              size="sm"
+              leftIcon={<Users className="w-3.5 h-3.5 shrink-0" />}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Chỉnh sửa hàng loạt ({selectedRecordIds.length})
+            </Button>
           )}
 
           {/* Làm mới dữ liệu */}
@@ -526,6 +572,9 @@ export const AdminAttendanceView: React.FC = () => {
           highlightedRecordId={highlightedRecordId}
           showFilters={false}
           onEditRecord={(record) => setRecordToAdjust(record)}
+          selectedRecordIds={selectedRecordIds}
+          onToggleSelectRecord={handleToggleSelectRecord}
+          onToggleSelectAll={handleToggleSelectAll}
         />
 
         {/* ── Thanh Phân Trang Chuẩn Hóa (Global PaginationBar) ── */}
@@ -567,6 +616,19 @@ export const AdminAttendanceView: React.FC = () => {
           fetchAttendanceData()
         }}
       />
+
+      {/* ── Modal Chỉnh Sửa Hàng Loạt (BIZ-01, RFC-02) ── */}
+      {isBulkAdjustModalOpen && (
+        <BulkAdjustAttendanceModal
+          isOpen={isBulkAdjustModalOpen}
+          selectedRecords={selectedRecords}
+          onClose={() => setIsBulkAdjustModalOpen(false)}
+          onSuccess={() => {
+            setSelectedRecordIds([])
+            void fetchAttendanceData()
+          }}
+        />
+      )}
     </div>
   )
 }

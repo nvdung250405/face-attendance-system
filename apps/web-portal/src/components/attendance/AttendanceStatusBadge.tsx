@@ -1,6 +1,7 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/utils/cn'
+import { isOvernightShift } from '@/utils/date'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -18,6 +19,9 @@ export interface AttendanceStatusBadgeProps extends React.HTMLAttributes<HTMLDiv
   shortLate?: boolean
   lateFormat?: 'short' | 'standard' | 'verbose'
   size?: 'default' | 'sm'
+  isOvernight?: boolean
+  startTime?: string
+  endTime?: string
   testId?: string
   'data-testid'?: string
 }
@@ -49,6 +53,9 @@ export const AttendanceStatusBadge: React.FC<AttendanceStatusBadgeProps> = React
     shortLate = false,
     lateFormat,
     size = 'default',
+    isOvernight,
+    startTime,
+    endTime,
     testId,
     'data-testid': dataTestId,
     className,
@@ -74,19 +81,32 @@ export const AttendanceStatusBadge: React.FC<AttendanceStatusBadgeProps> = React
     const IconComponent = config.icon
     const iconClass = size === 'sm' ? 'w-2.5 h-2.5 shrink-0' : 'w-3.5 h-3.5 shrink-0'
 
+    const crossesMidnight = isOvernight || (startTime && endTime && isOvernightShift(startTime, endTime))
+
     return (
-      <Badge
-        variant={config.variant}
-        icon={showIcon ? <IconComponent className={iconClass} /> : undefined}
-        data-testid={testId || dataTestId}
-        className={cn(
-          size === 'sm' && 'text-2xs px-1.5 py-0.5 rounded-sm',
-          className
+      <span className="inline-flex items-center gap-1">
+        <Badge
+          variant={config.variant}
+          icon={showIcon ? <IconComponent className={iconClass} /> : undefined}
+          data-testid={testId || dataTestId}
+          className={cn(
+            size === 'sm' && 'text-2xs px-1.5 py-0.5 rounded-sm',
+            className
+          )}
+          {...props}
+        >
+          {label}
+        </Badge>
+        {crossesMidnight && (
+          <span
+            data-testid="overnight-badge"
+            className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+            title="Ca làm việc qua đêm (+1 ngày)"
+          >
+            +1 ngày
+          </span>
         )}
-        {...props}
-      >
-        {label}
-      </Badge>
+      </span>
     )
   }
 )

@@ -81,6 +81,40 @@ describe('errorNormalizer - Chuẩn hóa lỗi API (TASK-WEB-023)', () => {
     expect(normalized.fieldErrors.email).toBe('Email không hợp lệ')
   })
 
+  it('3c. Chuẩn hóa đầy đủ trường RFC 9457 ProblemDetails (detail, title, type, invalidParams với pointer)', () => {
+    const headers = new AxiosHeaders()
+    const error = new AxiosError(
+      'Request failed with status code 422',
+      'ERR_BAD_REQUEST',
+      undefined,
+      undefined,
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers,
+        config: { headers },
+        data: {
+          type: 'https://api.fas.vn/errors/unprocessable-entity',
+          title: 'Unprocessable Entity',
+          detail: 'Dữ liệu không đáp ứng quy chuẩn nghiệp vụ của hệ thống',
+          invalidParams: [
+            { pointer: '#/reason', reason: 'Lý do giải trình không được để trống' },
+            { name: 'attendanceDate', message: 'Ngày chấm công không hợp lệ' },
+          ],
+        },
+      }
+    )
+
+    const normalized = normalizeApiError(error)
+    expect(normalized.statusCode).toBe(422)
+    expect(normalized.title).toBe('Unprocessable Entity')
+    expect(normalized.detail).toBe('Dữ liệu không đáp ứng quy chuẩn nghiệp vụ của hệ thống')
+    expect(normalized.type).toBe('https://api.fas.vn/errors/unprocessable-entity')
+    expect(normalized.fieldErrors.reason).toBe('Lý do giải trình không được để trống')
+    expect(normalized.fieldErrors.attendanceDate).toBe('Ngày chấm công không hợp lệ')
+    expect(normalized.message).toBe('Dữ liệu không đáp ứng quy chuẩn nghiệp vụ của hệ thống')
+  })
+
   it('4. Chuẩn hóa lỗi HTTP 401 Unauthorized', () => {
     const headers = new AxiosHeaders()
     const error = new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', undefined, undefined, {

@@ -49,7 +49,7 @@ const UnlockPayrollModalContent: React.FC<UnlockPayrollModalContentProps> = ({
     <DialogContent
       data-testid="unlock-payroll-modal"
       hideCloseButton
-      usePortal={false}
+      aria-describedby="unlock-payroll-desc"
       className="w-full max-w-md p-6 space-y-4 max-h-[85vh] overflow-y-auto"
     >
       <div className="flex items-center gap-3">
@@ -58,7 +58,7 @@ const UnlockPayrollModalContent: React.FC<UnlockPayrollModalContentProps> = ({
         </div>
         <div className="min-w-0 flex-1">
           <DialogTitle className="font-bold text-base text-slate-900 truncate">Mở Lại Kỳ Công Đã Chốt</DialogTitle>
-          <span className="text-xs text-slate-500">
+          <span id="unlock-payroll-desc" className="text-xs text-slate-500">
             Kỳ Tháng {String(period.periodMonth).padStart(2, '0')}/{period.periodYear}
           </span>
         </div>

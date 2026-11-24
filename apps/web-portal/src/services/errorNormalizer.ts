@@ -12,6 +12,9 @@ export interface NormalizedApiError {
   statusCode: number
   code: string
   message: string
+  title?: string
+  detail?: string
+  type?: string
   fieldErrors: Record<string, string>
   overlapConflict?: OverlapConflictInfo
   isNetworkError: boolean
@@ -22,16 +25,29 @@ interface BackendErrorPayload {
   success?: boolean
   code?: string
   message?: string
+  title?: string
+  detail?: string
+  type?: string
+  status?: number
+  instance?: string
   details?: Record<string, string>
   errors?: Record<string, string> | Array<{ field?: string; message?: string }>
-  invalidParams?: Array<{ field?: string; property?: string; reason?: string; message?: string }>
+  invalidParams?: Array<{
+    name?: string
+    field?: string
+    property?: string
+    pointer?: string
+    reason?: string
+    message?: string
+    detail?: string
+  }>
   overlapInfo?: OverlapConflictInfo
   suggestedStartDate?: string
   suggestedEndDate?: string
 }
 
 /**
- * Chuẩn hóa lỗi từ API Axios hoặc đối tượng lỗi thông thường
+ * Chuẩn hóa lỗi từ API Axios hoặc đối tượng lỗi thông thường theo RFC 9457 ProblemDetails (RFC-01)
  */
 export function normalizeApiError(error: unknown): NormalizedApiError {
   // 1. Trường hợp lỗi Axios
@@ -55,15 +71,25 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
 
     const status = axiosErr.response.status
     const data = axiosErr.response.data || {}
-    const backendCode = data.code || `HTTP_${status}`
-    const backendMessage = data.message || ''
+    const title = data.title
+    const detail = data.detail
+    const type = data.type
+    const backendCode =
+      data.code ||
+      (type && type !== 'about:blank' ? type : undefined) ||
+      title ||
+      `HTTP_${status}`
+    const backendMessage = detail || data.message || ''
 
-    // Trích xuất lỗi từng trường nếu có
+    // Trích xuất lỗi từng trường nếu có (RFC 9457 invalidParams array & legacy details/errors)
     const fieldErrors: Record<string, string> = {}
     if (Array.isArray(data.invalidParams)) {
       data.invalidParams.forEach((param) => {
-        const key = param?.field || param?.property
-        const val = param?.reason || param?.message
+        let key = param?.field || param?.property || param?.name
+        if (!key && param?.pointer) {
+          key = param.pointer.replace(/^#?\/?/, '').replace(/\//g, '.')
+        }
+        const val = param?.reason || param?.message || param?.detail
         if (key && val) {
           fieldErrors[key] = val
         }
@@ -180,6 +206,9 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
       statusCode: status,
       code: backendCode,
       message: friendlyMessage,
+      title,
+      detail,
+      type,
       fieldErrors,
       overlapConflict,
       isNetworkError: false,
