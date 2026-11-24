@@ -16,7 +16,7 @@ export const RetentionScheduleTable: React.FC<RetentionScheduleTableProps> = ({
     <div className="space-y-4">
       <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs sm:text-sm leading-relaxed shadow-xs">
         <strong className="font-bold">Quy định Tiêu hủy Dữ liệu (Decree 13/2023 &amp; Decree 356/2025):</strong>{' '}
-        Toàn bộ bản mã vector đặc trưng khuôn mặt của nhân viên nghỉ việc hoặc đã rút Informed Consent phải được xóa sạch hoàn toàn khỏi hệ thống trong thời hạn tối đa 7 ngày làm việc kể từ thời điểm có hiệu lực.
+        Toàn bộ bản mã vector đặc trưng khuôn mặt của nhân viên nghỉ việc hoặc đã rút Informed Consent phải được xóa sạch hoàn toàn khỏi hệ thống trong thời hạn tối đa 20 ngày theo quy định tại Nghị định 356/2025/NĐ-CP kể từ thời điểm có hiệu lực.
       </div>
 
       <div className="card-surface overflow-hidden">
@@ -35,7 +35,7 @@ export const RetentionScheduleTable: React.FC<RetentionScheduleTableProps> = ({
                 <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">Mã NV</th>
                 <th scope="col" className="py-3 px-4">Họ và Tên</th>
                 <th scope="col" className="py-3 px-4">Thời Điểm Rút / Nghỉ Việc</th>
-                <th scope="col" className="py-3 px-4">Hạn Tiêu Hủy Dự Kiến (7 ngày)</th>
+                <th scope="col" className="py-3 px-4">Hạn Tiêu Hủy Dự Kiến (20 ngày)</th>
                 <th scope="col" className="py-3 px-4">Thời Điểm Tiêu Hủy Thực Tế</th>
                 <th scope="col" className="py-3 px-4">Trạng Thái</th>
               </tr>

@@ -135,7 +135,7 @@ export const AdminAuditLogView: React.FC = () => {
           }`}
         >
           <Trash2 className="w-4 h-4 shrink-0" />
-          <span>Lịch Tiêu hủy 7 Ngày</span>
+          <span>Lịch Tiêu hủy 20 Ngày</span>
           <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
             activeTab === 'RETENTION_SCHEDULE' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
           }`}>
@@ -185,7 +185,7 @@ export const AdminAuditLogView: React.FC = () => {
         />
       )}
 
-      {/* ── TAB 3: LỊCH TIÊU HỦY DỮ LIỆU SINH TRẮC 7 NGÀY ── */}
+      {/* ── TAB 3: LỊCH TIÊU HỦY DỮ LIỆU SINH TRẮC 20 NGÀY ── */}
       {activeTab === 'RETENTION_SCHEDULE' && (
         <RetentionScheduleTable
           retentionItems={retentionItems}

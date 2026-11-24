@@ -464,7 +464,7 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
   })
 
   // ────────────────────────────────────────────────────────────────────────────
-  // 3. AdminAuditLogView Tests (Audit Logs, DPO Consents, Retention 7 ngày)
+  // 3. AdminAuditLogView Tests (Audit Logs, DPO Consents, Retention 20 ngày)
   // ────────────────────────────────────────────────────────────────────────────
   describe('3. AdminAuditLogView (Tra cứu Kiểm toán & Tuân thủ DPO)', () => {
     it('hiển thị nhãn Chế độ Chỉ đọc và 3 Tab chức năng', async () => {
@@ -485,6 +485,7 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       expect(screen.getByTestId('tab-audit-logs')).toBeTruthy()
       expect(screen.getByTestId('tab-dpo-consents')).toBeTruthy()
       expect(screen.getByTestId('tab-retention-schedule')).toBeTruthy()
+      expect(screen.getByTestId('tab-retention-schedule').textContent).toContain('Lịch Tiêu hủy 20 Ngày')
     })
 
     it('Tab 1: hiển thị bộ lọc kiểm toán và tải danh sách Audit Logs', async () => {
@@ -572,7 +573,7 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       expect(screen.getByText('HIỆU LỰC')).toBeTruthy()
     })
 
-    it('Tab 3: chuyển sang tab Retention Schedule và hiển thị lịch tiêu hủy 7 ngày theo NĐ 13/2023', async () => {
+    it('Tab 3: chuyển sang tab Retention Schedule và hiển thị lịch tiêu hủy 20 ngày theo NĐ 356/2025', async () => {
       render(
         <MemoryRouter>
           <AdminAuditLogView />
@@ -592,6 +593,7 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
 
       expect(screen.getByText('Lịch Trình Tiêu Hủy Vector Sinh Trắc Học')).toBeTruthy()
       expect(screen.getByText(/Quy định Tiêu hủy Dữ liệu \(Decree 13\/2023 & Decree 356\/2025\)/i)).toBeTruthy()
+      expect(screen.getByText('Hạn Tiêu Hủy Dự Kiến (20 ngày)')).toBeTruthy()
       expect(screen.getByText('EMP-1042')).toBeTruthy()
       expect(screen.getByText('ĐANG CHỜ TIÊU HỦY')).toBeTruthy()
     })

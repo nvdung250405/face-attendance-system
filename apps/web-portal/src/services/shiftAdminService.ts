@@ -37,6 +37,7 @@ interface BackendShiftResponse {
   startTime: string
   endTime: string
   gracePeriodMinutes?: number
+  isOvernight?: boolean
   isActive?: boolean
   createdAt?: string
   updatedAt?: string
@@ -89,6 +90,7 @@ export class ShiftAdminService {
       startTime,
       endTime,
       gracePeriodMinutes: s.gracePeriodMinutes ?? 0,
+      isOvernight: s.isOvernight,
       isActive: Boolean(s.isActive),
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
@@ -141,12 +143,15 @@ export class ShiftAdminService {
       const endTime = data.endTime.length === 5 ? `${data.endTime}:00` : data.endTime
       const shiftName = data.name || data.shiftName || ''
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         shiftCode: data.shiftCode,
         shiftName,
         startTime,
         endTime,
         gracePeriodMinutes: data.gracePeriodMinutes ?? 15,
+      }
+      if (data.isOvernight !== undefined) {
+        payload.isOvernight = data.isOvernight
       }
 
       const response = await apiClient.post<ApiResponse<BackendShiftResponse>>(
@@ -197,6 +202,9 @@ export class ShiftAdminService {
         startTime: data.startTime && data.startTime.length === 5 ? `${data.startTime}:00` : data.startTime,
         endTime: data.endTime && data.endTime.length === 5 ? `${data.endTime}:00` : data.endTime,
         gracePeriodMinutes: data.gracePeriodMinutes ?? 15,
+      }
+      if (data.isOvernight !== undefined) {
+        payload.isOvernight = data.isOvernight
       }
       if (data.isActive !== undefined) {
         payload.isActive = data.isActive

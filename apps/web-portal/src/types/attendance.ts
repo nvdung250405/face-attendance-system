@@ -9,6 +9,8 @@ export type VerificationMethod =
   | 'FALLBACK_PIN'
   | 'MANUAL_HR'
   | 'HR_OVERRIDE'
+  | 'ARCFACE_512D'
+  | 'PIN'
 export type PunchType = 'CHECK_IN' | 'CHECK_OUT'
 export type AttendanceStatus = 'ON_TIME' | 'LATE' | 'EARLY_LEAVE' | 'OVERTIME' | 'ANOMALOUS'
 
@@ -24,6 +26,8 @@ export interface AttendanceRecord {
   readonly status: AttendanceStatus
   readonly lateMinutes: number
   readonly kioskId: string
+  readonly confidenceScore?: number
+  readonly overtimeMinutes?: number
 }
 
 export interface AttendanceQueryParams {
@@ -93,6 +97,8 @@ export interface PersonalAttendanceDayRecord {
   checkOut?: string | null
   status: DynamicAttendanceStatus
   lateMinutes?: number
+  overtimeMinutes?: number
+  confidenceScore?: number
   workingHours?: number
   shiftCode?: string
   verificationMethod?: VerificationMethod

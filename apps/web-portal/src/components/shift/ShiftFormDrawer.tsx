@@ -6,6 +6,7 @@ import React, { useState } from 'react'
 import { Clock, X, AlertTriangle, Sparkles, ChevronDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { previewShiftCode } from '@/utils/codePreview'
 import type { ShiftItem, CreateShiftRequest } from '@/types'
 
@@ -210,6 +211,20 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
               <span className="text-2xs text-text-secondary">
                 Khoảng thời gian nhân viên đến trễ mà không bị tính vi phạm đi muộn (0 - 60 phút)
               </span>
+            </div>
+
+            {/* Ca qua đêm (isOvernight) */}
+            <div className="pt-1">
+              <Switch
+                id="shift-is-overnight"
+                data-testid="input-shift-is-overnight"
+                checked={Boolean(formData.isOvernight)}
+                onChange={(e) =>
+                  onChangeFormData((prev) => ({ ...prev, isOvernight: e.target.checked }))
+                }
+                label="Ca qua đêm (isOvernight)"
+                description="Ca làm việc bắt đầu hôm trước và kết thúc vào ngày hôm sau (ví dụ: 22:00 - 06:00)"
+              />
             </div>
 
             {/* Kích hoạt trạng thái khi chỉnh sửa */}

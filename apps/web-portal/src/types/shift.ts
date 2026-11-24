@@ -11,6 +11,7 @@ export interface ShiftItem {
   readonly startTime: string // Định dạng HH:mm, ví dụ "08:00"
   readonly endTime: string // Định dạng HH:mm, ví dụ "17:30"
   readonly gracePeriodMinutes: number // 0-60 phút
+  readonly isOvernight?: boolean
   readonly isActive: boolean
   readonly createdAt?: string
   readonly updatedAt?: string
@@ -24,6 +25,7 @@ export interface CreateShiftRequest {
   startTime: string
   endTime: string
   gracePeriodMinutes?: number
+  isOvernight?: boolean
 }
 
 export interface UpdateShiftRequest {
@@ -33,6 +35,7 @@ export interface UpdateShiftRequest {
   startTime?: string
   endTime?: string
   gracePeriodMinutes?: number
+  isOvernight?: boolean
   isActive?: boolean
 }
 
