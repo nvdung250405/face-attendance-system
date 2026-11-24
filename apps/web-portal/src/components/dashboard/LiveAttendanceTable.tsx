@@ -36,9 +36,16 @@ export interface LiveAttendanceTableProps {
   selectedRecordIds?: number[]
   onToggleSelectRecord?: (recordId: number) => void
   onToggleSelectAll?: () => void
+  showTelemetryColumns?: boolean
 }
 
 export { AttendanceStatusBadge } from '@/components/attendance'
+
+const formatConfidence = (score?: number | null): string => {
+  if (score == null) return ''
+  const pct = score <= 1 ? Math.round(score * 100) : Math.round(score)
+  return `${pct}%`
+}
 
 interface AttendanceRowItemProps {
   record: AttendanceRecord
@@ -46,10 +53,18 @@ interface AttendanceRowItemProps {
   onEditRecord?: (record: AttendanceRecord) => void
   isSelected?: boolean
   onToggleSelectRecord?: (recordId: number) => void
+  showTelemetryColumns?: boolean
 }
 
 const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
-  ({ record, isHighlighted, onEditRecord, isSelected, onToggleSelectRecord }) => {
+  ({
+    record,
+    isHighlighted,
+    onEditRecord,
+    isSelected,
+    onToggleSelectRecord,
+    showTelemetryColumns = false,
+  }) => {
     return (
       <tr
         data-testid={`attendance-row-${record.recordId}`}
@@ -109,31 +124,93 @@ const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
         </td>
 
         <td className="py-3 px-4 text-xs whitespace-nowrap">
-          <span className="inline-flex items-center gap-1.5 font-medium text-slate-600">
-            {record.verificationMethod === 'VERIFICATION_FACE' ||
-            record.verificationMethod === 'FACE_MATCH' ? (
-              <>
-                <ScanFace size={15} className="text-indigo-600 shrink-0" />
-                <span>Khuôn mặt</span>
-              </>
-            ) : record.verificationMethod === 'MANUAL_HR' ||
-              record.verificationMethod === 'HR_OVERRIDE' ? (
-              <>
-                <UserCheck size={15} className="text-blue-600 shrink-0" />
-                <span>HR Điều chỉnh</span>
-              </>
-            ) : (
-              <>
-                <Lock size={15} className="text-amber-600 shrink-0" />
-                <span>Mã PIN</span>
-              </>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 font-medium text-slate-600">
+              {record.verificationMethod === 'VERIFICATION_FACE' ||
+              record.verificationMethod === 'FACE_MATCH' ? (
+                <>
+                  <ScanFace size={15} className="text-indigo-600 shrink-0" />
+                  <span>Khuôn mặt</span>
+                </>
+              ) : record.verificationMethod === 'MANUAL_HR' ||
+                record.verificationMethod === 'HR_OVERRIDE' ? (
+                <>
+                  <UserCheck size={15} className="text-blue-600 shrink-0" />
+                  <span>HR Điều chỉnh</span>
+                </>
+              ) : (
+                <>
+                  <Lock size={15} className="text-amber-600 shrink-0" />
+                  <span>Mã PIN</span>
+                </>
+              )}
+            </span>
+            {!showTelemetryColumns && record.confidenceScore != null && (
+              <span
+                data-testid={`confidence-badge-${record.recordId}`}
+                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-mono font-semibold border ${
+                  (record.confidenceScore <= 1 ? record.confidenceScore : record.confidenceScore / 100) >= 0.8
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+                title={`Độ tin cậy nhận diện: ${formatConfidence(record.confidenceScore)}`}
+              >
+                {formatConfidence(record.confidenceScore)}
+              </span>
             )}
-          </span>
+          </div>
         </td>
 
+        {showTelemetryColumns && (
+          <td className="py-3 px-4 font-mono text-xs whitespace-nowrap">
+            {record.confidenceScore != null ? (
+              <span
+                data-testid={`confidence-badge-${record.recordId}`}
+                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-semibold border ${
+                  (record.confidenceScore <= 1 ? record.confidenceScore : record.confidenceScore / 100) >= 0.8
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+                title={`Độ tin cậy nhận diện: ${formatConfidence(record.confidenceScore)}`}
+              >
+                {formatConfidence(record.confidenceScore)}
+              </span>
+            ) : (
+              <span className="text-slate-400 font-mono">—</span>
+            )}
+          </td>
+        )}
+
         <td className="py-3 px-4 whitespace-nowrap">
-          <AttendanceStatusBadge status={record.status} lateMinutes={record.lateMinutes} />
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <AttendanceStatusBadge status={record.status} lateMinutes={record.lateMinutes} />
+            {!showTelemetryColumns && record.overtimeMinutes != null && record.overtimeMinutes > 0 && (
+              <span
+                data-testid={`overtime-badge-${record.recordId}`}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200"
+                title={`Tăng ca +${record.overtimeMinutes} phút`}
+              >
+                +{record.overtimeMinutes}m OT
+              </span>
+            )}
+          </div>
         </td>
+
+        {showTelemetryColumns && (
+          <td className="py-3 px-4 text-xs whitespace-nowrap">
+            {record.overtimeMinutes != null && record.overtimeMinutes > 0 ? (
+              <span
+                data-testid={`overtime-badge-${record.recordId}`}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200"
+                title={`Tăng ca +${record.overtimeMinutes} phút`}
+              >
+                +{record.overtimeMinutes}m OT
+              </span>
+            ) : (
+              <span className="text-slate-400 font-mono">—</span>
+            )}
+          </td>
+        )}
 
         <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
           <span className="truncate max-w-[200px] block" title={record.kioskId}>
@@ -172,11 +249,17 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
   selectedRecordIds,
   onToggleSelectRecord,
   onToggleSelectAll,
+  showTelemetryColumns = false,
 }) => {
   const [filterKeyword, setFilterKeyword] = useState('')
   const debouncedKeyword = useDebounce(filterKeyword, 350)
   const [filterDepartment, setFilterDepartment] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+
+  const totalColumns =
+    (onEditRecord ? 9 : 8) +
+    (onToggleSelectRecord ? 1 : 0) +
+    (showTelemetryColumns ? 2 : 0)
 
   // Danh sách các phòng ban phân biệt (EXP2-08: Memoized)
   const departments = useMemo(() => {
@@ -340,7 +423,13 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
               <th scope="col" className="py-3 px-4">Phòng Ban</th>
               <th scope="col" className="py-3 px-4">Loại Quẹt</th>
               <th scope="col" className="py-3 px-4">Phương Thức</th>
+              {showTelemetryColumns && (
+                <th scope="col" className="py-3 px-4">Độ Tin Cậy</th>
+              )}
               <th scope="col" className="py-3 px-4">Trạng Thái</th>
+              {showTelemetryColumns && (
+                <th scope="col" className="py-3 px-4">Tăng Ca</th>
+              )}
               <th scope="col" className="py-3 px-4">Trạm Kiosk</th>
               {onEditRecord && (
                 <th scope="col" className="py-3 px-4 text-right sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] z-20">
@@ -352,7 +441,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
           <tbody className="divide-y divide-border-subtle">
             {isLoading && records.length === 0 ? (
               <TableSkeleton
-                columns={(onEditRecord ? 9 : 8) + (onToggleSelectRecord ? 1 : 0)}
+                columns={totalColumns}
                 rows={6}
                 hasActionColumn={Boolean(onEditRecord)}
                 ariaLabel="Đang nạp dữ liệu chấm công..."
@@ -360,7 +449,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
             ) : displayRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={(onEditRecord ? 9 : 8) + (onToggleSelectRecord ? 1 : 0)}
+                  colSpan={totalColumns}
                   className="py-16 text-center"
                 >
                   <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
@@ -384,6 +473,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                   onEditRecord={onEditRecord}
                   isSelected={selectedRecordIds?.includes(record.recordId)}
                   onToggleSelectRecord={onToggleSelectRecord}
+                  showTelemetryColumns={showTelemetryColumns}
                 />
               ))
             )}

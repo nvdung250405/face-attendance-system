@@ -241,6 +241,58 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
       // Không có ai ở Khối Kinh doanh mà Đúng giờ
       expect(screen.getByText(/Chưa có lượt điểm danh nào phù hợp/i)).toBeTruthy()
     })
+
+    it('render huy hiệu độ tin cậy confidenceScore và số phút tăng ca overtimeMinutes telemetry', () => {
+      const recordsWithTelemetry: AttendanceRecord[] = [
+        {
+          recordId: 104,
+          employeeId: 1004,
+          employeeCode: 'NV-1004',
+          fullName: 'Đỗ Văn Dũng',
+          department: 'Khối Công nghệ',
+          punchTimestamp: '2026-10-14T19:30:00.000+07:00',
+          punchType: 'CHECK_OUT',
+          verificationMethod: 'VERIFICATION_FACE',
+          status: 'OVERTIME',
+          lateMinutes: 0,
+          overtimeMinutes: 45,
+          confidenceScore: 0.962,
+          kioskId: 'KSK-HQ-01',
+        },
+      ]
+
+      render(<LiveAttendanceTable records={recordsWithTelemetry} />)
+
+      expect(screen.getByTestId('confidence-badge-104').textContent).toBe('96%')
+      expect(screen.getByTestId('overtime-badge-104').textContent).toBe('+45m OT')
+    })
+
+    it('render các cột telemetry riêng biệt khi showTelemetryColumns = true', () => {
+      const recordsWithTelemetry: AttendanceRecord[] = [
+        {
+          recordId: 105,
+          employeeId: 1005,
+          employeeCode: 'NV-1005',
+          fullName: 'Ngô Thanh Vân',
+          department: 'Khối Kinh doanh',
+          punchTimestamp: '2026-10-14T20:00:00.000+07:00',
+          punchType: 'CHECK_OUT',
+          verificationMethod: 'FACE_MATCH',
+          status: 'OVERTIME',
+          lateMinutes: 0,
+          overtimeMinutes: 60,
+          confidenceScore: 0.94,
+          kioskId: 'KSK-HQ-02',
+        },
+      ]
+
+      render(<LiveAttendanceTable records={recordsWithTelemetry} showTelemetryColumns={true} />)
+
+      expect(screen.getByText('Độ Tin Cậy')).toBeTruthy()
+      expect(screen.getByText('Tăng Ca')).toBeTruthy()
+      expect(screen.getByTestId('confidence-badge-105').textContent).toBe('94%')
+      expect(screen.getByTestId('overtime-badge-105').textContent).toBe('+60m OT')
+    })
   })
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -252,13 +304,11 @@ describe('Bảng Chấm Công Trực Tiếp & Thẻ KPI (TASK-WEB-010)', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/Chào mừng trở lại/i)).toBeTruthy()
+        expect(screen.getByTestId('kpi-total-employees').textContent).toBe('120')
+        expect(screen.getByTestId('kpi-present-count').textContent).toBe('100')
+        expect(screen.getByTestId('kpi-late-count').textContent).toBe('8')
+        expect(screen.getByTestId('kpi-absent-count').textContent).toBe('20')
       })
-
-      // KPI số liệu ban đầu
-      expect(screen.getByTestId('kpi-total-employees').textContent).toBe('120')
-      expect(screen.getByTestId('kpi-present-count').textContent).toBe('100')
-      expect(screen.getByTestId('kpi-late-count').textContent).toBe('8')
-      expect(screen.getByTestId('kpi-absent-count').textContent).toBe('20')
 
       // Dữ liệu bảng ban đầu
       expect(screen.getByText('Trần Văn An')).toBeTruthy()

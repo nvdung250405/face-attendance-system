@@ -182,6 +182,8 @@ export const AdminAttendanceView: React.FC = () => {
       punchType: r.punchType,
       status: r.status,
       lateMinutes: r.lateMinutes,
+      overtimeMinutes: r.overtimeMinutes ?? 0,
+      confidenceScore: r.confidenceScore,
       kioskId: r.kioskId,
       verificationMethod: r.verificationMethod,
     }))
@@ -577,6 +579,7 @@ export const AdminAttendanceView: React.FC = () => {
           selectedRecordIds={selectedRecordIds}
           onToggleSelectRecord={handleToggleSelectRecord}
           onToggleSelectAll={handleToggleSelectAll}
+          showTelemetryColumns={true}
         />
 
         {/* ── Thanh Phân Trang Chuẩn Hóa (Global PaginationBar) ── */}

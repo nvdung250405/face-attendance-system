@@ -43,6 +43,7 @@ const mockShifts: ShiftItem[] = [
     startTime: '08:00',
     endTime: '17:30',
     gracePeriodMinutes: 15,
+    isOvernight: false,
     isActive: true,
   },
   {
@@ -52,6 +53,17 @@ const mockShifts: ShiftItem[] = [
     startTime: '13:00',
     endTime: '21:00',
     gracePeriodMinutes: 10,
+    isOvernight: false,
+    isActive: true,
+  },
+  {
+    id: 3,
+    shiftCode: 'CA_DEM',
+    name: 'Ca Đêm',
+    startTime: '22:00',
+    endTime: '06:00',
+    gracePeriodMinutes: 10,
+    isOvernight: true,
     isActive: true,
   },
 ]
@@ -163,12 +175,13 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
     vi.spyOn(shiftAdminService, 'getShifts').mockResolvedValue(mockShifts)
     vi.spyOn(shiftAdminService, 'getEmployeeShifts').mockResolvedValue(mockAssignments)
     vi.spyOn(shiftAdminService, 'createShift').mockImplementation(async (req) => ({
-      id: 3,
+      id: 4,
       shiftCode: req.shiftCode || 'SHIFT-CUSTOM',
       name: req.name,
       startTime: req.startTime,
       endTime: req.endTime,
       gracePeriodMinutes: req.gracePeriodMinutes || 15,
+      isOvernight: req.isOvernight,
       isActive: true,
     }))
     vi.spyOn(shiftAdminService, 'updateShift').mockImplementation(async (id, req) => ({
@@ -178,6 +191,7 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       startTime: req.startTime || '08:00',
       endTime: req.endTime || '17:30',
       gracePeriodMinutes: req.gracePeriodMinutes || 15,
+      isOvernight: req.isOvernight,
       isActive: req.isActive !== undefined ? req.isActive : true,
     }))
     vi.spyOn(shiftAdminService, 'assignShift').mockResolvedValue({
@@ -266,6 +280,11 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
       fireEvent.change(screen.getByTestId('input-shift-start-time'), { target: { value: '22:00' } })
       fireEvent.change(screen.getByTestId('input-shift-end-time'), { target: { value: '06:00' } })
 
+      // Bật switch ca qua đêm (isOvernight)
+      const overnightSwitch = screen.getByTestId('input-shift-is-overnight')
+      expect(overnightSwitch).toBeTruthy()
+      fireEvent.click(overnightSwitch)
+
       // Submit
       fireEvent.click(screen.getByTestId('submit-shift-btn'))
 
@@ -276,6 +295,7 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
             name: 'Ca Đêm',
             startTime: '22:00',
             endTime: '06:00',
+            isOvernight: true,
           })
         )
       })
@@ -306,6 +326,42 @@ describe('Module Ca kíp & Kỳ công (TASK-WEB-025)', () => {
             name: 'Ca Tự Động',
             startTime: '09:00',
             endTime: '18:00',
+          })
+        )
+      })
+    })
+
+    it('2c. Hiển thị huy hiệu ca qua đêm (+1 ngày) và cho phép chỉnh sửa ca qua đêm', async () => {
+      renderShiftManagementView()
+
+      await waitFor(() => {
+        expect(screen.getByText('Ca Đêm')).toBeTruthy()
+      })
+
+      // Huy hiệu +1 ngày hiển thị cho ca qua đêm trong bảng danh mục
+      const overnightBadge = screen.getByTestId('overnight-badge-3')
+      expect(overnightBadge).toBeTruthy()
+      expect(overnightBadge.textContent).toContain('+1 ngày')
+
+      // Mở modal sửa ca đêm
+      const editButton = screen.getByTestId('edit-shift-btn-3')
+      fireEvent.click(editButton)
+
+      expect(screen.getByTestId('shift-drawer')).toBeTruthy()
+      const overnightSwitch = screen.getByTestId('input-shift-is-overnight') as HTMLInputElement
+      expect(overnightSwitch.checked).toBe(true)
+
+      // Tắt switch qua đêm và submit
+      fireEvent.click(overnightSwitch)
+      expect(overnightSwitch.checked).toBe(false)
+
+      fireEvent.click(screen.getByTestId('submit-shift-btn'))
+
+      await waitFor(() => {
+        expect(shiftAdminService.updateShift).toHaveBeenCalledWith(
+          3,
+          expect.objectContaining({
+            isOvernight: false,
           })
         )
       })

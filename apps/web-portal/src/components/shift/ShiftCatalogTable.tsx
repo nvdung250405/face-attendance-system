@@ -77,7 +77,7 @@ export const ShiftCatalogTable: React.FC<ShiftCatalogTableProps> = ({
                         <Clock className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
                         <span>{shift.endTime}</span>
                       </span>
-                      {isOvernightShift(shift.startTime, shift.endTime) && (
+                      {(Boolean(shift.isOvernight) || isOvernightShift(shift.startTime, shift.endTime)) && (
                         <span
                           data-testid={`overnight-badge-${shift.id}`}
                           className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 shrink-0"

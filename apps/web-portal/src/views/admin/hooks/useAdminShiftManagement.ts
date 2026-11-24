@@ -61,6 +61,7 @@ export const useAdminShiftManagement = () => {
     startTime: '08:00',
     endTime: '17:30',
     gracePeriodMinutes: 15,
+    isOvernight: false,
     isActive: true,
   })
   const [shiftFormError, setShiftFormError] = useState<string | null>(null)
@@ -159,6 +160,7 @@ export const useAdminShiftManagement = () => {
       startTime: '08:00',
       endTime: '17:30',
       gracePeriodMinutes: 15,
+      isOvernight: false,
       isActive: true,
     })
     setShiftFormError(null)
@@ -180,6 +182,7 @@ export const useAdminShiftManagement = () => {
       startTime: shift.startTime,
       endTime: shift.endTime,
       gracePeriodMinutes: shift.gracePeriodMinutes,
+      isOvernight: shift.isOvernight ?? false,
       isActive: shift.isActive,
     })
     setShiftFormError(null)
@@ -207,6 +210,7 @@ export const useAdminShiftManagement = () => {
           startTime: shiftFormData.startTime,
           endTime: shiftFormData.endTime,
           gracePeriodMinutes: Number(shiftFormData.gracePeriodMinutes),
+          isOvernight: shiftFormData.isOvernight,
           isActive: shiftFormData.isActive,
         }
         await shiftAdminService.updateShift(editingShift.id, updateData)
@@ -217,6 +221,7 @@ export const useAdminShiftManagement = () => {
           startTime: shiftFormData.startTime,
           endTime: shiftFormData.endTime,
           gracePeriodMinutes: Number(shiftFormData.gracePeriodMinutes),
+          isOvernight: shiftFormData.isOvernight,
         }
         if (shiftFormData.shiftCode && shiftFormData.shiftCode.trim()) {
           createData.shiftCode = shiftFormData.shiftCode.trim().toUpperCase()
