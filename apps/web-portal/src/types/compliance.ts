@@ -7,9 +7,18 @@ export interface WithdrawConsentRequest {
 }
 
 export interface WithdrawConsentResponse {
+  readonly id?: number
+  readonly userId?: number
+  readonly employeeCode?: string
   readonly withdrawnAt: string
-  readonly retentionDeadline: string // 7 ngày tiêu hủy dữ liệu sinh trắc
-  readonly message: string
+  readonly retentionDeadline?: string // hạn tiêu hủy dữ liệu sinh trắc
+  readonly biometricDisposalDueAt?: string // hạn tiêu hủy 20 ngày theo NĐ 356
+  readonly processedAt?: string | null
+  readonly createdAt?: string
+  readonly clientIp?: string
+  readonly status?: 'PENDING_DISPOSAL' | 'DISPOSED' | 'CANCELLED' | string
+  readonly message?: string
+  readonly reason?: string
 }
 
 export type DataSubjectRequestType = 'ACCESS' | 'CORRECTION'
@@ -88,6 +97,17 @@ export interface DpoConsentAuditItem {
   readonly ipAddress: string
   readonly consentVersion: string
   readonly status: string
+}
+
+export interface DpoConsentWithdrawalItem {
+  readonly id: number
+  readonly employeeId: number
+  readonly employeeCode: string
+  readonly fullName: string
+  readonly withdrawnAt: string
+  readonly biometricDisposalDueAt: string
+  readonly status: string
+  readonly reason?: string | null
 }
 
 export interface RetentionScheduleItem {

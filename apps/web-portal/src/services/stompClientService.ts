@@ -63,7 +63,19 @@ export class StompWebSocketService {
 
   constructor(options: StompServiceOptions = {}) {
     const rawEndpoint = options.endpoint ?? import.meta.env?.VITE_WS_BASE_URL ?? '/ws-attendance'
-    const endpoint = rawEndpoint.trim() || '/ws-attendance'
+    let endpoint = rawEndpoint.trim() || '/ws-attendance'
+    if (
+      !endpoint.startsWith('http://') &&
+      !endpoint.startsWith('https://') &&
+      !endpoint.startsWith('ws://') &&
+      !endpoint.startsWith('wss://')
+    ) {
+      const origin =
+        typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null'
+          ? window.location.origin
+          : 'http://localhost:3000'
+      endpoint = `${origin}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`
+    }
 
     this.tokenProvider = options.tokenProvider ?? getStoredAccessToken
     this.baseReconnectDelay = options.baseReconnectDelay ?? 1000

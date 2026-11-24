@@ -18,7 +18,10 @@ import { useAuthStore } from '@/store/authStore'
 
 // Stub useStompConnectionStore — cung cấp đủ interface (status + setStatus)
 vi.mock('@/store/stompConnectionStore', () => ({
-  useStompConnectionStore: () => ({ status: 'CONNECTED', setStatus: vi.fn() }),
+  useStompConnectionStore: (selector?: (state: { status: string; setStatus: ReturnType<typeof vi.fn> }) => unknown) => {
+    const state = { status: 'CONNECTED', setStatus: vi.fn() }
+    return typeof selector === 'function' ? selector(state) : state
+  },
 }))
 
 // Stub useStompClient để AdminShellLayout không thử kết nối STOMP thật trong test

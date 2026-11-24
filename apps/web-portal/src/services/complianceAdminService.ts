@@ -17,14 +17,34 @@ import type {
   RegisterKioskRequest,
   RegisterKioskResponse,
   DpoConsentAuditItem,
+  DpoConsentWithdrawalItem,
   RetentionScheduleItem,
 } from '@/types'
+
+export interface KioskHeartbeatLog {
+  timestamp: string
+  latencyMs?: number
+  status: 'SUCCESS' | 'MISSED' | 'TIMEOUT'
+}
+
+export interface KioskDiagnosticLog {
+  timestamp: string
+  level: 'INFO' | 'WARN' | 'ERROR'
+  message: string
+}
 
 export interface KioskHealthResponse {
   kioskId: string
   status: string
   lastPingAt?: string
   isStale: boolean
+  macAddress?: string
+  ipAddress?: string
+  firmwareVersion?: string
+  appVersion?: string
+  cachedGalleryCount?: number
+  heartbeatHistory?: KioskHeartbeatLog[]
+  diagnosticLogs?: KioskDiagnosticLog[]
 }
 
 export interface UpdateKioskRequest {
@@ -128,6 +148,44 @@ export function adaptDpoConsent(raw: unknown, index = 0): DpoConsentAuditItem {
     agreedAt,
     ipAddress,
     status,
+  }
+}
+
+export function adaptDpoConsentWithdrawal(raw: unknown, index = 0): DpoConsentWithdrawalItem {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: index + 1,
+      employeeId: 0,
+      employeeCode: '',
+      fullName: '',
+      withdrawnAt: '',
+      biometricDisposalDueAt: '',
+      status: 'PENDING_DISPOSAL',
+      reason: null,
+    }
+  }
+
+  const item = raw as Record<string, unknown>
+  const id = Number(item.id ?? item.withdrawalId ?? index + 1)
+  const employeeId = Number(item.employeeId ?? item.userId ?? 0)
+  const employeeCode = String(item.employeeCode ?? '')
+  const fullName = String(item.fullName ?? '')
+  const withdrawnAt = String(item.withdrawnAt ?? item.createdAt ?? item.timestamp ?? '')
+  const biometricDisposalDueAt = String(
+    item.biometricDisposalDueAt ?? item.retentionDeadline ?? item.disposalDueAt ?? item.scheduledDestructionDate ?? ''
+  )
+  const status = String(item.status ?? 'PENDING_DISPOSAL')
+  const reason = item.reason ? String(item.reason) : null
+
+  return {
+    id,
+    employeeId,
+    employeeCode,
+    fullName,
+    withdrawnAt,
+    biometricDisposalDueAt,
+    status,
+    reason,
   }
 }
 
@@ -402,6 +460,27 @@ export class ComplianceAdminService {
         list = (data as PaginatedResult<RetentionScheduleItem>).content
       }
       return list.map((item, idx) => adaptRetentionSchedule(item, idx))
+    } catch (error) {
+      throw normalizeApiError(error)
+    }
+  }
+
+  /**
+   * DPO tra cứu danh sách rút cam kết Informed Consent (chỉ đọc) (GET /api/v1/dpo/consent-withdrawals)
+   */
+  async getDpoConsentWithdrawals(): Promise<DpoConsentWithdrawalItem[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<PaginatedResult<DpoConsentWithdrawalItem> | DpoConsentWithdrawalItem[]>>(
+        '/api/v1/dpo/consent-withdrawals'
+      )
+      const data = response.data.data
+      let list: unknown[] = []
+      if (Array.isArray(data)) {
+        list = data
+      } else if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as PaginatedResult<DpoConsentWithdrawalItem>).content)) {
+        list = (data as PaginatedResult<DpoConsentWithdrawalItem>).content
+      }
+      return list.map((item, idx) => adaptDpoConsentWithdrawal(item, idx))
     } catch (error) {
       throw normalizeApiError(error)
     }

@@ -5,14 +5,23 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { complianceAdminService } from '@/services/complianceAdminService'
+import { dataSubjectService } from '@/services/dataSubjectService'
 import type {
   AuditLogItem,
   DpoConsentAuditItem,
+  DpoConsentWithdrawalItem,
   RetentionScheduleItem,
+  DataSubjectRequestItem,
+  UpdateDataSubjectRequest,
   AuditLogQueryCriteria,
 } from '@/types'
 
-export type ComplianceTab = 'AUDIT_LOGS' | 'DPO_CONSENTS' | 'RETENTION_SCHEDULE'
+export type ComplianceTab =
+  | 'AUDIT_LOGS'
+  | 'DPO_CONSENTS'
+  | 'RETENTION_SCHEDULE'
+  | 'DPO_WITHDRAWALS'
+  | 'DPO_DATA_REQUESTS'
 
 export const useAdminAuditLog = () => {
   const [activeTab, setActiveTab] = useState<ComplianceTab>('AUDIT_LOGS')
@@ -36,6 +45,14 @@ export const useAdminAuditLog = () => {
   // Tab 3: Retention Schedule state
   const [retentionItems, setRetentionItems] = useState<RetentionScheduleItem[]>([])
   const [isRetentionLoading, setIsRetentionLoading] = useState(false)
+
+  // Tab 4: DPO Consent Withdrawals state
+  const [dpoWithdrawals, setDpoWithdrawals] = useState<DpoConsentWithdrawalItem[]>([])
+  const [isWithdrawalsLoading, setIsWithdrawalsLoading] = useState(false)
+
+  // Tab 5: DPO Data Subject Requests state
+  const [dpoDataRequests, setDpoDataRequests] = useState<DataSubjectRequestItem[]>([])
+  const [isDataRequestsLoading, setIsDataRequestsLoading] = useState(false)
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedLogDetail, setSelectedLogDetail] = useState<AuditLogItem | null>(null)
@@ -111,6 +128,52 @@ export const useAdminAuditLog = () => {
     }
   }, [])
 
+  // 4. Tải DPO Consent Withdrawals
+  const loadDpoConsentWithdrawals = useCallback(async () => {
+    try {
+      setIsWithdrawalsLoading(true)
+      setErrorMessage(null)
+      const data = await complianceAdminService.getDpoConsentWithdrawals()
+      setDpoWithdrawals(data)
+    } catch (err) {
+      const error = err as { message?: string }
+      setErrorMessage(error.message || 'Không thể tải danh sách rút cam kết DPO.')
+    } finally {
+      setIsWithdrawalsLoading(false)
+    }
+  }, [])
+
+  // 5. Tải DPO Data Subject Requests
+  const loadDpoDataRequests = useCallback(async () => {
+    try {
+      setIsDataRequestsLoading(true)
+      setErrorMessage(null)
+      const data = await dataSubjectService.getDpoDataRequests()
+      setDpoDataRequests(data)
+    } catch (err) {
+      const error = err as { message?: string }
+      setErrorMessage(error.message || 'Không thể tải danh sách yêu cầu quyền chủ thể dữ liệu.')
+    } finally {
+      setIsDataRequestsLoading(false)
+    }
+  }, [])
+
+  // 6. Cập nhật trạng thái yêu cầu dữ liệu
+  const handleUpdateDataRequest = useCallback(
+    async (id: number, data: UpdateDataSubjectRequest) => {
+      try {
+        setErrorMessage(null)
+        await dataSubjectService.updateDataRequestStatus(id, data)
+        await loadDpoDataRequests()
+      } catch (err) {
+        const error = err as { message?: string }
+        setErrorMessage(error.message || 'Không thể cập nhật trạng thái yêu cầu dữ liệu.')
+        throw err
+      }
+    },
+    [loadDpoDataRequests]
+  )
+
   // Tải dữ liệu ban đầu
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -125,6 +188,10 @@ export const useAdminAuditLog = () => {
       loadDpoConsents()
     } else if (tab === 'RETENTION_SCHEDULE' && retentionItems.length === 0) {
       loadRetentionSchedule()
+    } else if (tab === 'DPO_WITHDRAWALS' && dpoWithdrawals.length === 0) {
+      loadDpoConsentWithdrawals()
+    } else if (tab === 'DPO_DATA_REQUESTS' && dpoDataRequests.length === 0) {
+      loadDpoDataRequests()
     }
   }
 
@@ -171,12 +238,19 @@ export const useAdminAuditLog = () => {
     isConsentsLoading,
     retentionItems,
     isRetentionLoading,
+    dpoWithdrawals,
+    isWithdrawalsLoading,
+    dpoDataRequests,
+    isDataRequestsLoading,
     errorMessage,
     selectedLogDetail,
     setSelectedLogDetail,
     loadAuditLogs,
     loadDpoConsents,
     loadRetentionSchedule,
+    loadDpoConsentWithdrawals,
+    loadDpoDataRequests,
+    handleUpdateDataRequest,
     handleTabChange,
     handleFilterSubmit,
     handleResetFilter,

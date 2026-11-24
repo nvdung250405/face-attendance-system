@@ -23,8 +23,14 @@ import { Button, TableSkeleton, toast } from '@/components/ui'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
+import { useStompClient } from '@/services/hooks/useStompClient'
 import { complianceAdminService } from '@/services/complianceAdminService'
-import { KioskRegistrationModal, ReissuedTokenDialog, KioskKpiCards } from '@/components/kiosk'
+import {
+  KioskRegistrationModal,
+  ReissuedTokenDialog,
+  KioskKpiCards,
+  KioskDetailDrawer,
+} from '@/components/kiosk'
 import { formatRelativeTime } from '@/utils/date'
 import type { KioskItemResponse, KioskStatus } from '@/types'
 
@@ -48,9 +54,39 @@ export const AdminKioskManagementView: React.FC = () => {
   const kiosks = useKioskRegistryStore((s) => s.kiosks)
   const isPingStale = useKioskRegistryStore((s) => s.isPingStale)
   const setKiosks = useKioskRegistryStore((s) => s.setKiosks)
+  const selectedKioskId = useKioskRegistryStore((s) => s.selectedKioskId)
+  const setSelectedKioskId = useKioskRegistryStore((s) => s.setSelectedKioskId)
+  const updateKioskStatus = useKioskRegistryStore((s) => s.updateKioskStatus)
   const setSecretToken = useKioskRegistryStore((s) => s.setSecretToken)
   const clearSecretToken = useKioskRegistryStore((s) => s.clearSecretToken)
   const clearStore = useKioskRegistryStore((s) => s.clearStore)
+
+  const { subscribe } = useStompClient()
+
+  // Lắng nghe cập nhật trạng thái trạm Kiosk thời gian thực qua STOMP topic /topic/kiosk-status
+  useEffect(() => {
+    const handleStatusEvent = (message: { body: string }) => {
+      try {
+        const payload = JSON.parse(message.body) as {
+          kioskId?: string
+          id?: string
+          status?: KioskStatus
+          lastPingAt?: string
+        }
+        const targetId = payload.kioskId || payload.id
+        if (targetId && payload.status) {
+          updateKioskStatus(targetId, payload.status, payload.lastPingAt)
+        }
+      } catch (err) {
+        console.error('[AdminKioskManagementView] Lỗi phân tích thông điệp STOMP kiosk-status:', err)
+      }
+    }
+
+    const sub = subscribe('/topic/kiosk-status', handleStatusEvent)
+    return () => {
+      sub.unsubscribe()
+    }
+  }, [subscribe, updateKioskStatus])
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -146,6 +182,12 @@ export const AdminKioskManagementView: React.FC = () => {
     }
     return { staleKiosks: stale, onlineCount: online, warningCount: warning, offlineCount: offline }
   }, [kiosks, isPingStale])
+
+  // Trạm Kiosk đang được chọn hiển thị trong Drawer chẩn đoán
+  const activeKiosk = useMemo(() => {
+    if (!selectedKioskId) return null
+    return kiosks.find((k) => k.kioskId === selectedKioskId || String(k.id) === selectedKioskId) || null
+  }, [kiosks, selectedKioskId])
 
   // Danh sách Kiosk đã lọc theo từ khóa và trạng thái (GAP-COMP-02)
   const filteredKiosks = useMemo(() => {
@@ -374,10 +416,22 @@ export const AdminKioskManagementView: React.FC = () => {
                     <tr
                       key={kiosk.kioskId}
                       data-testid={`kiosk-row-${kiosk.kioskId}`}
-                      className="hover:bg-slate-50/80 group transition-colors"
+                      onClick={() => setSelectedKioskId(kiosk.kioskId)}
+                      className="hover:bg-slate-50/80 group transition-colors cursor-pointer"
                     >
                       <td className="py-3 px-4 font-mono font-bold text-xs text-text-primary sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
-                        {kiosk.kioskId}
+                        <button
+                          type="button"
+                          data-testid={`kiosk-card-${kiosk.kioskId}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedKioskId(kiosk.kioskId)
+                          }}
+                          className="text-left font-mono font-bold text-xs text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                          title="Xem chi tiết chẩn đoán trạm Kiosk"
+                        >
+                          {kiosk.kioskId}
+                        </button>
                       </td>
                       <td className="py-3 px-4">
                         <span
@@ -432,7 +486,10 @@ export const AdminKioskManagementView: React.FC = () => {
                             variant="secondary"
                             size="sm"
                             data-testid={`reissue-token-btn-${kiosk.kioskId}`}
-                            onClick={() => handleReissueToken(kiosk)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleReissueToken(kiosk)
+                            }}
                             isLoading={isReissuing === kiosk.kioskId}
                             disabled={isReissuing === kiosk.kioskId}
                             title="Cấp lại Secret Token"
@@ -468,6 +525,15 @@ export const AdminKioskManagementView: React.FC = () => {
           }
           setReissuedTokenKiosk(null)
         }}
+      />
+
+      {/* ── Drawer Chi tiết & Chẩn đoán Trạm Kiosk ── */}
+      <KioskDetailDrawer
+        isOpen={!!activeKiosk}
+        onClose={() => setSelectedKioskId(null)}
+        kiosk={activeKiosk}
+        onReissueToken={handleReissueToken}
+        isReadOnly={isReadOnly}
       />
     </div>
   )

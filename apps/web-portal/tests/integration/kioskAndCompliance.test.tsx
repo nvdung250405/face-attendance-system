@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { KioskRegistrationModal } from '@/components/kiosk/KioskRegistrationModal'
 import { AdminKioskManagementView } from '@/views/admin/AdminKioskManagementView'
@@ -12,13 +12,29 @@ import { AdminAuditLogView } from '@/views/admin/AdminAuditLogView'
 import { useAuthStore } from '@/store/authStore'
 import { useKioskRegistryStore } from '@/store/kioskRegistryStore'
 import { complianceAdminService } from '@/services/complianceAdminService'
+import { dataSubjectService } from '@/services/dataSubjectService'
 import type {
   UserProfile,
   KioskItemResponse,
   AuditLogItem,
   DpoConsentAuditItem,
+  DpoConsentWithdrawalItem,
   RetentionScheduleItem,
+  DataSubjectRequestItem,
 } from '@/types'
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const mockStompSubscribe = vi.fn((_topic?: string, _cb?: unknown) => ({ unsubscribe: vi.fn() }))
+
+vi.mock('@/services/hooks/useStompClient', () => ({
+  useStompClient: () => ({
+    status: 'CONNECTED',
+    isConnected: true,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    subscribe: mockStompSubscribe,
+  }),
+}))
 
 const mockAdminUser: UserProfile = {
   id: 1,
@@ -136,6 +152,32 @@ const mockRetentionItems: RetentionScheduleItem[] = [
   },
 ]
 
+const mockWithdrawals: DpoConsentWithdrawalItem[] = [
+  {
+    id: 1,
+    employeeId: 1042,
+    employeeCode: 'EMP-1042',
+    fullName: 'Nguyễn Văn A',
+    withdrawnAt: '2026-10-14T09:00:00Z',
+    biometricDisposalDueAt: '2026-11-03T09:00:00Z',
+    status: 'PENDING_DISPOSAL',
+    reason: 'Chuyển sang phương thức điểm danh thẻ từ',
+  },
+]
+
+const mockDataRequests: DataSubjectRequestItem[] = [
+  {
+    id: 1,
+    employeeId: 1042,
+    employeeCode: 'EMP-1042',
+    fullName: 'Nguyễn Văn A',
+    requestType: 'ACCESS',
+    detail: 'Yêu cầu trích xuất toàn bộ dữ liệu điểm danh tháng 09/2026.',
+    status: 'RECEIVED',
+    submittedAt: '2026-10-01T08:30:00Z',
+  },
+]
+
 describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -172,6 +214,39 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
     })
     vi.spyOn(complianceAdminService, 'getDpoConsents').mockResolvedValue(mockConsents)
     vi.spyOn(complianceAdminService, 'getDpoRetentionSchedule').mockResolvedValue(mockRetentionItems)
+    vi.spyOn(complianceAdminService, 'getDpoConsentWithdrawals').mockResolvedValue(mockWithdrawals)
+    vi.spyOn(complianceAdminService, 'getKioskHealth').mockResolvedValue({
+      kioskId: 'KSK-HQ-LOBBY-01',
+      status: 'ONLINE',
+      isStale: false,
+      lastPingAt: new Date().toISOString(),
+      macAddress: '00:1B:44:11:3A:B7',
+      ipAddress: '192.168.10.101',
+      firmwareVersion: 'v1.4.2 (Linux Edge OS)',
+      appVersion: 'v2.4.0',
+      cachedGalleryCount: 1248,
+      heartbeatHistory: [
+        { timestamp: new Date().toISOString(), latencyMs: 14, status: 'SUCCESS' },
+      ],
+      diagnosticLogs: [
+        { timestamp: new Date().toISOString(), level: 'INFO', message: 'Camera feed healthy' },
+      ],
+    })
+    vi.spyOn(dataSubjectService, 'getDpoDataRequests').mockResolvedValue(mockDataRequests)
+    vi.spyOn(dataSubjectService, 'updateDataRequestStatus').mockImplementation(async (id, data) => ({
+      id,
+      employeeId: 1042,
+      employeeCode: 'EMP-1042',
+      fullName: 'Nguyễn Văn A',
+      requestType: 'ACCESS',
+      detail: 'Yêu cầu trích xuất toàn bộ dữ liệu điểm danh tháng 09/2026.',
+      status: data.status,
+      submittedAt: '2026-10-01T08:30:00Z',
+      handledAt: new Date().toISOString(),
+      handledBy: 'DPO Officer',
+      response: data.response ?? data.adminNote ?? null,
+      adminNote: data.response ?? data.adminNote ?? null,
+    }))
   })
 
   afterEach(() => {
@@ -461,13 +536,141 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       unmount()
       expect(useKioskRegistryStore.getState().secretTokens).toEqual({})
     })
+
+    it('mở KioskDetailDrawer khi click vào thẻ/dòng trạm Kiosk và hiển thị đầy đủ viễn trắc chẩn đoán', async () => {
+      const getHealthSpy = vi.spyOn(complianceAdminService, 'getKioskHealth').mockResolvedValue({
+        kioskId: 'KSK-HQ-LOBBY-01',
+        status: 'ONLINE',
+        isStale: false,
+        lastPingAt: new Date().toISOString(),
+        macAddress: '00:1B:44:11:3A:B7',
+        ipAddress: '192.168.10.101',
+        firmwareVersion: 'v1.4.2 (Linux Edge OS)',
+        appVersion: 'v2.4.0',
+        cachedGalleryCount: 1248,
+        heartbeatHistory: [
+          { timestamp: new Date().toISOString(), latencyMs: 14, status: 'SUCCESS' },
+        ],
+        diagnosticLogs: [
+          { timestamp: new Date().toISOString(), level: 'INFO', message: 'Camera feed healthy (60 FPS)' },
+        ],
+      })
+
+      render(
+        <MemoryRouter>
+          <AdminKioskManagementView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('kiosk-card-KSK-HQ-LOBBY-01')).toBeTruthy()
+      })
+
+      // Click card/row to open KioskDetailDrawer
+      fireEvent.click(screen.getByTestId('kiosk-card-KSK-HQ-LOBBY-01'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('kiosk-detail-drawer')).toBeTruthy()
+      })
+
+      expect(getHealthSpy).toHaveBeenCalledWith('KSK-HQ-LOBBY-01')
+      expect(screen.getByTestId('kiosk-status-badge')).toBeTruthy()
+      expect(screen.getByTestId('kiosk-mac-address').textContent).toBe('00:1B:44:11:3A:B7')
+      expect(screen.getByTestId('kiosk-ip-address').textContent).toBe('192.168.10.101')
+      expect(screen.getByTestId('kiosk-firmware-version').textContent).toContain('v1.4.2')
+      expect(screen.getByTestId('kiosk-cached-vectors').textContent).toContain('1.248')
+      expect(screen.getByTestId('kiosk-heartbeat-history')).toBeTruthy()
+      expect(screen.getByTestId('kiosk-diagnostic-logs')).toBeTruthy()
+
+      // Làm mới viễn trắc
+      fireEvent.click(screen.getByTestId('refresh-kiosk-health-btn'))
+      expect(getHealthSpy).toHaveBeenCalledTimes(2)
+
+      // Đóng drawer
+      fireEvent.click(screen.getByTestId('detail-drawer-close-btn'))
+      await waitFor(() => {
+        expect(useKioskRegistryStore.getState().selectedKioskId).toBeNull()
+      })
+    })
+
+    it('cập nhật trạng thái trạm Kiosk tức thời trong RAM qua STOMP topic /topic/kiosk-status', async () => {
+      render(
+        <MemoryRouter>
+          <AdminKioskManagementView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('kpi-online-kiosks').textContent).toBe('1')
+        expect(screen.getByTestId('kpi-offline-kiosks').textContent).toBe('1')
+      })
+
+      // Cập nhật trạng thái KSK-HQ-LOBBY-01 từ ONLINE sang OFFLINE trong RAM qua STOMP
+      act(() => {
+        useKioskRegistryStore.getState().updateKioskStatus('KSK-HQ-LOBBY-01', 'OFFLINE')
+      })
+
+      await waitFor(() => {
+        expect(screen.getByTestId('kpi-online-kiosks').textContent).toBe('0')
+        expect(screen.getByTestId('kpi-offline-kiosks').textContent).toBe('2')
+      })
+
+      // Cập nhật lại sang ONLINE
+      act(() => {
+        useKioskRegistryStore.getState().updateKioskStatus('KSK-HQ-LOBBY-01', 'ONLINE')
+      })
+      await waitFor(() => {
+        expect(screen.getByTestId('kpi-online-kiosks').textContent).toBe('1')
+        expect(screen.getByTestId('kpi-offline-kiosks').textContent).toBe('1')
+      })
+    })
+
+    it('đăng ký lắng nghe STOMP topic /topic/kiosk-status khi màn hình được khởi tạo', async () => {
+      let capturedTopic = ''
+      let capturedCallback: ((msg: { body: string }) => void) | undefined = undefined
+
+      mockStompSubscribe.mockImplementation((topic?: string, cb?: unknown) => {
+        capturedTopic = topic || ''
+        capturedCallback = cb as (msg: { body: string }) => void
+        return {
+          unsubscribe: vi.fn(),
+        }
+      })
+
+      render(
+        <MemoryRouter>
+          <AdminKioskManagementView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(mockStompSubscribe).toHaveBeenCalled()
+      })
+      expect(capturedTopic).toBe('/topic/kiosk-status')
+
+      // Giả lập phát thông điệp STOMP tới /topic/kiosk-status
+      act(() => {
+        capturedCallback?.({
+          body: JSON.stringify({
+            kioskId: 'KSK-HQ-LOBBY-01',
+            status: 'OFFLINE',
+            lastPingAt: new Date().toISOString(),
+          }),
+        })
+      })
+
+      await waitFor(() => {
+        const kiosk = useKioskRegistryStore.getState().kiosks.find((k) => k.kioskId === 'KSK-HQ-LOBBY-01')
+        expect(kiosk?.status).toBe('OFFLINE')
+      })
+    })
   })
 
   // ────────────────────────────────────────────────────────────────────────────
   // 3. AdminAuditLogView Tests (Audit Logs, DPO Consents, Retention 20 ngày)
   // ────────────────────────────────────────────────────────────────────────────
   describe('3. AdminAuditLogView (Tra cứu Kiểm toán & Tuân thủ DPO)', () => {
-    it('hiển thị nhãn Chế độ Chỉ đọc và 3 Tab chức năng', async () => {
+    it('hiển thị nhãn Chế độ Chỉ đọc và các Tab chức năng DPO & Kiểm toán', async () => {
       render(
         <MemoryRouter>
           <AdminAuditLogView />
@@ -481,11 +684,13 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       // Banner chỉ đọc
       expect(screen.getByTestId('read-only-compliance-banner').textContent).toContain('Chế độ Tra cứu Chỉ Đọc')
 
-      // 3 Tabs
+      // 5 Tabs
       expect(screen.getByTestId('tab-audit-logs')).toBeTruthy()
       expect(screen.getByTestId('tab-dpo-consents')).toBeTruthy()
       expect(screen.getByTestId('tab-retention-schedule')).toBeTruthy()
       expect(screen.getByTestId('tab-retention-schedule').textContent).toContain('Lịch Tiêu hủy 20 Ngày')
+      expect(screen.getByTestId('tab-dpo-withdrawals')).toBeTruthy()
+      expect(screen.getByTestId('tab-dpo-data-requests')).toBeTruthy()
     })
 
     it('Tab 1: hiển thị bộ lọc kiểm toán và tải danh sách Audit Logs', async () => {
@@ -596,6 +801,79 @@ describe('Module Quản trị Trạm Kiosk & Tuân thủ DPO (TASK-WEB-027)', ()
       expect(screen.getByText('Hạn Tiêu Hủy Dự Kiến (20 ngày)')).toBeTruthy()
       expect(screen.getByText('EMP-1042')).toBeTruthy()
       expect(screen.getByText('ĐANG CHỜ TIÊU HỦY')).toBeTruthy()
+    })
+
+    it('Tab 4: chuyển sang tab DPO Withdrawals và hiển thị bảng rút cam kết với hạn tiêu hủy 20 ngày', async () => {
+      render(
+        <MemoryRouter>
+          <AdminAuditLogView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('tab-dpo-withdrawals')).toBeTruthy()
+      })
+
+      fireEvent.click(screen.getByTestId('tab-dpo-withdrawals'))
+
+      await waitFor(() => {
+        expect(complianceAdminService.getDpoConsentWithdrawals).toHaveBeenCalled()
+      })
+
+      expect(screen.getByTestId('dpo-consent-withdrawals-table')).toBeTruthy()
+      expect(screen.getByText('Danh Sách Rút Cam Kết Informed Consent')).toBeTruthy()
+      expect(screen.getByText(/Quy định Tiêu hủy khi Rút Đồng thuận/i)).toBeTruthy()
+      expect(screen.getByText('EMP-1042')).toBeTruthy()
+      expect(screen.getByText('Chuyển sang phương thức điểm danh thẻ từ')).toBeTruthy()
+      expect(screen.getByText('CHỜ TIÊU HỦY')).toBeTruthy()
+    })
+
+    it('Tab 5: chuyển sang tab DPO Data Requests và xử lý yêu cầu quyền chủ thể dữ liệu (DSR)', async () => {
+      render(
+        <MemoryRouter>
+          <AdminAuditLogView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('tab-dpo-data-requests')).toBeTruthy()
+      })
+
+      fireEvent.click(screen.getByTestId('tab-dpo-data-requests'))
+
+      await waitFor(() => {
+        expect(dataSubjectService.getDpoDataRequests).toHaveBeenCalled()
+      })
+
+      expect(screen.getByTestId('dpo-data-requests-table')).toBeTruthy()
+      expect(screen.getByText('Yêu Cầu Về Quyền Chủ Thể Dữ Liệu (DSR)')).toBeTruthy()
+      expect(screen.getByText('Yêu cầu trích xuất toàn bộ dữ liệu điểm danh tháng 09/2026.')).toBeTruthy()
+
+      // Mở modal xử lý
+      fireEvent.click(screen.getByTestId('review-request-btn-1'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('request-status-select')).toBeTruthy()
+      })
+
+      fireEvent.change(screen.getByTestId('request-status-select'), {
+        target: { value: 'FULFILLED' },
+      })
+      fireEvent.change(screen.getByTestId('request-response-input'), {
+        target: { value: 'Đã xuất file điểm danh gửi qua email.' },
+      })
+
+      fireEvent.click(screen.getByTestId('submit-review-btn'))
+
+      await waitFor(() => {
+        expect(dataSubjectService.updateDataRequestStatus).toHaveBeenCalledWith(
+          1,
+          expect.objectContaining({
+            status: 'FULFILLED',
+            response: 'Đã xuất file điểm danh gửi qua email.',
+          })
+        )
+      })
     })
   })
 })

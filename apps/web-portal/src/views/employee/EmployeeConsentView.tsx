@@ -10,10 +10,11 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, Shield, ScanFace, AlertTriangle, Plus, Lock } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
-import { ConsentModal, ConsentWithdrawalModal } from '@/components/consent'
+import { ConsentModal, ConsentWithdrawalModal, ConsentWithdrawalTimeline } from '@/components/consent'
 import { PinManagementModal } from '@/components/account'
 import { apiClient } from '@/services/apiClient'
-import type { ApiResponse, UserProfile } from '@/types'
+import { dataSubjectService } from '@/services/dataSubjectService'
+import type { ApiResponse, UserProfile, WithdrawConsentResponse } from '@/types'
 
 export const EmployeeConsentView: React.FC = () => {
   const { user, updateUser } = useAuthStore()
@@ -21,13 +22,20 @@ export const EmployeeConsentView: React.FC = () => {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
   const [isPinModalOpen, setIsPinModalOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [withdrawal, setWithdrawal] = useState<WithdrawConsentResponse | null>(null)
 
   const refreshProfile = useCallback(async () => {
     try {
       setIsRefreshing(true)
-      const res = await apiClient.get<ApiResponse<UserProfile>>('/api/v1/auth/me')
-      if (res.data?.data) {
-        updateUser(res.data.data)
+      const [res, withdrawalRes] = await Promise.allSettled([
+        apiClient.get<ApiResponse<UserProfile>>('/api/v1/auth/me'),
+        dataSubjectService.getLatestWithdrawal(),
+      ])
+      if (res.status === 'fulfilled' && res.value.data?.data) {
+        updateUser(res.value.data.data)
+      }
+      if (withdrawalRes.status === 'fulfilled') {
+        setWithdrawal(withdrawalRes.value)
       }
     } catch {
       // Bỏ qua lỗi nếu mạng tạm thời gián đoạn
@@ -79,10 +87,18 @@ export const EmployeeConsentView: React.FC = () => {
           </h2>
           <p className="text-xs text-blue-800 leading-relaxed">
             Hệ thống FAS chỉ lưu trữ biểu diễn vector đặc trưng một chiều (Embedding) và không lưu trữ hình ảnh khuôn mặt thô.
-            Bạn luôn có toàn quyền rút lại cam kết Informed Consent bất cứ lúc nào. Khi rút cam kết, dữ liệu vector sẽ được tiêu hủy trong vòng 7 ngày làm việc và bạn sẽ chuyển sang chấm công bằng mã PIN.
+            Bạn luôn có toàn quyền rút lại cam kết Informed Consent bất cứ lúc nào. Khi rút cam kết, dữ liệu vector sẽ được tiêu hủy trong vòng 20 ngày theo Nghị định 356/2025/NĐ-CP và bạn sẽ chuyển sang chấm công bằng mã PIN.
           </p>
         </div>
       </div>
+
+      {/* ── Lộ trình Rút cam kết & Tiêu hủy Sinh trắc (Nghị định 356/2025/NĐ-CP) ── */}
+      {withdrawal && (
+        <ConsentWithdrawalTimeline
+          withdrawal={withdrawal}
+          onRefresh={refreshProfile}
+        />
+      )}
 
       {/* ── Thẻ Trạng thái Sinh trắc học & PIN ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -199,6 +215,7 @@ export const EmployeeConsentView: React.FC = () => {
       <ConsentWithdrawalModal
         isOpen={isWithdrawModalOpen}
         onClose={() => setIsWithdrawModalOpen(false)}
+        onSuccess={() => void refreshProfile()}
       />
 
       {/* ── Modal Thiết lập / Đặt lại Mã PIN Dự phòng (UI-WEB-008, TASK-WEB-029) ── */}

@@ -26,6 +26,7 @@ import type {
   PayrollPeriodResponse,
   AuditLogItem,
   DpoConsentAuditItem,
+  DpoConsentWithdrawalItem,
   RetentionScheduleItem,
   ConsentResult,
   WithdrawConsentResponse,
@@ -646,11 +647,30 @@ export function initDevMockServer(options: { delayResponse?: number } = { delayR
   mock.onGet(/(?:^|\/api\/v1)\/admin\/kiosks\/[^/]+\/health/).reply((config) => {
     const match = config.url?.match(/\/admin\/kiosks\/([^/]+)\/health/)
     const kioskId = match ? match[1] : 'KIOSK-HN-01'
+    const now = Date.now()
     const health: KioskHealthResponse = {
       kioskId,
       status: 'ONLINE',
       isStale: false,
-      lastPingAt: new Date().toISOString(),
+      lastPingAt: new Date(now - 15000).toISOString(),
+      macAddress: '00:1B:44:11:3A:B7',
+      ipAddress: '192.168.10.101',
+      firmwareVersion: 'v1.4.2 (Linux Edge OS)',
+      appVersion: 'v2.4.0',
+      cachedGalleryCount: 1248,
+      heartbeatHistory: [
+        { timestamp: new Date(now - 15000).toISOString(), latencyMs: 14, status: 'SUCCESS' },
+        { timestamp: new Date(now - 30000).toISOString(), latencyMs: 18, status: 'SUCCESS' },
+        { timestamp: new Date(now - 45000).toISOString(), latencyMs: 12, status: 'SUCCESS' },
+        { timestamp: new Date(now - 60000).toISOString(), latencyMs: 15, status: 'SUCCESS' },
+        { timestamp: new Date(now - 75000).toISOString(), latencyMs: 19, status: 'SUCCESS' },
+      ],
+      diagnosticLogs: [
+        { timestamp: new Date(now - 10000).toISOString(), level: 'INFO', message: 'Camera RTSP stream synchronized (60 FPS)' },
+        { timestamp: new Date(now - 25000).toISOString(), level: 'INFO', message: 'Heartbeat ping acknowledged by backend (14ms)' },
+        { timestamp: new Date(now - 60000).toISOString(), level: 'INFO', message: 'Local gallery cache verified (1,248 vectors)' },
+        { timestamp: new Date(now - 120000).toISOString(), level: 'INFO', message: 'STOMP subscription /topic/kiosk-gallery active' },
+      ],
     }
     return [200, makeResponse(health)]
   })
@@ -744,6 +764,26 @@ export function initDevMockServer(options: { delayResponse?: number } = { delayR
       return [200, makeResponse(employees[empIndex])]
     }
     return [200, makeResponse(employees[0])]
+  })
+
+  mock.onPatch(/(?:^|\/api\/v1)\/admin\/users\/\d+\/role/).reply((config) => {
+    const match = config.url?.match(/\/admin\/users\/(\d+)\/role/)
+    const id = match ? Number(match[1]) : 1
+    const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+    const newRole = body?.role || 'EMPLOYEE'
+    const empIndex = employees.findIndex((e) => e.id === id)
+    if (empIndex >= 0) {
+      employees[empIndex] = { ...employees[empIndex], role: newRole }
+      const res = {
+        userId: employees[empIndex].id,
+        employeeCode: employees[empIndex].employeeCode,
+        fullName: employees[empIndex].fullName,
+        email: employees[empIndex].email,
+        role: employees[empIndex].role,
+      }
+      return [200, makeResponse(res, 'Cập nhật vai trò người dùng thành công', 'ROLE_UPDATED')]
+    }
+    return [200, makeResponse({ userId: id, role: newRole }, 'Cập nhật vai trò người dùng thành công', 'ROLE_UPDATED')]
   })
 
   mock.onGet(/(?:^|\/api\/v1)\/admin\/employees(?:\?.*)?$/).reply((config) => {
@@ -1090,6 +1130,32 @@ export function initDevMockServer(options: { delayResponse?: number } = { delayR
     return [200, makeResponse(list)]
   })
 
+  mock.onGet(/(?:^|\/api\/v1)\/dpo\/consent-withdrawals(?:\?.*)?$/).reply(() => {
+    const list: DpoConsentWithdrawalItem[] = [
+      {
+        id: 1,
+        employeeId: 1042,
+        employeeCode: 'NV-1042',
+        fullName: 'Ngô Văn Dũng',
+        withdrawnAt: '2026-10-14T09:00:00+07:00',
+        biometricDisposalDueAt: '2026-11-03T09:00:00+07:00',
+        status: 'PENDING_DISPOSAL',
+        reason: 'Chuyển sang phương thức điểm danh thẻ từ',
+      },
+      {
+        id: 2,
+        employeeId: 1045,
+        employeeCode: 'NV-1045',
+        fullName: 'Trần Thị Bích',
+        withdrawnAt: '2026-10-01T10:00:00+07:00',
+        biometricDisposalDueAt: '2026-10-21T10:00:00+07:00',
+        status: 'COMPLETED',
+        reason: 'Thôi việc theo nguyện vọng cá nhân',
+      },
+    ]
+    return [200, makeResponse(list)]
+  })
+
   mock.onGet(/(?:^|\/api\/v1)\/dpo\/data-requests(?:\?.*)?$/).reply(() => {
     return [200, makeResponse(dataRequests)]
   })
@@ -1190,12 +1256,32 @@ export function initDevMockServer(options: { delayResponse?: number } = { delayR
     return [200, makeResponse(res)]
   })
 
-  mock.onPost(/(?:^|\/api\/v1)\/employee\/consent\/withdraw/).reply(() => {
-    const res: WithdrawConsentResponse = {
-      withdrawnAt: new Date().toISOString(),
-      retentionDeadline: new Date(Date.now() + 7 * 86400000).toISOString(),
-      message: 'Rút cam kết thành công. Dữ liệu sinh trắc học sẽ được tiêu hủy trong vòng 7 ngày.',
+  let latestEmployeeWithdrawal: WithdrawConsentResponse | null = null
+
+  mock.onGet(/(?:^|\/api\/v1)\/employee\/consent\/withdrawal/).reply(() => {
+    return [200, makeResponse(latestEmployeeWithdrawal)]
+  })
+
+  mock.onPost(/(?:^|\/api\/v1)\/employee\/consent\/withdraw/).reply((config) => {
+    let reason = ''
+    try {
+      const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+      reason = body?.reason || ''
+    } catch {
+      // ignore
     }
+    const res: WithdrawConsentResponse = {
+      id: 1,
+      userId: 1042,
+      employeeCode: 'NV-1042',
+      withdrawnAt: new Date().toISOString(),
+      retentionDeadline: new Date(Date.now() + 20 * 86400000).toISOString(),
+      biometricDisposalDueAt: new Date(Date.now() + 20 * 86400000).toISOString(),
+      status: 'PENDING_DISPOSAL',
+      reason,
+      message: 'Rút cam kết thành công. Dữ liệu sinh trắc học sẽ được tiêu hủy trong vòng 20 ngày theo Nghị định 356/2025/NĐ-CP.',
+    }
+    latestEmployeeWithdrawal = res
     return [200, makeResponse(res)]
   })
 

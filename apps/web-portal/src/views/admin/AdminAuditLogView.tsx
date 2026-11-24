@@ -11,11 +11,15 @@ import {
   FileText,
   Trash2,
   History,
+  UserX,
+  ClipboardList,
 } from 'lucide-react'
 import {
   AuditLogTable,
   DpoConsentsTable,
   RetentionScheduleTable,
+  DpoConsentWithdrawalsTable,
+  DpoDataRequestsReviewTable,
   AuditDiffModal,
 } from '@/components/compliance'
 import { useAdminAuditLog, type ComplianceTab } from './hooks/useAdminAuditLog'
@@ -43,10 +47,15 @@ export const AdminAuditLogView: React.FC = () => {
     isConsentsLoading,
     retentionItems,
     isRetentionLoading,
+    dpoWithdrawals,
+    isWithdrawalsLoading,
+    dpoDataRequests,
+    isDataRequestsLoading,
     errorMessage,
     selectedLogDetail,
     setSelectedLogDetail,
     loadAuditLogs,
+    handleUpdateDataRequest,
     handleTabChange,
     handleFilterSubmit,
     handleResetFilter,
@@ -85,12 +94,12 @@ export const AdminAuditLogView: React.FC = () => {
       </div>
 
       {/* ── Tab Navigation Đồng bộ ── */}
-      <div className="flex border-b border-border-subtle gap-6">
+      <div className="flex border-b border-border-subtle gap-6 overflow-x-auto">
         <button
           type="button"
           data-testid="tab-audit-logs"
           onClick={() => handleTabChange('AUDIT_LOGS')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
             activeTab === 'AUDIT_LOGS'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -109,7 +118,7 @@ export const AdminAuditLogView: React.FC = () => {
           type="button"
           data-testid="tab-dpo-consents"
           onClick={() => handleTabChange('DPO_CONSENTS')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
             activeTab === 'DPO_CONSENTS'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -128,7 +137,7 @@ export const AdminAuditLogView: React.FC = () => {
           type="button"
           data-testid="tab-retention-schedule"
           onClick={() => handleTabChange('RETENTION_SCHEDULE')}
-          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 ${
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
             activeTab === 'RETENTION_SCHEDULE'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -140,6 +149,44 @@ export const AdminAuditLogView: React.FC = () => {
             activeTab === 'RETENTION_SCHEDULE' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
           }`}>
             {retentionItems.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="tab-dpo-withdrawals"
+          onClick={() => handleTabChange('DPO_WITHDRAWALS')}
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
+            activeTab === 'DPO_WITHDRAWALS'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <UserX className="w-4 h-4 shrink-0" />
+          <span>Rút Cam Kết</span>
+          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+            activeTab === 'DPO_WITHDRAWALS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+          }`}>
+            {dpoWithdrawals.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="tab-dpo-data-requests"
+          onClick={() => handleTabChange('DPO_DATA_REQUESTS')}
+          className={`pb-3 text-xs font-bold transition-all relative flex items-center gap-2 border-b-2 shrink-0 ${
+            activeTab === 'DPO_DATA_REQUESTS'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <ClipboardList className="w-4 h-4 shrink-0" />
+          <span>Yêu Cầu Dữ Liệu (DSR)</span>
+          <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+            activeTab === 'DPO_DATA_REQUESTS' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+          }`}>
+            {dpoDataRequests.length}
           </span>
         </button>
       </div>
@@ -190,6 +237,23 @@ export const AdminAuditLogView: React.FC = () => {
         <RetentionScheduleTable
           retentionItems={retentionItems}
           isRetentionLoading={isRetentionLoading}
+        />
+      )}
+
+      {/* ── TAB 4: DANH SÁCH RÚT CAM KẾT DPO ── */}
+      {activeTab === 'DPO_WITHDRAWALS' && (
+        <DpoConsentWithdrawalsTable
+          dpoWithdrawals={dpoWithdrawals}
+          isWithdrawalsLoading={isWithdrawalsLoading}
+        />
+      )}
+
+      {/* ── TAB 5: YÊU CẦU QUYỀN CHỦ THỂ DỮ LIỆU (DSR) ── */}
+      {activeTab === 'DPO_DATA_REQUESTS' && (
+        <DpoDataRequestsReviewTable
+          dataRequests={dpoDataRequests}
+          isLoading={isDataRequestsLoading}
+          onUpdateStatus={handleUpdateDataRequest}
         />
       )}
 

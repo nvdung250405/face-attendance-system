@@ -30,6 +30,7 @@ import {
   mockRegisterKioskSuccess,
   mockAuditLogsPaginatedResponse,
   mockDpoConsentList,
+  mockDpoConsentWithdrawalList,
   mockRetentionScheduleList,
 } from './fixtures'
 
@@ -97,6 +98,15 @@ export function setupDefaultMockHandlers(mock: MockAdapter): MockAdapter {
       return [200, mockWithdrawConsentSuccess]
     }
     return [200, mockConsentSubmitSuccess]
+  })
+
+  // 4b. GET /api/v1/employee/consent/withdrawal
+  mock.onGet(/\/api\/v1\/employee\/consent\/withdrawal/).reply(200, {
+    success: true,
+    code: 'OK',
+    message: 'Thành công',
+    data: null,
+    timestamp: new Date().toISOString(),
   })
 
   // 5. GET /api/v1/admin/attendance/stats
@@ -208,6 +218,10 @@ export function setupDefaultMockHandlers(mock: MockAdapter): MockAdapter {
   mock.onGet(/\/api\/v1\/dpo\/retention-schedule/).reply(200, {
     success: true,
     data: mockRetentionScheduleList,
+  })
+  mock.onGet(/\/api\/v1\/dpo\/consent-withdrawals/).reply(200, {
+    success: true,
+    data: mockDpoConsentWithdrawalList,
   })
 
   return mock
