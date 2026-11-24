@@ -33,6 +33,9 @@ export interface LiveAttendanceTableProps {
   highlightedRecordId?: number | null
   showFilters?: boolean
   onEditRecord?: (record: AttendanceRecord) => void
+  selectedRecordIds?: number[]
+  onToggleSelectRecord?: (recordId: number) => void
+  onToggleSelectAll?: () => void
 }
 
 export { AttendanceStatusBadge } from '@/components/attendance'
@@ -41,19 +44,36 @@ interface AttendanceRowItemProps {
   record: AttendanceRecord
   isHighlighted: boolean
   onEditRecord?: (record: AttendanceRecord) => void
+  isSelected?: boolean
+  onToggleSelectRecord?: (recordId: number) => void
 }
 
 const AttendanceRowItem: React.FC<AttendanceRowItemProps> = React.memo(
-  ({ record, isHighlighted, onEditRecord }) => {
+  ({ record, isHighlighted, onEditRecord, isSelected, onToggleSelectRecord }) => {
     return (
       <tr
         data-testid={`attendance-row-${record.recordId}`}
         className={`transition-colors duration-500 group ${
           isHighlighted
             ? 'bg-emerald-50/90 ring-2 ring-emerald-400 ring-inset animate-pulse'
-            : 'hover:bg-indigo-50/25'
+            : isSelected
+              ? 'bg-indigo-50/50'
+              : 'hover:bg-indigo-50/25'
         }`}
       >
+        {onToggleSelectRecord && (
+          <td className="py-3 px-3 text-center whitespace-nowrap">
+            <input
+              type="checkbox"
+              data-testid={`select-record-checkbox-${record.recordId}`}
+              aria-label={`Chọn bản ghi của ${record.fullName}`}
+              checked={Boolean(isSelected)}
+              onChange={() => onToggleSelectRecord(record.recordId)}
+              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            />
+          </td>
+        )}
+
         <td className="py-3 px-4 font-mono font-bold text-xs text-slate-900 whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
           {formatTime(record.punchTimestamp)}
         </td>
@@ -149,6 +169,9 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
   highlightedRecordId = null,
   showFilters = true,
   onEditRecord,
+  selectedRecordIds,
+  onToggleSelectRecord,
+  onToggleSelectAll,
 }) => {
   const [filterKeyword, setFilterKeyword] = useState('')
   const debouncedKeyword = useDebounce(filterKeyword, 350)
@@ -294,6 +317,21 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
         >
           <thead>
             <tr className="bg-slate-50/95 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              {onToggleSelectRecord && (
+                <th scope="col" className="py-3 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    data-testid="select-all-attendance-checkbox"
+                    aria-label="Chọn tất cả bản ghi"
+                    checked={
+                      displayRows.length > 0 &&
+                      displayRows.every((r) => selectedRecordIds?.includes(r.recordId))
+                    }
+                    onChange={onToggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </th>
+              )}
               <th scope="col" className="py-3 px-4 sticky left-0 z-20 bg-slate-50/95 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.04)]">
                 Giờ Quẹt
               </th>
@@ -314,7 +352,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
           <tbody className="divide-y divide-border-subtle">
             {isLoading && records.length === 0 ? (
               <TableSkeleton
-                columns={onEditRecord ? 9 : 8}
+                columns={(onEditRecord ? 9 : 8) + (onToggleSelectRecord ? 1 : 0)}
                 rows={6}
                 hasActionColumn={Boolean(onEditRecord)}
                 ariaLabel="Đang nạp dữ liệu chấm công..."
@@ -322,7 +360,7 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
             ) : displayRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={onEditRecord ? 9 : 8}
+                  colSpan={(onEditRecord ? 9 : 8) + (onToggleSelectRecord ? 1 : 0)}
                   className="py-16 text-center"
                 >
                   <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
@@ -344,6 +382,8 @@ export const LiveAttendanceTable: React.FC<LiveAttendanceTableProps> = ({
                   record={record}
                   isHighlighted={highlightedRecordId === record.recordId}
                   onEditRecord={onEditRecord}
+                  isSelected={selectedRecordIds?.includes(record.recordId)}
+                  onToggleSelectRecord={onToggleSelectRecord}
                 />
               ))
             )}

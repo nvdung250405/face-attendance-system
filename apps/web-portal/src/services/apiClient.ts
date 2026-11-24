@@ -4,9 +4,8 @@
  */
 
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
-import type { AuthSession } from '@/types'
 
-import { safeLocalStorage, AUTH_STORAGE_KEY } from './storage'
+import { AUTH_STORAGE_KEY } from './storage'
 import { attachTokenRefreshInterceptor } from './tokenRefreshInterceptor'
 import { useAuthStore } from '@/store/authStore'
 
@@ -14,17 +13,12 @@ export { AUTH_STORAGE_KEY }
 export const DEFAULT_TIMEOUT_MS = 10000 // 10.0 giây theo SLA đặc tả DD-WEB-008
 
 /**
- * Trích xuất an toàn Access Token từ In-Memory State (Zustand RAM - SEC-002)
- * Fallback sang SafeLocalStorage nếu chạy trong môi trường kiểm thử trực tiếp.
+ * Trích xuất an toàn Access Token từ In-Memory State (Zustand RAM - SEC-002, SEC-02)
+ * Nghiêm cấm fallback sang SafeLocalStorage nhằm triệt tiêu nguy cơ rò rỉ qua DOM XSS.
  */
 export function getStoredAccessToken(): string | null {
   try {
-    const memoryToken = useAuthStore.getState?.()?.session?.accessToken
-    if (memoryToken) {
-      return memoryToken
-    }
-    const session = safeLocalStorage.getItem<Partial<AuthSession>>(AUTH_STORAGE_KEY)
-    return session?.accessToken || null
+    return useAuthStore.getState().session?.accessToken ?? null
   } catch {
     return null
   }

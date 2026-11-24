@@ -268,5 +268,44 @@ describe('Phân Hệ Giải Trình Công (UI & Consumer Integration)', () => {
         expect(rejectSpy).toHaveBeenCalledWith(101, 'Không có minh chứng hợp lệ')
       })
     })
+
+    it('khử độc XSS (XSS-01) khi hiển thị lý do và ghi chú từ chối có mã độc', async () => {
+      const maliciousExcuseItem: ExcuseRequestItem = {
+        ...mockExcuseItem,
+        id: 102,
+        reason: '<script>alert("XSS")</script>Sự cố khẩn cấp do mưa ngập',
+        rejectionReason: '<img src="x" onerror="alert(1)">Minh chứng không đạt yêu cầu',
+        status: 'REJECTED',
+      }
+
+      vi.spyOn(excuseService, 'getAdminExcuseRequests').mockResolvedValueOnce({
+        content: [maliciousExcuseItem],
+        totalElements: 1,
+        totalPages: 1,
+        size: 15,
+        page: 0,
+        first: true,
+        last: true,
+      })
+
+      render(
+        <MemoryRouter>
+          <AdminExcuseManagementView />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('#102')).toBeTruthy()
+      })
+
+      // Mã script và event handler độc hại bị triệt tiêu hoàn toàn
+      expect(document.body.innerHTML).not.toContain('<script>')
+      expect(document.body.innerHTML).not.toContain('</script>')
+      expect(document.body.innerHTML).not.toContain('onerror=')
+      expect(document.body.innerHTML).not.toContain('alert(1)')
+      // Nội dung text an toàn được giữ lại
+      expect(screen.getByText(/Sự cố khẩn cấp do mưa ngập/)).toBeTruthy()
+      expect(screen.getByText(/Từ chối: Minh chứng không đạt yêu cầu/)).toBeTruthy()
+    })
   })
 })

@@ -32,7 +32,7 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { ConfettiEffect } from '@/components/ui'
 import { consentService } from '@/services/consentService'
 import { useEnrollmentStatus } from '@/services/hooks/useEnrollmentStatus'
@@ -267,7 +267,8 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
       <DialogContent
         data-testid="consent-modal"
         hideCloseButton
-        usePortal={false}
+        aria-labelledby="consent-modal-title"
+        aria-describedby="consent-modal-description"
         className="p-0 max-w-2xl border-0 bg-transparent shadow-none"
       >
       <div
@@ -282,19 +283,19 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="consent-modal-title" className="text-base font-bold text-text-primary">
+              <DialogTitle id="consent-modal-title" className="text-base font-bold text-text-primary">
                 {currentStep === 'TERMS' &&
                   'Cam kết Thu thập & Xử lý Dữ liệu Sinh trắc học (Nghị định 13/2023/NĐ-CP)'}
                 {currentStep === 'OTP_DISPLAY' && 'Mã OTP Kích hoạt tại Trạm Kiosk'}
                 {currentStep === 'SUCCESS' && 'Kích hoạt Thành công'}
-              </h2>
-              <p className="text-xs text-text-secondary">
+              </DialogTitle>
+              <DialogDescription id="consent-modal-description" className="text-xs text-text-secondary">
                 {currentStep === 'TERMS' &&
                   'Vui lòng đọc hết điều khoản bảo mật dữ liệu trước khi ký'}
                 {currentStep === 'OTP_DISPLAY' &&
                   'Sử dụng mã OTP tại trạm Kiosk để mở camera nạp khuôn mặt'}
                 {currentStep === 'SUCCESS' && 'Hồ sơ sinh trắc học của bạn đã sẵn sàng hoạt động'}
-              </p>
+              </DialogDescription>
             </div>
           </div>
 

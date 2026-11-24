@@ -43,7 +43,6 @@ export const ShiftFormDrawer: React.FC<ShiftFormDrawerProps> = ({
       <DialogContent
         data-testid="shift-drawer"
         hideCloseButton
-        usePortal={false}
         className="p-0 max-w-lg border-0 bg-transparent shadow-none"
       >
         <div className="relative w-full max-w-lg bg-surface-card rounded-2xl shadow-2xl border border-border-subtle overflow-hidden flex flex-col max-h-[90vh]">

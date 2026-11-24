@@ -382,7 +382,6 @@ export const AssignShiftDrawer: React.FC<AssignShiftDrawerProps> = (props) => {
       <DialogContent
         data-testid="assign-shift-drawer"
         hideCloseButton
-        usePortal={false}
         className="p-0 max-w-xl border-0 bg-transparent shadow-none"
       >
         <AssignShiftDrawerContent key={props.isOpen ? 'open' : 'closed'} {...props} />

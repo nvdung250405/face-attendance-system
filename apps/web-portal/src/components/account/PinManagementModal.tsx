@@ -23,6 +23,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import type { NormalizedApiError } from '@/services/errorNormalizer'
@@ -181,6 +182,11 @@ const PinManagementDialog: React.FC<{
             <DialogTitle className="text-sm font-bold text-slate-900">
               {hasExistingPin ? 'Đặt Lại Mã PIN Dự Phòng' : 'Thiết Lập Mã PIN Dự Phòng'}
             </DialogTitle>
+            <DialogDescription id="pin-modal-desc" className="text-xs text-slate-500 mt-0.5">
+              {hasExistingPin
+                ? 'Nhập mật khẩu tài khoản và mã PIN 6 số mới'
+                : 'Mã PIN 6 chữ số dùng để điểm danh tại Kiosk'}
+            </DialogDescription>
           </div>
         </div>
         <button
@@ -188,7 +194,7 @@ const PinManagementDialog: React.FC<{
           onClick={handleClose}
           disabled={isLoading}
           aria-label="Đóng"
-          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
         >
           <X className="w-5 h-5 shrink-0" />
         </button>
@@ -260,6 +266,9 @@ const PinManagementDialog: React.FC<{
           {/* Ô hiển thị 6 chấm mã PIN (PIN Dots) */}
           <div
             data-testid="pin-dots-display"
+            role="status"
+            aria-live="polite"
+            aria-label={`${step === 'enter_pin' ? 'Mã PIN mới' : 'Xác nhận mã PIN'}: đã nhập ${(step === 'enter_pin' ? pin : confirmPin).length} trên 6 số`}
             className="flex items-center justify-center gap-3 py-2"
           >
             {[0, 1, 2, 3, 4, 5].map((idx) => {
@@ -268,6 +277,7 @@ const PinManagementDialog: React.FC<{
               return (
                 <div
                   key={idx}
+                  aria-hidden="true"
                   className={`w-3.5 h-3.5 rounded-full transition-all duration-150 ${
                     isFilled
                       ? 'bg-brand-primary scale-110 shadow-xs'
@@ -290,7 +300,8 @@ const PinManagementDialog: React.FC<{
                 onClick={() => handleKeypadClick(digit)}
                 disabled={isLoading}
                 data-testid={`keypad-btn-${digit}`}
-                className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-brand-50 active:text-brand-primary border border-slate-200/80 font-mono font-bold text-base text-text-primary transition-all shadow-2xs flex items-center justify-center select-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                aria-label={`Số ${digit}`}
+                className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-brand-50 active:text-brand-primary border border-slate-200/80 font-mono font-bold text-base text-text-primary transition-all shadow-2xs flex items-center justify-center select-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600"
               >
                 {digit}
               </button>
@@ -303,9 +314,10 @@ const PinManagementDialog: React.FC<{
               disabled={isLoading}
               data-testid="keypad-btn-clear"
               title="Xóa hết"
-              className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-text-secondary transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              aria-label="Xóa toàn bộ mã PIN"
+              className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-text-secondary transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600"
             >
-              <RotateCcw className="w-4 h-4 shrink-0" />
+              <RotateCcw className="w-4 h-4 shrink-0" aria-hidden="true" />
             </button>
 
             {/* Số 0 */}
@@ -314,7 +326,8 @@ const PinManagementDialog: React.FC<{
               onClick={() => handleKeypadClick('0')}
               disabled={isLoading}
               data-testid="keypad-btn-0"
-              className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-brand-50 active:text-brand-primary border border-slate-200/80 font-mono font-bold text-base text-text-primary transition-all shadow-2xs flex items-center justify-center select-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              aria-label="Số 0"
+              className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-brand-50 active:text-brand-primary border border-slate-200/80 font-mono font-bold text-base text-text-primary transition-all shadow-2xs flex items-center justify-center select-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600"
             >
               0
             </button>
@@ -326,9 +339,10 @@ const PinManagementDialog: React.FC<{
               disabled={isLoading}
               data-testid="keypad-btn-backspace"
               title="Xóa lùi"
-              className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-text-secondary transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              aria-label="Xóa lùi một số"
+              className="h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-text-secondary transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600"
             >
-              <Delete className="w-4 h-4 shrink-0" />
+              <Delete className="w-4 h-4 shrink-0" aria-hidden="true" />
             </button>
           </div>
 
@@ -380,6 +394,7 @@ export const PinManagementModal: React.FC<PinManagementModalProps> = ({
       <DialogContent
         data-testid="pin-management-modal"
         hideCloseButton
+        aria-describedby="pin-modal-desc"
         className="sm:max-w-sm sm:p-6"
       >
         <PinManagementDialog key={isOpen ? 'open' : 'closed'} onClose={onClose} onSuccess={onSuccess} />

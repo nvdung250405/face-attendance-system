@@ -333,7 +333,6 @@ export const KioskRegistrationModal: React.FC<KioskRegistrationModalProps> = (pr
     >
       <DialogContent
         hideCloseButton
-        usePortal={false}
         className="p-0 max-w-lg border-0 bg-transparent shadow-none"
       >
         <KioskRegistrationModalContent key={props.isOpen ? 'open' : 'closed'} {...props} />

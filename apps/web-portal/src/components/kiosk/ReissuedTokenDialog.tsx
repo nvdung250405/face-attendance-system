@@ -45,7 +45,7 @@ export const ReissuedTokenDialog: React.FC<ReissuedTokenDialogProps> = ({
     >
       <DialogContent
         hideCloseButton
-        usePortal={false}
+        aria-describedby="reissued-token-description"
         className="w-full max-w-md p-6 space-y-4"
       >
         {reissuedTokenKiosk && (
@@ -53,6 +53,9 @@ export const ReissuedTokenDialog: React.FC<ReissuedTokenDialogProps> = ({
             <DialogTitle className="text-base font-bold text-slate-900">
               Cấp Lại Secret Token Thành Công
             </DialogTitle>
+            <p id="reissued-token-description" className="sr-only">
+              Secret Token mới của trạm Kiosk {reissuedTokenKiosk.kioskId}
+            </p>
 
             <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
               Secret Token mới của trạm <strong>{reissuedTokenKiosk.kioskId}</strong> chỉ hiển thị duy nhất 1 lần trong RAM. Khi đóng hộp thoại này, token sẽ bị hủy khỏi bộ nhớ trình duyệt.

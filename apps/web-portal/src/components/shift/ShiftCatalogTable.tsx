@@ -1,6 +1,7 @@
 import React from 'react'
 import { Clock, Edit2 } from 'lucide-react'
 import { TableSkeleton } from '@/components/ui/table-skeleton'
+import { isOvernightShift } from '@/utils/date'
 import type { ShiftItem } from '@/types'
 
 export interface ShiftCatalogTableProps {
@@ -71,10 +72,21 @@ export const ShiftCatalogTable: React.FC<ShiftCatalogTableProps> = ({
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-text-secondary text-xs">
-                    <span className="inline-flex items-center gap-1 font-mono">
-                      <Clock className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
-                      <span>{shift.endTime}</span>
-                    </span>
+                    <div className="inline-flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 font-mono">
+                        <Clock className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+                        <span>{shift.endTime}</span>
+                      </span>
+                      {isOvernightShift(shift.startTime, shift.endTime) && (
+                        <span
+                          data-testid={`overnight-badge-${shift.id}`}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+                          title="Ca làm việc qua đêm (kết thúc vào ngày hôm sau)"
+                        >
+                          +1 ngày
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3.5 px-4 text-text-secondary font-medium text-xs">
                     {shift.gracePeriodMinutes} phút

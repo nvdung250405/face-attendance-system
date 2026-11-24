@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             data-testid="sidebar-close-mobile"
             aria-label="Đóng sidebar"
             onClick={onToggleCollapse}
-            className="md:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           >
             <X size={20} />
           </button>
@@ -214,7 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             const linkClassName = [
               "flex items-center rounded-xl min-h-[44px] text-sm font-medium transition-all duration-150",
               collapsed ? "justify-center px-0 w-11 h-11 mx-auto" : "px-3 py-2.5 gap-3",
-              "group relative select-none",
+              "group relative select-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
               isActive
                 ? "bg-indigo-600 text-white font-semibold shadow-xs"
                 : "text-slate-300 hover:bg-white/8 hover:text-white",
@@ -269,7 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id="sidebar-toggle"
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
           onClick={onToggleCollapse}
-          className={`w-full hidden md:flex items-center rounded-xl min-h-[44px] text-slate-300 hover:bg-white/8 hover:text-white transition-all duration-150 cursor-pointer ${
+          className={`w-full hidden md:flex items-center rounded-xl min-h-[44px] text-slate-300 hover:bg-white/8 hover:text-white transition-all duration-150 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
             collapsed ? "justify-center px-0 w-11 mx-auto" : "px-3 py-2.5 gap-3"
           }`}
         >
@@ -293,7 +293,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id="sidebar-logout"
           onClick={handleLogout}
           title={collapsed ? "Đăng xuất" : undefined}
-          className={`w-full flex items-center rounded-xl min-h-[44px] text-slate-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all duration-150 cursor-pointer ${
+          className={`w-full flex items-center rounded-xl min-h-[44px] text-slate-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all duration-150 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
             collapsed ? "justify-center px-0 w-11 mx-auto" : "px-3 py-2.5 gap-3"
           }`}
         >

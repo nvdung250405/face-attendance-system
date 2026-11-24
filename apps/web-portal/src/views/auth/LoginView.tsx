@@ -125,7 +125,11 @@ export const LoginView: React.FC = () => {
           </div>
 
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-status-danger text-xs sm:text-sm rounded-xl">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="p-3 bg-rose-50 border border-rose-200 text-status-danger text-xs sm:text-sm rounded-xl"
+            >
               {error}
             </div>
           )}
@@ -139,10 +143,12 @@ export const LoginView: React.FC = () => {
                 id="email-input"
                 type="email"
                 required
+                autoComplete="username"
+                aria-invalid={Boolean(error)}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ten.nv@company.com"
-                className="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 min-h-[44px] border border-border-subtle rounded-xl text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-hidden focus:ring-2 focus:ring-brand-primary focus:border-transparent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 transition-all"
               />
             </div>
 
@@ -154,17 +160,19 @@ export const LoginView: React.FC = () => {
                 id="password-input"
                 type="password"
                 required
+                autoComplete="current-password"
+                aria-invalid={Boolean(error)}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 min-h-[44px] border border-border-subtle rounded-xl text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-hidden focus:ring-2 focus:ring-brand-primary focus:border-transparent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full min-h-[44px] py-3 bg-brand-primary hover:bg-brand-hover text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center cursor-pointer"
+              className="w-full min-h-[44px] py-3 bg-brand-primary hover:bg-brand-hover text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
             >
               {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
             </button>

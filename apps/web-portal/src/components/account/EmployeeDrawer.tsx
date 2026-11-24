@@ -11,7 +11,7 @@
 import React, { useState } from 'react'
 import { X, AlertCircle, Sparkles } from 'lucide-react'
 import { adminEmployeeService } from '@/services/adminEmployeeService'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { DEPARTMENTS } from '@/constants/departments'
 import { previewEmployeeCode } from '@/utils/codePreview'
@@ -136,20 +136,20 @@ const DrawerForm: React.FC<DrawerFormProps> = ({ mode, initialData, isLastActive
       {/* Header Modal */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-slate-50/50 shrink-0">
         <div>
-          <h2 id="employee-drawer-title" className="text-base font-bold text-text-primary">
+          <DialogTitle id="employee-drawer-title" className="text-base font-bold text-text-primary">
             {mode === 'create' ? 'Tạo mới hồ sơ nhân sự' : 'Chỉnh sửa hồ sơ nhân sự'}
-          </h2>
-          <p className="text-xs text-text-secondary mt-0.5">
+          </DialogTitle>
+          <DialogDescription id="employee-drawer-desc" className="text-xs text-text-secondary mt-0.5">
             {mode === 'create'
               ? 'Thông tin nhân viên & cấp quyền truy cập'
               : `Mã NV: ${initialData?.employeeCode}`}
-          </p>
+          </DialogDescription>
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Đóng Drawer"
-          className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-slate-100 transition-colors shrink-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
         >
           <X size={18} strokeWidth={2} className="shrink-0" />
         </button>
@@ -396,6 +396,7 @@ export const EmployeeDrawer: React.FC<EmployeeDrawerProps> = ({
       <DialogContent
         data-testid="employee-drawer"
         aria-labelledby="employee-drawer-title"
+        aria-describedby="employee-drawer-desc"
         hideCloseButton
         className="p-0 max-w-lg border-0 bg-transparent shadow-none"
       >

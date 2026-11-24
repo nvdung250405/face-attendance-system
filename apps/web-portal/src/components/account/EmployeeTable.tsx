@@ -142,7 +142,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                         <span
                           title={emp.hasBiometric ? 'Đã kích hoạt sinh trắc mặt' : 'Chưa kích hoạt'}
                           className={`w-6 h-6 rounded-md flex items-center justify-center text-xs shrink-0 ${
-                            emp.hasBiometric ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                            emp.hasBiometric ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
                           }`}
                         >
                           <ScanFace size={14} strokeWidth={2} className="shrink-0" />
@@ -150,7 +150,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                         <span
                           title={emp.hasPin ? 'Đã cài đặt PIN dự phòng' : 'Chưa có PIN'}
                           className={`w-6 h-6 rounded-md flex items-center justify-center text-xs shrink-0 ${
-                            emp.hasPin ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'
+                            emp.hasPin ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
                           }`}
                         >
                           <Lock size={14} strokeWidth={2} className="shrink-0" />
@@ -159,14 +159,14 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                     </td>
 
                     <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10 whitespace-nowrap">
-                      <div className="inline-flex items-center gap-2">
+                      <div className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
                           title="Chỉnh sửa hồ sơ"
                           aria-label={`Sửa hồ sơ ${emp.fullName}`}
                           onClick={() => onEdit(emp)}
                           disabled={isBusy}
-                          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
+                          className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
                         >
                           <Edit2 size={16} strokeWidth={2} className="shrink-0" />
                         </button>
@@ -177,7 +177,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                           aria-label={`Cấp lại mật khẩu cho ${emp.fullName}`}
                           onClick={() => onResetCredentials(emp)}
                           disabled={isBusy}
-                          className="p-2 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
+                          className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
                         >
                           <KeyRound size={16} strokeWidth={2} className="shrink-0" />
                         </button>
@@ -188,7 +188,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                           aria-label={`${isDeactivated ? 'Kích hoạt' : 'Vô hiệu hóa'} ${emp.fullName}`}
                           onClick={() => onToggleStatus(emp)}
                           disabled={isBusy}
-                          className={`p-2 rounded-lg transition-colors shrink-0 cursor-pointer disabled:opacity-50 ${
+                          className={`min-w-[44px] min-h-[44px] p-2.5 rounded-lg transition-colors shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 ${
                             isDeactivated
                               ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
                               : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'

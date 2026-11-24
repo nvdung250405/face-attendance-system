@@ -13,10 +13,16 @@ import {
   AUTH_STORAGE_KEY,
   DEFAULT_TIMEOUT_MS,
 } from '@/services/apiClient'
+import { useAuthStore } from '@/store/authStore'
 
 describe('ApiClient & Request Interceptor (TASK-WEB-013)', () => {
   beforeEach(() => {
     localStorage.clear()
+    useAuthStore.setState({
+      session: null,
+      user: null,
+      isAuthenticated: false,
+    })
     vi.restoreAllMocks()
   })
 
@@ -34,24 +40,34 @@ describe('ApiClient & Request Interceptor (TASK-WEB-013)', () => {
     })
   })
 
-  describe('getStoredAccessToken', () => {
-    it('trả về null khi chưa có session trong LocalStorage', () => {
+  describe('getStoredAccessToken (SEC-02)', () => {
+    it('trả về null khi chưa có session trong authStore', () => {
       expect(getStoredAccessToken()).toBeNull()
     })
 
-    it('trích xuất chính xác token khi có session hợp lệ', () => {
+    it('trích xuất chính xác token từ Zustand RAM khi có session hợp lệ', () => {
       const mockSession = {
         accessToken: 'mock-jwt-token-xyz',
         refreshToken: 'mock-refresh-token',
-        tokenType: 'Bearer',
+        tokenType: 'Bearer' as const,
         expiresAt: Date.now() + 3600000,
+        user: {
+          id: 1,
+          employeeCode: 'NV-001',
+          fullName: 'Test User',
+          email: 'test@company.com',
+          department: 'Engineering',
+          role: 'ADMIN' as const,
+          status: 'ACTIVE' as const,
+        },
       }
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockSession))
+      useAuthStore.setState({ session: mockSession })
       expect(getStoredAccessToken()).toBe('mock-jwt-token-xyz')
     })
 
-    it('trả về null an toàn khi JSON hỏng mà không gây ném lỗi', () => {
-      localStorage.setItem(AUTH_STORAGE_KEY, 'invalid-json-string')
+    it('không fallback sang LocalStorage nếu LocalStorage chứa token (SEC-02)', () => {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ accessToken: 'leaked-token' }))
+      useAuthStore.setState({ session: null })
       expect(getStoredAccessToken()).toBeNull()
     })
   })
@@ -59,7 +75,23 @@ describe('ApiClient & Request Interceptor (TASK-WEB-013)', () => {
   describe('attachRequestInterceptor (TST-WEB-009)', () => {
     it('tự động gắn Authorization: Bearer <token> vào request config khi đã đăng nhập', async () => {
       const token = 'valid-token-12345'
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ accessToken: token }))
+      useAuthStore.setState({
+        session: {
+          accessToken: token,
+          refreshToken: 'refresh-1',
+          tokenType: 'Bearer',
+          expiresAt: Date.now() + 3600000,
+          user: {
+            id: 1,
+            employeeCode: 'NV-001',
+            fullName: 'Test User',
+            email: 'test@company.com',
+            department: 'Engineering',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+          },
+        },
+      })
 
       const instance = axios.create({ baseURL: '/api/v1' })
       attachRequestInterceptor(instance)
@@ -93,7 +125,23 @@ describe('ApiClient & Request Interceptor (TASK-WEB-013)', () => {
     })
 
     it('giữ nguyên header Authorization nếu đã được thiết lập thủ công', async () => {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ accessToken: 'storage-token' }))
+      useAuthStore.setState({
+        session: {
+          accessToken: 'storage-token',
+          refreshToken: 'refresh-1',
+          tokenType: 'Bearer',
+          expiresAt: Date.now() + 3600000,
+          user: {
+            id: 1,
+            employeeCode: 'NV-001',
+            fullName: 'Test User',
+            email: 'test@company.com',
+            department: 'Engineering',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+          },
+        },
+      })
 
       const instance = axios.create({ baseURL: '/api/v1' })
       attachRequestInterceptor(instance)

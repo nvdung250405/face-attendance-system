@@ -123,7 +123,8 @@ export function attachTokenRefreshInterceptor(
         originalRequest._retry = true
         isRefreshing = true
 
-        const session = safeLocalStorage.getItem<AuthSession>(AUTH_STORAGE_KEY)
+        const session =
+          useAuthStore.getState().session || safeLocalStorage.getItem<AuthSession>(AUTH_STORAGE_KEY)
         if (!session || !session.refreshToken) {
           isRefreshing = false
           processQueue(new Error('No refresh token available'), null)
@@ -163,7 +164,8 @@ export function attachTokenRefreshInterceptor(
             expiresAt: Date.now() + (tokenData.expiresIn ? tokenData.expiresIn * 1000 : 3600000),
           }
 
-          safeLocalStorage.setItem(AUTH_STORAGE_KEY, updatedSession)
+          // SEC-01: Không ghi trực tiếp updatedSession vào localStorage tránh rò rỉ accessToken.
+          // Uỷ thác hoàn toàn cho Zustand setSession tự động strip accessToken khi lưu storage.
           useAuthStore.getState().setSession(updatedSession)
 
           // Giải phóng các request đang chờ trong queue

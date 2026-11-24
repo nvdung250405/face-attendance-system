@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui'
 import { attendanceService } from '@/services/attendanceService'
+import { normalizeApiError } from '@/services/errorNormalizer'
 import { usePayrollPeriodStore } from '@/store/payrollPeriodStore'
 import type { AttendanceRecord, AttendanceStatus, AdjustAttendanceRequest } from '@/types'
 
@@ -67,6 +68,7 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
   const [reason, setReason] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -98,11 +100,19 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
 
     if (!reason.trim()) {
       setErrorMessage('Vui lòng nhập lý do điều chỉnh công (bắt buộc để lưu kiểm toán).')
+      setFieldErrors({ reason: 'Lý do điều chỉnh không được để trống.' })
+      return
+    }
+
+    if (reason.trim().length < 10) {
+      setErrorMessage('Lý do điều chỉnh phải chứa ít nhất 10 ký tự để phục vụ kiểm toán.')
+      setFieldErrors({ reason: 'Lý do điều chỉnh phải chứa ít nhất 10 ký tự.' })
       return
     }
 
     setIsLoading(true)
     setErrorMessage(null)
+    setFieldErrors({})
 
     try {
       let isoTimestamp: string | undefined = undefined
@@ -123,10 +133,11 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
         onClose()
       }, 1200)
     } catch (err: unknown) {
-      const errorObj = err as { message?: string }
+      const apiErr = normalizeApiError(err)
       setErrorMessage(
-        errorObj.message || 'Không thể điều chỉnh bản ghi. Vui lòng kiểm tra lại.'
+        apiErr.message || 'Không thể điều chỉnh bản ghi. Vui lòng kiểm tra lại.'
       )
+      setFieldErrors(apiErr.fieldErrors || {})
     } finally {
       setIsLoading(false)
     }
@@ -208,10 +219,24 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
             data-testid="punch-datetime-input"
             type="datetime-local"
             value={punchDateTime}
-            onChange={(e) => setPunchDateTime(e.target.value)}
+            onChange={(e) => {
+              setPunchDateTime(e.target.value)
+              if (fieldErrors.punchTimestamp) {
+                setFieldErrors((prev) => ({ ...prev, punchTimestamp: '' }))
+              }
+            }}
+            aria-invalid={Boolean(fieldErrors.punchTimestamp)}
+            aria-describedby={fieldErrors.punchTimestamp ? 'punch-datetime-error' : undefined}
             disabled={isDateLocked || isLoading}
-            className="w-full text-xs rounded-xl border border-border-subtle p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50"
+            className={`w-full text-xs rounded-xl border p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50 ${
+              fieldErrors.punchTimestamp ? 'border-status-danger ring-1 ring-status-danger' : 'border-border-subtle'
+            }`}
           />
+          {fieldErrors.punchTimestamp && (
+            <p id="punch-datetime-error" role="alert" className="text-2xs text-status-danger mt-1">
+              {fieldErrors.punchTimestamp}
+            </p>
+          )}
         </div>
 
         {/* Trạng thái công & Số phút trễ */}
@@ -224,9 +249,18 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
               id="adjust-status"
               data-testid="adjust-status-select"
               value={status}
-              onChange={(e) => setStatus(e.target.value as AttendanceStatus)}
+              onChange={(e) => {
+                setStatus(e.target.value as AttendanceStatus)
+                if (fieldErrors.status) {
+                  setFieldErrors((prev) => ({ ...prev, status: '' }))
+                }
+              }}
+              aria-invalid={Boolean(fieldErrors.status)}
+              aria-describedby={fieldErrors.status ? 'adjust-status-error' : undefined}
               disabled={isDateLocked || isLoading}
-              className="w-full text-xs rounded-xl border border-border-subtle p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50"
+              className={`w-full text-xs rounded-xl border p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50 ${
+                fieldErrors.status ? 'border-status-danger ring-1 ring-status-danger' : 'border-border-subtle'
+              }`}
             >
               <option value="ON_TIME">Đúng giờ (ON_TIME)</option>
               <option value="LATE">Đi muộn (LATE)</option>
@@ -234,6 +268,11 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
               <option value="OVERTIME">Tăng ca (OVERTIME)</option>
               <option value="ANOMALOUS">Bất thường (ANOMALOUS)</option>
             </select>
+            {fieldErrors.status && (
+              <p id="adjust-status-error" role="alert" className="text-2xs text-status-danger mt-1">
+                {fieldErrors.status}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -272,11 +311,32 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
             maxLength={500}
             required
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => {
+              setReason(e.target.value)
+              if (fieldErrors.reason) {
+                setFieldErrors((prev) => ({ ...prev, reason: '' }))
+              }
+            }}
+            aria-invalid={Boolean(fieldErrors.reason || (reason.length > 0 && reason.trim().length < 10))}
+            aria-describedby={fieldErrors.reason ? 'adjust-reason-error' : undefined}
             disabled={isDateLocked || isLoading}
-            placeholder="Nhập lý do điều chỉnh giờ công (bắt buộc để phục vụ kiểm toán)..."
-            className="w-full text-xs rounded-xl border border-border-subtle p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50"
+            placeholder="Nhập lý do điều chỉnh giờ công (tối thiểu 10 ký tự, bắt buộc để phục vụ kiểm toán)..."
+            className={`w-full text-xs rounded-xl border p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50 ${
+              fieldErrors.reason || (reason.length > 0 && reason.trim().length < 10)
+                ? 'border-status-danger ring-1 ring-status-danger'
+                : 'border-border-subtle'
+            }`}
           />
+          {fieldErrors.reason && (
+            <p id="adjust-reason-error" role="alert" className="text-2xs text-status-danger mt-1">
+              {fieldErrors.reason}
+            </p>
+          )}
+          {reason.length > 0 && reason.trim().length < 10 && !fieldErrors.reason && (
+            <p role="alert" className="text-2xs text-amber-700 mt-1">
+              Lý do cần tối thiểu 10 ký tự (còn thiếu {10 - reason.trim().length} ký tự).
+            </p>
+          )}
         </div>
       </div>
 
@@ -295,7 +355,7 @@ const AdjustAttendanceForm: React.FC<AdjustAttendanceFormProps> = ({
           variant="primary"
           size="sm"
           isLoading={isLoading}
-          disabled={isDateLocked || !reason.trim()}
+          disabled={isDateLocked || reason.trim().length < 10}
           data-testid="submit-adjust-btn"
           className="gap-1.5"
         >
